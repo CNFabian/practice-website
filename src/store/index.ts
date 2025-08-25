@@ -1,32 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { persistStore, persistReducer } from 'redux-persist'
-import storage from 'redux-persist/lib/storage'
 
-const persistConfig = {
-  key: 'root',
-  storage,
-}
-
-// Simple initial reducer - you'll expand this
-const rootReducer = (state = { user: null }, action: any) => {
-  switch (action.type) {
-    default:
-      return state
-  }
-}
-
-const persistedReducer = persistReducer(persistConfig, rootReducer)
+// Temporary root reducer - will add slices in future commits
+const rootReducer = (state = {}, action: any) => state
 
 export const store = configureStore({
-  reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-      },
-    }),
+  reducer: rootReducer,
 })
 
-export const persistor = persistStore(store)
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
