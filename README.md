@@ -1,5 +1,4 @@
-# 🎯 Nest Navigate Frontend
-
+# 🎯Website Front End
 Video-based learning platform with gamification - Frontend Application
 
 ## Tech Stack
