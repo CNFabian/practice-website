@@ -1,4 +1,4 @@
-# practice website Frontend
+# Nest Navigate Frontend
 
 Video-based learning platform with gamification.
 
