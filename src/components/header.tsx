@@ -1,10 +1,10 @@
 import React, { Fragment } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { Logo, CoinIcon, BellIcon, ProfileIcon, SavedIcon, ShareIcon, GetHelpIcon, SettingsIcon, SignOutIcon } from '../assets/images/icons';
+import { Logo, CoinIcon, BellIcon, ProfileIcon, RewardsIcon, ShareIcon, GetHelpIcon, SettingsIcon, SignOutIcon } from '../assets/images/icons';
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-gradient-to-r from-purple-50 to-blue-50 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16">
+    <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
       <div className="flex items-center justify-between h-full">
         {/* Left Section - Logo and Greeting */}
         <div className="flex items-center space-x-3">
@@ -85,80 +85,80 @@ const Header: React.FC = () => {
                   leaveTo="transform opacity-0 scale-95"
                 >
                   <MenuItems className="absolute right-0 mt-2 w-72 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2 z-50">
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-gray-300" />
-                      <span className="text-gray-700">My Profile @Jordan123</span>
-                    </button>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded bg-gray-300" />
-                      <span className="text-gray-700">Saved Rewards</span>
-                    </button>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded bg-gray-300" />
-                      <span className="text-gray-700">Share NestNavigate</span>
-                    </button>
-                  )}
-                </MenuItem>
-                <div className="h-px bg-gray-200 my-1 mx-3" />
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded-full bg-gray-300" />
-                      <span className="text-gray-700">Get Help</span>
-                    </button>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded bg-gray-300" />
-                      <span className="text-gray-700">Account Settings</span>
-                    </button>
-                  )}
-                </MenuItem>
-                <div className="h-px bg-gray-200 my-1 mx-3" />
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      className={`${
-                        focus ? 'bg-purple-50' : ''
-                      } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                    >
-                      <div className="w-5 h-5 rounded bg-gray-300" />
-                      <span className="text-gray-700">Sign Out</span>
-                    </button>
-                  )}
-                </MenuItem>
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
+                          <span className="text-gray-700">My Profile @Jordan123</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={RewardsIcon} alt="Rewards" className="w-5 h-5" />
+                          <span className="text-gray-700">Saved Rewards</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={ShareIcon} alt="Share" className="w-5 h-5" />
+                          <span className="text-gray-700">Share NestNavigate</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <div className="h-px bg-gray-200 my-1 mx-3" />
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={GetHelpIcon} alt="Get Help" className="w-5 h-5" />
+                          <span className="text-gray-700">Get Help</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={SettingsIcon} alt="Settings" className="w-5 h-5" />
+                          <span className="text-gray-700">Account Settings</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <div className="h-px bg-gray-200 my-1 mx-3" />
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-purple-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={SignOutIcon} alt="Sign Out" className="w-5 h-5" />
+                          <span className="text-gray-700">Sign Out</span>
+                        </button>
+                      )}
+                    </MenuItem>
                   </MenuItems>
                 </Transition>
               </>

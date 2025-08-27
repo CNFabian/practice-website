@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="w-44 bg-gray-50 border-r border-gray-200 h-[calc(100vh-64px)] fixed left-0 top-16 flex flex-col">
+    <aside className="w-44 h-[calc(100vh-88px)] fixed left-2 top-[80px] flex flex-col rounded-xl shadow-sm" style={{ backgroundColor: '#EFF2FF' }}>
       {/* Main Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="space-y-1">
@@ -30,12 +30,13 @@ const Sidebar: React.FC = () => {
               key={item.id}
               to={item.path}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
                 ${isActive(item.path) 
-                  ? 'bg-purple-50 text-purple-700 font-medium' 
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }
+                  ? 'font-medium shadow-sm' 
+                  : 'hover:bg-white/50'
+                } text-gray-700 hover:text-gray-900
               `}
+              style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
             >
               {/* Icon */}
               <img src={item.icon} alt={item.label} className="w-5 h-5" />
@@ -46,18 +47,18 @@ const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-gray-200 px-3 py-3">
+      <div className="border-t border-white/20 px-3 py-3">
         <div className="space-y-1">
           {bottomMenuItems.map((item) => (
             <Link
               key={item.id}
               to={item.path}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
                 ${isActive(item.path) 
-                  ? 'bg-purple-50 text-purple-700 font-medium' 
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }
+                  ? 'font-medium shadow-sm' 
+                  : 'hover:bg-white/50'
+                } text-gray-700 hover:text-gray-900
               `}
             >
               {/* Icon */}
