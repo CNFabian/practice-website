@@ -89,7 +89,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={RewardsIcon} alt="Rewards" className="w-5 h-5" />
@@ -113,7 +113,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={ShareIcon} alt="Share" className="w-5 h-5" />
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={GetHelpIcon} alt="Get Help" className="w-5 h-5" />
@@ -138,7 +138,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={SettingsIcon} alt="Settings" className="w-5 h-5" />
@@ -150,7 +150,7 @@ const Header: React.FC = () => {
                       {({ focus }) => (
                         <button
                           className={`${
-                            focus ? 'bg-purple-50' : ''
+                            focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={SignOutIcon} alt="Sign Out" className="w-5 h-5" />
