@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from './store/store.ts'
+import type { RootState } from './store/store'
 
 import AuthLayout from './components/layout/AuthLayout'
 import MainLayout from './components/layout/MainLayout'
@@ -19,7 +19,7 @@ import {
   SettingsPage
 } from './pages'
 
-import { setUser, setLoading } from './store/slices/authSlice'
+import { setUser } from './store/slices/authSlice'
 import { onAuthStateChange } from './services/auth'
 
 function App() {
