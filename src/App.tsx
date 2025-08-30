@@ -3,12 +3,18 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from './store/store'
 
+// Layouts
 import AuthLayout from './layouts/AuthLayout'
+import PublicLayout from './layouts/PublicLayout'
 import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/common/ProtectedRoute'
 
+// Public Pages
 import SplashPage from './pages/public/SplashPage'
+import LoginPage from './pages/public/LoginPage'
+import SignupPage from './pages/public/SignupPage'
 
+// Protected Pages
 import {
   OverviewPage,
   ModulesPage,
@@ -40,19 +46,25 @@ function App() {
 
   return (
     <Routes>
-      {/* Public Routes - Auth Layout */}
+      {/* Public Routes - Auth Layout (no header) */}
       <Route path="/splash" element={
         <AuthLayout>
           <SplashPage />
         </AuthLayout>
       } />
+
+      {/* Public Routes - Public Layout (with header) */}
+      <Route path="/auth" element={<PublicLayout />}>
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
+      </Route>
       
-      {/* Temporarily redirect to splash for login/signup until we create those pages */}
-      <Route path="/login" element={<Navigate to="/splash" replace />} />
-      <Route path="/signup" element={<Navigate to="/splash" replace />} />
+      {/* Redirect old paths to new structure */}
+      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
 
       {/* Protected Routes - Main Layout */}
-      <Route path="/*" element={
+      <Route path="/app" element={
         <ProtectedRoute>
           <MainLayout />
         </ProtectedRoute>
@@ -68,7 +80,7 @@ function App() {
 
       {/* Default redirect */}
       <Route path="/" element={
-        isAuthenticated ? <Navigate to="/overview" replace /> : <Navigate to="/splash" replace />
+        isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
       } />
     </Routes>
   )
