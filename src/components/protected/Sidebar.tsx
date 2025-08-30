@@ -1,6 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, ModuleIcon, SavedIcon, RewardsIcon, BadgesIcon, GetHelpIcon, SettingsIcon } from '../assets/images/icons';
+import { 
+  HomeIcon, 
+  ModuleIcon, 
+  SavedIcon, 
+  RewardsIcon, 
+  BadgesIcon, 
+  GetHelpIcon, 
+  SettingsIcon 
+} from '../../assets/images/icons';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();

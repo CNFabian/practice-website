@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { Logo, CoinIcon, BellIcon, ProfileIcon, RewardsIcon, ShareIcon, GetHelpIcon, SettingsIcon, SignOutIcon } from '../assets/images/icons';
+import { Logo, CoinIcon, BellIcon, ProfileIcon, RewardsIcon, ShareIcon, GetHelpIcon, SettingsIcon, SignOutIcon } from '../../assets/images/icons';
 
 const Header: React.FC = () => {
   return (

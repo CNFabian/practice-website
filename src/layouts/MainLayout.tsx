@@ -1,6 +1,6 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import { Header, Sidebar } from '../index'
+import { Header, Sidebar } from '../components/index'
 
 const MainLayout: React.FC = () => {
   return (

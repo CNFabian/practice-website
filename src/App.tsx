@@ -3,11 +3,11 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from './store/store'
 
-import AuthLayout from './components/layout/AuthLayout'
-import MainLayout from './components/layout/MainLayout'
+import AuthLayout from './layouts/AuthLayout'
+import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/common/ProtectedRoute'
 
-import SplashPage from './pages/auth/SplashPage'
+import SplashPage from './pages/public/SplashPage'
 
 import {
   OverviewPage,
