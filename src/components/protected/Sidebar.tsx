@@ -8,7 +8,7 @@ import {
   BadgesIcon, 
   GetHelpIcon, 
   SettingsIcon 
-} from '../../assets/images/icons';
+} from '../../assets';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();

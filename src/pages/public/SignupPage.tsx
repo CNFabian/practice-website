@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { signupWithEmail } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
+import { SignupImage } from '../../assets'
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate()
@@ -51,7 +52,7 @@ const SignupPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center px-6 lg:px-8">
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-8 my-8">
         <div className="w-full max-w-md space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -153,10 +154,11 @@ const SignupPage: React.FC = () => {
       {/* Right Side - Illustration */}
       <div className="hidden lg:flex flex-1 bg-blue-100 items-center justify-center">
         <div className="max-w-lg">
-          {/* Placeholder for the illustration - you'll need to add the actual image */}
-          <div className="w-96 h-96 bg-blue-200 rounded-2xl flex items-center justify-center">
-            <span className="text-blue-600 text-lg font-medium">Illustration Here</span>
-          </div>
+          <img 
+            src={SignupImage} 
+            alt="Home ownership journey illustration" 
+            className="w-96 h-96 object-contain"
+          />
         </div>
       </div>
     </div>
