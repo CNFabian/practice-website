@@ -39,7 +39,6 @@ const SignupPage: React.FC = () => {
       if (error) {
         setError(error)
       } else if (user) {
-        // Success - user will be redirected by auth state change
         navigate('/')
       }
     } catch (err) {
@@ -78,7 +77,7 @@ const SignupPage: React.FC = () => {
             value={formData.firstName}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+            className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
             style={{ backgroundColor: '#EFF2FF' }}
           />
 
@@ -89,7 +88,7 @@ const SignupPage: React.FC = () => {
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
@@ -100,7 +99,7 @@ const SignupPage: React.FC = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
@@ -111,7 +110,7 @@ const SignupPage: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
@@ -123,7 +122,7 @@ const SignupPage: React.FC = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
@@ -135,16 +134,15 @@ const SignupPage: React.FC = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="mx-auto w-48 bg-blue-600 text-white py-3 px-6 rounded-full font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               style={{ backgroundColor: '#3F6CB9' }}
-
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -164,7 +162,7 @@ const SignupPage: React.FC = () => {
         <div className="w-full h-full flex items-center justify-center">
           <img 
             src={SignupImage} 
-            alt="Home ownership journey illustration" 
+            alt="Home ownership journey image" 
             className="w-full h-full object-cover rounded-2xl"
           />
         </div>

@@ -102,7 +102,7 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="mx-auto w-48 bg-blue-600 text-white py-3 px-6 rounded-full font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               style={{ backgroundColor: '#3F6CB9' }}
             >
               {loading ? (
@@ -123,7 +123,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full h-full flex items-center justify-center">
           <img 
             src={LoginImage} 
-            alt="Home ownership journey illustration" 
+            alt="Home ownership journey image" 
             className="w-full h-full object-cover rounded-2xl"
           />
         </div>
