@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { loginWithEmail } from '../../services/auth'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { LoginImage } from '../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
@@ -44,63 +45,87 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome back!
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Sign in to continue your learning journey
-          </p>
-        </div>
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-8 my-8">
+        <div className="w-full max-w-md space-y-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome Back!
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Sign in to continue your learning journey
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
-              {error}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
+            <input
+              type="email"
+              name="email"
+              placeholder="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              style={{ backgroundColor: '#EFF2FF' }}
+            />
+
+            <input
+              type="password"
+              name="password"
+              placeholder="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              style={{ backgroundColor: '#EFF2FF' }}
+            />
+
+            <div className="flex items-center">
+              <input
+                id="stayLoggedIn"
+                name="stayLoggedIn"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="stayLoggedIn" className="ml-2 block text-sm text-gray-700">
+                Stay logged in
+              </label>
             </div>
-          )}
 
-          <input
-            type="email"
-            name="email"
-            placeholder="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-4 bg-gray-100 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              style={{ backgroundColor: '#3F6CB9' }}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              ) : null}
+              Log In
+            </button>
+          </form>
+
+          <div className="text-center text-gray-600">
+            <p>No account yet? Register <a href='/auth/signup' className="text-blue-600 hover:underline">here</a></p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side */}
+      <div className="hidden lg:flex flex-1 items-center justify-center m-10">
+        <div className="w-full h-full flex items-center justify-center">
+          <img 
+            src={LoginImage} 
+            alt="Home ownership journey illustration" 
+            className="w-full h-full object-cover rounded-2xl"
           />
-
-          <input
-            type="password"
-            name="password"
-            placeholder="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-4 bg-gray-100 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-            ) : null}
-            Login
-          </button>
-        </form>
-
-        <div className="text-center">
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-              Sign up here
-            </Link>
-          </p>
         </div>
       </div>
     </div>

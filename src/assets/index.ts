@@ -1,3 +1,4 @@
+// Icons
 export { default as Logo } from './images/icons/nest-logo.svg'
 export { default as CoinIcon } from './images/icons/nest-coin.svg'
 export { default as BellIcon } from './images/icons/bell-icon.svg'
@@ -12,5 +13,11 @@ export { default as GetHelpIcon } from './images/icons/get-help-icon.svg'
 export { default as SettingsIcon } from './images/icons/settings-icon.svg'
 export { default as SignOutIcon } from './images/icons/sign-out-icon.svg'
 export { default as NestNavigateLogo } from './images/icons/nest-navigate-logo.svg'
-
+export { default as FacebookIcon } from './images/icons/facebook.svg'
+export { default as TwitterIcon } from './images/icons/twitter.svg'
+export { default as InstagramIcon } from './images/icons/instagram.svg'
+export { default as LinkedInIcon } from './images/icons/linkedin.svg'
+export { default as YouTubeIcon } from './images/icons/youtube.svg'
+// Static Images
 export { default as SignupImage } from './images/static/signup_page.png'
+export { default as LoginImage } from './images/static/login_page.png'
