@@ -1,8 +1,57 @@
 import React, { Fragment } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { Logo, CoinIcon, BellIcon, ProfileIcon, RewardsIcon, ShareIcon, GetHelpIcon, SettingsIcon, SignOutIcon } from '../../assets';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { RootState } from '../../store/store';
+import { logoutUser } from '../../services/auth';
+import { logout } from '../../store/slices/authSlice';
+import { 
+  Logo, 
+  CoinIcon, 
+  BellIcon, 
+  ProfileIcon, 
+  RewardsIcon, 
+  ShareIcon, 
+  GetHelpIcon, 
+  SettingsIcon, 
+  SignOutIcon 
+} from '../../assets';
 
 const Header: React.FC = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      dispatch(logout());
+      navigate('/splash');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const getDisplayName = () => {
+    if (user?.displayName) {
+      return user.displayName.split(' ')[0]; // Get first name
+    }
+    if (user?.email) {
+      return user.email.split('@')[0]; // Use email username as fallback
+    }
+    return 'Guest';
+  };
+
+  const getUserHandle = () => {
+    if (user?.displayName) {
+      return `@${user.displayName.replace(/\s+/g, '').toLowerCase()}123`;
+    }
+    if (user?.email) {
+      return `@${user.email.split('@')[0]}`;
+    }
+    return '@user';
+  };
+
   return (
     <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
       <div className="flex items-center justify-between h-full">
@@ -14,10 +63,10 @@ const Header: React.FC = () => {
           {/* Greeting Section */}
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold text-gray-800">
-              Hello, [name]
+              Hello, {getDisplayName()}
             </h1>
             <p className="text-sm text-gray-600">
-              Here's 25 Nest coins to get your started.
+              Here's 25 Nest coins to get you started.
             </p>
           </div>
         </div>
@@ -93,13 +142,14 @@ const Header: React.FC = () => {
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
-                          <span className="text-gray-700">My Profile @Jordan123</span>
+                          <span className="text-gray-700">My Profile {getUserHandle()}</span>
                         </button>
                       )}
                     </MenuItem>
                     <MenuItem>
                       {({ focus }) => (
                         <button
+                          onClick={() => navigate('/app/rewards')}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
@@ -125,6 +175,7 @@ const Header: React.FC = () => {
                     <MenuItem>
                       {({ focus }) => (
                         <button
+                          onClick={() => navigate('/app/help')}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
@@ -137,6 +188,7 @@ const Header: React.FC = () => {
                     <MenuItem>
                       {({ focus }) => (
                         <button
+                          onClick={() => navigate('/app/settings')}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
@@ -149,6 +201,7 @@ const Header: React.FC = () => {
                     <MenuItem>
                       {({ focus }) => (
                         <button
+                          onClick={handleLogout}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}

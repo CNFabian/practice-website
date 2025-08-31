@@ -3,7 +3,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User
+  User,
+  updateProfile
 } from 'firebase/auth'
 import { auth } from './firebase'
 
@@ -14,6 +15,8 @@ export interface AuthCredentials {
 
 export interface SignupCredentials extends AuthCredentials {
   confirmPassword: string
+  firstName?: string
+  lastName?: string
 }
 
 // Login with email and password
@@ -22,12 +25,37 @@ export const loginWithEmail = async ({ email, password }: AuthCredentials) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password)
     return { user: userCredential.user, error: null }
   } catch (error: any) {
-    return { user: null, error: error.message }
+    console.error('Login error:', error)
+    
+    // Return user-friendly error messages
+    let errorMessage = 'An error occurred during login'
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage = 'No account found with this email address'
+        break
+      case 'auth/wrong-password':
+        errorMessage = 'Incorrect password'
+        break
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address'
+        break
+      case 'auth/user-disabled':
+        errorMessage = 'This account has been disabled'
+        break
+      case 'auth/too-many-requests':
+        errorMessage = 'Too many failed login attempts. Please try again later'
+        break
+      default:
+        errorMessage = error.message || 'Login failed'
+    }
+    
+    return { user: null, error: errorMessage }
   }
 }
 
 // Sign up with email and password
-export const signupWithEmail = async ({ email, password, confirmPassword }: SignupCredentials) => {
+export const signupWithEmail = async ({ email, password, confirmPassword, firstName, lastName }: SignupCredentials) => {
   if (password !== confirmPassword) {
     return { user: null, error: 'Passwords do not match' }
   }
@@ -38,9 +66,40 @@ export const signupWithEmail = async ({ email, password, confirmPassword }: Sign
 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    
+    // Update user profile with display name if first name is provided
+    if (firstName) {
+      const displayName = lastName ? `${firstName} ${lastName}` : firstName
+      await updateProfile(userCredential.user, {
+        displayName: displayName
+      })
+    }
+    
     return { user: userCredential.user, error: null }
   } catch (error: any) {
-    return { user: null, error: error.message }
+    console.error('Signup error:', error)
+    
+    // Return user-friendly error messages
+    let errorMessage = 'An error occurred during signup'
+    
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'An account with this email already exists'
+        break
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address'
+        break
+      case 'auth/operation-not-allowed':
+        errorMessage = 'Email/password accounts are not enabled'
+        break
+      case 'auth/weak-password':
+        errorMessage = 'Password is too weak. Please use at least 6 characters'
+        break
+      default:
+        errorMessage = error.message || 'Signup failed'
+    }
+    
+    return { user: null, error: errorMessage }
   }
 }
 
@@ -50,11 +109,32 @@ export const logoutUser = async () => {
     await signOut(auth)
     return { error: null }
   } catch (error: any) {
-    return { error: error.message }
+    console.error('Logout error:', error)
+    return { error: error.message || 'Logout failed' }
   }
 }
 
 // Auth state listener
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback)
+}
+
+// Get current user
+export const getCurrentUser = (): User | null => {
+  return auth.currentUser
+}
+
+// Update user profile
+export const updateUserProfile = async (updates: { displayName?: string; photoURL?: string }) => {
+  if (!auth.currentUser) {
+    return { error: 'No user logged in' }
+  }
+  
+  try {
+    await updateProfile(auth.currentUser, updates)
+    return { error: null }
+  } catch (error: any) {
+    console.error('Profile update error:', error)
+    return { error: error.message || 'Failed to update profile' }
+  }
 }

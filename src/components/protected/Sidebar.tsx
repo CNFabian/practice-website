@@ -14,19 +14,24 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
 
   const mainMenuItems = [
-    { id: 'overview', label: 'Overview', path: '/', icon: HomeIcon },
-    { id: 'modules', label: 'Modules', path: '/modules', icon: ModuleIcon },
-    { id: 'saved', label: 'Saved', path: '/saved', icon: SavedIcon },
-    { id: 'rewards', label: 'Rewards', path: '/rewards', icon: RewardsIcon },
-    { id: 'badges', label: 'Badges', path: '/badges', icon: BadgesIcon },
+    { id: 'overview', label: 'Overview', path: '/app', icon: HomeIcon },
+    { id: 'modules', label: 'Modules', path: '/app/modules', icon: ModuleIcon },
+    { id: 'saved', label: 'Saved', path: '/app/saved', icon: SavedIcon },
+    { id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon },
+    { id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon },
   ];
 
   const bottomMenuItems = [
-    { id: 'help', label: 'Get Help', path: '/help', icon: GetHelpIcon },
-    { id: 'settings', label: 'Settings', path: '/settings', icon: SettingsIcon },
+    { id: 'help', label: 'Get Help', path: '/app/help', icon: GetHelpIcon },
+    { id: 'settings', label: 'Settings', path: '/app/settings', icon: SettingsIcon },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/app') {
+      return location.pathname === '/app';
+    }
+    return location.pathname === path;
+  };
 
   return (
     <aside className="w-44 h-[calc(100vh-88px)] fixed left-2 top-[80px] flex flex-col rounded-xl shadow-sm" style={{ backgroundColor: '#EFF2FF' }}>
@@ -68,6 +73,7 @@ const Sidebar: React.FC = () => {
                   : 'hover:bg-white/50'
                 } text-gray-700 hover:text-gray-900
               `}
+              style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
             >
               {/* Icon */}
               <img src={item.icon} alt={item.label} className="w-5 h-5" />
