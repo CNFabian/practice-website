@@ -2,7 +2,6 @@ import React, { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { onAuthStateChange } from '../../services/auth'
 import { setUser, setLoading } from '../../store/slices/authSlice'
-import LoadingSpinner from '../index'
 
 interface AuthProviderProps {
   children: React.ReactNode
