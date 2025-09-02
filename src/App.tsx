@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { useState, useEffect } from 'react'
 import type { RootState } from './store/store'
+import { setLoading } from './store/slices/authSlice'
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
@@ -28,11 +30,30 @@ import {
 
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch()
+  const [authResolved, setAuthResolved] = useState(false)
+
+  // Monitor auth state changes to determine when content is ready
+  useEffect(() => {
+    // This effect runs when authentication state changes
+    if (isAuthenticated !== null) { // null means still checking, true/false means resolved
+      setAuthResolved(true)
+    }
+  }, [isAuthenticated])
+
+  const handleLoadingComplete = () => {
+    // Called when the bird progress bar completes and minimum time is reached
+    dispatch(setLoading(false))
+  }
 
   return (
     <AuthProvider>
       {isLoading ? (
-        <LoadingSpinner />
+        <LoadingSpinner 
+          minDisplayTime={2000} // 2 seconds minimum display time
+          onMinTimeComplete={handleLoadingComplete}
+          onReadyToShow={authResolved} // Pass whether auth state has been determined
+        />
       ) : (
         <Routes>
           {/* Public Routes - Auth Layout (no header/footer) */}
