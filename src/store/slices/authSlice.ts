@@ -30,7 +30,6 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<SerializableUser | null>) => {
       state.user = action.payload
       state.isAuthenticated = !!action.payload
-      // DON'T automatically set isLoading to false - let App.tsx control it
       state.error = null
     },
     setLoading: (state, action: PayloadAction<boolean>) => {

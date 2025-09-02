@@ -157,7 +157,7 @@ const SignupPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Side - Illustration */}
+      {/* Right Side - Image */}
       <div className="hidden lg:flex flex-1 items-center justify-center m-10">
         <div className="w-full h-full flex items-center justify-center">
           <img 

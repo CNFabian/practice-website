@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { useState, useEffect } from 'react'
 import type { RootState } from './store/store'
 import { setLoading } from './store/slices/authSlice'
 
@@ -43,13 +42,13 @@ function App() {
     <AuthProvider>
       {isLoading ? (
         <LoadingSpinner 
-          minDisplayTime={2000} // 2 seconds minimum display time
+          minDisplayTime={2000}
           onMinTimeComplete={handleLoadingComplete}
-          onReadyToShow={true} // Always ready since we control when loading starts
+          onReadyToShow={true}
         />
       ) : (
         <Routes>
-          {/* Public Routes - Auth Layout (no header/footer) */}
+          {/* Public Routes - Auth Layout */}
           <Route path="/splash" element={
             isAuthenticated ? <Navigate to="/app" replace /> : (
               <AuthLayout>
@@ -58,7 +57,7 @@ function App() {
             )
           } />
 
-          {/* Public Routes - Public Layout (with header/footer) */}
+          {/* Public Routes - Public Layout */}
           <Route path="/auth" element={
             isAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
           }>

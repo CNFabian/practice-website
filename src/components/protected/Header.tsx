@@ -34,10 +34,10 @@ const Header: React.FC = () => {
 
   const getDisplayName = () => {
     if (user?.displayName) {
-      return user.displayName.split(' ')[0]; // Get first name
+      return user.displayName.split(' ')[0];
     }
     if (user?.email) {
-      return user.email.split('@')[0]; // Use email username as fallback
+      return user.email.split('@')[0];
     }
     return 'Guest';
   };

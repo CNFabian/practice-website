@@ -34,7 +34,6 @@ const LoginPage: React.FC = () => {
       if (error) {
         setError(error)
       } else if (user) {
-        // Success - user will be redirected by auth state change
         navigate('/')
       }
     } catch (err) {
@@ -118,7 +117,7 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Side - Image */}
       <div className="hidden lg:flex flex-1 items-center justify-center m-10">
         <div className="w-full h-full flex items-center justify-center">
           <img 

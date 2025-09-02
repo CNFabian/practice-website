@@ -17,7 +17,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   useEffect(() => {
     console.log('LoadingSpinner: Starting progress animation')
     
-    // Single timer that handles both progress and minimum time
     const startTime = Date.now()
     
     const progressTimer = setInterval(() => {
@@ -26,12 +25,11 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       
       setProgress(timeProgress)
       
-      // If we've reached minimum time and content is ready, complete
       if (elapsed >= minDisplayTime && onReadyToShow) {
         console.log('LoadingSpinner: Completing - min time reached and content ready')
         clearInterval(progressTimer)
         if (onMinTimeComplete) {
-          setTimeout(() => onMinTimeComplete(), 100) // Small delay for smooth transition
+          setTimeout(() => onMinTimeComplete(), 100)
         }
       }
     }, 50)
@@ -47,7 +45,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       {/* White background overlay */}
       <div className="absolute inset-0 bg-white"></div>
       
-      {/* Content container */}
       <div className="relative z-10 text-center max-w-md mx-auto px-6">
         
         {/* Main Loading Image with Progress Fill */}
@@ -84,7 +81,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           <span className="text-sm text-gray-500">{Math.round(progress)}%</span>
         </div>
         
-        {/* Additional animated dots for extra polish */}
+        {/* Animated dots */}
         <div className="mt-6">
           <div className="flex space-x-1 justify-center">
             <div 

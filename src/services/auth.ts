@@ -31,20 +31,8 @@ export const loginWithEmail = async ({ email, password }: AuthCredentials) => {
     let errorMessage = 'An error occurred during login'
     
     switch (error.code) {
-      case 'auth/user-not-found':
-        errorMessage = 'No account found with this email address'
-        break
-      case 'auth/wrong-password':
-        errorMessage = 'Incorrect password'
-        break
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address'
-        break
-      case 'auth/user-disabled':
-        errorMessage = 'This account has been disabled'
-        break
-      case 'auth/too-many-requests':
-        errorMessage = 'Too many failed login attempts. Please try again later'
+      case 'auth/invalid-credential':
+        errorMessage = 'Invalid email or password.'
         break
       default:
         errorMessage = error.message || 'Login failed'
@@ -88,12 +76,6 @@ export const signupWithEmail = async ({ email, password, confirmPassword, firstN
         break
       case 'auth/invalid-email':
         errorMessage = 'Invalid email address'
-        break
-      case 'auth/operation-not-allowed':
-        errorMessage = 'Email/password accounts are not enabled'
-        break
-      case 'auth/weak-password':
-        errorMessage = 'Password is too weak. Please use at least 6 characters'
         break
       default:
         errorMessage = error.message || 'Signup failed'
