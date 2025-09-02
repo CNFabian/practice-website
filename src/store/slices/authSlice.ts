@@ -1,8 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import type { User } from 'firebase/auth'
+
+// Serializable user interface - only store what we need
+export interface SerializableUser {
+  uid: string
+  email: string | null
+  displayName: string | null
+  photoURL: string | null
+  emailVerified: boolean
+}
 
 interface AuthState {
-  user: User | null
+  user: SerializableUser | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
@@ -19,10 +27,10 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User | null>) => {
+    setUser: (state, action: PayloadAction<SerializableUser | null>) => {
       state.user = action.payload
       state.isAuthenticated = !!action.payload
-      state.isLoading = false
+      // DON'T automatically set isLoading to false - let App.tsx control it
       state.error = null
     },
     setLoading: (state, action: PayloadAction<boolean>) => {

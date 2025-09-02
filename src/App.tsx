@@ -31,20 +31,13 @@ import {
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch()
-  const [authResolved, setAuthResolved] = useState(false)
-
-  // Monitor auth state changes to determine when content is ready
-  useEffect(() => {
-    // This effect runs when authentication state changes
-    if (isAuthenticated !== null) { // null means still checking, true/false means resolved
-      setAuthResolved(true)
-    }
-  }, [isAuthenticated])
 
   const handleLoadingComplete = () => {
-    // Called when the bird progress bar completes and minimum time is reached
+    console.log('App: Loading complete - hiding spinner')
     dispatch(setLoading(false))
   }
+
+  console.log('App render - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated)
 
   return (
     <AuthProvider>
@@ -52,7 +45,7 @@ function App() {
         <LoadingSpinner 
           minDisplayTime={2000} // 2 seconds minimum display time
           onMinTimeComplete={handleLoadingComplete}
-          onReadyToShow={authResolved} // Pass whether auth state has been determined
+          onReadyToShow={true} // Always ready since we control when loading starts
         />
       ) : (
         <Routes>
