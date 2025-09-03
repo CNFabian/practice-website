@@ -450,8 +450,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex gap-8">
-        {/* Main Content Area */}
-        <div className={`transition-all duration-300 ease-in-out ${
+     {/* Main Content Area */}
+        <div className={`transition-all duration-700 ease-in-out ${
           selectedModule && !sidebarCollapsed ? 'w-[55%]' : 'flex-1'
         }`}>
           <div className="space-y-6">
@@ -465,7 +465,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                   className="lg:flex hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <svg 
-                    className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -495,7 +495,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
             </div>
 
             {/* Module Cards */}
-            <div className={`transition-all duration-300 ${
+            <div className={`transition-all duration-700 ease-in-out ${
               selectedModule && !sidebarCollapsed
                 ? 'flex flex-col gap-4' 
                 : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
@@ -503,7 +503,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
               {modulesData.map((module, index) => (
                 <div 
                   key={module.id}
-                  className={`bg-white rounded-xl border-2 p-6 cursor-pointer transition-all hover:border-blue-200 ${
+                  className={`bg-white rounded-xl border-2 p-6 cursor-pointer transition-all duration-700 ease-in-out hover:border-blue-200 ${
                     selectedModule === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'
                   } ${
                     selectedModule && !sidebarCollapsed ? 'max-w-none w-full' : ''
@@ -535,12 +535,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                           <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
                             <span className="text-2xl">
                               {index === 0 ? '🏠' : 
-                               index === 1 ? '💰' : 
-                               index === 2 ? '🔍' : 
-                               index === 3 ? '🤝' : 
-                               index === 4 ? '🔨' : 
-                               index === 5 ? '📋' : 
-                               index === 6 ? '🏡' : '📈'}
+                              index === 1 ? '💰' : 
+                              index === 2 ? '🔍' : 
+                              index === 3 ? '🤝' : 
+                              index === 4 ? '🔨' : 
+                              index === 5 ? '📋' : 
+                              index === 6 ? '🏡' : '📈'}
                             </span>
                           </div>
                           <div className="text-xs text-gray-600">{module.title}</div>
@@ -579,91 +579,98 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
           </div>
         </div>
 
-        {/* Collapsible Right Sidebar */}
-        <div className={`hidden lg:block transition-all duration-300 ease-in-out ${
-          selectedModule && !sidebarCollapsed ? 'w-[45%] opacity-100' : 'w-0 overflow-hidden opacity-0'
-        }`}>
-          <div className="space-y-6">
-            {selectedModuleData ? (
-              <>
-                <div className="bg-white rounded-xl border-2 border-gray-100 p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    {selectedModuleData.title}
-                  </h2>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {selectedModuleData.description}
-                  </p>
-                  <div className="flex gap-2 mb-6">
-                    {selectedModuleData.tags.map((tag) => (
-                      <span 
-                        key={tag}
-                        className={`px-3 py-1 text-xs rounded-full ${
-                          tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                        }`}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+       {/* Collapsible Right Sidebar */}
+<div className={`hidden lg:block transition-all duration-700 ease-in-out overflow-hidden ${
+  selectedModule && !sidebarCollapsed ? 'w-[45%]' : 'w-0'
+}`}>
+  <div 
+    className={`duration-500 ease-in-out ${
+      selectedModule && !sidebarCollapsed 
+        ? 'opacity-100 translate-x-0 delay-300 transition-opacity' 
+        : 'opacity-0 translate-x-full transition-[transform,opacity]'
+    }`}
+  >
+    <div className="space-y-6 pl-4">
+      {selectedModuleData ? (
+        <>
+          <div className="bg-white rounded-xl border-2 border-gray-100 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {selectedModuleData.title}
+            </h2>
+            <p className="text-gray-600 text-sm mb-4">
+              {selectedModuleData.description}
+            </p>
+            <div className="flex gap-2 mb-6">
+              {selectedModuleData.tags.map((tag) => (
+                <span 
+                  key={tag}
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
 
-                  {/* Lessons List */}
-                  <div className="space-y-4">
-                    {selectedModuleData.lessons.map((lesson, index) => (
-                      <div key={lesson.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {lesson.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm text-gray-600">Lesson {index + 1}</span>
-                              <span className="text-sm text-gray-400">•</span>
-                              <span className="text-sm text-gray-600">{lesson.duration}</span>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3">
-                              {lesson.description}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-yellow-600 ml-4">
-                            <span className="text-sm font-medium">+{lesson.coins}</span>
-                            <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => handleLessonStart(lesson)}
-                            className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700"
-                          >
-                            Start Lesson
-                          </button>
-                          <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200">
-                            Lesson Quiz
-                          </button>
-                        </div>
+            {/* Lessons List */}
+            <div className="space-y-4">
+              {selectedModuleData.lessons.map((lesson, index) => (
+                <div key={lesson.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">
+                        {lesson.title}
+                      </h4>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm text-gray-600">Lesson {index + 1}</span>
+                        <span className="text-sm text-gray-400">•</span>
+                        <span className="text-sm text-gray-600">{lesson.duration}</span>
                       </div>
-                    ))}
+                      <p className="text-xs text-gray-600 mb-3">
+                        {lesson.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 text-yellow-600 ml-4">
+                      <span className="text-sm font-medium">+{lesson.coins}</span>
+                      <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
+                    </div>
                   </div>
-
-                  {/* Module Actions */}
-                  <div className="flex gap-2 mt-6">
-                    <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
-                      Quiz Battle
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleLessonStart(lesson)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      Start Lesson
                     </button>
-                    <button className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700">
-                      Module Quiz
+                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200">
+                      Lesson Quiz
                     </button>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
-                <p className="text-gray-500">Select a module to view lessons and details</p>
-              </div>
-            )}
-          </div>
-        </div>
+              ))}
+            </div>
 
+            {/* Module Actions */}
+            <div className="flex gap-2 mt-6">
+              <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+                Quiz Battle
+              </button>
+              <button className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700">
+                Module Quiz
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
+          <p className="text-gray-500">Select a module to view lessons and details</p>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
         {/* Mobile Module Details (shown below modules on mobile when sidebar is hidden on desktop) */}
         <div className="lg:hidden w-full mt-6">
           {selectedModuleData && (
