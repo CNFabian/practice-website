@@ -288,27 +288,29 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       <div className="flex gap-8">
         {/* Main Content Area */}
         <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'flex-1' : 'flex-1 lg:max-w-[calc(66.666%-2rem)]'
+          selectedModule ? 'flex-1 lg:max-w-[calc(55%-2rem)]' : 'flex-1'
         }`}>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
               
-              {/* Sidebar Toggle Button */}
-              <button
-                onClick={toggleSidebar}
-                className="lg:flex hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+              {/* Sidebar Toggle Button - Only show when module is selected */}
+              {selectedModule && (
+                <button
+                  onClick={toggleSidebar}
+                  className="lg:flex hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                {sidebarCollapsed ? 'Show Details' : 'Hide Details'}
-              </button>
+                  <svg 
+                    className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  {sidebarCollapsed ? 'Show Details' : 'Hide Details'}
+                </button>
+              )}
             </div>
             
             {/* Tabs */}
@@ -329,7 +331,11 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
             </div>
 
             {/* Module Cards */}
-            <div className="space-y-4">
+            <div className={`transition-all duration-300 ${
+              selectedModule 
+                ? 'space-y-4' 
+                : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
+            }`}>
               {modulesData.map((module, index) => (
                 <div 
                   key={module.id}
@@ -403,7 +409,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
         {/* Collapsible Right Sidebar */}
         <div className={`hidden lg:block transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-80 opacity-100'
+          selectedModule ? 'w-[45%] opacity-100' : 'w-0 overflow-hidden opacity-0'
         }`}>
           <div className="space-y-6">
             {selectedModuleData ? (
