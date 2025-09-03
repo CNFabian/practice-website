@@ -85,6 +85,170 @@ We'll also help you identify the people and tools that can support your decision
         completed: false
       }
     ]
+  }, 
+  {
+    id: 3,
+    title: "Readiness and Decision Making",
+    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
+    lessonCount: 3,
+    status: "In Progress",
+    tags: ["Beginner", "Finance"],
+    illustration: "readiness", // We'll use a placeholder for now
+    lessons: [
+      {
+        id: 1,
+        title: "Mindset and Financial Readiness",
+        duration: "20 minutes",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
+        coins: 25,
+        completed: false,
+        videoUrl: "https://example.com/video1.mp4",
+        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+
+In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
+
+We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
+      },
+      {
+        id: 2,
+        title: "Credit and Financial Foundations",
+        duration: "20 minutes",
+        description: "Build—and protect—the credit score that unlocks your dream home.",
+        coins: 25,
+        completed: false
+      },
+      {
+        id: 3,
+        title: "Real Estate Terminology 101",
+        duration: "20 minutes",
+        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  }, 
+  {
+    id: 4,
+    title: "Readiness and Decision Making",
+    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
+    lessonCount: 3,
+    status: "In Progress",
+    tags: ["Beginner", "Finance"],
+    illustration: "readiness", // We'll use a placeholder for now
+    lessons: [
+      {
+        id: 1,
+        title: "Mindset and Financial Readiness",
+        duration: "20 minutes",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
+        coins: 25,
+        completed: false,
+        videoUrl: "https://example.com/video1.mp4",
+        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+
+In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
+
+We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
+      },
+      {
+        id: 2,
+        title: "Credit and Financial Foundations",
+        duration: "20 minutes",
+        description: "Build—and protect—the credit score that unlocks your dream home.",
+        coins: 25,
+        completed: false
+      },
+      {
+        id: 3,
+        title: "Real Estate Terminology 101",
+        duration: "20 minutes",
+        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "Readiness and Decision Making",
+    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
+    lessonCount: 3,
+    status: "In Progress",
+    tags: ["Beginner", "Finance"],
+    illustration: "readiness", // We'll use a placeholder for now
+    lessons: [
+      {
+        id: 1,
+        title: "Mindset and Financial Readiness",
+        duration: "20 minutes",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
+        coins: 25,
+        completed: false,
+        videoUrl: "https://example.com/video1.mp4",
+        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+
+In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
+
+We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
+      },
+      {
+        id: 2,
+        title: "Credit and Financial Foundations",
+        duration: "20 minutes",
+        description: "Build—and protect—the credit score that unlocks your dream home.",
+        coins: 25,
+        completed: false
+      },
+      {
+        id: 3,
+        title: "Real Estate Terminology 101",
+        duration: "20 minutes",
+        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 6,
+    title: "Readiness and Decision Making",
+    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
+    lessonCount: 3,
+    status: "In Progress",
+    tags: ["Beginner", "Finance"],
+    illustration: "readiness", // We'll use a placeholder for now
+    lessons: [
+      {
+        id: 1,
+        title: "Mindset and Financial Readiness",
+        duration: "20 minutes",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
+        coins: 25,
+        completed: false,
+        videoUrl: "https://example.com/video1.mp4",
+        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+
+In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
+
+We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
+      },
+      {
+        id: 2,
+        title: "Credit and Financial Foundations",
+        duration: "20 minutes",
+        description: "Build—and protect—the credit score that unlocks your dream home.",
+        coins: 25,
+        completed: false
+      },
+      {
+        id: 3,
+        title: "Real Estate Terminology 101",
+        duration: "20 minutes",
+        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
+        coins: 25,
+        completed: false
+      }
+    ]
   }
 ];
 
@@ -288,7 +452,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       <div className="flex gap-8">
         {/* Main Content Area */}
         <div className={`transition-all duration-300 ease-in-out ${
-          selectedModule ? 'flex-1 lg:max-w-[calc(55%-2rem)]' : 'flex-1'
+          selectedModule && !sidebarCollapsed ? 'w-[55%]' : 'flex-1'
         }`}>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -332,8 +496,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
             {/* Module Cards */}
             <div className={`transition-all duration-300 ${
-              selectedModule 
-                ? 'space-y-4' 
+              selectedModule && !sidebarCollapsed
+                ? 'flex flex-col gap-4' 
                 : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
             }`}>
               {modulesData.map((module, index) => (
@@ -341,6 +505,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                   key={module.id}
                   className={`bg-white rounded-xl border-2 p-6 cursor-pointer transition-all hover:border-blue-200 ${
                     selectedModule === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'
+                  } ${
+                    selectedModule && !sidebarCollapsed ? 'max-w-none w-full' : ''
                   }`}
                   onClick={() => handleModuleSelect(module.id)}
                 >
@@ -364,12 +530,18 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       {/* Module Illustration Placeholder */}
-                      <div className={`h-32 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center mb-4 ${
-                        sidebarCollapsed ? 'w-full max-w-sm' : 'w-full max-w-xs'
-                      }`}>
+                      <div className="h-32 w-full max-w-xs bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center mb-4">
                         <div className="text-center">
                           <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
-                            <span className="text-2xl">{index === 0 ? '🏠' : '💰'}</span>
+                            <span className="text-2xl">
+                              {index === 0 ? '🏠' : 
+                               index === 1 ? '💰' : 
+                               index === 2 ? '🔍' : 
+                               index === 3 ? '🤝' : 
+                               index === 4 ? '🔨' : 
+                               index === 5 ? '📋' : 
+                               index === 6 ? '🏡' : '📈'}
+                            </span>
                           </div>
                           <div className="text-xs text-gray-600">{module.title}</div>
                         </div>
@@ -409,7 +581,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
         {/* Collapsible Right Sidebar */}
         <div className={`hidden lg:block transition-all duration-300 ease-in-out ${
-          selectedModule ? 'w-[45%] opacity-100' : 'w-0 overflow-hidden opacity-0'
+          selectedModule && !sidebarCollapsed ? 'w-[45%] opacity-100' : 'w-0 overflow-hidden opacity-0'
         }`}>
           <div className="space-y-6">
             {selectedModuleData ? (
