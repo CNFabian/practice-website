@@ -96,6 +96,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'modules' | 'lesson'>('modules');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [lessonInfoCollapsed, setLessonInfoCollapsed] = useState(false);
 
   const handleModuleSelect = (moduleId: number) => {
     setSelectedModule(moduleId);
@@ -117,6 +118,10 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const toggleLessonInfo = () => {
+    setLessonInfoCollapsed(!lessonInfoCollapsed);
   };
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModule);
