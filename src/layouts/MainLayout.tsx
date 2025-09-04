@@ -8,10 +8,8 @@ const MainLayout: React.FC = () => {
       <Header />
       <Sidebar />
       
-      <main className="pt-16 pl-48 relative z-0 overflow-hidden">
-        <div className="max-h-[calc(100vh-64px)] overflow-y-auto">
-          <Outlet />
-        </div>
+      <main className="pt-16 pl-52">
+        <Outlet />
       </main>
     </div>
   )
