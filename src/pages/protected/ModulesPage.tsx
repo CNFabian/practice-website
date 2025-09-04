@@ -452,9 +452,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       <div className="flex gap-8">
         {/* Main Content Area */}
         <div className={`transition-all duration-700 ease-in-out ${
-          selectedModule && !sidebarCollapsed ? 'w-[55%]' : 'flex-1'
+          selectedModule && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
         }`}>
-          <div className="space-y-6">
+            <div className={`space-y-6 ${
+            selectedModule && !sidebarCollapsed 
+              ? 'sticky top-6 h-[calc(100vh-48px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-10' 
+              : ''
+          }`}>
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
               
@@ -579,9 +583,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
           </div>
         </div>
 
-        {/* Collapsible Right Sidebar with Independent Scroll */}
+        {/* Collapsible Right Sidebar */}
         <div className={`hidden lg:block transition-all duration-700 ease-in-out overflow-hidden ${
-          selectedModule && !sidebarCollapsed ? 'w-[45%]' : 'w-0'
+          selectedModule && !sidebarCollapsed ? 'w-[55%]' : 'w-0'
         }`}>
           <div 
             className={`duration-500 ease-in-out h-full ${
@@ -590,8 +594,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                 : 'opacity-0 translate-x-full transition-[transform,opacity]'
             }`}
           >
-            {/* Scrollable Container - Fixed height with independent scroll */}
-            <div className="pl-4 h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+            {/* Container */}
+            <div>
               <div className="space-y-6 pr-2">
                 {selectedModuleData ? (
                   <>
@@ -616,7 +620,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
                       </div>
                     </div>
 
-                    {/* Scrollable Lessons List */}
+                    {/* Lessons List */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900 px-2">Lessons</h3>
                       {selectedModuleData.lessons.map((lesson, index) => (
