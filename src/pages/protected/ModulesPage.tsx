@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ModulesView from './ModulesView';
+import LessonView from './LessonView';
+import { Module, Lesson } from '../../types/modules';
 
-// Mock data for modules and lessons
-const modulesData = [
+// Import your modules data
+const modulesData: Module[] = [
   {
     id: 1,
     title: "Readiness and Decision Making",
@@ -9,7 +12,7 @@ const modulesData = [
     lessonCount: 3,
     status: "In Progress",
     tags: ["Beginner", "Finance"],
-    illustration: "readiness", // We'll use a placeholder for now
+    illustration: "readiness",
     lessons: [
       {
         id: 1,
@@ -85,646 +88,93 @@ We'll also help you identify the people and tools that can support your decision
         completed: false
       }
     ]
-  }, 
-  {
-    id: 3,
-    title: "Readiness and Decision Making",
-    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
-    lessonCount: 3,
-    status: "In Progress",
-    tags: ["Beginner", "Finance"],
-    illustration: "readiness", // We'll use a placeholder for now
-    lessons: [
-      {
-        id: 1,
-        title: "Mindset and Financial Readiness",
-        duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
-        coins: 25,
-        completed: false,
-        videoUrl: "https://example.com/video1.mp4",
-        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-
-In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
-
-We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
-      },
-      {
-        id: 2,
-        title: "Credit and Financial Foundations",
-        duration: "20 minutes",
-        description: "Build—and protect—the credit score that unlocks your dream home.",
-        coins: 25,
-        completed: false
-      },
-      {
-        id: 3,
-        title: "Real Estate Terminology 101",
-        duration: "20 minutes",
-        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
-        coins: 25,
-        completed: false
-      }
-    ]
-  }, 
-  {
-    id: 4,
-    title: "Readiness and Decision Making",
-    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
-    lessonCount: 3,
-    status: "In Progress",
-    tags: ["Beginner", "Finance"],
-    illustration: "readiness", // We'll use a placeholder for now
-    lessons: [
-      {
-        id: 1,
-        title: "Mindset and Financial Readiness",
-        duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
-        coins: 25,
-        completed: false,
-        videoUrl: "https://example.com/video1.mp4",
-        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-
-In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
-
-We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
-      },
-      {
-        id: 2,
-        title: "Credit and Financial Foundations",
-        duration: "20 minutes",
-        description: "Build—and protect—the credit score that unlocks your dream home.",
-        coins: 25,
-        completed: false
-      },
-      {
-        id: 3,
-        title: "Real Estate Terminology 101",
-        duration: "20 minutes",
-        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
-        coins: 25,
-        completed: false
-      }
-    ]
-  },
-  {
-    id: 5,
-    title: "Readiness and Decision Making",
-    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
-    lessonCount: 3,
-    status: "In Progress",
-    tags: ["Beginner", "Finance"],
-    illustration: "readiness", // We'll use a placeholder for now
-    lessons: [
-      {
-        id: 1,
-        title: "Mindset and Financial Readiness",
-        duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
-        coins: 25,
-        completed: false,
-        videoUrl: "https://example.com/video1.mp4",
-        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-
-In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
-
-We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
-      },
-      {
-        id: 2,
-        title: "Credit and Financial Foundations",
-        duration: "20 minutes",
-        description: "Build—and protect—the credit score that unlocks your dream home.",
-        coins: 25,
-        completed: false
-      },
-      {
-        id: 3,
-        title: "Real Estate Terminology 101",
-        duration: "20 minutes",
-        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
-        coins: 25,
-        completed: false
-      }
-    ]
-  },
-  {
-    id: 6,
-    title: "Readiness and Decision Making",
-    description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
-    lessonCount: 3,
-    status: "In Progress",
-    tags: ["Beginner", "Finance"],
-    illustration: "readiness", // We'll use a placeholder for now
-    lessons: [
-      {
-        id: 1,
-        title: "Mindset and Financial Readiness",
-        duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
-        coins: 25,
-        completed: false,
-        videoUrl: "https://example.com/video1.mp4",
-        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-
-In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
-
-We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
-      },
-      {
-        id: 2,
-        title: "Credit and Financial Foundations",
-        duration: "20 minutes",
-        description: "Build—and protect—the credit score that unlocks your dream home.",
-        coins: 25,
-        completed: false
-      },
-      {
-        id: 3,
-        title: "Real Estate Terminology 101",
-        duration: "20 minutes",
-        description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
-        coins: 25,
-        completed: false
-      }
-    ]
   }
+  // Add more modules as needed
 ];
 
 interface ModulesPageProps {}
 
 const ModulesPage: React.FC<ModulesPageProps> = () => {
-  const [activeTab, setActiveTab] = useState<'All' | 'In Progress' | 'Completed'>('All');
-  const [selectedModule, setSelectedModule] = useState<number | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [currentView, setCurrentView] = useState<'modules' | 'lesson'>('modules');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [lessonInfoCollapsed, setLessonInfoCollapsed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const handleModuleSelect = (moduleId: number) => {
-    setSelectedModule(moduleId);
-    // Auto-expand sidebar when selecting a module
-    if (sidebarCollapsed) {
-      setSidebarCollapsed(false);
-    }
-  };
-
-  const handleLessonStart = (lesson: any) => {
+  const handleLessonStart = (lesson: Lesson, module: Module) => {
     setIsTransitioning(true);
     setSelectedLesson(lesson);
+    setSelectedModule(module);
     
-    // Start the transition
-    setTimeout(() => {
+    // Small delay to ensure state is set before transition
+    requestAnimationFrame(() => {
       setCurrentView('lesson');
-    }, 50);
-    
-    // End transition after animation completes
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 500);
+    });
   };
 
   const handleBackToModule = () => {
     setIsTransitioning(true);
-    
-    // Start the transition
-    setTimeout(() => {
-      setCurrentView('modules');
-    }, 50);
-    
-    // Clean up lesson state after animation completes
-    setTimeout(() => {
-      setSelectedLesson(null);
-      setIsTransitioning(false);
-    }, 500);
+    setCurrentView('modules');
   };
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  const toggleLessonInfo = () => {
-    setLessonInfoCollapsed(!lessonInfoCollapsed);
-  };
-
-  const selectedModuleData = modulesData.find(m => m.id === selectedModule);
-
-// Lesson View Component
-  const LessonView = () => (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={handleBackToModule}
-          className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Module
-        </button>
-
-        {/* Toggle Button for Lesson Info */}
-        <button
-          onClick={toggleLessonInfo}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          <svg 
-            className={`w-4 h-4 transition-transform duration-200 ${lessonInfoCollapsed ? '' : 'rotate-180'}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-          {lessonInfoCollapsed ? 'Show Lesson Info' : 'Hide Lesson Info'}
-        </button>
-      </div>
-
-      <div className="flex gap-8">
-        {/* Left Column - Lesson Info (Collapsible) */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[40%] opacity-100'
-        }`}>
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {selectedLesson?.title}
-              </h1>
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-gray-600">{selectedLesson?.duration}</span>
-                <div className="flex gap-2">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                    Beginner
-                  </span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    Finance
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Lesson Illustration */}
-            <div className="bg-white rounded-lg p-6 border-2 border-gray-100">
-              <div className="flex justify-center items-center">
-                <div className="w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                    <div className="text-sm text-gray-600">Financial Planning</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-gray-700 mb-4">
-                {selectedLesson?.description}
-              </p>
-              <p className="text-sm text-gray-600">
-                When you have finished watching the video, earn rewards by testing your knowledge through a Lesson Quiz!
-              </p>
-            </div>
-
-            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
-              Test Your Knowledge
-            </button>
-
-            {/* Rewards */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Rewards</h3>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2 bg-yellow-50 px-4 py-3 rounded-lg">
-                  <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">🏆</span>
-                  </div>
-                  <span className="font-medium">+{selectedLesson?.coins} NestCoins</span>
-                </div>
-                <div className="flex items-center gap-2 bg-orange-50 px-4 py-3 rounded-lg">
-                  <div className="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">🎖️</span>
-                  </div>
-                  <span className="font-medium">Badge Progress</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Next Lesson */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Next Lesson</h4>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">💳</span>
-                </div>
-                <div>
-                  <h5 className="font-medium">Credit & Financial Foundations</h5>
-                  <p className="text-sm text-gray-600">20 minutes</p>
-                  <p className="text-sm text-gray-500">Build—and protect—the credit score that unlocks your dream home.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - Video Player */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'flex-1' : 'w-[60%]'
-        }`}>
-          <div className="space-y-6">
-            {/* Video Player */}
-            <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
-                <div className="text-right text-sm text-gray-500 mt-4">
-                  {selectedLesson?.duration}
-                </div>
-              </div>
-            </div>
-
-            {/* Video Transcript */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Video Transcript</h3>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <span className="text-sm text-gray-500 min-w-[3rem]">0:00</span>
-                    <p className="text-sm text-gray-700">{selectedLesson?.transcript}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Modules View Component  
-  const ModulesView = () => (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex gap-8">
-        {/* Main Content Area - Fixed positioning to avoid transform conflicts */}
-        <div className={`${
-          selectedModule && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
-        }`} style={{
-          transition: isTransitioning ? 'none' : 'width 700ms ease-in-out'
-        }}>
-          <div className={`space-y-6 ${
-            selectedModule && !sidebarCollapsed 
-              ? 'sticky top-6 h-[calc(100vh-48px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-10' 
-              : ''
-          }`}>
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
-              
-              {/* Sidebar Toggle Button */}
-              {selectedModule && (
-                <button
-                  onClick={toggleSidebar}
-                  className="lg:flex hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <svg 
-                    className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  {sidebarCollapsed ? 'Show Details' : 'Hide Details'}
-                </button>
-              )}
-            </div>
-            
-            {/* Tabs */}
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 max-w-xs">
-              {(['All', 'In Progress', 'Completed'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Module Cards */}
-            <div className={`${
-              selectedModule && !sidebarCollapsed
-                ? 'flex flex-col gap-4' 
-                : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
-            }`} style={{
-              transition: isTransitioning ? 'none' : 'all 700ms ease-in-out'
-            }}>
-              {modulesData.map((module, index) => (
-                <div 
-                  key={module.id}
-                  className={`bg-white rounded-xl border-2 p-6 cursor-pointer hover:border-blue-200 ${
-                    selectedModule === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'
-                  } ${
-                    selectedModule && !sidebarCollapsed ? 'max-w-none w-full' : ''
-                  }`}
-                  style={{
-                    transition: isTransitioning ? 'none' : 'all 700ms ease-in-out'
-                  }}
-                  onClick={() => handleModuleSelect(module.id)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
-                        <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
-                      </div>
-                    </div>
-                    <button className="p-2 hover:bg-gray-50 rounded-lg">
-                      <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {/* Module Illustration */}
-                      <div className="h-32 w-full max-w-xs bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
-                            <span className="text-2xl">
-                              {index === 0 ? '🏠' : 
-                              index === 1 ? '💰' : 
-                              '🔍'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-600">{module.title}</div>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-gray-600 mb-4">
-                        {module.description}
-                      </p>
-
-                      <div className="flex items-center gap-2 mb-4">
-                        {module.tags.map((tag) => (
-                          <span 
-                            key={tag}
-                            className={`px-3 py-1 text-xs rounded-full ${
-                              tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                            }`}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <button className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        module.status === 'In Progress' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {module.status}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Collapsible Right Sidebar - Fixed positioning */}
-        <div className={`hidden lg:block overflow-hidden ${
-          selectedModule && !sidebarCollapsed ? 'w-[55%]' : 'w-0'
-        }`} style={{
-          transition: isTransitioning ? 'none' : 'width 700ms ease-in-out'
-        }}>
-          <div 
-            className={`h-full ${
-              selectedModule && !sidebarCollapsed 
-                ? 'opacity-100' 
-                : 'opacity-0'
-            }`}
-            style={{
-              transition: isTransitioning ? 'none' : 'opacity 500ms ease-in-out 300ms'
-            }}
-          >
-            <div className="space-y-6 pr-2">
-              {selectedModuleData ? (
-                <>
-                  <div className="bg-white rounded-xl border-2 border-gray-100 p-6 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">
-                      {selectedModuleData.title}
-                    </h2>
-                    <p className="text-gray-600 text-sm mb-4">
-                      {selectedModuleData.description}
-                    </p>
-                    <div className="flex gap-2 mb-6">
-                      {selectedModuleData.tags.map((tag) => (
-                        <span 
-                          key={tag}
-                          className={`px-3 py-1 text-xs rounded-full ${
-                            tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Lessons List */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 px-2">Lessons</h3>
-                    {selectedModuleData.lessons.map((lesson, index) => (
-                      <div key={lesson.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {lesson.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm text-gray-600">Lesson {index + 1}</span>
-                              <span className="text-sm text-gray-400">•</span>
-                              <span className="text-sm text-gray-600">{lesson.duration}</span>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3">
-                              {lesson.description}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-yellow-600 ml-4">
-                            <span className="text-sm font-medium">+{lesson.coins}</span>
-                            <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => handleLessonStart(lesson)}
-                            className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                            disabled={isTransitioning}
-                          >
-                            Start Lesson
-                          </button>
-                          <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                            Lesson Quiz
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Module Actions */}
-                  <div className="bg-white border-t border-gray-200 pt-4">
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                        Quiz Battle
-                      </button>
-                      <button className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
-                        Module Quiz
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
-                  <p className="text-gray-500">Select a module to view lessons and details</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Main container with slide transitions
-  return (
-    <div className="relative overflow-hidden min-h-screen">
-      {/* Modules View */}
-      <div className={`w-full transition-transform duration-500 ease-in-out ${
-        currentView === 'lesson' ? '-translate-x-full' : 'translate-x-0'
-      }`}>
-        <ModulesView />
-      </div>
+  // Clean up lesson state after transition completes
+  useEffect(() => {
+    if (currentView === 'modules' && isTransitioning) {
+      const timer = setTimeout(() => {
+        setSelectedLesson(null);
+        setIsTransitioning(false);
+      }, 500); // Match transition duration
       
-      {/* Lesson View */}
-      <div className={`absolute inset-0 w-full transition-transform duration-500 ease-in-out ${
-        currentView === 'lesson' ? 'translate-x-0' : 'translate-x-full'
-      }`}>
-        <LessonView />
+      return () => clearTimeout(timer);
+    } else if (currentView === 'lesson' && isTransitioning) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentView, isTransitioning]);
+
+  return (
+    <div className="relative min-h-screen w-full overflow-hidden bg-gray-50">
+      {/* MODULES VIEW */}
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+          currentView === 'lesson'
+            ? '-translate-x-full opacity-0'
+            : 'translate-x-0 opacity-100'
+        }`}
+        style={{ 
+          // Prevent interaction during transition
+          pointerEvents: currentView === 'lesson' ? 'none' : 'auto'
+        }}
+      >
+        <ModulesView
+          modulesData={modulesData}
+          onLessonSelect={handleLessonStart}
+          isTransitioning={isTransitioning}
+        />
+      </div>
+
+      {/* LESSON VIEW */}
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+          currentView === 'lesson'
+            ? 'translate-x-0 opacity-100'
+            : 'translate-x-full opacity-0'
+        }`}
+        style={{ 
+          // Prevent interaction when not visible
+          pointerEvents: currentView === 'lesson' ? 'auto' : 'none'
+        }}
+      >
+        {selectedLesson && selectedModule && (
+          <LessonView
+            lesson={selectedLesson}
+            module={selectedModule}
+            onBack={handleBackToModule}
+            isTransitioning={isTransitioning}
+          />
+        )}
       </div>
     </div>
   );
