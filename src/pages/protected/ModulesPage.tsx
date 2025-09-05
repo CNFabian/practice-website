@@ -92,6 +92,41 @@ const modulesData: Module[] = [
         completed: false
       }
     ]
+  },
+  {
+    id: 3,
+    title: "Home Buying Process",
+    description: "Understand the steps involved in buying a home.",
+    lessonCount: 3,
+    status: "Not Started",
+    tags: ["Beginner", "Process"],
+    illustration: "home-buying",
+    lessons: [
+      {
+        id: 8,
+        title: "The Home Buying Timeline",
+        duration: "30 minutes",
+        description: "Learn about the typical timeline for buying a home.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 9,
+        title: "Working with Real Estate Agents",
+        duration: "25 minutes",
+        description: "Understand the role of real estate agents in the buying process.",
+        coins: 25,
+        completed: false
+      },
+      {
+        id: 10,
+        title: "Making an Offer",
+        duration: "20 minutes",
+        description: "Learn how to make a competitive offer on a home.",
+        coins: 25,
+        completed: false
+      }
+    ]
   }
 ];
 

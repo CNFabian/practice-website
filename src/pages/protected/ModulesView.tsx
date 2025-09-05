@@ -228,30 +228,50 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Lessons List */}
+              {/* Lessons List */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900 px-2">Lessons</h3>
                       {selectedModuleData.lessons.map((lesson, index) => (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-start justify-between mb-3">
+                          <div className="flex gap-4 mb-4">
+                            {/* Lesson Image */}
+                            <div className="flex-shrink-0">
+                              <div className="w-24 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-8 h-8 bg-yellow-400 rounded-full mx-auto flex items-center justify-center">
+                                    <span className="text-lg">
+                                      {index === 0 ? '💰' : 
+                                       index === 1 ? '📊' : 
+                                       '🏠'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Lesson Content */}
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 mb-1">
-                                {lesson.title}
-                              </h4>
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm text-gray-600">Lesson {index + 1}</span>
-                                <span className="text-sm text-gray-400">•</span>
-                                <span className="text-sm text-gray-600">{lesson.duration}</span>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 mb-1">
+                                    {lesson.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm text-gray-600">Lesson {index + 1}</span>
+                                    <span className="text-sm text-gray-400">•</span>
+                                    <span className="text-sm text-gray-600">{lesson.duration}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 text-yellow-600">
+                                  <span className="text-sm font-medium">+{lesson.coins}</span>
+                                   <div className="flex items-center space-x-2 rounded-full py-2">
+                                     <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
+                                   </div>
+                                </div>
                               </div>
                               <p className="text-xs text-gray-600 mb-3">
                                 {lesson.description}
                               </p>
-                            </div>
-                            <div className="flex items-center gap-1 text-yellow-600">
-                              <span className="text-sm font-medium">+{lesson.coins}</span>
-                               <div className="flex items-center space-x-2 rounded-full py-2">
-                                 <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
-                               </div>
                             </div>
                           </div>
                           
