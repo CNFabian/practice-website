@@ -53,7 +53,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         <div className={`transition-[width] duration-700 ease-in-out ${
           selectedModuleId && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-4">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
@@ -200,13 +200,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         </div>
 
         {/* Collapsible Right Sidebar - Made scrollable */}
-        <div className={`hidden lg:block overflow-hidden transition-[width] duration-700 ease-in-out ${
+        <div className={`hidden lg:block overflow-hidden transition-[width] duration-700 ease-in-out pr-4 ${
           selectedModuleId && !sidebarCollapsed ? 'w-[55%]' : 'w-0'
         }`}>
-          <div className={`h-full transition-transform duration-700 ease-in-out ${
+          <div className={`h-full transition-transform duration-700 ease-in-out${
             selectedModuleId && !sidebarCollapsed ? 'translate-x-0' : 'translate-x-full'
           }`}>
-            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2">
+            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-4">
               <div className="space-y-6 pb-6">
                 {selectedModuleData ? (
                   <>

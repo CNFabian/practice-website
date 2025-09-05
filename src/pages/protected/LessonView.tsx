@@ -69,7 +69,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className={`transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[40%] opacity-100'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-6">
             <div className="space-y-6 pb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -165,7 +165,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className={`transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'flex-1' : 'w-[60%]'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
             <div className="space-y-6 pb-6">
               {/* Video Player */}
               <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center">
