@@ -231,64 +231,81 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               {/* Lessons List */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900 px-2">Lessons</h3>
-                      {selectedModuleData.lessons.map((lesson, index) => (
-                        <div key={lesson.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex gap-4 mb-4">
-                            {/* Lesson Image */}
+ {selectedModuleData.lessons.map((lesson, index) => (
+                        <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative">
+                          {/* Coin Reward - Top Right */}
+                          <div className="absolute top-4 right-4 flex items-center gap-1 bg-yellow-100 rounded-full px-3 py-1">
+                            <span className="text-sm font-semibold text-gray-900">+{lesson.coins}</span>
+                            <img src={CoinIcon} alt="Coins" className="w-5 h-5" />
+                          </div>
+
+                          <div className="flex gap-6 items-start">
+                            {/* Left Side - Illustration */}
                             <div className="flex-shrink-0">
-                              <div className="w-24 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                                <div className="text-center">
-                                  <div className="w-8 h-8 bg-yellow-400 rounded-full mx-auto flex items-center justify-center">
-                                    <span className="text-lg">
-                                      {index === 0 ? '💰' : 
-                                       index === 1 ? '📊' : 
-                                       '🏠'}
-                                    </span>
+                              <div className="aspect-square w-40 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden">
+                                {/* Background decorative elements */}
+                                <div className="absolute top-2 left-2">
+                                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                    <span className="text-white text-sm">🏠</span>
                                   </div>
+                                </div>
+                                <div className="absolute top-2 right-2">
+                                  <div className="w-6 h-6 bg-green-400 rounded-md flex items-center justify-center">
+                                    <span className="text-white text-xs">📊</span>
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-2 right-2">
+                                  <div className="w-7 h-7 bg-teal-400 rounded-lg flex items-center justify-center">
+                                    <span className="text-white text-sm">💰</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Main character/person */}
+                                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                                  <div className="w-12 h-16 bg-yellow-400 rounded-t-full relative">
+                                    {/* Simple person representation */}
+                                    <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-amber-600 rounded-full"></div>
+                                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-10 bg-yellow-400 rounded-t-lg"></div>
+                                  </div>
+                                </div>
+                                
+                                {/* Bottom leaf decoration */}
+                                <div className="absolute bottom-1 left-2">
+                                  <div className="w-4 h-3 bg-green-300 rounded-full transform rotate-45"></div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Lesson Content */}
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-gray-900 mb-1">
-                                    {lesson.title}
-                                  </h4>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-sm text-gray-600">Lesson {index + 1}</span>
-                                    <span className="text-sm text-gray-400">•</span>
-                                    <span className="text-sm text-gray-600">{lesson.duration}</span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1 text-yellow-600">
-                                  <span className="text-sm font-medium">+{lesson.coins}</span>
-                                   <div className="flex items-center space-x-2 rounded-full py-2">
-                                     <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
-                                   </div>
-                                </div>
+                            {/* Right Side - Content */}
+                            <div className="flex-1 pr-16">
+                              <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                                {lesson.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sm text-gray-600 font-medium">Lesson {index + 1}</span>
+                                <span className="text-sm text-gray-600">{lesson.duration}</span>
                               </div>
-                              <p className="text-xs text-gray-600 mb-3">
+                              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
                                 {lesson.description}
                               </p>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex gap-3">
+                                <button 
+                                  onClick={() => handleLessonStart(lesson, selectedModuleData)}
+                                  disabled={isTransitioning}
+                                  className="bg-blue-600 text-white py-2.5 px-6 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Start Lesson
+                                </button>
+                                <button 
+                                  disabled={isTransitioning}
+                                  className="bg-gray-500 text-white py-2.5 px-6 rounded-full text-sm font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Lesson Quiz
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleLessonStart(lesson, selectedModuleData)}
-                              disabled={isTransitioning}
-                              className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Start Lesson
-                            </button>
-                            <button 
-                              disabled={isTransitioning}
-                              className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Lesson Quiz
-                            </button>
                           </div>
                         </div>
                       ))}
