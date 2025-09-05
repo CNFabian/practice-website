@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Module, Lesson } from '../../types/modules';
+import { 
+  CoinIcon, 
+} from '../../assets';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -33,44 +36,46 @@ const LessonView: React.FC<LessonViewProps> = ({
     : null;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={handleBack}
-          disabled={isTransitioning}
-          className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Module
-        </button>
-
-        {/* Toggle Button for Lesson Info */}
+    <div className="p-6 max-w-7xl mx-auto -mr-6">
+      <div className="flex gap-8 h-[calc(100vh-88px)] relative">
+        {/* Arrow Toggle */}
         <button
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`absolute top-60 z-10 w-6 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+            lessonInfoCollapsed ? 'left-2' : 'left-[calc(40%-12px)]'
+          }`}
         >
           <svg 
-            className={`w-4 h-4 transition-transform duration-200 ${lessonInfoCollapsed ? '' : 'rotate-180'}`}
+            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${lessonInfoCollapsed ? 'rotate-180' : ''}`}
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          {lessonInfoCollapsed ? 'Show Lesson Info' : 'Hide Lesson Info'}
         </button>
-      </div>
 
-      <div className="flex gap-8 h-[calc(100vh-160px)]">
-        {/* Left Column - Lesson Info (Collapsible and Scrollable) */}
-        <div className={`transition-all duration-300 ease-in-out ${
+        {/* Left Column - Lesson Info */}
+        <div className={`relative transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[40%] opacity-100'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-6">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
             <div className="space-y-6 pb-6">
+              {/* Back to Module button only */}
+              <div>
+                <button
+                  onClick={handleBack}
+                  disabled={isTransitioning}
+                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Module
+                </button>
+              </div>
+
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
                   {lesson.title}
@@ -127,8 +132,8 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <h3 className="text-lg font-semibold mb-4">Rewards</h3>
                 <div className="flex gap-4">
                   <div className="flex items-center gap-2 bg-yellow-50 px-4 py-3 rounded-lg">
-                    <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">🏆</span>
+                     <div className="flex items-center space-x-2 rounded-full px-3 py-2">
+                      <img src={CoinIcon} alt="Coins" className="w-12 h-12" />
                     </div>
                     <span className="font-medium">+{lesson.coins} NestCoins</span>
                   </div>
@@ -161,11 +166,11 @@ const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </div>
 
-        {/* Right Column - Video Player (Scrollable) */}
+        {/* Right Column - Video Player */}
         <div className={`transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'flex-1' : 'w-[60%]'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
             <div className="space-y-6 pb-6">
               {/* Video Player */}
               <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center">
@@ -178,55 +183,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   <div className="text-right text-sm text-gray-500 mt-4">
                     {lesson.duration}
                   </div>
-                </div>
-              </div>
-
-              {/* Video Controls */}
-              <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200">
-                <div className="flex items-center gap-4">
-                  <button 
-                    disabled={isTransitioning}
-                    className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </button>
-                  <div className="text-sm text-gray-600">
-                    0:00 / {lesson.duration}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <button 
-                    disabled={isTransitioning}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    1x
-                  </button>
-                  <button 
-                    disabled={isTransitioning}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    CC
-                  </button>
-                  <button 
-                    disabled={isTransitioning}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ⚙️
-                  </button>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="bg-white rounded-lg p-4 border border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Lesson Progress</span>
-                  <span className="text-sm text-gray-500">0%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '0%' }}></div>
                 </div>
               </div>
 

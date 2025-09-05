@@ -3,7 +3,6 @@ import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import { Module, Lesson } from '../../types/modules';
 
-// Import your modules data
 const modulesData: Module[] = [
   {
     id: 1,
@@ -22,17 +21,22 @@ const modulesData: Module[] = [
         coins: 25,
         completed: false,
         videoUrl: "https://example.com/video1.mp4",
-        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-
-In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently.
-
-We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
+        transcript: `Welcome to this module on Readiness and Decision Making in your homeownership journey. 
+        Buying a home is one of the most significant financial and emotional decisions you'll make. 
+        So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. 
+        That means understanding your current income, savings, debt, and how stable your job or life situation is. 
+        Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance? 
+        In this module, we'll walk through key decision-making frameworks to help you evaluate trade-offs — like buying vs. renting, location vs. size, or price vs. future growth. 
+        You'll also learn how to differentiate between emotional impulses and data-driven choices. Remember, the goal isn't just to buy a house, it's to buy the right house for your lifestyle and goals. 
+        By the end of this section, you'll have a clearer picture of where you stand and what steps to take next to move forward confidently. 
+        We'll also help you identify the people and tools that can support your decision-making process. From real estate agents and loan officers to online calculators and budgeting apps — knowing who to trust and when to ask for help can make the journey smoother and less overwhelming. 
+        You don't have to figure it all out alone. Think of this phase as laying the foundation — not just for your future home, but for a more informed, confident version of yourself as a buyer. Let's get started by exploring what "readiness" really means in practice.`
       },
       {
         id: 2,
         title: "Credit and Financial Foundations",
         duration: "20 minutes",
-        description: "Build—and protect—the credit score that unlocks your dream home.",
+        description: "Build and protect the credit score that unlocks your dream home.",
         coins: 25,
         completed: false
       },
@@ -89,7 +93,6 @@ We'll also help you identify the people and tools that can support your decision
       }
     ]
   }
-  // Add more modules as needed
 ];
 
 interface ModulesPageProps {}
@@ -105,7 +108,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     setSelectedLesson(lesson);
     setSelectedModule(module);
     
-    // Small delay to ensure state is set before transition
     requestAnimationFrame(() => {
       setCurrentView('lesson');
     });
@@ -116,13 +118,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     setCurrentView('modules');
   };
 
-  // Clean up lesson state after transition completes
   useEffect(() => {
     if (currentView === 'modules' && isTransitioning) {
       const timer = setTimeout(() => {
         setSelectedLesson(null);
         setIsTransitioning(false);
-      }, 500); // Match transition duration
+      }, 500);
       
       return () => clearTimeout(timer);
     } else if (currentView === 'lesson' && isTransitioning) {
@@ -144,7 +145,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
             : 'translate-x-0 opacity-100'
         }`}
         style={{ 
-          // Prevent interaction during transition
           pointerEvents: currentView === 'lesson' ? 'none' : 'auto'
         }}
       >
@@ -163,7 +163,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
             : 'translate-x-full opacity-0'
         }`}
         style={{ 
-          // Prevent interaction when not visible
           pointerEvents: currentView === 'lesson' ? 'auto' : 'none'
         }}
       >

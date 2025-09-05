@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Module, Lesson } from '../../types/modules';
+import { 
+  CoinIcon, 
+} from '../../assets';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -19,7 +22,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
   const handleModuleSelect = (moduleId: number) => {
-    if (isTransitioning) return; // Prevent interaction during transition
+    if (isTransitioning) return;
     
     setSelectedModuleId(moduleId);
     if (sidebarCollapsed) {
@@ -28,7 +31,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
-    if (isTransitioning) return; // Prevent interaction during transition
+    if (isTransitioning) return;
     onLessonSelect(lesson, module);
   };
 
@@ -37,23 +40,21 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Filter modules based on active tab
   const filteredModules = modulesData.filter(module => {
     if (activeTab === 'All') return true;
     return module.status === activeTab;
   });
 
-  // Determine if we should show the compact layout
   const isCompactLayout = selectedModuleId && !sidebarCollapsed;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-88px)] overflow-hidden">
+    <div className="pl-6 pt-6 pb-6 max-w-7xl mx-auto h-[calc(100vh-88px)] overflow-hidden -mr-6">
       <div className="flex gap-8 h-full">
-        {/* Main Content Area - Smooth sliding animation */}
+        {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
           selectedModuleId && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
         }`}>
-        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-4">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
@@ -98,7 +99,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
               {/* Module Cards Container */}
               <div className="pb-6">
-                {/* Use CSS Grid with dynamic column sizing instead of switching between grid and flex */}
                 <div 
                   className={`
                     grid gap-4 transition-all duration-700 ease-in-out
@@ -108,7 +108,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     }
                   `}
                   style={{
-                    // Add smooth gap transition
                     gap: isCompactLayout ? '1rem' : '1.5rem'
                   }}
                 >
@@ -123,7 +122,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       `}
                       onClick={() => handleModuleSelect(module.id)}
                       style={{
-                        // Ensure consistent sizing during transition
                         minHeight: isCompactLayout ? 'auto' : '400px'
                       }}
                     >
@@ -146,7 +144,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          {/* Module Illustration - Hide in compact mode to save space */}
                           <div className={`
                             transition-all duration-700 ease-in-out overflow-hidden
                             ${isCompactLayout ? 'h-0 mb-0 opacity-0' : 'h-32 mb-4 opacity-100'}
@@ -199,14 +196,14 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           </div>
         </div>
 
-        {/* Collapsible Right Sidebar - Made scrollable */}
+        {/* Collapsible Right Sidebar */}
         <div className={`hidden lg:block overflow-hidden transition-[width] duration-700 ease-in-out ${
           selectedModuleId && !sidebarCollapsed ? 'w-[55%]' : 'w-0'
         }`}>
           <div className={`h-full transition-transform duration-700 ease-in-out ${
             selectedModuleId && !sidebarCollapsed ? 'translate-x-0' : 'translate-x-full'
           }`}>
-            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-6">
+            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
               <div className="space-y-6 pb-6">
                 {selectedModuleData ? (
                   <>
@@ -250,9 +247,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 {lesson.description}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1 text-yellow-600 ml-4">
+                            <div className="flex items-center gap-1 text-yellow-600">
                               <span className="text-sm font-medium">+{lesson.coins}</span>
-                              <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
+                               <div className="flex items-center space-x-2 rounded-full py-2">
+                                 <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
+                               </div>
                             </div>
                           </div>
                           
