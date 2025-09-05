@@ -43,6 +43,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     return module.status === activeTab;
   });
 
+  // Determine if we should show the compact layout
+  const isCompactLayout = selectedModuleId && !sidebarCollapsed;
+
   return (
     <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-88px)] overflow-hidden">
       <div className="flex gap-8 h-full">
@@ -93,85 +96,104 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 ))}
               </div>
 
-              {/* Module Cards */}
-              <div className={`${
-                selectedModuleId && !sidebarCollapsed
-                  ? 'flex flex-col gap-4' 
-                  : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
-              } transition-all duration-700 ease-in-out pb-6`}>
-                {filteredModules.map((module, index) => (
-                  <div 
-                    key={module.id}
-                    className={`bg-white rounded-xl border-2 p-6 cursor-pointer hover:border-blue-200 transition-all duration-300 ${
-                      selectedModuleId === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'
-                    } ${
-                      selectedModuleId && !sidebarCollapsed ? 'max-w-none w-full' : ''
-                    } ${
-                      isTransitioning ? 'pointer-events-none' : ''
-                    }`}
-                    onClick={() => handleModuleSelect(module.id)}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
-                          <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
-                        </div>
-                      </div>
-                      <button className="p-2 hover:bg-gray-50 rounded-lg">
-                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        {/* Module Illustration */}
-                        <div className="h-32 w-full max-w-xs bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                          <div className="text-center">
-                            <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
-                              <span className="text-2xl">
-                                {index === 0 ? '🏠' : 
-                                index === 1 ? '💰' : 
-                                '🔍'}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600">{module.title}</div>
+              {/* Module Cards Container */}
+              <div className="pb-6">
+                {/* Use CSS Grid with dynamic column sizing instead of switching between grid and flex */}
+                <div 
+                  className={`
+                    grid gap-4 transition-all duration-700 ease-in-out
+                    ${isCompactLayout 
+                      ? 'grid-cols-1' 
+                      : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
+                    }
+                  `}
+                  style={{
+                    // Add smooth gap transition
+                    gap: isCompactLayout ? '1rem' : '1.5rem'
+                  }}
+                >
+                  {filteredModules.map((module, index) => (
+                    <div 
+                      key={module.id}
+                      className={`
+                        bg-white rounded-xl border-2 p-6 cursor-pointer 
+                        hover:border-blue-200 transition-all duration-300 
+                        ${selectedModuleId === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'}
+                        ${isTransitioning ? 'pointer-events-none' : ''}
+                      `}
+                      onClick={() => handleModuleSelect(module.id)}
+                      style={{
+                        // Ensure consistent sizing during transition
+                        minHeight: isCompactLayout ? 'auto' : '400px'
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
+                            <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
                           </div>
                         </div>
-
-                        <p className="text-sm text-gray-600 mb-4">
-                          {module.description}
-                        </p>
-
-                        <div className="flex items-center gap-2 mb-4">
-                          {module.tags.map((tag) => (
-                            <span 
-                              key={tag}
-                              className={`px-3 py-1 text-xs rounded-full ${
-                                tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                              }`}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        <button className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                          module.status === 'In Progress' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {module.status}
+                        <button className="p-2 hover:bg-gray-50 rounded-lg">
+                          <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                          </svg>
                         </button>
                       </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          {/* Module Illustration - Hide in compact mode to save space */}
+                          <div className={`
+                            transition-all duration-700 ease-in-out overflow-hidden
+                            ${isCompactLayout ? 'h-0 mb-0 opacity-0' : 'h-32 mb-4 opacity-100'}
+                          `}>
+                            <div className="w-full max-w-xs bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center h-full">
+                              <div className="text-center">
+                                <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
+                                  <span className="text-2xl">
+                                    {index === 0 ? '🏠' : 
+                                    index === 1 ? '💰' : 
+                                    '🔍'}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-600">{module.title}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-gray-600 mb-4">
+                            {module.description}
+                          </p>
+
+                          <div className="flex items-center gap-2 mb-4">
+                            {module.tags.map((tag) => (
+                              <span 
+                                key={tag}
+                                className={`px-3 py-1 text-xs rounded-full ${
+                                  tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+
+                          <button className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                            module.status === 'In Progress' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {module.status}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -195,7 +217,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       <p className="text-gray-600 text-sm mb-4">
                         {selectedModuleData.description}
                       </p>
-                      <div className="flex gap-2 mb-6">
+                      <div className="flex gap-2">
                         {selectedModuleData.tags.map((tag) => (
                           <span 
                             key={tag}
