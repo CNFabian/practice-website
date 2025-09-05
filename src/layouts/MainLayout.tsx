@@ -4,11 +4,11 @@ import { Header, Sidebar } from '../components/index'
 
 const MainLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-hidden">
       <Header />
       <Sidebar />
       
-      <main className="pt-16 pl-52">
+      <main className="pt-16 pl-52 h-screen overflow-hidden">
         <Outlet />
       </main>
     </div>
