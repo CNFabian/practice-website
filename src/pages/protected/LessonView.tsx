@@ -36,14 +36,14 @@ const LessonView: React.FC<LessonViewProps> = ({
     : null;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto -mr-6">
-      <div className="flex gap-8 h-[calc(100vh-88px)] relative">
+    <div className="pt-6 w-full h-[calc(100vh-88px)]">
+      <div className="flex h-full w-full relative">
         {/* Arrow Toggle */}
         <button
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
-          className={`absolute top-60 z-10 w-6 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
-            lessonInfoCollapsed ? 'left-2' : 'left-[calc(40%-12px)]'
+          className={`relative ml-4 top-60 x-10 z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+            lessonInfoCollapsed ? '' : 'left-[calc(40%-12px)]'
           }`}
         >
           <svg 
@@ -60,7 +60,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className={`relative transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[40%] opacity-100'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
             <div className="space-y-6 pb-6">
               {/* Back to Module button only */}
               <div>
@@ -170,7 +170,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className={`transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'flex-1' : 'w-[60%]'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
             <div className="space-y-6 pb-6">
               {/* Video Player */}
               <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center">

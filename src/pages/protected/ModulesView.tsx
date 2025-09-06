@@ -48,14 +48,25 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const isCompactLayout = selectedModuleId && !sidebarCollapsed;
 
   return (
-    <div className="pl-6 pt-6 pb-6 max-w-7xl mx-auto h-[calc(100vh-88px)] overflow-hidden -mr-6">
+    <div className="pt-6 max-w-7xl mx-auto h-[calc(100vh-88px)]">
       <div className="flex gap-8 h-full">
         {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
           selectedModuleId && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
         }`}>
-        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-10">
-            <div className="space-y-6">
+          <div 
+            className={`h-full overflow-y-auto transition-all duration-300 -mr-10 ${
+              selectedModuleId && !sidebarCollapsed 
+                ? '' 
+                : 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 -mr-16'
+            }`}
+            style={{
+              // Hide scrollbar visually but keep functionality when sidebar is visible
+              scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'none' : 'thin',
+              msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto'
+            }}
+          >
+            <div className="space-y-6 px-4">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
                 
@@ -101,92 +112,143 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               <div className="pb-6">
                 <div 
                   className={`
-                    grid gap-4 transition-all duration-700 ease-in-out
+                    grid gap-6 transition-all duration-700 ease-in-out
                     ${isCompactLayout 
                       ? 'grid-cols-1' 
                       : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
                     }
                   `}
-                  style={{
-                    gap: isCompactLayout ? '1rem' : '1.5rem'
-                  }}
                 >
                   {filteredModules.map((module, index) => (
                     <div 
                       key={module.id}
                       className={`
-                        bg-white rounded-xl border-2 p-6 cursor-pointer 
-                        hover:border-blue-200 transition-all duration-300 
-                        ${selectedModuleId === module.id ? 'border-blue-300 shadow-lg' : 'border-gray-100'}
+                        bg-white rounded-2xl border border-gray-200 p-6 cursor-pointer 
+                        hover:border-blue-300 hover:shadow-lg
+                        transition-all duration-700 ease-in-out
+                        ${selectedModuleId === module.id ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
                         ${isTransitioning ? 'pointer-events-none' : ''}
+                        ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
                       `}
                       onClick={() => handleModuleSelect(module.id)}
                       style={{
-                        minHeight: isCompactLayout ? 'auto' : '400px'
+                        backgroundColor: '#F7F9FF'
                       }}
                     >
+                      {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-semibold">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                            style={{ backgroundColor: '#6B73FF' }}
+                          >
                             {index + 1}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                              {module.title}
+                            </h3>
                             <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
                           </div>
                         </div>
-                        <button className="p-2 hover:bg-gray-50 rounded-lg">
+                        <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
                           <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                           </svg>
                         </button>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className={`
-                            transition-all duration-700 ease-in-out overflow-hidden
-                            ${isCompactLayout ? 'h-0 mb-0 opacity-0' : 'h-32 mb-4 opacity-100'}
-                          `}>
-                            <div className="w-full max-w-xs bg-gradient-to-br from-blue-100 to-yellow-100 rounded-lg flex items-center justify-center h-full">
-                              <div className="text-center">
-                                <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
-                                  <span className="text-2xl">
-                                    {index === 0 ? '🏠' : 
-                                    index === 1 ? '💰' : 
-                                    '🔍'}
-                                  </span>
+                      {/* Illustration */}
+                      <div className={`transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'}`}>
+                        <div className={`
+                          w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
+                          rounded-xl flex items-center justify-center relative overflow-hidden 
+                          transition-[height] duration-700 ease-in-out
+                          ${isCompactLayout ? 'h-0' : 'h-48'}
+                        `}>
+                          {/* Background decorative elements */}
+                          <div className="absolute top-4 left-4">
+                            <div className="w-12 h-10 bg-blue-500 rounded-lg flex items-center justify-center relative">
+                              <div className="w-8 h-6 bg-yellow-300 rounded-sm"></div>
+                              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-2 bg-blue-600 rounded-t-sm"></div>
+                            </div>
+                          </div>
+                          
+                          {/* Decorative leaves */}
+                          <div className="absolute bottom-4 left-8">
+                            <div className="w-6 h-8 bg-green-400 rounded-full transform rotate-12 opacity-80"></div>
+                          </div>
+                          <div className="absolute bottom-6 right-12">
+                            <div className="w-8 h-10 bg-green-300 rounded-full transform -rotate-12 opacity-70"></div>
+                          </div>
+                          
+                          {/* Main character - Woman with laptop */}
+                          <div className="absolute bottom-0 right-8">
+                            <div className="relative">
+                              {/* Laptop */}
+                              <div className="w-16 h-10 bg-blue-600 rounded-t-lg mb-2 relative">
+                                <div className="w-14 h-8 bg-blue-700 rounded-t-md mx-auto"></div>
+                                <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-12 h-6 bg-gray-100 rounded-sm"></div>
+                              </div>
+                              
+                              {/* Person */}
+                              <div className="relative">
+                                {/* Body */}
+                                <div className="w-12 h-16 bg-yellow-400 rounded-t-full mx-auto relative">
+                                  {/* Head */}
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-amber-600 rounded-full"></div>
+                                  {/* Hair */}
+                                  <div className="absolute -top-9 left-1/2 transform -translate-x-1/2 w-10 h-8 bg-gray-800 rounded-full"></div>
+                                  {/* Arms */}
+                                  <div className="absolute top-4 -left-2 w-4 h-8 bg-amber-600 rounded-full transform rotate-12"></div>
+                                  <div className="absolute top-4 -right-2 w-4 h-8 bg-amber-600 rounded-full transform -rotate-12"></div>
                                 </div>
-                                <div className="text-xs text-gray-600">{module.title}</div>
                               </div>
                             </div>
                           </div>
-
-                          <p className="text-sm text-gray-600 mb-4">
-                            {module.description}
-                          </p>
-
-                          <div className="flex items-center gap-2 mb-4">
-                            {module.tags.map((tag) => (
-                              <span 
-                                key={tag}
-                                className={`px-3 py-1 text-xs rounded-full ${
-                                  tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                                }`}
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                          
+                          {/* Floating elements */}
+                          <div className="absolute top-6 right-6">
+                            <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center">
+                              <span className="text-white text-xs">📊</span>
+                            </div>
                           </div>
-
-                          <button className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                            module.status === 'In Progress' 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {module.status}
-                          </button>
                         </div>
+                      </div>
+
+                      {/* Description */}
+                      <div className="mb-6">
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {module.description}
+                        </p>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {module.tags.map((tag) => (
+                            <span 
+                              key={tag}
+                              className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <button 
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            module.status === 'In Progress' 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : module.status === 'Completed'
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {module.status}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -196,30 +258,45 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           </div>
         </div>
 
+        {/* Separator Line */}
+        <div className={`transition-all duration-700 ease-in-out ${
+          selectedModuleId && !sidebarCollapsed ? 'w-px bg-gray-200 mx-2' : 'w-0'
+        }`} />
+
         {/* Collapsible Right Sidebar */}
-        <div className={`hidden lg:block overflow-hidden transition-[width] duration-700 ease-in-out ${
-          selectedModuleId && !sidebarCollapsed ? 'w-[55%]' : 'w-0'
+        <div className={`transition-[width] duration-700 ease-in-out -ml-6 ${
+          selectedModuleId && !sidebarCollapsed ? 'w-[70%]' : 'w-0'
         }`}>
           <div className={`h-full transition-transform duration-700 ease-in-out ${
             selectedModuleId && !sidebarCollapsed ? 'translate-x-0' : 'translate-x-full'
           }`}>
-            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-8">
-              <div className="space-y-6 pb-6">
+            <div className={`h-full overflow-y-auto transition-all duration-300 ${
+              selectedModuleId && !sidebarCollapsed 
+                ? 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400' 
+                : ''
+            }`}
+            style={{
+              // Hide scrollbar when sidebar is not visible
+              scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'thin' : 'none',
+              msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'auto' : 'none'
+            }}>
+              <div className="space-y-6 pb-6 mr-4">
                 {selectedModuleData ? (
                   <>
-                    <div className="bg-white rounded-xl border-2 border-gray-100 p-6 shadow-sm">
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    {/* Module Header - Compact layout */}
+                    <div className="space-y-3">
+                      <h2 className="text-xl font-bold text-gray-900">
                         {selectedModuleData.title}
                       </h2>
-                      <p className="text-gray-600 text-sm mb-4">
+                      <p className="text-gray-600 text-sm leading-normal">
                         {selectedModuleData.description}
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         {selectedModuleData.tags.map((tag) => (
                           <span 
                             key={tag}
-                            className={`px-3 py-1 text-xs rounded-full ${
-                              tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                            className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                              tag === 'Beginner' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
                             }`}
                           >
                             {tag}
@@ -228,10 +305,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       </div>
                     </div>
 
-              {/* Lessons List */}
+                    {/* Lessons List */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900 px-2">Lessons</h3>
- {selectedModuleData.lessons.map((lesson, index) => (
+                      {selectedModuleData.lessons.map((lesson, index) => (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
                           {/* Coin Reward - Top Right */}
                           <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
