@@ -60,111 +60,147 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className={`relative transition-all duration-300 ease-in-out ${
           lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[40%] opacity-100'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
-            <div className="space-y-6 pb-6">
-              {/* Back to Module button only */}
-              <div>
-                <button
-                  onClick={handleBack}
-                  disabled={isTransitioning}
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Module
-                </button>
-              </div>
-
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  {lesson.title}
-                </h1>
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-gray-600">{lesson.duration}</span>
-                  <div className="flex gap-2">
-                    {module.tags.map((tag) => (
-                      <span 
-                        key={tag}
-                        className={`px-3 py-1 text-xs rounded-full ${
-                          tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                        }`}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Lesson Illustration */}
-              <div className="bg-white rounded-lg p-6 border-2 border-gray-100">
-                <div className="flex justify-center items-center">
-                  <div className="w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center">
-                        <span className="text-2xl">💰</span>
-                      </div>
-                      <div className="text-sm text-gray-600">{module.title}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-700 mb-4">
-                  {lesson.description}
-                </p>
-                <p className="text-sm text-gray-600">
-                  When you have finished watching the video, earn rewards by testing your knowledge through a Lesson Quiz!
-                </p>
-              </div>
-
-              <button 
+          <div className="h-full flex flex-col px-4">
+            {/* Back Button - Fixed at top */}
+            <div className="flex-shrink-0 py-2">
+              <button
+                onClick={handleBack}
                 disabled={isTransitioning}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                Test Your Knowledge
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Module
               </button>
+            </div>
 
-              {/* Rewards */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Rewards</h3>
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2 bg-yellow-50 px-4 py-3 rounded-lg">
-                     <div className="flex items-center space-x-2 rounded-full px-3 py-2">
-                      <img src={CoinIcon} alt="Coins" className="w-12 h-12" />
+            {/* Main Content - Scrollable if needed */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+              <div className="space-y-4 pb-4">
+                {/* Lesson Header - Compact */}
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 mb-1">
+                    {lesson.title}
+                  </h1>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm text-gray-600">{lesson.duration}</span>
+                    <div className="flex gap-1">
+                      {module.tags.map((tag) => (
+                        <span 
+                          key={tag}
+                          className={`px-2 py-0.5 text-xs rounded-full ${
+                            tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    <span className="font-medium">+{lesson.coins} NestCoins</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-orange-50 px-4 py-3 rounded-lg">
-                    <div className="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">🎖️</span>
-                    </div>
-                    <span className="font-medium">Badge Progress</span>
                   </div>
                 </div>
+
+                {/* Compact Lesson Illustration */}
+                <div className="bg-white rounded-lg p-3 border border-gray-100">
+                  <div className="flex justify-center items-center">
+                    <div className="w-32 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 bg-yellow-400 rounded-full mx-auto mb-2 flex items-center justify-center">
+                          <span className="text-sm">💰</span>
+                        </div>
+                        <div className="text-xs text-gray-600">{module.title}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lesson Description - Compact */}
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-700 mb-2 leading-relaxed">
+                    {lesson.description}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Complete the video to unlock the quiz!
+                  </p>
+                </div>
+
+                {/* Test Knowledge Button */}
+                <button 
+                  disabled={isTransitioning}
+                  className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Test Your Knowledge
+                </button>
+
+                {/* Rewards - Compact Layout */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Rewards</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded-lg">
+                      <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
+                      <span className="text-xs font-medium">+{lesson.coins}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-lg">
+                      <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">🎖️</span>
+                      </div>
+                      <span className="text-xs font-medium">Badge</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Lesson - Compact */}
+                {nextLesson && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Next Lesson</h4>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm">💳</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-sm font-medium truncate">{nextLesson.title}</h5>
+                        <p className="text-xs text-gray-600">{nextLesson.duration}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Next Lesson */}
-              {nextLesson && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Next Lesson</h4>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">💳</span>
-                    </div>
-                    <div>
-                      <h5 className="font-medium">{nextLesson.title}</h5>
-                      <p className="text-sm text-gray-600">{nextLesson.duration}</p>
-                      <p className="text-sm text-gray-500">{nextLesson.description}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Navigation Buttons - Fixed at bottom */}
+            <div className="flex-shrink-0 py-3 border-t border-gray-100">
+              <div className="flex gap-2">
+                <button 
+                  disabled={isTransitioning || currentLessonIndex === 0}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                {nextLesson ? (
+                  <button 
+                    disabled={isTransitioning}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleBack}
+                    disabled={isTransitioning}
+                    className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Complete
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Separator Line */}
+        <div className={`transition-all duration-300 ease-in-out ${
+          lessonInfoCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
+        }`} />
 
         {/* Right Column - Video Player */}
         <div className={`transition-all duration-300 ease-in-out ${
