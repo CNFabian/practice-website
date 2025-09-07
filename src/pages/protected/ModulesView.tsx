@@ -48,7 +48,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const isCompactLayout = selectedModuleId && !sidebarCollapsed;
 
   return (
-    <div className="pt-6 max-w-7xl mx-auto h-[calc(100vh-88px)]">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)]">
       <div className="flex gap-8 h-full">
         {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
@@ -67,7 +67,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             }}
           >
             {/* Sticky Header for Main Content */}
-            <div className="sticky top-0 z-10 bg-gray-50 px-4 py-3">
+            <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
                 
@@ -260,7 +260,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         </div>
 
         {/* Separator Line */}
-        <div className={`transition-all duration-700 ease-in-out ${
+        <div className={`transition-all duration-700 ease-in-out mt-5 ${
           selectedModuleId && !sidebarCollapsed ? 'w-px bg-gray-200 mx-2' : 'w-0'
         }`} />
 
@@ -283,7 +283,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             }}>
               {/* Sticky Header for Lesson List */}
               {selectedModuleData && (
-                <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 py-3">
+                <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 pt-6 pb-3">
                   <div className="space-y-2">
                     <h2 className="text-xl font-bold text-gray-900">
                       {selectedModuleData.title}

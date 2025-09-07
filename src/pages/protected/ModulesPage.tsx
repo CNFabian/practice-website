@@ -171,7 +171,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   }, [currentView, isTransitioning]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-gray-50">
+    <div className="relative h-full w-full overflow-hidden bg-gray-50">
       {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
