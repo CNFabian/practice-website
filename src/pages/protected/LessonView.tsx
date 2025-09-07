@@ -18,6 +18,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   isTransitioning = false 
 }) => {
   const [lessonInfoCollapsed, setLessonInfoCollapsed] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -35,8 +36,11 @@ const LessonView: React.FC<LessonViewProps> = ({
     ? module.lessons[currentLessonIndex + 1] 
     : null;
 
+  // Use lesson description, fallback to a default description
+  const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
+
   return (
-    <div className="pt-6 w-full h-[calc(100vh-88px)]">
+    <div className="pt-6 w-full h-full">
       <div className="flex h-full w-full relative">
         {/* Arrow Toggle */}
         <button
@@ -61,7 +65,7 @@ const LessonView: React.FC<LessonViewProps> = ({
           lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[25%] opacity-100'
         }`}>
           <div 
-            className="h-full px-1 flex flex-col overflow-y-auto -ml-8" 
+            className="h-full px-2 flex flex-col overflow-y-auto -ml-8" 
             style={{ 
               scrollbarWidth: 'none', 
               msOverflowStyle: 'none'
@@ -109,12 +113,12 @@ const LessonView: React.FC<LessonViewProps> = ({
             </div>
 
             {/* EXPANDING IMAGE SECTION */}
-            <div className="flex-1 flex items-center justify-center py-3">
+            <div className="flex-1 flex items-center justify-center">
               <div 
                 className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-3 w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
-                  height: 'min(calc(100vh - 600px), 300px)',
-                  minHeight: '120px'
+                  height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
+                  minHeight: descriptionExpanded ? '64px' : '120px'
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
@@ -124,7 +128,9 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {/* Head */}
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-amber-600 rounded-full"></div>
                       {/* Thought bubbles */}
-                      <div className="absolute -top-1 -right-8 flex flex-col gap-1">
+                      <div className={`absolute -top-1 -right-8 flex flex-col gap-1 transition-all duration-300 ${
+                        descriptionExpanded ? 'opacity-30 scale-75' : 'opacity-100 scale-100'
+                      }`}>
                         <div className="w-8 h-6 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
                           <span className="text-xs">🏠</span>
                         </div>
@@ -145,9 +151,25 @@ const LessonView: React.FC<LessonViewProps> = ({
             <div className="flex-shrink-0 py-3 border-t border-gray-100 space-y-3">
               {/* Lesson Description */}
               <div className="bg-blue-50 rounded-lg p-2">
-                <p className="text-xs text-gray-700 mb-1 leading-tight">
-                  In this lesson, you'll learn the key financial steps to prepare for home ownership and and understand why lenders evaluate.
-                </p>
+                <div 
+                  className={`text-xs text-gray-700 mb-1 leading-tight cursor-pointer transition-all duration-300 hover:text-gray-900 ${
+                    lessonDescription.length > 120 ? 'cursor-pointer' : 'cursor-default'
+                  }`}
+                  onClick={() => {
+                    if (lessonDescription.length > 120) {
+                      setDescriptionExpanded(!descriptionExpanded);
+                    }
+                  }}
+                >
+                  {descriptionExpanded || lessonDescription.length <= 120 ? (
+                    lessonDescription
+                  ) : (
+                    <>
+                      {lessonDescription.substring(0, 120)}
+                      <span className="text-blue-600 font-medium">...</span>
+                    </>
+                  )}
+                </div>
                 <p className="text-xs text-gray-600">
                   When you have finished watching the video, earn rewards by testing your knowledge through a Lesson Quiz!
                 </p>

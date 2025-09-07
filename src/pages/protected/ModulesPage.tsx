@@ -17,7 +17,7 @@ const modulesData: Module[] = [
         id: 1,
         title: "Mindset and Financial Readiness",
         duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream homeq weoifwoe ifmnwoiwenfowi enfoweinfoweiffsfa",
         coins: 25,
         completed: false,
         videoUrl: "https://example.com/video1.mp4",

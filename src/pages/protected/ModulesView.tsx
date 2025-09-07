@@ -48,7 +48,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const isCompactLayout = selectedModuleId && !sidebarCollapsed;
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)]">
+    <div className="max-w-7xl mx-auto h-full">
       <div className="flex gap-8 h-full">
         {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${

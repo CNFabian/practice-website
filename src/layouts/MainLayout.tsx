@@ -8,7 +8,7 @@ const MainLayout: React.FC = () => {
       <Header />
       <Sidebar />
       
-      <main className="pt-16 pl-48 pr-2 h-screen overflow-hidden">
+      <main className="pt-12 pl-48 h-screen overflow-hidden">
         <Outlet />
       </main>
     </div>
