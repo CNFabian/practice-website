@@ -40,7 +40,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
   return (
-    <div className="w-full h-full">
+    <div className="pt-6 w-full h-full">
       <div className="flex h-full w-full relative">
         {/* Arrow Toggle */}
         <button
@@ -90,7 +90,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* Lesson Header */}
               <div className="space-y-3 pb-3">
                 <div>
-                  <h1 className="text-lg font-bold text-gray-900 mb-1 leading-tight">
+                  <h1 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                     {lesson.title}
                   </h1>
                   <div className="flex items-center gap-2 mb-1">
@@ -115,34 +115,14 @@ const LessonView: React.FC<LessonViewProps> = ({
             {/* EXPANDING IMAGE SECTION */}
             <div className="flex-1 flex items-center justify-center">
               <div 
-                className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-3 w-full transition-all duration-700 ease-in-out overflow-hidden"
+                className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
                   height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
                   minHeight: descriptionExpanded ? '64px' : '120px'
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                  {/* Simple illustration matching the design */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-10 bg-yellow-400 rounded-t-full relative">
-                      {/* Head */}
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-amber-600 rounded-full"></div>
-                      {/* Thought bubbles */}
-                      <div className={`absolute -top-1 -right-8 flex flex-col gap-1 transition-all duration-300 ${
-                        descriptionExpanded ? 'opacity-30 scale-75' : 'opacity-100 scale-100'
-                      }`}>
-                        <div className="w-8 h-6 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                          <span className="text-xs">🏠</span>
-                        </div>
-                        <div className="w-6 h-5 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                          <span className="text-xs">📊</span>
-                        </div>
-                        <div className="w-6 h-5 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                          <span className="text-xs">💰</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <img src={lesson.image} alt={lesson.title} className="object-cover w-full h-full" />
                 </div>
               </div>
             </div>

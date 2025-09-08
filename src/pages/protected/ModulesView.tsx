@@ -92,7 +92,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               </div>
               
               {/* Tabs */}
-              <div className="flex justify-center border-b border-gray-200">
+              <div className={`flex justify-center border-b border-gray-200 ${
+              sidebarCollapsed ? '-mt-8' : ''}`}>
                 {(['All', 'In Progress', 'Completed'] as const).map((tab) => (
                   <button
                     key={tab}
