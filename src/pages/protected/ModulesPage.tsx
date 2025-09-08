@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import { Module, Lesson } from '../../types/modules';
+import { SignupImage } from '../../assets';
 
 const modulesData: Module[] = [
   {
     id: 1,
+    image: SignupImage,
     title: "Readiness and Decision Making",
     description: "In this module, you'll learn about the precursor steps to prepare for home ownership.",
     lessonCount: 3,
@@ -15,6 +17,7 @@ const modulesData: Module[] = [
     lessons: [
       {
         id: 1,
+        image: SignupImage,
         title: "Mindset and Financial Readiness",
         duration: "20 minutes",
         description: "Get your head in the game—and your wallet in shape—before you shop for your dream homeq weoifwoe ifmnwoiwenfowi enfoweinfoweiffsfa",
@@ -34,6 +37,7 @@ const modulesData: Module[] = [
       },
       {
         id: 2,
+        image: SignupImage,
         title: "Credit and Financial Foundations",
         duration: "20 minutes",
         description: "Build and protect the credit score that unlocks your dream home.",
@@ -42,6 +46,7 @@ const modulesData: Module[] = [
       },
       {
         id: 3,
+        image: SignupImage,
         title: "Real Estate Terminology 101",
         duration: "20 minutes",
         description: "Speak the language of real estate with confidence—decode key terms, know who does what, and spot fees before they surprise you.",
@@ -52,6 +57,7 @@ const modulesData: Module[] = [
   },
   {
     id: 2,
+    image: SignupImage,
     title: "Budgeting and Mortgage Preparation",
     description: "Learn how to budget for your home purchase and understand mortgage options.",
     lessonCount: 4,
@@ -61,6 +67,7 @@ const modulesData: Module[] = [
     lessons: [
       {
         id: 4,
+        image: SignupImage,
         title: "Understanding Your Budget",
         duration: "25 minutes",
         description: "Learn to calculate what you can actually afford.",
@@ -69,6 +76,7 @@ const modulesData: Module[] = [
       },
       {
         id: 5,
+        image: SignupImage,
         title: "Mortgage Types and Terms",
         duration: "30 minutes",
         description: "Explore different mortgage options available to you.",
@@ -77,6 +85,7 @@ const modulesData: Module[] = [
       },
       {
         id: 6,
+        image: SignupImage,
         title: "Pre-approval Process",
         duration: "20 minutes",
         description: "Get ready for mortgage pre-approval.",
@@ -85,6 +94,7 @@ const modulesData: Module[] = [
       },
       {
         id: 7,
+        image: SignupImage,
         title: "Down Payment Strategies",
         duration: "25 minutes",
         description: "Explore different approaches to saving for a down payment.",
@@ -95,6 +105,7 @@ const modulesData: Module[] = [
   },
   {
     id: 3,
+    image: SignupImage,
     title: "Home Buying Process",
     description: "Understand the steps involved in buying a home.",
     lessonCount: 3,
@@ -104,6 +115,7 @@ const modulesData: Module[] = [
     lessons: [
       {
         id: 8,
+        image: SignupImage,
         title: "The Home Buying Timeline",
         duration: "30 minutes",
         description: "Learn about the typical timeline for buying a home.",
@@ -112,6 +124,7 @@ const modulesData: Module[] = [
       },
       {
         id: 9,
+        image: SignupImage,
         title: "Working with Real Estate Agents",
         duration: "25 minutes",
         description: "Understand the role of real estate agents in the buying process.",
@@ -120,6 +133,7 @@ const modulesData: Module[] = [
       },
       {
         id: 10,
+        image: SignupImage,
         title: "Making an Offer",
         duration: "20 minutes",
         description: "Learn how to make a competitive offer on a home.",

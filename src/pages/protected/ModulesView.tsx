@@ -165,57 +165,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     <div className={`transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'}`}>
                       <div className={`
                         w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
-                        rounded-xl flex items-center justify-center relative overflow-hidden 
+                        rounded-xlitems-center justify-center relative overflow-hidden 
                         transition-[height] duration-700 ease-in-out
                         ${isCompactLayout ? 'h-0' : 'h-48'}
                       `}>
-                        {/* Background decorative elements */}
-                        <div className="absolute top-4 left-4">
-                          <div className="w-12 h-10 bg-blue-500 rounded-lg flex items-center justify-center relative">
-                            <div className="w-8 h-6 bg-yellow-300 rounded-sm"></div>
-                            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-2 bg-blue-600 rounded-t-sm"></div>
-                          </div>
-                        </div>
-                        
-                        {/* Decorative leaves */}
-                        <div className="absolute bottom-4 left-8">
-                          <div className="w-6 h-8 bg-green-400 rounded-full transform rotate-12 opacity-80"></div>
-                        </div>
-                        <div className="absolute bottom-6 right-12">
-                          <div className="w-8 h-10 bg-green-300 rounded-full transform -rotate-12 opacity-70"></div>
-                        </div>
-                        
-                        {/* Main character - Woman with laptop */}
-                        <div className="absolute bottom-0 right-8">
-                          <div className="relative">
-                            {/* Laptop */}
-                            <div className="w-16 h-10 bg-blue-600 rounded-t-lg mb-2 relative">
-                              <div className="w-14 h-8 bg-blue-700 rounded-t-md mx-auto"></div>
-                              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-12 h-6 bg-gray-100 rounded-sm"></div>
-                            </div>
-                            
-                            {/* Person */}
-                            <div className="relative">
-                              {/* Body */}
-                              <div className="w-12 h-16 bg-yellow-400 rounded-t-full mx-auto relative">
-                                {/* Head */}
-                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-amber-600 rounded-full"></div>
-                                {/* Hair */}
-                                <div className="absolute -top-9 left-1/2 transform -translate-x-1/2 w-10 h-8 bg-gray-800 rounded-full"></div>
-                                {/* Arms */}
-                                <div className="absolute top-4 -left-2 w-4 h-8 bg-amber-600 rounded-full transform rotate-12"></div>
-                                <div className="absolute top-4 -right-2 w-4 h-8 bg-amber-600 rounded-full transform -rotate-12"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Floating elements */}
-                        <div className="absolute top-6 right-6">
-                          <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center">
-                            <span className="text-white text-xs">📊</span>
-                          </div>
-                        </div>
+                       <img src={module.image} alt={module.title} className="object-cover w-full h-full" />
+
                       </div>
                     </div>
 
@@ -325,36 +280,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             {/* Left Side - Illustration */}
                             <div className="flex-shrink-0">
                               <div className="aspect-square w-28 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden">
-                                {/* Background decorative elements */}
-                                <div className="absolute top-1 left-1">
-                                  <div className="w-5 h-5 bg-blue-500 rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-xs">🏠</span>
-                                  </div>
-                                </div>
-                                <div className="absolute top-1 right-1">
-                                  <div className="w-4 h-4 bg-green-400 rounded-md flex items-center justify-center">
-                                    <span className="text-white text-xs">📊</span>
-                                  </div>
-                                </div>
-                                <div className="absolute bottom-1 right-1">
-                                  <div className="w-5 h-5 bg-teal-400 rounded-lg flex items-center justify-center">
-                                    <span className="text-white text-xs">💰</span>
-                                  </div>
-                                </div>
-                                
-                                {/* Main character/person */}
-                                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                                  <div className="w-8 h-10 bg-yellow-400 rounded-t-full relative">
-                                    {/* Simple person representation */}
-                                    <div className="absolute top-0.5 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-amber-600 rounded-full"></div>
-                                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-7 bg-yellow-400 rounded-t-lg"></div>
-                                  </div>
-                                </div>
-                                
-                                {/* Bottom leaf decoration */}
-                                <div className="absolute bottom-0.5 left-1">
-                                  <div className="w-3 h-2 bg-green-300 rounded-full transform rotate-45"></div>
-                                </div>
+                                <img src={lesson.image} alt={lesson.title} className="object-cover w-full h-full" />
                               </div>
                             </div>
 
