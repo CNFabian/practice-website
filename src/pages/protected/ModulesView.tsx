@@ -126,23 +126,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                   <div 
                     key={module.id}
                     className={`
-                      bg-white rounded-2xl border border-gray-200 p-6 cursor-pointer 
+                      bg-white rounded-2xl border border-gray-200 cursor-pointer 
                       hover:border-blue-300 hover:shadow-lg
                       transition-all duration-700 ease-in-out
                       ${selectedModuleId === module.id ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
                       ${isTransitioning ? 'pointer-events-none' : ''}
                       ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
+                      flex flex-col
                     `}
                     onClick={() => handleModuleSelect(module.id)}
                     style={{
                       backgroundColor: '#F7F9FF'
                     }}
                   >
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
+                    {/* Header - Fixed height */}
+                    <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0">
                       <div className="flex items-center gap-3">
                         <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm p-4"
                           style={{ backgroundColor: '#6B73FF' }}
                         >
                           {index + 1}
@@ -154,59 +155,56 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
                         </div>
                       </div>
-                      <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                        </svg>
-                      </button>
                     </div>
 
-                    {/* Illustration */}
-                    <div className={`transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'}`}>
+                    {/* Illustration - Dynamic height in normal view, hidden in compact */}
+                    <div className={`px-6 transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'} flex-shrink-0`}>
                       <div className={`
                         w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
-                        rounded-xlitems-center justify-center relative overflow-hidden 
+                        rounded-xl items-center justify-center relative overflow-hidden 
                         transition-[height] duration-700 ease-in-out
                         ${isCompactLayout ? 'h-0' : 'h-48'}
                       `}>
                        <img src={module.image} alt={module.title} className="object-cover w-full h-full" />
-
                       </div>
                     </div>
 
-                    {/* Description */}
-                    <div className="mb-6">
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {module.description}
-                      </p>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {module.tags.map((tag) => (
-                          <span 
-                            key={tag}
-                            className={`px-3 py-1 text-xs font-medium rounded-full ${
-                              tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                            }`}
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                    {/* Content Area - Flexible height */}
+                    <div className="px-6 flex-1 flex flex-col">
+                      {/* Description - Takes available space */}
+                      <div className="flex-1 mb-6">
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {module.description}
+                        </p>
                       </div>
-                      
-                      <button 
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          module.status === 'In Progress' 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : module.status === 'Completed'
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {module.status}
-                      </button>
+
+                      {/* Footer - Fixed position at bottom */}
+                      <div className="flex items-center justify-between pb-6">
+                        <div className="flex items-center gap-2">
+                          {module.tags.map((tag) => (
+                            <span 
+                              key={tag}
+                              className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <button 
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            module.status === 'In Progress' 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : module.status === 'Completed'
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {module.status}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
