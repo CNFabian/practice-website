@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Module, Lesson } from '../../types/modules';
 import { 
   CoinIcon, 
@@ -18,6 +18,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const [activeTab, setActiveTab] = useState<'All' | 'In Progress' | 'Completed'>('All');
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
@@ -29,6 +30,30 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       setSidebarCollapsed(false);
     }
   };
+
+  // Scroll first, then trigger layout change
+  useEffect(() => {
+    if (selectedModuleId && !sidebarCollapsed) {
+      const moduleElement = moduleRefs.current[selectedModuleId];
+      if (moduleElement) {
+        // First scroll immediately
+        const container = moduleElement.closest('.h-full.overflow-y-auto') as HTMLElement;
+        if (container) {
+          const moduleRect = moduleElement.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const stickyHeaderHeight = 120; // Approximate height of sticky header
+          
+          // Calculate the scroll position needed to put the module at the top (accounting for sticky header)
+          const scrollTop = container.scrollTop + (moduleRect.top - containerRect.top) - stickyHeaderHeight;
+          
+          container.scrollTo({
+            top: Math.max(0, scrollTop),
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+  }, [selectedModuleId, sidebarCollapsed]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
@@ -125,6 +150,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 {filteredModules.map((module, index) => (
                   <div 
                     key={module.id}
+                    ref={(el) => { moduleRefs.current[module.id] = el; }}
                     className={`
                       bg-white rounded-2xl border border-gray-200 cursor-pointer 
                       hover:border-blue-300 hover:shadow-lg

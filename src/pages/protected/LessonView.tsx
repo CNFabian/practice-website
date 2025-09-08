@@ -122,7 +122,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <img src={lesson.image} alt={lesson.title} className="object-cover w-full h-full" />
+                  <img src={lesson.image} alt={lesson.title} className="object-contain w-full h-full" />
                 </div>
               </div>
             </div>
