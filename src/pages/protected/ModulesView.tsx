@@ -52,7 +52,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       <div className="flex gap-8 h-full">
         {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
-          selectedModuleId && !sidebarCollapsed ? 'w-[40%]' : 'flex-1'
+          selectedModuleId && !sidebarCollapsed ? 'w-[30%]' : 'flex-1'
         }`}>
           <div 
             className={`h-full overflow-y-auto transition-all duration-300 -mr-10 ${
@@ -69,7 +69,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             {/* Sticky Header for Main Content */}
             <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
               <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Modules</h1>
                 
                 {/* Sidebar Toggle Button */}
                 {selectedModuleId && (
@@ -92,16 +92,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               </div>
               
               {/* Tabs */}
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1 max-w-xs mt-4">
+              <div className="flex justify-center border-b border-gray-200">
                 {(['All', 'In Progress', 'Completed'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => !isTransitioning && setActiveTab(tab)}
                     disabled={isTransitioning}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`px-4 py-3 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-b-2 ${
                       activeTab === tab
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-blue-600 border-blue-600'
+                        : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
                     {tab}
@@ -260,7 +260,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         </div>
 
         {/* Separator Line */}
-        <div className={`transition-all duration-700 ease-in-out mt-5 ${
+        <div className={`transition-all duration-700 ease-in-out mt-6 m-2 ${
           selectedModuleId && !sidebarCollapsed ? 'w-px bg-gray-200 mx-2' : 'w-0'
         }`} />
 

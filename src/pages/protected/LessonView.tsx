@@ -40,7 +40,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
   return (
-    <div className="pt-6 w-full h-full">
+    <div className="w-full h-full">
       <div className="flex h-full w-full relative">
         {/* Arrow Toggle */}
         <button
