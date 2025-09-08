@@ -45,7 +45,7 @@ const LessonView: React.FC<LessonViewProps> = ({
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
           className={`relative ml-4 top-60 x-10 z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
-            lessonInfoCollapsed ? '' : 'left-[calc(25%+4px)]'
+            lessonInfoCollapsed ? '' : 'left-[calc(30%+2px)]'
           }`}
         >
           <svg 
@@ -60,7 +60,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
         {/* Left Column - Lesson Info */}
         <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[25%] opacity-100'
+          lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
         }`}>
           <div 
             className="h-full px-2 flex flex-col overflow-y-auto -ml-8" 
@@ -228,7 +228,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
         {/* Right Column - Video Player */}
         <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'flex-1' : 'w-[75%]'
+          lessonInfoCollapsed ? 'flex-1' : 'w-[70%]'
         }`}>
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
             <div className="space-y-6 pb-6">

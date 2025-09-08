@@ -10,11 +10,6 @@ interface ModulesViewProps {
   isTransitioning?: boolean;
 }
 
-interface InfiniteModule extends Module {
-  infiniteId: string;
-  originalId: number;
-}
-
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
   onLessonSelect, 
@@ -24,20 +19,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showCompactLayout, setShowCompactLayout] = useState(false);
-  const [infiniteScrollActive, setInfiniteScrollActive] = useState(false); // NEW: Track infinite scroll activation
   
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const infiniteScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW: Timeout for infinite scroll activation
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
   // Determine if we're in compact layout mode
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
-  // NEW: Only use infinite scroll when both compact layout is active AND infinite scroll is activated
-  const useInfiniteScroll = isCompactLayout && infiniteScrollActive;
 
   // Get optimal card width based on screen size
   const getOptimalCardWidth = () => {
@@ -53,59 +43,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     return 300;                             // XL screens: 4+ columns
   };
 
-  // Create infinite scroll data (repeat modules for infinite effect)
-  const createInfiniteData = (): InfiniteModule[] => {
-    const filteredModules = modulesData.filter(module => {
-      if (activeTab === 'All') return true;
-      return module.status === activeTab;
-    });
-    
-    if (filteredModules.length === 0) return [];
-    
-    // Create 5 copies for infinite scroll effect
-    const copies = 5;
-    const infiniteData: InfiniteModule[] = [];
-    
-    for (let i = 0; i < copies; i++) {
-      infiniteData.push(...filteredModules.map(module => ({
-        ...module,
-        infiniteId: `${module.id}-${i}`, // Unique key for React
-        originalId: module.id
-      })));
-    }
-    
-    return infiniteData;
-  };
-
-  // Handle scroll for infinite effect
-  const handleScroll = () => {
-    if (!scrollContainerRef.current || !useInfiniteScroll) return; // MODIFIED: Use useInfiniteScroll
-
-    const container = scrollContainerRef.current;
-    const scrollTop = container.scrollTop;
-    const filteredModules = modulesData.filter(module => {
-      if (activeTab === 'All') return true;
-      return module.status === activeTab;
-    });
-
-    // Infinite scroll logic - when infinite scroll is active
-    if (useInfiniteScroll && filteredModules.length > 0) { // MODIFIED: Use useInfiniteScroll
-      const cardHeight = 220; // Approximate height of compact card + gap
-      const totalOriginalHeight = filteredModules.length * cardHeight;
-      const middleSection = totalOriginalHeight * 2; // Start from 2nd copy
-      
-      // Reset to middle when near top or bottom (but not during initial selection scroll)
-      if (scrollTop < totalOriginalHeight && scrollTop > 100) {
-        // Near top, jump to middle section
-        container.scrollTop = scrollTop + middleSection;
-      } else if (scrollTop > totalOriginalHeight * 4) {
-        // Near bottom, jump back to middle section
-        container.scrollTop = scrollTop - middleSection;
-      }
-    }
-  };
-
-  // Scroll to selected module - enhanced for infinite scroll
+  // Simplified scroll to selected module
   const scrollToSelectedModule = () => {
     if (!selectedModuleId || sidebarCollapsed || !scrollContainerRef.current) return;
 
@@ -115,80 +53,72 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       return module.status === activeTab;
     });
     
+    const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
+    if (selectedIndex === -1) return;
+    
     if (isCompactLayout) {
-      // MODIFIED: Always scroll to the original modules first, then activate infinite scroll
-      const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
-      if (selectedIndex === -1) return;
-      
-      // Calculate scroll position for the original module (not infinite copy)
-      const cardHeight = 220;
+      // Simple calculation for compact layout
+      const cardHeight = 220; // Height of each compact card including gap
+      const stickyHeaderHeight = 120; // Height of sticky header
       const containerHeight = container.clientHeight;
-      const stickyHeaderHeight = 120;
+      const availableHeight = containerHeight - stickyHeaderHeight;
       
-      // Position to center the target module in original data
-      const targetScrollTop = selectedIndex * cardHeight;
-      const finalScrollTop = Math.max(0, targetScrollTop);
+      // Calculate position to center the module
+      const moduleTop = selectedIndex * cardHeight;
+      const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
       
-      smoothScrollTo(container, finalScrollTop, 1500);
+      // Ensure we don't scroll past boundaries
+      const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
       
-      // NEW: Activate infinite scroll after the initial scroll is complete
-      if (infiniteScrollTimeoutRef.current) {
-        clearTimeout(infiniteScrollTimeoutRef.current);
+      // Only scroll if needed (don't scroll if module is already visible and reasonably centered)
+      const currentScrollTop = container.scrollTop;
+      const moduleVisibleTop = moduleTop - currentScrollTop;
+      const moduleVisibleBottom = moduleVisibleTop + cardHeight;
+      
+      // Check if module is already reasonably visible
+      const isReasonablyVisible = moduleVisibleTop > stickyHeaderHeight + 50 && 
+                                  moduleVisibleBottom < containerHeight - 50;
+      
+      if (!isReasonablyVisible) {
+        smoothScrollTo(container, finalScrollTop, 600); // Faster scroll
       }
-      infiniteScrollTimeoutRef.current = setTimeout(() => {
-        setInfiniteScrollActive(true);
-        
-        // Now scroll to the middle copy for infinite scroll
-        setTimeout(() => {
-          if (!scrollContainerRef.current) return;
-          
-          const originalModulesCount = filteredModules.length;
-          const middleCopyStartIndex = originalModulesCount * 2; // Start of 3rd copy
-          const targetModuleIndex = middleCopyStartIndex + selectedIndex;
-          const newTargetScrollTop = targetModuleIndex * cardHeight;
-          
-          smoothScrollTo(scrollContainerRef.current, newTargetScrollTop, 800);
-        }, 100);
-      }, 1600); // Wait for initial scroll to complete
       
     } else {
-      // For grid layout, use the existing logic with module refs
+      // For grid layout, use DOM element positioning
       const moduleElement = moduleRefs.current[selectedModuleId];
       if (moduleElement) {
         const moduleRect = moduleElement.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
         const stickyHeaderHeight = 120;
         
-        // Center the module in the viewport
-        const containerHeight = container.clientHeight;
-        const availableHeight = containerHeight - stickyHeaderHeight;
-        const moduleHeight = moduleRect.height;
+        // Check if module is already visible
+        const isVisible = moduleRect.top >= containerRect.top + stickyHeaderHeight &&
+                         moduleRect.bottom <= containerRect.bottom;
         
-        const targetScrollTop = container.scrollTop + 
-          (moduleRect.top - containerRect.top) - 
-          stickyHeaderHeight - 
-          (availableHeight / 2) + 
-          (moduleHeight / 2);
-        
-        const finalScrollTop = Math.max(0, targetScrollTop);
-        
-        smoothScrollTo(container, finalScrollTop, 1500);
+        if (!isVisible) {
+          // Center the module in viewport
+          const containerHeight = container.clientHeight;
+          const availableHeight = containerHeight - stickyHeaderHeight;
+          const moduleHeight = moduleRect.height;
+          
+          const targetScrollTop = container.scrollTop + 
+            (moduleRect.top - containerRect.top) - 
+            stickyHeaderHeight - 
+            (availableHeight / 2) + 
+            (moduleHeight / 2);
+          
+          const finalScrollTop = Math.max(0, targetScrollTop);
+          
+          smoothScrollTo(container, finalScrollTop, 600);
+        }
       }
     }
   };
 
-  const handleModuleSelect = (moduleId: number, originalId?: number) => {
+  const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
     
-    // Use originalId if available (for infinite scroll items), otherwise use moduleId
-    const targetId = originalId || moduleId;
-    setSelectedModuleId(targetId);
-    
-    // NEW: Reset infinite scroll when selecting a new module
-    setInfiniteScrollActive(false);
-    if (infiniteScrollTimeoutRef.current) {
-      clearTimeout(infiniteScrollTimeoutRef.current);
-    }
+    setSelectedModuleId(moduleId);
     
     if (sidebarCollapsed) {
       setSidebarCollapsed(false);
@@ -203,18 +133,25 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     }, 0);
   };
 
-  const smoothScrollTo = (container: HTMLElement, targetScrollTop: number, duration: number = 1200) => {
+  const smoothScrollTo = (container: HTMLElement, targetScrollTop: number, duration: number = 600) => {
     const startScrollTop = container.scrollTop;
     const distance = targetScrollTop - startScrollTop;
+    
+    // Don't scroll if distance is very small
+    if (Math.abs(distance) < 10) return;
+    
     const startTime = performance.now();
 
     const animateScroll = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+      // Use easeInOutCubic for smoother animation
+      const easeInOutCubic = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
       
-      container.scrollTop = startScrollTop + (distance * easeOut);
+      container.scrollTop = startScrollTop + (distance * easeInOutCubic);
 
       if (progress < 1) {
         requestAnimationFrame(animateScroll);
@@ -225,44 +162,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   useEffect(() => {
-    if (selectedModuleId && !sidebarCollapsed) {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      scrollTimeoutRef.current = setTimeout(() => {
+    if (selectedModuleId && !sidebarCollapsed && showCompactLayout) {
+      // Small delay to allow layout to settle
+      const timer = setTimeout(() => {
         scrollToSelectedModule();
-      }, sidebarCollapsed ? 500 : showCompactLayout ? 800 : 0);
-    }
+      }, 100);
 
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
+      return () => clearTimeout(timer);
+    }
   }, [selectedModuleId, sidebarCollapsed, showCompactLayout]);
 
   useEffect(() => {
     if (!selectedModuleId) {
       setShowCompactLayout(false);
-      setInfiniteScrollActive(false); // NEW: Reset infinite scroll when no module selected
       if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
       }
-      if (infiniteScrollTimeoutRef.current) { // NEW: Clear infinite scroll timeout
-        clearTimeout(infiniteScrollTimeoutRef.current);
-      }
     }
   }, [selectedModuleId]);
-
-  // NEW: Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (infiniteScrollTimeoutRef.current) {
-        clearTimeout(infiniteScrollTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
@@ -274,15 +191,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Choose data source based on layout
+  // Filter modules based on active tab
   const filteredModules = modulesData.filter(module => {
     if (activeTab === 'All') return true;
     return module.status === activeTab;
   });
-
-  const infiniteModules = createInfiniteData();
-  const originalModulesCount = filteredModules.length;
-  const displayModules: (Module | InfiniteModule)[] = useInfiniteScroll ? infiniteModules : filteredModules; // MODIFIED: Use useInfiniteScroll
 
   return (
     <div className="max-w-7xl mx-auto h-full">
@@ -303,7 +216,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
               scrollBehavior: 'auto'
             }}
-            onScroll={handleScroll}
           >
             {/* Sticky Header for Main Content */}
             <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
@@ -362,31 +274,23 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     : `repeat(auto-fit, minmax(${getOptimalCardWidth()}px, 1fr))`,
                 }}
               >
-                {displayModules.map((module, index) => {
-                  // For infinite scroll items, use infiniteId, for normal use id
-                  const isInfiniteModule = 'infiniteId' in module;
-                  const keyId = isInfiniteModule ? module.infiniteId : `module-${module.id}`;
-                  const originalId = isInfiniteModule ? module.originalId : undefined;
-                  const moduleIndex = isCompactLayout ? index % originalModulesCount : index;
-                  
+                {filteredModules.map((module, index) => {
                   return (
                     <div 
-                      key={keyId}
+                      key={module.id}
                       ref={(el) => { 
-                        // Only store ref for the original module ID
-                        const refId = originalId || module.id;
-                        moduleRefs.current[refId] = el;
+                        moduleRefs.current[module.id] = el;
                       }}
                       className={`
                         bg-white rounded-2xl border border-gray-200 cursor-pointer 
                         hover:border-blue-300 hover:shadow-lg
                         transition-all duration-700 ease-in-out
-                        ${(selectedModuleId === module.id || selectedModuleId === originalId) ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
+                        ${selectedModuleId === module.id ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
                         ${isTransitioning ? 'pointer-events-none' : ''}
                         ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
                         flex flex-col
                       `}
-                      onClick={() => handleModuleSelect(module.id, originalId)}
+                      onClick={() => handleModuleSelect(module.id)}
                       style={{
                         backgroundColor: '#F7F9FF'
                       }}
@@ -398,7 +302,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm p-4"
                             style={{ backgroundColor: '#6B73FF' }}
                           >
-                            {moduleIndex + 1}
+                            {index + 1}
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900 leading-tight">
@@ -488,15 +392,17 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             }}>
               {/* Header for Lesson List */}
               {selectedModuleData && (
+               
                 <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 pt-6 pb-3">
-                  <div className="space-y-2">
+                   <div className='grid grid-cols-2 gap-4 items-center'>
+                  <div className="space-y-1">
                     <h2 className="text-xl font-bold text-gray-900">
                       {selectedModuleData.title}
                     </h2>
                     <p className="text-gray-600 text-sm leading-normal">
                       {selectedModuleData.description}
                     </p>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 pt-2">
                       {selectedModuleData.tags.map((tag) => (
                         <span 
                           key={tag}
@@ -509,6 +415,25 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       ))}
                     </div>
                   </div>
+
+                    {/* Module Actions */}
+                    <div className="flex flex-col justify-between py-4">
+                      <div className="flex gap-2">
+                        <button 
+                          disabled={isTransitioning}
+                          className="flex-1 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Quiz Battle
+                        </button>
+                        <button 
+                          disabled={isTransitioning}
+                          className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Module Quiz
+                        </button>
+                      </div>
+                    </div>
+                </div>
                 </div>
               )}
 
@@ -556,13 +481,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <button 
                                   onClick={() => handleLessonStart(lesson, selectedModuleData)}
                                   disabled={isTransitioning}
-                                  className="bg-blue-600 text-white py-2 px-4 rounded-full text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-blue-600 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Start Lesson
                                 </button>
                                 <button 
                                   disabled={isTransitioning}
-                                  className="bg-gray-500 text-white py-2 px-4 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-gray-500 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Lesson Quiz
                                 </button>
@@ -571,24 +496,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           </div>
                         </div>
                       ))}
-                    </div>
-
-                    {/* Module Actions */}
-                    <div className="bg-white border-t border-gray-200 pt-4 px-1 mt-6">
-                      <div className="flex gap-2">
-                        <button 
-                          disabled={isTransitioning}
-                          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Quiz Battle
-                        </button>
-                        <button 
-                          disabled={isTransitioning}
-                          className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Module Quiz
-                        </button>
-                      </div>
                     </div>
                   </>
                 ) : (
