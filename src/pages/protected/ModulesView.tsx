@@ -10,6 +10,11 @@ interface ModulesViewProps {
   isTransitioning?: boolean;
 }
 
+interface InfiniteModule extends Module {
+  infiniteId: string;
+  originalId: number;
+}
+
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
   onLessonSelect, 
@@ -19,16 +24,151 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showCompactLayout, setShowCompactLayout] = useState(false);
+  
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
-  const handleModuleSelect = (moduleId: number) => {
+  // Determine if we're in compact layout mode
+  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
+
+  // Get optimal card width based on screen size
+  const getOptimalCardWidth = () => {
+    if (typeof window === 'undefined') return 320;
+    
+    const screenWidth = window.innerWidth;
+    
+    if (screenWidth < 640) return 280;      // Mobile: 1 column
+    if (screenWidth < 768) return 300;      // Small tablet: 2 columns
+    if (screenWidth < 1024) return 320;     // Large tablet: 2 columns  
+    if (screenWidth < 1280) return 300;     // Desktop: 3 columns
+    if (screenWidth < 1536) return 280;     // Large desktop: 4 columns
+    return 300;                             // XL screens: 4+ columns
+  };
+
+  // Create infinite scroll data (repeat modules for infinite effect)
+  const createInfiniteData = (): InfiniteModule[] => {
+    const filteredModules = modulesData.filter(module => {
+      if (activeTab === 'All') return true;
+      return module.status === activeTab;
+    });
+    
+    if (filteredModules.length === 0) return [];
+    
+    // Create 5 copies for infinite scroll effect
+    const copies = 5;
+    const infiniteData: InfiniteModule[] = [];
+    
+    for (let i = 0; i < copies; i++) {
+      infiniteData.push(...filteredModules.map(module => ({
+        ...module,
+        infiniteId: `${module.id}-${i}`, // Unique key for React
+        originalId: module.id
+      })));
+    }
+    
+    return infiniteData;
+  };
+
+  // Handle scroll for infinite effect
+  const handleScroll = () => {
+    if (!scrollContainerRef.current || !isCompactLayout) return;
+
+    const container = scrollContainerRef.current;
+    const scrollTop = container.scrollTop;
+    const filteredModules = modulesData.filter(module => {
+      if (activeTab === 'All') return true;
+      return module.status === activeTab;
+    });
+
+    // Infinite scroll logic - when in compact layout
+    if (isCompactLayout && filteredModules.length > 0) {
+      const cardHeight = 220; // Approximate height of compact card + gap
+      const totalOriginalHeight = filteredModules.length * cardHeight;
+      const middleSection = totalOriginalHeight * 2; // Start from 2nd copy
+      
+      // Reset to middle when near top or bottom (but not during initial selection scroll)
+      if (scrollTop < totalOriginalHeight && scrollTop > 100) {
+        // Near top, jump to middle section
+        container.scrollTop = scrollTop + middleSection;
+      } else if (scrollTop > totalOriginalHeight * 4) {
+        // Near bottom, jump back to middle section
+        container.scrollTop = scrollTop - middleSection;
+      }
+    }
+  };
+
+  // Scroll to selected module - enhanced for infinite scroll
+  const scrollToSelectedModule = () => {
+    if (!selectedModuleId || sidebarCollapsed || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const filteredModules = modulesData.filter(module => {
+      if (activeTab === 'All') return true;
+      return module.status === activeTab;
+    });
+    
+    if (isCompactLayout) {
+      // For compact layout with infinite scroll, find the middle copy and center it
+      const originalModulesCount = filteredModules.length;
+      
+      if (originalModulesCount === 0) return;
+      
+      // Find the index of the selected module in the original data
+      const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
+      if (selectedIndex === -1) return;
+      
+      // Calculate position for the middle copy (copy #2 out of 5 copies)
+      const middleCopyStartIndex = originalModulesCount * 2; // Start of 3rd copy (index 2)
+      const targetModuleIndex = middleCopyStartIndex + selectedIndex;
+      
+      // Calculate scroll position to center the module
+      const cardHeight = 220; // Approximate height including gap
+      const containerHeight = container.clientHeight;
+      const stickyHeaderHeight = 120;
+      const availableHeight = containerHeight - stickyHeaderHeight;
+      
+      // Position to center the target module
+      const targetScrollTop = (targetModuleIndex * cardHeight);
+      const finalScrollTop = Math.max(0, targetScrollTop);
+      
+      smoothScrollTo(container, finalScrollTop, 1500);
+    } else {
+      // For grid layout, use the existing logic with module refs
+      const moduleElement = moduleRefs.current[selectedModuleId];
+      if (moduleElement) {
+        const moduleRect = moduleElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const stickyHeaderHeight = 120;
+        
+        // Center the module in the viewport
+        const containerHeight = container.clientHeight;
+        const availableHeight = containerHeight - stickyHeaderHeight;
+        const moduleHeight = moduleRect.height;
+        
+        const targetScrollTop = container.scrollTop + 
+          (moduleRect.top - containerRect.top) - 
+          stickyHeaderHeight - 
+          (availableHeight / 2) + 
+          (moduleHeight / 2);
+        
+        const finalScrollTop = Math.max(0, targetScrollTop);
+        
+        smoothScrollTo(container, finalScrollTop, 1500);
+      }
+    }
+  };
+
+  const handleModuleSelect = (moduleId: number, originalId?: number) => {
     if (isTransitioning) return;
     
-    setSelectedModuleId(moduleId);
+    // Use originalId if available (for infinite scroll items), otherwise use moduleId
+    const targetId = originalId || moduleId;
+    setSelectedModuleId(targetId);
+    
     if (sidebarCollapsed) {
       setSidebarCollapsed(false);
     }
@@ -70,21 +210,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       }
 
       scrollTimeoutRef.current = setTimeout(() => {
-        const moduleElement = moduleRefs.current[selectedModuleId];
-        if (moduleElement) {
-          const container = moduleElement.closest('.h-full.overflow-y-auto') as HTMLElement;
-          if (container) {
-            const moduleRect = moduleElement.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-            const stickyHeaderHeight = 120;
-            
-            const targetScrollTop = container.scrollTop + (moduleRect.top - containerRect.top) - stickyHeaderHeight;
-            const finalScrollTop = Math.max(0, targetScrollTop);
-            
-            smoothScrollTo(container, finalScrollTop, 1500);
-          }
-        }
-      }, sidebarCollapsed ? 500 : 0);
+        scrollToSelectedModule();
+      }, sidebarCollapsed ? 500 : showCompactLayout ? 800 : 0);
     }
 
     return () => {
@@ -92,7 +219,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [selectedModuleId, sidebarCollapsed]);
+  }, [selectedModuleId, sidebarCollapsed, showCompactLayout]);
 
   useEffect(() => {
     if (!selectedModuleId) {
@@ -113,12 +240,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Choose data source based on layout
   const filteredModules = modulesData.filter(module => {
     if (activeTab === 'All') return true;
     return module.status === activeTab;
   });
 
-  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
+  const infiniteModules = createInfiniteData();
+  const originalModulesCount = filteredModules.length;
+  const displayModules: (Module | InfiniteModule)[] = isCompactLayout ? infiniteModules : filteredModules;
 
   return (
     <div className="max-w-7xl mx-auto h-full">
@@ -128,6 +258,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           selectedModuleId && !sidebarCollapsed ? 'w-[30%]' : 'flex-1'
         }`}>
           <div 
+            ref={scrollContainerRef}
             className={`h-full overflow-y-auto transition-all duration-300 -mr-10 ${
               selectedModuleId && !sidebarCollapsed 
                 ? '' 
@@ -138,6 +269,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
               scrollBehavior: 'auto'
             }}
+            onScroll={handleScroll}
           >
             {/* Sticky Header for Main Content */}
             <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
@@ -187,100 +319,113 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             {/* Module Cards Container */}
             <div className="px-4 pb-6">
               <div 
-                className={`
-                  grid gap-6 transition-all duration-700 ease-in-out
-                  ${isCompactLayout 
-                    ? 'grid-cols-1' 
-                    : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
-                  }
-                `}
+                className="transition-all duration-700 ease-in-out"
+                style={{
+                  display: 'grid',
+                  gap: isCompactLayout ? '1rem' : 'clamp(1rem, 2.5vw, 1.5rem)',
+                  gridTemplateColumns: isCompactLayout 
+                    ? '1fr'
+                    : `repeat(auto-fit, minmax(${getOptimalCardWidth()}px, 1fr))`,
+                }}
               >
-                {filteredModules.map((module, index) => (
-                  <div 
-                    key={module.id}
-                    ref={(el) => { moduleRefs.current[module.id] = el; }}
-                    className={`
-                      bg-white rounded-2xl border border-gray-200 cursor-pointer 
-                      hover:border-blue-300 hover:shadow-lg
-                      transition-all duration-700 ease-in-out
-                      ${selectedModuleId === module.id ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
-                      ${isTransitioning ? 'pointer-events-none' : ''}
-                      ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
-                      flex flex-col
-                    `}
-                    onClick={() => handleModuleSelect(module.id)}
-                    style={{
-                      backgroundColor: '#F7F9FF'
-                    }}
-                  >
-                    {/* Header - Fixed height */}
-                    <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm p-4"
-                          style={{ backgroundColor: '#6B73FF' }}
-                        >
-                          {index + 1}
+                {displayModules.map((module, index) => {
+                  // For infinite scroll items, use infiniteId, for normal use id
+                  const isInfiniteModule = 'infiniteId' in module;
+                  const keyId = isInfiniteModule ? module.infiniteId : `module-${module.id}`;
+                  const originalId = isInfiniteModule ? module.originalId : undefined;
+                  const moduleIndex = isCompactLayout ? index % originalModulesCount : index;
+                  
+                  return (
+                    <div 
+                      key={keyId}
+                      ref={(el) => { 
+                        // Only store ref for the original module ID
+                        const refId = originalId || module.id;
+                        moduleRefs.current[refId] = el;
+                      }}
+                      className={`
+                        bg-white rounded-2xl border border-gray-200 cursor-pointer 
+                        hover:border-blue-300 hover:shadow-lg
+                        transition-all duration-700 ease-in-out
+                        ${(selectedModuleId === module.id || selectedModuleId === originalId) ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
+                        ${isTransitioning ? 'pointer-events-none' : ''}
+                        ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
+                        flex flex-col
+                      `}
+                      onClick={() => handleModuleSelect(module.id, originalId)}
+                      style={{
+                        backgroundColor: '#F7F9FF'
+                      }}
+                    >
+                      {/* Header - Fixed height */}
+                      <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm p-4"
+                            style={{ backgroundColor: '#6B73FF' }}
+                          >
+                            {moduleIndex + 1}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                              {module.title}
+                            </h3>
+                            <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                            {module.title}
-                          </h3>
-                          <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
+                      </div>
+
+                      <div className={`px-6 transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'} flex-shrink-0`}>
+                        <div className={`
+                          w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
+                          rounded-xl items-center justify-center relative overflow-hidden 
+                          transition-[height] duration-700 ease-in-out
+                          ${isCompactLayout ? 'h-0' : 'h-48'}
+                        `}>
+                         <img src={module.image} alt={module.title} className="object-cover w-full h-full" />
+                        </div>
+                      </div>
+
+                      {/* Content Area */}
+                      <div className="px-6 flex-1 flex flex-col">
+                        {/* Description - Takes available space */}
+                        <div className="flex-1 mb-6">
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {module.description}
+                          </p>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pb-6">
+                          <div className="flex items-center gap-2">
+                            {module.tags.map((tag) => (
+                              <span 
+                                key={tag}
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                  tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          <button 
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                              module.status === 'In Progress' 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : module.status === 'Completed'
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {module.status}
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    <div className={`px-6 transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'} flex-shrink-0`}>
-                      <div className={`
-                        w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
-                        rounded-xl items-center justify-center relative overflow-hidden 
-                        transition-[height] duration-700 ease-in-out
-                        ${isCompactLayout ? 'h-0' : 'h-48'}
-                      `}>
-                       <img src={module.image} alt={module.title} className="object-cover w-full h-full" />
-                      </div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="px-6 flex-1 flex flex-col">
-                      {/* Description - Takes available space */}
-                      <div className="flex-1 mb-6">
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {module.description}
-                        </p>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pb-6">
-                        <div className="flex items-center gap-2">
-                          {module.tags.map((tag) => (
-                            <span 
-                              key={tag}
-                              className={`px-3 py-1 text-xs font-medium rounded-full ${
-                                tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                              }`}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        
-                        <button 
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                            module.status === 'In Progress' 
-                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                              : module.status === 'Completed'
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {module.status}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
