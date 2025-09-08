@@ -24,16 +24,20 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showCompactLayout, setShowCompactLayout] = useState(false);
+  const [infiniteScrollActive, setInfiniteScrollActive] = useState(false); // NEW: Track infinite scroll activation
   
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const infiniteScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null); // NEW: Timeout for infinite scroll activation
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
   // Determine if we're in compact layout mode
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
+  // NEW: Only use infinite scroll when both compact layout is active AND infinite scroll is activated
+  const useInfiniteScroll = isCompactLayout && infiniteScrollActive;
 
   // Get optimal card width based on screen size
   const getOptimalCardWidth = () => {
@@ -75,7 +79,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
   // Handle scroll for infinite effect
   const handleScroll = () => {
-    if (!scrollContainerRef.current || !isCompactLayout) return;
+    if (!scrollContainerRef.current || !useInfiniteScroll) return; // MODIFIED: Use useInfiniteScroll
 
     const container = scrollContainerRef.current;
     const scrollTop = container.scrollTop;
@@ -84,8 +88,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       return module.status === activeTab;
     });
 
-    // Infinite scroll logic - when in compact layout
-    if (isCompactLayout && filteredModules.length > 0) {
+    // Infinite scroll logic - when infinite scroll is active
+    if (useInfiniteScroll && filteredModules.length > 0) { // MODIFIED: Use useInfiniteScroll
       const cardHeight = 220; // Approximate height of compact card + gap
       const totalOriginalHeight = filteredModules.length * cardHeight;
       const middleSection = totalOriginalHeight * 2; // Start from 2nd copy
@@ -112,30 +116,41 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     });
     
     if (isCompactLayout) {
-      // For compact layout with infinite scroll, find the middle copy and center it
-      const originalModulesCount = filteredModules.length;
-      
-      if (originalModulesCount === 0) return;
-      
-      // Find the index of the selected module in the original data
+      // MODIFIED: Always scroll to the original modules first, then activate infinite scroll
       const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
       if (selectedIndex === -1) return;
       
-      // Calculate position for the middle copy (copy #2 out of 5 copies)
-      const middleCopyStartIndex = originalModulesCount * 2; // Start of 3rd copy (index 2)
-      const targetModuleIndex = middleCopyStartIndex + selectedIndex;
-      
-      // Calculate scroll position to center the module
-      const cardHeight = 220; // Approximate height including gap
+      // Calculate scroll position for the original module (not infinite copy)
+      const cardHeight = 220;
       const containerHeight = container.clientHeight;
       const stickyHeaderHeight = 120;
-      const availableHeight = containerHeight - stickyHeaderHeight;
       
-      // Position to center the target module
-      const targetScrollTop = (targetModuleIndex * cardHeight);
+      // Position to center the target module in original data
+      const targetScrollTop = selectedIndex * cardHeight;
       const finalScrollTop = Math.max(0, targetScrollTop);
       
       smoothScrollTo(container, finalScrollTop, 1500);
+      
+      // NEW: Activate infinite scroll after the initial scroll is complete
+      if (infiniteScrollTimeoutRef.current) {
+        clearTimeout(infiniteScrollTimeoutRef.current);
+      }
+      infiniteScrollTimeoutRef.current = setTimeout(() => {
+        setInfiniteScrollActive(true);
+        
+        // Now scroll to the middle copy for infinite scroll
+        setTimeout(() => {
+          if (!scrollContainerRef.current) return;
+          
+          const originalModulesCount = filteredModules.length;
+          const middleCopyStartIndex = originalModulesCount * 2; // Start of 3rd copy
+          const targetModuleIndex = middleCopyStartIndex + selectedIndex;
+          const newTargetScrollTop = targetModuleIndex * cardHeight;
+          
+          smoothScrollTo(scrollContainerRef.current, newTargetScrollTop, 800);
+        }, 100);
+      }, 1600); // Wait for initial scroll to complete
+      
     } else {
       // For grid layout, use the existing logic with module refs
       const moduleElement = moduleRefs.current[selectedModuleId];
@@ -168,6 +183,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     // Use originalId if available (for infinite scroll items), otherwise use moduleId
     const targetId = originalId || moduleId;
     setSelectedModuleId(targetId);
+    
+    // NEW: Reset infinite scroll when selecting a new module
+    setInfiniteScrollActive(false);
+    if (infiniteScrollTimeoutRef.current) {
+      clearTimeout(infiniteScrollTimeoutRef.current);
+    }
     
     if (sidebarCollapsed) {
       setSidebarCollapsed(false);
@@ -224,11 +245,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   useEffect(() => {
     if (!selectedModuleId) {
       setShowCompactLayout(false);
+      setInfiniteScrollActive(false); // NEW: Reset infinite scroll when no module selected
       if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
       }
+      if (infiniteScrollTimeoutRef.current) { // NEW: Clear infinite scroll timeout
+        clearTimeout(infiniteScrollTimeoutRef.current);
+      }
     }
   }, [selectedModuleId]);
+
+  // NEW: Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (infiniteScrollTimeoutRef.current) {
+        clearTimeout(infiniteScrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
@@ -248,7 +282,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
   const infiniteModules = createInfiniteData();
   const originalModulesCount = filteredModules.length;
-  const displayModules: (Module | InfiniteModule)[] = isCompactLayout ? infiniteModules : filteredModules;
+  const displayModules: (Module | InfiniteModule)[] = useInfiniteScroll ? infiniteModules : filteredModules; // MODIFIED: Use useInfiniteScroll
 
   return (
     <div className="max-w-7xl mx-auto h-full">
