@@ -30,13 +30,11 @@ const LessonView: React.FC<LessonViewProps> = ({
     setLessonInfoCollapsed(!lessonInfoCollapsed);
   };
 
-  // Get next lesson
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
   const nextLesson = currentLessonIndex < module.lessons.length - 1 
     ? module.lessons[currentLessonIndex + 1] 
     : null;
 
-  // Use lesson description, fallback to a default description
   const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
   return (
@@ -112,7 +110,6 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             </div>
 
-            {/* EXPANDING IMAGE SECTION */}
             <div className="flex-1 flex items-center justify-center">
               <div 
                 className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
@@ -127,7 +124,6 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             </div>
 
-            {/* Bottom Fixed Content - Pinned to bottom */}
             <div className="flex-shrink-0 py-3 border-t border-gray-100 space-y-3">
               {/* Lesson Description */}
               <div className="bg-blue-50 rounded-lg p-2">

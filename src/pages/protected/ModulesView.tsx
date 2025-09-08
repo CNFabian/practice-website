@@ -17,8 +17,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'All' | 'In Progress' | 'Completed'>('All');
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [showCompactLayout, setShowCompactLayout] = useState(false);
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
 
@@ -29,31 +32,76 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     if (sidebarCollapsed) {
       setSidebarCollapsed(false);
     }
+
+    if (layoutTimeoutRef.current) {
+      clearTimeout(layoutTimeoutRef.current);
+    }
+
+    layoutTimeoutRef.current = setTimeout(() => {
+      setShowCompactLayout(true);
+    }, 0);
   };
 
-  // Scroll first, then trigger layout change
+  const smoothScrollTo = (container: HTMLElement, targetScrollTop: number, duration: number = 1200) => {
+    const startScrollTop = container.scrollTop;
+    const distance = targetScrollTop - startScrollTop;
+    const startTime = performance.now();
+
+    const animateScroll = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      container.scrollTop = startScrollTop + (distance * easeOut);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+
+    requestAnimationFrame(animateScroll);
+  };
+
   useEffect(() => {
     if (selectedModuleId && !sidebarCollapsed) {
-      const moduleElement = moduleRefs.current[selectedModuleId];
-      if (moduleElement) {
-        // First scroll immediately
-        const container = moduleElement.closest('.h-full.overflow-y-auto') as HTMLElement;
-        if (container) {
-          const moduleRect = moduleElement.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          const stickyHeaderHeight = 120; // Approximate height of sticky header
-          
-          // Calculate the scroll position needed to put the module at the top (accounting for sticky header)
-          const scrollTop = container.scrollTop + (moduleRect.top - containerRect.top) - stickyHeaderHeight;
-          
-          container.scrollTo({
-            top: Math.max(0, scrollTop),
-            behavior: 'smooth'
-          });
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        const moduleElement = moduleRefs.current[selectedModuleId];
+        if (moduleElement) {
+          const container = moduleElement.closest('.h-full.overflow-y-auto') as HTMLElement;
+          if (container) {
+            const moduleRect = moduleElement.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const stickyHeaderHeight = 120;
+            
+            const targetScrollTop = container.scrollTop + (moduleRect.top - containerRect.top) - stickyHeaderHeight;
+            const finalScrollTop = Math.max(0, targetScrollTop);
+            
+            smoothScrollTo(container, finalScrollTop, 1500);
+          }
         }
+      }, sidebarCollapsed ? 500 : 0);
+    }
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [selectedModuleId, sidebarCollapsed]);
+
+  useEffect(() => {
+    if (!selectedModuleId) {
+      setShowCompactLayout(false);
+      if (layoutTimeoutRef.current) {
+        clearTimeout(layoutTimeoutRef.current);
       }
     }
-  }, [selectedModuleId, sidebarCollapsed]);
+  }, [selectedModuleId]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
@@ -70,7 +118,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     return module.status === activeTab;
   });
 
-  const isCompactLayout = selectedModuleId && !sidebarCollapsed;
+  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
   return (
     <div className="max-w-7xl mx-auto h-full">
@@ -86,9 +134,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 : 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 -mr-16'
             }`}
             style={{
-              // Hide scrollbar visually but keep functionality when sidebar is visible
               scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'none' : 'thin',
-              msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto'
+              msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
+              scrollBehavior: 'auto'
             }}
           >
             {/* Sticky Header for Main Content */}
@@ -183,7 +231,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Illustration - Dynamic height in normal view, hidden in compact */}
                     <div className={`px-6 transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'} flex-shrink-0`}>
                       <div className={`
                         w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
@@ -195,7 +242,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Content Area - Flexible height */}
+                    {/* Content Area */}
                     <div className="px-6 flex-1 flex flex-col">
                       {/* Description - Takes available space */}
                       <div className="flex-1 mb-6">
@@ -204,7 +251,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         </p>
                       </div>
 
-                      {/* Footer - Fixed position at bottom */}
+                      {/* Footer */}
                       <div className="flex items-center justify-between pb-6">
                         <div className="flex items-center gap-2">
                           {module.tags.map((tag) => (
@@ -257,11 +304,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 : ''
             }`}
             style={{
-              // Hide scrollbar when sidebar is not visible
               scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'thin' : 'none',
               msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'auto' : 'none'
             }}>
-              {/* Sticky Header for Lesson List */}
+              {/* Header for Lesson List */}
               {selectedModuleData && (
                 <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 pt-6 pb-3">
                   <div className="space-y-2">
@@ -304,7 +350,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             {/* Left Side - Illustration */}
                             <div className="flex-shrink-0">
                               <div className="aspect-square w-28 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden">
-                                <img src={lesson.image} alt={lesson.title} className="object-cover w-full h-full" />
+                                <img 
+                                  src={lesson.image} 
+                                  alt={lesson.title} 
+                                  className="object-contain w-full h-full" 
+                                  style={{ imageRendering: 'crisp-edges' }}
+                                />
                               </div>
                             </div>
 

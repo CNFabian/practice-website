@@ -20,7 +20,7 @@ const modulesData: Module[] = [
         image: SignupImage,
         title: "Mindset and Financial Readiness",
         duration: "20 minutes",
-        description: "Get your head in the game—and your wallet in shape—before you shop for your dream homeq weoifwoe ifmnwoiwenfowi enfoweinfoweiffsfa",
+        description: "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
         coins: 25,
         completed: false,
         videoUrl: "https://example.com/video1.mp4",
@@ -137,6 +137,123 @@ const modulesData: Module[] = [
         title: "Making an Offer",
         duration: "20 minutes",
         description: "Learn how to make a competitive offer on a home.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 4,
+    image: SignupImage,
+    title: "Home Maintenance Basics",
+    description: "Learn essential home maintenance skills to protect your investment.",
+    lessonCount: 3,
+    status: "Not Started",
+    tags: ["Beginner", "Maintenance"],
+    illustration: "home-maintenance",
+    lessons: [
+      {
+        id: 11,
+        image: SignupImage,
+        title: "Seasonal Maintenance Checklist",
+        duration: "25 minutes",
+        description: "Stay ahead of home maintenance with this seasonal checklist.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 12,
+        image: SignupImage,
+        title: "Basic Home Repairs",
+        duration: "30 minutes",
+        description: "Learn to tackle common home repairs like a pro.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 13,
+        image: SignupImage,
+        title: "When to Call a Professional",
+        duration: "20 minutes",
+        description: "Know your limits—learn when to call in the pros.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 5,
+    image: SignupImage,
+    title: "Home Safety and Security",
+    description: "Learn how to keep your home safe and secure.",
+    lessonCount: 3,
+    status: "Not Started",
+    tags: ["Beginner", "Safety"],
+    illustration: "home-safety",
+    lessons: [
+      {
+        id: 14,
+        image: SignupImage,
+        title: "Home Security Systems",
+        duration: "25 minutes",
+        description: "Explore different types of home security systems.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 15,
+        image: SignupImage,
+        title: "Fire Safety Tips",
+        duration: "30 minutes",
+        description: "Learn essential fire safety tips for your home.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 16,
+        image: SignupImage,
+        title: "Emergency Preparedness",
+        duration: "20 minutes",
+        description: "Get prepared for emergencies with a solid plan.",
+        coins: 25,
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 6,
+    image: SignupImage,
+    title: "Home Technology Integration",
+    description: "Learn how to integrate technology into your home.",
+    lessonCount: 3,
+    status: "Not Started",
+    tags: ["Beginner", "Technology"],
+    illustration: "home-technology",
+    lessons: [
+      {
+        id: 17,
+        image: SignupImage,
+        title: "Smart Home Devices",
+        duration: "25 minutes",
+        description: "Explore various smart home devices and their benefits.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 18,
+        image: SignupImage,
+        title: "Home Automation Basics",
+        duration: "30 minutes",
+        description: "Learn the basics of home automation and control.",
+        coins: 30,
+        completed: false
+      },
+      {
+        id: 19,
+        image: SignupImage,
+        title: "Setting Up a Home Network",
+        duration: "20 minutes",
+        description: "Understand how to set up and secure a home network.",
         coins: 25,
         completed: false
       }
