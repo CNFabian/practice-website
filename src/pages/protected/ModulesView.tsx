@@ -271,7 +271,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                   gap: isCompactLayout ? '1rem' : 'clamp(1rem, 2.5vw, 1.5rem)',
                   gridTemplateColumns: isCompactLayout 
                     ? '1fr'
-                    : `repeat(auto-fit, minmax(${getOptimalCardWidth()}px, 1fr))`,
+                    : `repeat(auto-fill, minmax(${getOptimalCardWidth()}px, 400px))`,
+                  justifyContent: 'start',
                 }}
               >
                 {filteredModules.map((module, index) => {
