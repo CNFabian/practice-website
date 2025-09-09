@@ -39,7 +39,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   return (
     <div className="pt-6 w-full h-full">
-      <div className="flex h-full w-full relative">
+      <div className="flex h-full w-full">
         {/* Arrow Toggle */}
         <button
           onClick={toggleLessonInfo}

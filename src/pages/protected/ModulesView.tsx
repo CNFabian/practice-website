@@ -147,7 +147,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       const progress = Math.min(elapsed / duration, 1);
       
       // Use easeInOutCubic for smoother animation
-      const easeInOutCubic = progress < 0.5
+      const easeInOutCubic = progress < 2
         ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
       
@@ -166,7 +166,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       // Small delay to allow layout to settle
       const timer = setTimeout(() => {
         scrollToSelectedModule();
-      }, 100);
+      }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -198,7 +198,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   });
 
   return (
-    <div className="max-w-7xl mx-auto h-full">
+    <div className="w-full h-full">
       <div className="flex gap-8 h-full">
         {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
@@ -508,13 +508,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <button 
                                   onClick={() => handleLessonStart(lesson, selectedModuleData)}
                                   disabled={isTransitioning}
-                                  className="bg-blue-600 w-full text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-blue-600 w-full mx-5 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Start Lesson
                                 </button>
                                 <button 
                                   disabled={isTransitioning}
-                                  className="bg-gray-500 w-full text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-gray-500 w-full mx-5 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Lesson Quiz
                                 </button>
