@@ -334,31 +334,58 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between pb-6">
-                          <div className="flex items-center gap-2">
-                            {module.tags.map((tag) => (
-                              <span 
-                                key={tag}
-                                className={`px-3 py-1 text-xs font-medium rounded-full ${
-                                  tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                                }`}
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                        <div className="space-y-4 pb-6">
+                          {/* Tags and Status */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {module.tags.map((tag) => (
+                                <span 
+                                  key={tag}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                    tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                                  }`}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                          
-                          <button 
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                              module.status === 'In Progress' 
-                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                : module.status === 'Completed'
-                                ? 'bg-green-600 text-white hover:bg-green-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {module.status}
-                          </button>
+
+                          {/* Progress Bar */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-600">
+                                {(() => {
+                                  const completedLessons = module.lessons.filter(lesson => lesson.completed).length;
+                                  return `${completedLessons}/${module.lessons.length} lessons completed`;
+                                })()}
+                              </span>
+                              <span className="text-gray-600">
+                                {(() => {
+                                  const completedLessons = module.lessons.filter(lesson => lesson.completed).length;
+                                  const percentage = Math.round((completedLessons / module.lessons.length) * 100);
+                                  return `${percentage}%`;
+                                })()}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-500 ${
+                                  module.status === 'Completed' 
+                                    ? 'bg-green-500' 
+                                    : module.status === 'In Progress'
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-300'
+                                }`}
+                                style={{
+                                  width: `${(() => {
+                                    const completedLessons = module.lessons.filter(lesson => lesson.completed).length;
+                                    return Math.round((completedLessons / module.lessons.length) * 100);
+                                  })()}%`
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -396,7 +423,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 pt-6 pb-3">
                    <div className='grid grid-cols-2 gap-4 items-center'>
                   <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="whitespace-nowrap text-xl font-bold text-gray-900">
                       {selectedModuleData.title}
                     </h2>
                     <p className="text-gray-600 text-sm leading-normal">
@@ -417,7 +444,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                   </div>
 
                     {/* Module Actions */}
-                    <div className="flex flex-col justify-between py-4">
+                    <div className="absolute right-0 bottom-5 pr-4 pb-3 w-[calc(50%-1rem)]">
                       <div className="flex gap-2">
                         <button 
                           disabled={isTransitioning}
@@ -481,13 +508,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <button 
                                   onClick={() => handleLessonStart(lesson, selectedModuleData)}
                                   disabled={isTransitioning}
-                                  className="bg-blue-600 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-blue-600 w-full text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Start Lesson
                                 </button>
                                 <button 
                                   disabled={isTransitioning}
-                                  className="bg-gray-500 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="bg-gray-500 w-full text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Lesson Quiz
                                 </button>
