@@ -3,6 +3,7 @@ import { Module, Lesson } from '../../types/modules';
 import { 
   CoinIcon, 
 } from '../../assets';
+import LessonQuiz from './LessonQuiz';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -19,6 +20,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 }) => {
   const [lessonInfoCollapsed, setLessonInfoCollapsed] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -28,6 +30,21 @@ const LessonView: React.FC<LessonViewProps> = ({
   const toggleLessonInfo = () => {
     if (isTransitioning) return;
     setLessonInfoCollapsed(!lessonInfoCollapsed);
+  };
+
+  const handleStartQuiz = () => {
+    if (isTransitioning) return;
+    setShowQuiz(true);
+  };
+
+  const handleCloseQuiz = () => {
+    setShowQuiz(false);
+  };
+
+  const handleQuizComplete = (score: number) => {
+    console.log(`Quiz completed with score: ${score}%`);
+    // Here you would typically update the lesson completion status
+    // and award coins/badges based on the score
   };
 
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
@@ -153,6 +170,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Test Knowledge Button */}
               <button 
+                onClick={handleStartQuiz}
                 disabled={isTransitioning}
                 className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
@@ -227,68 +245,95 @@ const LessonView: React.FC<LessonViewProps> = ({
         }`} />
 
         {/* Right Column - Video Player */}
-        <div className={`transition-all duration-300 ease-in-out ${
+        <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
           lessonInfoCollapsed ? 'flex-1' : 'w-[70%]'
         }`}>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
-            <div className="space-y-6 pb-6">
-              {/* Video Player */}
-              <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
+          {/* Main Video Content */}
+          <div className={`h-full transition-transform duration-700 ease-in-out ${
+            showQuiz ? '-translate-x-full' : 'translate-x-0'
+          }`}>
+            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
+              <div className="space-y-6 pb-6">
+                {/* Video Player */}
+                <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                    <div className="text-right text-sm text-gray-500 mt-4">
+                      {lesson.duration}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-gray-500 mt-4">
-                    {lesson.duration}
-                  </div>
+                  
+                  {/* Test Knowledge Floating Button */}
+                  <button 
+                    onClick={handleStartQuiz}
+                    disabled={isTransitioning}
+                    className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    Test Knowledge
+                  </button>
                 </div>
-              </div>
 
-              {/* Video Transcript */}
-              {lesson.transcript && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Video Transcript</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <span className="text-sm text-gray-500 min-w-[3rem]">0:00</span>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {lesson.transcript}
-                        </p>
+                {/* Video Transcript */}
+                {lesson.transcript && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Video Transcript</h3>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <span className="text-sm text-gray-500 min-w-[3rem]">0:00</span>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {lesson.transcript}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Lesson Navigation */}
-              <div className="flex gap-3">
-                <button 
-                  disabled={isTransitioning || currentLessonIndex === 0}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous Lesson
-                </button>
-                {nextLesson ? (
-                  <button 
-                    disabled={isTransitioning}
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next Lesson
-                  </button>
-                ) : (
-                  <button 
-                    onClick={handleBack}
-                    disabled={isTransitioning}
-                    className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Complete Module
-                  </button>
                 )}
+
+                {/* Lesson Navigation */}
+                <div className="flex gap-3">
+                  <button 
+                    disabled={isTransitioning || currentLessonIndex === 0}
+                    className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous Lesson
+                  </button>
+                  {nextLesson ? (
+                    <button 
+                      disabled={isTransitioning}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next Lesson
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleBack}
+                      disabled={isTransitioning}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Complete Module
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Quiz Overlay */}
+          <div className={`absolute top-0 left-0 w-full h-full transition-transform duration-700 ease-in-out ${
+            showQuiz ? 'translate-x-0' : 'translate-x-full'
+          }`}>
+            <LessonQuiz
+              lesson={lesson}
+              module={module}
+              isVisible={showQuiz}
+              onClose={handleCloseQuiz}
+              onComplete={handleQuizComplete}
+            />
           </div>
         </div>
       </div>
