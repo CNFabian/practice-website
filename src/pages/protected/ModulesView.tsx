@@ -480,29 +480,25 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 </div>
               )}
 
-              <div className="mr-4 pb-6">
-                {selectedModuleData ? (
-                  <div className="space-y-4 px-1">
-                    {selectedModuleData.lessons.map((lesson, index) => (
-                      <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
-                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
-                          <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
-                          <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
+<div className="mr-4 pb-6">
+              {selectedModuleData ? (
+                <div className="space-y-4 px-1">
+                  {selectedModuleData.lessons.map((lesson, index) => (
+                    <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
+                      <div className="flex gap-4 items-start">
+                        <div className="flex-shrink-0">
+                          <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-20 sm:w-24 md:w-28 lg:w-32 xl:w-36 2xl:w-40">
+                            <img 
+                              src={lesson.image} 
+                              alt={lesson.title} 
+                              className="object-contain w-full h-full" 
+                              style={{ imageRendering: 'crisp-edges' }}
+                            />
+                          </div>
                         </div>
 
-                        <div className="flex gap-4 items-start">
-                          <div className="flex-shrink-0">
-                            <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-20 sm:w-24 md:w-28 lg:w-32 xl:w-36 2xl:w-40">
-                              <img 
-                                src={lesson.image} 
-                                alt={lesson.title} 
-                                className="object-contain w-full h-full" 
-                                style={{ imageRendering: 'crisp-edges' }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex-1 pr-12">
+                        <div className="flex-1 flex justify-between items-start">
+                          <div className="flex-1 pr-4">
                             <h4 className="text-base font-semibold text-gray-900 mb-1">
                               {lesson.title}
                             </h4>
@@ -513,18 +509,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             <p className="text-xs text-gray-600 mb-4 leading-relaxed">
                               {lesson.description}
                             </p>
-                            
-                            <div className="flex gap-3 max-w-xs">
+                          </div>
+                          
+                          <div className="flex flex-col items-end gap-3">
+                            <div className="flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
+                              <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
+                              <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
+                            </div>
+                            <div className="flex flex-col gap-2">
                               <button 
                                 onClick={() => handleLessonStart(lesson, selectedModuleData)}
                                 disabled={isTransitioning}
-                                className="bg-blue-600 flex-1 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                className="bg-blue-600 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                               >
                                 Start Lesson
                               </button>
                               <button 
                                 disabled={isTransitioning}
-                                className="bg-gray-500 flex-1 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                className="bg-gray-500 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                               >
                                 Lesson Quiz
                               </button>
@@ -532,14 +534,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center mx-1">
-                    <p className="text-gray-500">Select a module to view lessons and details</p>
-                  </div>
-                )}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center mx-1">
+                  <p className="text-gray-500">Select a module to view lessons and details</p>
+                </div>
+              )}
+            </div>
             </div>
           </div>
         </div>
