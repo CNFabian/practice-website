@@ -266,15 +266,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {lesson.duration}
                     </div>
                   </div>
-                  
-                  {/* Test Knowledge Floating Button */}
-                  <button 
-                    onClick={handleStartQuiz}
-                    disabled={isTransitioning}
-                    className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    Test Knowledge
-                  </button>
                 </div>
 
                 {/* Video Transcript */}

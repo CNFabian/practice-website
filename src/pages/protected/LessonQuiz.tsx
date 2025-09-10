@@ -9,6 +9,15 @@ interface QuizQuestion {
     text: string;
     isCorrect: boolean;
   }[];
+  explanation: {
+    correct: string;
+    incorrect: {
+      [key: string]: {
+        why_wrong: string;
+        confusion_reason: string;
+      };
+    };
+  };
 }
 
 interface LessonQuizProps {
@@ -19,7 +28,7 @@ interface LessonQuizProps {
   onComplete: (score: number) => void;
 }
 
-// Sample quiz data - in a real app this would come from props or API
+// Sample quiz data with explanations
 const sampleQuestions: QuizQuestion[] = [
   {
     id: 1,
@@ -29,7 +38,24 @@ const sampleQuestions: QuizQuestion[] = [
       { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
       { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
       { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
-    ]
+    ],
+    explanation: {
+      correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
+      incorrect: {
+        'a': {
+          why_wrong: "Looking at houses online is premature without knowing your budget first.",
+          confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes."
+        },
+        'c': {
+          why_wrong: "Talking to a real estate agent should come after you know your financial limits.",
+          confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints."
+        },
+        'd': {
+          why_wrong: "Pre-approval comes after you've assessed what you can afford.",
+          confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders."
+        }
+      }
+    }
   },
   {
     id: 2,
@@ -39,7 +65,24 @@ const sampleQuestions: QuizQuestion[] = [
       { id: 'b', text: 'Complete flexibility to move anytime', isCorrect: true },
       { id: 'c', text: 'Tax deductions on mortgage interest', isCorrect: false },
       { id: 'd', text: 'Potential property value appreciation', isCorrect: false }
-    ]
+    ],
+    explanation: {
+      correct: "Homeownership actually reduces flexibility to move since selling a home takes time and involves transaction costs.",
+      incorrect: {
+        'a': {
+          why_wrong: "Building equity is indeed a major benefit of homeownership.",
+          confusion_reason: "You might have thought this wasn't a benefit, but equity building is one of the primary financial advantages."
+        },
+        'c': {
+          why_wrong: "Mortgage interest deductions are a legitimate tax benefit for homeowners.",
+          confusion_reason: "Tax benefits are often overlooked, but they're real advantages of homeownership."
+        },
+        'd': {
+          why_wrong: "Property appreciation is a potential benefit, though not guaranteed.",
+          confusion_reason: "While not guaranteed, property appreciation has historically been a benefit for many homeowners."
+        }
+      }
+    }
   },
   {
     id: 3,
@@ -49,7 +92,24 @@ const sampleQuestions: QuizQuestion[] = [
       { id: 'b', text: 'Your creditworthiness and payment history', isCorrect: true },
       { id: 'c', text: 'Your savings account balance', isCorrect: false },
       { id: 'd', text: 'Your employment status', isCorrect: false }
-    ]
+    ],
+    explanation: {
+      correct: "Credit scores are calculated based on your payment history, credit utilization, length of credit history, and types of credit accounts.",
+      incorrect: {
+        'a': {
+          why_wrong: "Income is not directly factored into credit score calculations.",
+          confusion_reason: "Many people think higher income means better credit, but credit scores focus on how you manage borrowed money."
+        },
+        'c': {
+          why_wrong: "Savings account balances don't affect your credit score.",
+          confusion_reason: "While savings are important for financial health, credit scores only track borrowed money management."
+        },
+        'd': {
+          why_wrong: "Employment status isn't a direct factor in credit scoring.",
+          confusion_reason: "Employment matters for loan approval but doesn't directly impact your credit score calculation."
+        }
+      }
+    }
   },
   {
     id: 4,
@@ -59,7 +119,24 @@ const sampleQuestions: QuizQuestion[] = [
       { id: 'b', text: '43% or lower', isCorrect: true },
       { id: 'c', text: '60% or lower', isCorrect: false },
       { id: 'd', text: '35% or lower', isCorrect: false }
-    ]
+    ],
+    explanation: {
+      correct: "The 43% debt-to-income ratio is the qualified mortgage (QM) standard set by the Consumer Financial Protection Bureau.",
+      incorrect: {
+        'a': {
+          why_wrong: "50% is too high for most mortgage approvals.",
+          confusion_reason: "This might seem reasonable, but lenders prefer lower ratios to ensure borrowers can handle payments."
+        },
+        'c': {
+          why_wrong: "60% is far too high and would likely result in loan denial.",
+          confusion_reason: "This ratio would indicate severe over-leveraging and payment difficulties."
+        },
+        'd': {
+          why_wrong: "While 35% is conservative and good, 43% is the official threshold.",
+          confusion_reason: "You're thinking conservatively, which is smart, but the official guideline is slightly higher."
+        }
+      }
+    }
   },
   {
     id: 5,
@@ -69,7 +146,24 @@ const sampleQuestions: QuizQuestion[] = [
       { id: 'b', text: 'What the bank will lend you', isCorrect: false },
       { id: 'c', text: 'Your monthly budget and expenses', isCorrect: true },
       { id: 'd', text: 'Current interest rates', isCorrect: false }
-    ]
+    ],
+    explanation: {
+      correct: "Your monthly budget determines what you can actually afford to pay without compromising your other financial goals and needs.",
+      incorrect: {
+        'a': {
+          why_wrong: "Wanting a house doesn't mean you can afford it financially.",
+          confusion_reason: "Emotional desires should be balanced with financial reality to avoid overextending yourself."
+        },
+        'b': {
+          why_wrong: "Banks may approve you for more than you can comfortably afford.",
+          confusion_reason: "Banks focus on minimum qualification requirements, not your overall financial well-being."
+        },
+        'd': {
+          why_wrong: "Interest rates affect costs but aren't the primary factor in affordability.",
+          confusion_reason: "While rates matter, your underlying budget capacity is more fundamental to affordability."
+        }
+      }
+    }
   }
 ];
 
@@ -82,12 +176,14 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
 
   const handleAnswerSelect = (optionId: string) => {
     setSelectedAnswer(optionId);
+    setShowFeedback(true);
   };
 
   const handleNext = () => {
@@ -98,6 +194,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       if (currentQuestion < sampleQuestions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
         setSelectedAnswer(answers[currentQuestion + 1] || null);
+        setShowFeedback(false);
       } else {
         // Calculate score and show results
         const correctAnswers = sampleQuestions.reduce((acc, question, index) => {
@@ -117,6 +214,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
       setSelectedAnswer(answers[currentQuestion - 1] || null);
+      setShowFeedback(!!answers[currentQuestion - 1]);
     }
   };
 
@@ -136,34 +234,31 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const currentQuestionData = sampleQuestions[currentQuestion];
+  const correctAnswer = currentQuestionData.options.find(opt => opt.isCorrect);
+  const isCorrectAnswer = selectedAnswer === correctAnswer?.id;
 
   if (!isVisible) return null;
 
   return (
     <div className={`absolute top-0 right-0 h-full bg-white transition-all duration-700 ease-in-out z-20 ${
-      isVisible ? 'w-full opacity-100 translate-x-0' : 'w-full opacity-0 translate-x-full'
-    }`}>
-      <div className="h-full flex flex-col p-3 overflow-y-auto">
+      isVisible ? 'w-full' : 'w-0'
+    } overflow-hidden`}>
+      <div className="p-4 h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors text-xs"
+            className="text-gray-600 hover:text-gray-800 transition-colors"
           >
-            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Lesson
-          </button>
-          
-          <button
-            onClick={onClose}
-            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-          >
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          <div className="text-center">
+            <h1 className="text-sm font-semibold text-gray-900">Lesson Quiz</h1>
+            <p className="text-xs text-gray-600">{module.title}</p>
+          </div>
+          <div className="w-6"></div>
         </div>
 
         {!showResults ? (
@@ -179,7 +274,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               {/* Illustration */}
               <div className="mb-4 flex-shrink-0">
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center relative">
-                  {/* Person thinking with question marks */}
                   <div className="text-2xl">🤔</div>
                   <div className="absolute -top-1 -left-1 text-blue-400 text-lg">❓</div>
                   <div className="absolute -top-2 right-1 text-blue-300 text-sm">❓</div>
@@ -199,7 +293,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                   <button
                     key={option.id}
                     onClick={() => handleAnswerSelect(option.id)}
-                    className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 ${
+                    disabled={showFeedback}
+                    className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
                       selectedAnswer === option.id 
                         ? getOptionColor(option.id) + ' ring-2 ring-white ring-opacity-50 scale-105' 
                         : getOptionColor(option.id) + ' opacity-80'
@@ -209,6 +304,48 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                   </button>
                 ))}
               </div>
+
+              {/* Feedback Box */}
+              {showFeedback && selectedAnswer && (
+                <div className={`w-full p-3 rounded-lg mb-4 ${
+                  isCorrectAnswer ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      isCorrectAnswer ? 'bg-green-500' : 'bg-red-500'
+                    }`}>
+                      {isCorrectAnswer ? (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <h3 className={`text-sm font-semibold ${
+                      isCorrectAnswer ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {isCorrectAnswer ? 'Correct!' : 'Incorrect'}
+                    </h3>
+                  </div>
+                  
+                  <div className={`text-xs ${
+                    isCorrectAnswer ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {isCorrectAnswer ? (
+                      <p>{currentQuestionData.explanation.correct}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p><strong>Why this is wrong:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.why_wrong}</p>
+                        <p><strong>Why you might have chosen this:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.confusion_reason}</p>
+                        <p><strong>Correct answer:</strong> {correctAnswer?.text} - {currentQuestionData.explanation.correct}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Navigation */}
@@ -277,6 +414,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                 onClick={() => {
                   setCurrentQuestion(0);
                   setSelectedAnswer(null);
+                  setShowFeedback(false);
                   setAnswers({});
                   setShowResults(false);
                   setScore(0);
