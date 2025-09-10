@@ -109,16 +109,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
       const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
       
-      const currentScrollTop = container.scrollTop;
-      const moduleVisibleTop = moduleTop - currentScrollTop;
-      const moduleVisibleBottom = moduleVisibleTop + cardHeight;
-      
-      const isReasonablyVisible = moduleVisibleTop > stickyHeaderHeight + 50 && 
-                                  moduleVisibleBottom < containerHeight - 50;
-      
-      if (!isReasonablyVisible) {
-        smoothScrollTo(container, finalScrollTop, 600);
-      }
+      // Always use smooth animation for subsequent selections
+      smoothScrollTo(container, finalScrollTop, 400);
     } else {
       const moduleElement = moduleRefs.current[selectedModuleId];
       if (moduleElement) {
@@ -140,7 +132,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             (availableHeight / 2) + 
             (moduleHeight / 2);
           
-          smoothScrollTo(container, Math.max(0, targetScrollTop), 600);
+          smoothScrollTo(container, Math.max(0, targetScrollTop), 400);
         }
       }
     }
@@ -149,10 +141,42 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
     
+    const wasCollapsed = sidebarCollapsed;
+    const previouslySelected = selectedModuleId;
+    
     setSelectedModuleId(moduleId);
     
-    if (sidebarCollapsed) {
+    if (wasCollapsed) {
+      // First selection - position immediately without animation
       setSidebarCollapsed(false);
+      
+      // Calculate and apply scroll position immediately for the initial transition
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const filteredModules = modulesData.filter(module => 
+          activeTab === 'All' || module.status === activeTab
+        );
+        
+        const selectedIndex = filteredModules.findIndex(m => m.id === moduleId);
+        if (selectedIndex !== -1) {
+          const cardHeight = 220; // Compact layout height
+          const stickyHeaderHeight = 120;
+          const containerHeight = container.clientHeight;
+          const availableHeight = containerHeight - stickyHeaderHeight;
+          
+          const moduleTop = selectedIndex * cardHeight;
+          const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
+          const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
+          
+          // Apply scroll position immediately without animation
+          container.scrollTop = finalScrollTop;
+        }
+      }
+    } else if (previouslySelected !== moduleId) {
+      // Subsequent selection in compact mode - smooth scroll to new position
+      setTimeout(() => {
+        scrollToSelectedModule();
+      }, 50);
     }
 
     if (layoutTimeoutRef.current) {
@@ -173,11 +197,41 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   useEffect(() => {
+    // Only handle scroll adjustments for layout changes, not module selections
+    // Module selections are now handled directly in handleModuleSelect
     if (selectedModuleId && !sidebarCollapsed && showCompactLayout) {
-      const timer = setTimeout(scrollToSelectedModule, 300);
+      // Small delay to ensure layout has settled after showCompactLayout becomes true
+      const timer = setTimeout(() => {
+        // Only scroll if we're not in the middle of a transition and need adjustment
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          const filteredModules = modulesData.filter(module => 
+            activeTab === 'All' || module.status === activeTab
+          );
+          
+          const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
+          if (selectedIndex !== -1) {
+            const cardHeight = 220;
+            const stickyHeaderHeight = 120;
+            const containerHeight = container.clientHeight;
+            const availableHeight = containerHeight - stickyHeaderHeight;
+            
+            const moduleTop = selectedIndex * cardHeight;
+            const currentModuleTop = moduleTop - container.scrollTop;
+            const idealTop = (availableHeight / 2) + stickyHeaderHeight - (cardHeight / 2);
+            
+            // Only adjust if significantly off-center (more than 50px)
+            if (Math.abs(currentModuleTop - idealTop) > 50) {
+              const targetScrollTop = moduleTop - idealTop;
+              const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
+              smoothScrollTo(container, finalScrollTop, 300);
+            }
+          }
+        }
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [selectedModuleId, sidebarCollapsed, showCompactLayout]);
+  }, [showCompactLayout]); // Removed selectedModuleId and sidebarCollapsed dependencies
 
   useEffect(() => {
     if (!selectedModuleId) {
