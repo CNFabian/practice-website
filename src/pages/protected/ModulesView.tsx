@@ -261,10 +261,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       : 'scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 -mr-16'
   }`;
 
-  const scrollContainerStyle = {
+  const scrollContainerStyle: React.CSSProperties = {
     scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'none' : 'thin',
     msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
-    scrollBehavior: 'auto'
   };
 
   return (
@@ -493,7 +492,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
                         <div className="flex gap-4 items-start">
                           <div className="flex-shrink-0">
-                            <div className="aspect-square w-28 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden">
+                            <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-20 sm:w-24 md:w-28 lg:w-32 xl:w-36 2xl:w-40">
                               <img 
                                 src={lesson.image} 
                                 alt={lesson.title} 
@@ -515,17 +514,17 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                               {lesson.description}
                             </p>
                             
-                            <div className="flex gap-2">
+                            <div className="flex gap-3 max-w-xs">
                               <button 
                                 onClick={() => handleLessonStart(lesson, selectedModuleData)}
                                 disabled={isTransitioning}
-                                className="bg-blue-600 w-full mx-5 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-blue-600 flex-1 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                               >
                                 Start Lesson
                               </button>
                               <button 
                                 disabled={isTransitioning}
-                                className="bg-gray-500 w-full mx-5 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-gray-500 flex-1 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                               >
                                 Lesson Quiz
                               </button>
