@@ -266,6 +266,8 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {lesson.duration}
                     </div>
                   </div>
+                  
+    
                 </div>
 
                 {/* Video Transcript */}

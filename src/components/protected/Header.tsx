@@ -53,7 +53,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="mx-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
+    <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
       <div className="flex items-center justify-between h-full">
         {/* Left Section - Logo and Greeting */}
         <div className="flex items-center space-x-3">
