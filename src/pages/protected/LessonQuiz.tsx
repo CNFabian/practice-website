@@ -168,7 +168,6 @@ const sampleQuestions: QuizQuestion[] = [
 ];
 
 const LessonQuiz: React.FC<LessonQuizProps> = ({
-  lesson,
   module,
   isVisible,
   onClose,
@@ -180,6 +179,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleAnswerSelect = (optionId: string) => {
     setSelectedAnswer(optionId);
@@ -192,9 +192,13 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       setAnswers(newAnswers);
       
       if (currentQuestion < sampleQuestions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-        setSelectedAnswer(answers[currentQuestion + 1] || null);
-        setShowFeedback(false);
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setCurrentQuestion(currentQuestion + 1);
+          setSelectedAnswer(answers[currentQuestion + 1] || null);
+          setShowFeedback(false);
+          setIsTransitioning(false);
+        }, 300);
       } else {
         // Calculate score and show results
         const correctAnswers = sampleQuestions.reduce((acc, question, index) => {
@@ -212,9 +216,13 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-      setSelectedAnswer(answers[currentQuestion - 1] || null);
-      setShowFeedback(!!answers[currentQuestion - 1]);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion - 1);
+        setSelectedAnswer(answers[currentQuestion - 1] || null);
+        setShowFeedback(!!answers[currentQuestion - 1]);
+        setIsTransitioning(false);
+      }, 300);
     }
   };
 
@@ -243,7 +251,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     <div className={`absolute top-0 right-0 h-full bg-white transition-all duration-700 ease-in-out z-20 ${
       isVisible ? 'w-full' : 'w-0'
     } overflow-hidden`}>
-      <div className="p-4 h-full flex flex-col">
+      <div className="p-4 h-full flex flex-col relative">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <button
@@ -262,93 +270,151 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
         </div>
 
         {!showResults ? (
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Quiz Header */}
-            <div className="text-center mb-4 flex-shrink-0">
-              <h1 className="text-lg font-bold text-gray-900 mb-1">Test Your Knowledge</h1>
-              <p className="text-xs text-gray-600">Question {currentQuestion + 1} out of {sampleQuestions.length}</p>
-            </div>
+          <>
+            <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+              {/* Current Question Container */}
+              <div className={`absolute inset-0 flex flex-col transition-transform duration-300 ease-in-out ${
+                isTransitioning ? '-translate-x-full' : 'translate-x-0'
+              }`}>
+                {/* Quiz Header */}
+                <div className="text-center mb-4 flex-shrink-0">
+                  <h1 className="text-lg font-bold text-gray-900 mb-1">Test Your Knowledge</h1>
+                  <p className="text-xs text-gray-600">Question {currentQuestion + 1} out of {sampleQuestions.length}</p>
+                </div>
 
-            {/* Question Content */}
-            <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-              {/* Illustration */}
-              <div className="mb-4 flex-shrink-0">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center relative">
-                  <div className="text-2xl">🤔</div>
-                  <div className="absolute -top-1 -left-1 text-blue-400 text-lg">❓</div>
-                  <div className="absolute -top-2 right-1 text-blue-300 text-sm">❓</div>
+                {/* Question Content */}
+                <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+                  {/* Illustration */}
+                  <div className="mb-4 flex-shrink-0">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center relative">
+                      <div className="text-2xl">🤔</div>
+                      <div className="absolute -top-1 -left-1 text-blue-400 text-lg">❓</div>
+                      <div className="absolute -top-2 right-1 text-blue-300 text-sm">❓</div>
+                    </div>
+                  </div>
+
+                  {/* Question */}
+                  <div className="text-center mb-4 flex-shrink-0">
+                    <h2 className="text-sm font-semibold text-gray-900 mb-3 leading-tight px-2">
+                      {currentQuestionData.question}
+                    </h2>
+                  </div>
+
+                  {/* Answer Options */}
+                  <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
+                    {currentQuestionData.options.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleAnswerSelect(option.id)}
+                        disabled={showFeedback}
+                        className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
+                          selectedAnswer === option.id 
+                            ? getOptionColor(option.id) + ' ring-2 ring-white ring-opacity-50 scale-105' 
+                            : getOptionColor(option.id) + ' opacity-80'
+                        }`}
+                      >
+                        <span className="text-xs leading-tight">{option.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Feedback Overlay - Positioned absolutely to drop down from top */}
+                <div className={`absolute top-0 left-0 right-0 z-30 transition-all duration-500 ease-in-out transform ${
+                  showFeedback && selectedAnswer
+                    ? 'translate-y-0 opacity-100' 
+                    : '-translate-y-full opacity-0'
+                }`}>
+                  <div className={`mx-4 mt-16 p-4 rounded-lg shadow-lg backdrop-blur-sm ${
+                    isCorrectAnswer 
+                      ? 'bg-green-50/95 border border-green-200' 
+                      : 'bg-red-50/95 border border-red-200'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        isCorrectAnswer ? 'bg-green-500' : 'bg-red-500'
+                      }`}>
+                        {isCorrectAnswer ? (
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <h3 className={`text-sm font-semibold ${
+                        isCorrectAnswer ? 'text-green-800' : 'text-red-800'
+                      }`}>
+                        {isCorrectAnswer ? 'Correct!' : 'Incorrect'}
+                      </h3>
+                    </div>
+                    
+                    <div className={`text-xs ${
+                      isCorrectAnswer ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {isCorrectAnswer ? (
+                        <p>{currentQuestionData.explanation.correct}</p>
+                      ) : (
+                        selectedAnswer && (
+                          <div className="space-y-2">
+                            <p><strong>Why this is wrong:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.why_wrong}</p>
+                            <p><strong>Why you might have chosen this:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.confusion_reason}</p>
+                            <p><strong>Correct answer:</strong> {correctAnswer?.text} - {currentQuestionData.explanation.correct}</p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Question */}
-              <div className="text-center mb-4 flex-shrink-0">
-                <h2 className="text-sm font-semibold text-gray-900 mb-3 leading-tight px-2">
-                  {currentQuestionData.question}
-                </h2>
-              </div>
-
-              {/* Answer Options */}
-              <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
-                {currentQuestionData.options.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleAnswerSelect(option.id)}
-                    disabled={showFeedback}
-                    className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
-                      selectedAnswer === option.id 
-                        ? getOptionColor(option.id) + ' ring-2 ring-white ring-opacity-50 scale-105' 
-                        : getOptionColor(option.id) + ' opacity-80'
-                    }`}
-                  >
-                    <span className="text-xs leading-tight">{option.text}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Feedback Box */}
-              {showFeedback && selectedAnswer && (
-                <div className={`w-full p-3 rounded-lg mb-4 ${
-                  isCorrectAnswer ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      isCorrectAnswer ? 'bg-green-500' : 'bg-red-500'
-                    }`}>
-                      {isCorrectAnswer ? (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                    <h3 className={`text-sm font-semibold ${
-                      isCorrectAnswer ? 'text-green-800' : 'text-red-800'
-                    }`}>
-                      {isCorrectAnswer ? 'Correct!' : 'Incorrect'}
-                    </h3>
+              {/* Next Question Container (slides in from right) */}
+              {isTransitioning && currentQuestion < sampleQuestions.length - 1 && (
+                <div className="absolute top-0 left-0 right-0 bottom-16 flex flex-col translate-x-full transition-transform duration-300 ease-in-out">
+                  {/* Quiz Header */}
+                  <div className="text-center mb-4 flex-shrink-0">
+                    <h1 className="text-lg font-bold text-gray-900 mb-1">Test Your Knowledge</h1>
+                    <p className="text-xs text-gray-600">Question {currentQuestion + 2} out of {sampleQuestions.length}</p>
                   </div>
-                  
-                  <div className={`text-xs ${
-                    isCorrectAnswer ? 'text-green-700' : 'text-red-700'
-                  }`}>
-                    {isCorrectAnswer ? (
-                      <p>{currentQuestionData.explanation.correct}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <p><strong>Why this is wrong:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.why_wrong}</p>
-                        <p><strong>Why you might have chosen this:</strong> {currentQuestionData.explanation.incorrect[selectedAnswer]?.confusion_reason}</p>
-                        <p><strong>Correct answer:</strong> {correctAnswer?.text} - {currentQuestionData.explanation.correct}</p>
+
+                  {/* Question Content */}
+                  <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+                    {/* Illustration */}
+                    <div className="mb-4 flex-shrink-0">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center relative">
+                        <div className="text-2xl">🤔</div>
+                        <div className="absolute -top-1 -left-1 text-blue-400 text-lg">❓</div>
+                        <div className="absolute -top-2 right-1 text-blue-300 text-sm">❓</div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Question */}
+                    <div className="text-center mb-4 flex-shrink-0">
+                      <h2 className="text-sm font-semibold text-gray-900 mb-3 leading-tight px-2">
+                        {sampleQuestions[currentQuestion + 1]?.question}
+                      </h2>
+                    </div>
+
+                    {/* Answer Options */}
+                    <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
+                      {sampleQuestions[currentQuestion + 1]?.options.map((option) => (
+                        <button
+                          key={option.id}
+                          disabled
+                          className={`p-2 rounded-lg text-white font-medium ${getOptionColor(option.id)} opacity-80`}
+                        >
+                          <span className="text-xs leading-tight">{option.text}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Outside of sliding containers */}
             <div className="flex justify-between items-center flex-shrink-0 mt-2">
               <button
                 onClick={handlePrevious}
@@ -381,7 +447,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                 {currentQuestion === sampleQuestions.length - 1 ? 'Finish' : 'Next'}
               </button>
             </div>
-          </div>
+          </>
         ) : (
           /* Results Screen */
           <div className="flex-1 flex flex-col items-center justify-center text-center">
