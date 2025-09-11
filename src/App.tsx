@@ -26,6 +26,7 @@ import {
   HelpPage,
   SettingsPage
 } from './pages'
+import { ModuleStateProvider } from './utils/ModuleStateContext'
 
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
@@ -76,7 +77,11 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<OverviewPage />} />
-            <Route path="modules" element={<ModulesPage />} />
+            <Route path="modules" element={
+              <ModuleStateProvider>
+                <ModulesPage />
+              </ModuleStateProvider>
+              } />
             <Route path="saved" element={<SavedPage />} />
             <Route path="rewards" element={<RewardsPage />} />
             <Route path="badges" element={<BadgesPage />} />
