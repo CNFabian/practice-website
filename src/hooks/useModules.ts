@@ -12,7 +12,9 @@ import {
   markLessonCompleted,
   startQuiz,
   selectQuizAnswer,
+  startQuizTransition,
   nextQuizQuestion,
+  startPreviousQuizTransition,
   previousQuizQuestion,
   completeQuiz,
   resetQuiz,
@@ -69,12 +71,22 @@ export const useModules = () => {
     dispatch(selectQuizAnswer({ questionIndex, answer }))
   }, [dispatch])
 
+  // Handle next question with proper transition
   const handleNextQuestion = useCallback(() => {
-    dispatch(nextQuizQuestion())
+    dispatch(startQuizTransition())
+    // Use setTimeout outside of reducer to handle the transition delay
+    setTimeout(() => {
+      dispatch(nextQuizQuestion())
+    }, 300)
   }, [dispatch])
 
+  // Handle previous question with proper transition
   const handlePreviousQuestion = useCallback(() => {
-    dispatch(previousQuizQuestion())
+    dispatch(startPreviousQuizTransition())
+    // Use setTimeout outside of reducer to handle the transition delay
+    setTimeout(() => {
+      dispatch(previousQuizQuestion())
+    }, 300)
   }, [dispatch])
 
   const handleCompleteQuiz = useCallback((lessonId: number, score: number) => {
@@ -135,14 +147,12 @@ export const useModules = () => {
   return {
     // State
     ...moduleState,
-    
-    // Computed values
     currentModule,
     currentLesson,
     currentLessonProgress,
     currentModuleProgress,
     
-    // Navigation actions
+    // Navigation
     goToModules,
     goToLesson,
     goToQuiz,
@@ -155,7 +165,7 @@ export const useModules = () => {
     updateProgress,
     markCompleted,
     
-    // Quiz actions
+    // Quiz actions - using the proper method names expected by components
     startQuiz: handleStartQuiz,
     selectAnswer: handleSelectAnswer,
     nextQuestion: handleNextQuestion,
@@ -164,7 +174,7 @@ export const useModules = () => {
     resetQuiz: handleResetQuiz,
     closeQuiz: handleCloseQuiz,
     
-    // UI state actions
+    // UI state
     toggleSidebar,
     toggleCompactLayout,
     changeActiveTab,
@@ -172,8 +182,6 @@ export const useModules = () => {
     // Error handling
     setError: handleSetError,
     clearError: handleClearError,
-    setLoading: handleSetLoading,
+    setLoading: handleSetLoading
   }
 }
-
-export default useModules

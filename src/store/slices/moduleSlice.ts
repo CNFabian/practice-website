@@ -143,14 +143,76 @@ const moduleSlice = createSlice({
       }
     },
     
-    // Module data actions
     setModules: (state, action: PayloadAction<Module[]>) => {
       state.modules = action.payload;
-      // Initialize module progress for new modules
-      action.payload.forEach(module => {
-        if (!state.moduleProgress[module.id]) {
-          state.moduleProgress[module.id] = {
-            moduleId: module.id,
+    },
+    
+    // Progress tracking
+    updateLessonProgress: (state, action: PayloadAction<{
+      lessonId: number;
+      watchProgress?: number;
+      timeSpent?: number;
+    }>) => {
+      const { lessonId, watchProgress, timeSpent } = action.payload;
+      
+      if (!state.lessonProgress[lessonId]) {
+        state.lessonProgress[lessonId] = {
+          lessonId,
+          moduleId: state.selectedModuleId || 0,
+          completed: false,
+          watchProgress: 0,
+          quizCompleted: false,
+          quizScore: null,
+          timeSpent: 0,
+          lastAccessed: new Date().toISOString()
+        };
+      }
+      
+      if (watchProgress !== undefined) {
+        state.lessonProgress[lessonId].watchProgress = watchProgress;
+      }
+      
+      if (timeSpent !== undefined) {
+        state.lessonProgress[lessonId].timeSpent = timeSpent;
+      }
+      
+      state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
+    },
+    
+    markLessonCompleted: (state, action: PayloadAction<{
+      lessonId: number;
+      moduleId: number;
+      quizScore?: number;
+    }>) => {
+      const { lessonId, moduleId, quizScore } = action.payload;
+      
+      if (!state.lessonProgress[lessonId]) {
+        state.lessonProgress[lessonId] = {
+          lessonId,
+          moduleId,
+          completed: false,
+          watchProgress: 0,
+          quizCompleted: false,
+          quizScore: null,
+          timeSpent: 0,
+          lastAccessed: new Date().toISOString()
+        };
+      }
+      
+      state.lessonProgress[lessonId].completed = true;
+      state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
+      
+      if (quizScore !== undefined) {
+        state.lessonProgress[lessonId].quizCompleted = true;
+        state.lessonProgress[lessonId].quizScore = quizScore;
+      }
+      
+      // Update module progress
+      const module = state.modules.find(m => m.id === moduleId);
+      if (module) {
+        if (!state.moduleProgress[moduleId]) {
+          state.moduleProgress[moduleId] = {
+            moduleId,
             lessonsCompleted: 0,
             totalLessons: module.lessons.length,
             overallProgress: 0,
@@ -158,67 +220,15 @@ const moduleSlice = createSlice({
             lastAccessed: new Date().toISOString()
           };
         }
-      });
-    },
-    
-    // Progress tracking actions
-    updateLessonProgress: (state, action: PayloadAction<Partial<LessonProgress> & { lessonId: number }>) => {
-      const { lessonId, ...updates } = action.payload;
-      if (state.lessonProgress[lessonId]) {
-        state.lessonProgress[lessonId] = { ...state.lessonProgress[lessonId], ...updates };
-      }
-      
-      // Update module progress when lesson progress changes
-      const lesson = state.lessonProgress[lessonId];
-      if (lesson) {
-        const moduleId = lesson.moduleId;
+        
         const moduleProgress = state.moduleProgress[moduleId];
-        if (moduleProgress) {
-          const completedLessons = Object.values(state.lessonProgress)
-            .filter(lp => lp.moduleId === moduleId && lp.completed).length;
-          
-          moduleProgress.lessonsCompleted = completedLessons;
-          moduleProgress.overallProgress = Math.round((completedLessons / moduleProgress.totalLessons) * 100);
-          moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
-                                 completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
-          moduleProgress.lastAccessed = new Date().toISOString();
-        }
-      }
-    },
-    
-    markLessonCompleted: (state, action: PayloadAction<{ lessonId: number; moduleId: number; quizScore?: number }>) => {
-      const { lessonId, moduleId, quizScore } = action.payload;
-      
-      if (!state.lessonProgress[lessonId]) {
-        state.lessonProgress[lessonId] = {
-          lessonId,
-          moduleId,
-          completed: true,
-          watchProgress: 100,
-          quizCompleted: !!quizScore,
-          quizScore: quizScore || null,
-          timeSpent: 0,
-          lastAccessed: new Date().toISOString()
-        };
-      } else {
-        state.lessonProgress[lessonId].completed = true;
-        state.lessonProgress[lessonId].watchProgress = 100;
-        if (quizScore !== undefined) {
-          state.lessonProgress[lessonId].quizCompleted = true;
-          state.lessonProgress[lessonId].quizScore = quizScore;
-        }
-        state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
-      }
-      
-      // Update module progress
-      const moduleProgress = state.moduleProgress[moduleId];
-      if (moduleProgress) {
         const completedLessons = Object.values(state.lessonProgress)
-          .filter(lp => lp.moduleId === moduleId && lp.completed).length;
+          .filter(progress => progress.moduleId === moduleId && progress.completed).length;
         
         moduleProgress.lessonsCompleted = completedLessons;
         moduleProgress.overallProgress = Math.round((completedLessons / moduleProgress.totalLessons) * 100);
-        moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
+        moduleProgress.status = completedLessons === 0 ? 
+                               'Not Started' : 
                                completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
         moduleProgress.lastAccessed = new Date().toISOString();
       }
@@ -240,16 +250,18 @@ const moduleSlice = createSlice({
       state.quizState.answers[questionIndex] = answer;
     },
     
+    // Start transition for next question
+    startQuizTransition: (state) => {
+      state.quizState.isTransitioning = true;
+    },
+    
+    // Complete transition to next question
     nextQuizQuestion: (state) => {
       if (state.quizState.currentQuestion < state.quizState.questions.length - 1) {
-        state.quizState.isTransitioning = true;
-        
-        setTimeout(() => {
-          state.quizState.currentQuestion += 1;
-          state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
-          state.quizState.showFeedback = false;
-          state.quizState.isTransitioning = false;
-        }, 300);
+        state.quizState.currentQuestion += 1;
+        state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
+        state.quizState.showFeedback = false;
+        state.quizState.isTransitioning = false;
       } else {
         // Show results
         const correctAnswers = state.quizState.questions.filter((question, index) => {
@@ -259,19 +271,22 @@ const moduleSlice = createSlice({
         
         state.quizState.score = Math.round((correctAnswers / state.quizState.questions.length) * 100);
         state.quizState.showResults = true;
+        state.quizState.isTransitioning = false;
       }
     },
     
+    // Start transition for previous question
+    startPreviousQuizTransition: (state) => {
+      state.quizState.isTransitioning = true;
+    },
+    
+    // Complete transition to previous question  
     previousQuizQuestion: (state) => {
       if (state.quizState.currentQuestion > 0) {
-        state.quizState.isTransitioning = true;
-        
-        setTimeout(() => {
-          state.quizState.currentQuestion -= 1;
-          state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
-          state.quizState.showFeedback = !!state.quizState.selectedAnswer;
-          state.quizState.isTransitioning = false;
-        }, 300);
+        state.quizState.currentQuestion -= 1;
+        state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
+        state.quizState.showFeedback = !!state.quizState.selectedAnswer;
+        state.quizState.isTransitioning = false;
       }
     },
     
@@ -344,7 +359,9 @@ export const {
   markLessonCompleted,
   startQuiz,
   selectQuizAnswer,
+  startQuizTransition,
   nextQuizQuestion,
+  startPreviousQuizTransition,
   previousQuizQuestion,
   completeQuiz,
   resetQuiz,

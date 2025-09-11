@@ -49,7 +49,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const handleStartQuiz = () => {
     if (isTransitioning) return;
     
-    // Use the same sample questions structure but connect to Redux
+    // Expanded quiz questions for first module first lesson - all with complete explanation structures
     const sampleQuestions = [
       {
         id: 1,
@@ -67,6 +67,82 @@ const LessonView: React.FC<LessonViewProps> = ({
             'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
             'c': { why_wrong: "Talking to a real estate agent should come after you know your financial limits.", confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints." },
             'd': { why_wrong: "Pre-approval comes after you've assessed what you can afford.", confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders." }
+          }
+        }
+      },
+      {
+        id: 2,
+        question: "What percentage of your monthly income should typically go toward housing costs?",
+        options: [
+          { id: 'a', text: '20%', isCorrect: false },
+          { id: 'b', text: '28%', isCorrect: true },
+          { id: 'c', text: '35%', isCorrect: false },
+          { id: 'd', text: '40%', isCorrect: false }
+        ],
+        explanation: {
+          correct: "The 28% rule is a widely accepted guideline that helps ensure you can afford your housing costs while maintaining financial stability for other expenses.",
+          incorrect: {
+            'a': { why_wrong: "20% is too conservative for most people and may limit housing options unnecessarily.", confusion_reason: "While being conservative with money is good, 20% might be too restrictive in today's housing market." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "35% puts you at risk of being house poor with little money for other expenses.", confusion_reason: "This might seem reasonable if you really want a nice home, but it leaves little room for emergencies or other goals." },
+            'd': { why_wrong: "40% is dangerously high and could lead to financial stress.", confusion_reason: "This percentage would make it very difficult to save money or handle unexpected expenses." }
+          }
+        }
+      },
+      {
+        id: 3,
+        question: "What is the minimum recommended credit score for a conventional mortgage?",
+        options: [
+          { id: 'a', text: '580', isCorrect: false },
+          { id: 'b', text: '620', isCorrect: true },
+          { id: 'c', text: '680', isCorrect: false },
+          { id: 'd', text: '720', isCorrect: false }
+        ],
+        explanation: {
+          correct: "620 is typically the minimum credit score for a conventional mortgage, though higher scores get better interest rates.",
+          incorrect: {
+            'a': { why_wrong: "580 is the minimum for FHA loans, not conventional mortgages.", confusion_reason: "You might be thinking of FHA loans, which have lower credit requirements but come with mortgage insurance." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "680 is a good score but higher than the minimum required.", confusion_reason: "While 680 will get you better rates, you can qualify with a lower score." },
+            'd': { why_wrong: "720 is an excellent score but much higher than the minimum.", confusion_reason: "This score gets you the best rates, but you don't need it to qualify for a mortgage." }
+          }
+        }
+      },
+      {
+        id: 4,
+        question: "What does PMI stand for in home buying?",
+        options: [
+          { id: 'a', text: 'Personal Mortgage Insurance', isCorrect: false },
+          { id: 'b', text: 'Private Mortgage Insurance', isCorrect: true },
+          { id: 'c', text: 'Property Management Insurance', isCorrect: false },
+          { id: 'd', text: 'Primary Mortgage Investment', isCorrect: false }
+        ],
+        explanation: {
+          correct: "Private Mortgage Insurance protects the lender if you default on your loan. It's required when you put down less than 20%.",
+          incorrect: {
+            'a': { why_wrong: "It's Private, not Personal Mortgage Insurance.", confusion_reason: "The terms sound similar, but PMI specifically refers to Private Mortgage Insurance." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "Property Management Insurance is a different type of coverage entirely.", confusion_reason: "This sounds related to real estate, but it's for property management companies, not home buyers." },
+            'd': { why_wrong: "PMI has nothing to do with investments.", confusion_reason: "While mortgages can be investments for lenders, PMI is purely about insurance protection." }
+          }
+        }
+      },
+      {
+        id: 5,
+        question: "How much should you typically have saved for a down payment on a conventional loan?",
+        options: [
+          { id: 'a', text: '3%', isCorrect: false },
+          { id: 'b', text: '5%', isCorrect: false },
+          { id: 'c', text: '10%', isCorrect: false },
+          { id: 'd', text: '20%', isCorrect: true }
+        ],
+        explanation: {
+          correct: "20% down payment helps you avoid PMI and typically gets you better loan terms and interest rates.",
+          incorrect: {
+            'a': { why_wrong: "3% is available but comes with PMI and higher long-term costs.", confusion_reason: "Some programs allow 3% down, but this isn't typical for conventional loans and costs more over time." },
+            'b': { why_wrong: "5% is possible but still requires PMI and higher costs.", confusion_reason: "While some lenders accept 5%, you'll pay PMI and higher interest rates." },
+            'c': { why_wrong: "10% is better than 5% but you'll still pay PMI.", confusion_reason: "Getting closer to 20%, but you'll still have additional costs with PMI." },
+            'd': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." }
           }
         }
       }
