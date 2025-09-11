@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { CoinIcon } from '../../assets';
@@ -14,27 +14,31 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   onLessonSelect, 
   isTransitioning = false 
 }) => {
+  const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Redux state management
   const { 
     selectModuleById,
-    selectedModuleId, // Get from Redux instead of local state
+    selectedModuleId,
     sidebarCollapsed,
     toggleSidebar,
     lessonProgress,
     moduleProgress,
     activeTab,
-    changeActiveTab
+    changeActiveTab,
+    showCompactLayout,
+    toggleCompactLayout
   } = useModules();
 
   // Keep only essential refs for scrolling functionality
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Use Redux selectedModuleId instead of local selectedModuleId
+  // Use Redux state instead of local state
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
-  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayoutLocal;
+  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
-  // Helper functions (keep your existing ones)
+  // Helper functions
   const getOptimalCardWidth = () => {
     if (typeof window === 'undefined') return 280;
     const screenWidth = window.innerWidth;
@@ -204,7 +208,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       clearTimeout(layoutTimeoutRef.current);
     }
 
-    layoutTimeoutRef.current = setTimeout(() => setShowCompactLayoutLocal(true), 0);
+    layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
   };
 
   const toggleSidebarLocal = () => {
@@ -225,7 +229,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   useEffect(() => {
-    if (selectedModuleId && !sidebarCollapsed && showCompactLayoutLocal) {
+    if (selectedModuleId && !sidebarCollapsed && showCompactLayout) {
       const timer = setTimeout(() => {
         if (scrollContainerRef.current) {
           const container = scrollContainerRef.current;
@@ -254,16 +258,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [showCompactLayoutLocal]);
+  }, [showCompactLayout, selectedModuleId, sidebarCollapsed, activeTab, modulesData]);
 
   useEffect(() => {
     if (!selectedModuleId) {
-      setShowCompactLayoutLocal(false);
+      toggleCompactLayout(false);
       if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
       }
     }
-  }, [selectedModuleId]);
+  }, [selectedModuleId, toggleCompactLayout]);
 
   const filteredModules = modulesData.filter(module => 
     activeTab === 'All' || module.status === activeTab

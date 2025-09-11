@@ -8,7 +8,14 @@ import moduleReducer from './slices/moduleSlice'
 const modulesPersistConfig = {
   key: 'modules',
   storage,
-  whitelist: ['lessonProgress', 'moduleProgress', 'selectedModuleId', 'selectedLessonId'] // Only persist progress data
+  whitelist: [
+    'lessonProgress', 
+    'moduleProgress', 
+    'selectedModuleId', 
+    'selectedLessonId',
+    'sidebarCollapsed',
+    'showCompactLayout'
+  ]
 }
 
 // Persist config for auth (optional, but helpful for login persistence)
