@@ -3,6 +3,7 @@ import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { 
   CoinIcon, 
+  TestResultIcon
 } from '../../assets';
 import LessonQuiz from './LessonQuiz';
 
@@ -219,8 +220,8 @@ const LessonView: React.FC<LessonViewProps> = ({
           >
             {/* Top Fixed Content */}
             <div className="flex-shrink-0">
-              {/* Back Button */}
-              <div className="py-2">
+              {/* Back Button and Quiz Status Row */}
+              <div className="py-2 flex items-center justify-between">
                 <button
                   onClick={handleBack}
                   disabled={isTransitioning}
@@ -231,6 +232,19 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </svg>
                   Back to Module
                 </button>
+
+                {/* Quiz Status from Redux */}
+                {quizCompleted && (
+                  <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg">
+                   <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5" color="currentColor"/>
+                    <span className="text-xs font-medium">Quiz Completed</span>
+                    {currentLessonProgress?.quizScore && (
+                      <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full">
+                        {currentLessonProgress.quizScore}%
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Lesson Header */}
@@ -254,29 +268,13 @@ const LessonView: React.FC<LessonViewProps> = ({
                       ))}
                     </div>
                   </div>
-                  
-                  {/* Progress Bar from Redux */}
-                  {watchProgress > 0 && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-600">Progress</span>
-                        <span className="text-xs text-gray-600">{watchProgress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                        <div
-                          className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${watchProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex-1 flex items-center justify-center">
               <div 
-                className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
+                className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
                   height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
                   minHeight: descriptionExpanded ? '64px' : '120px'
@@ -345,29 +343,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               </button>
 
               {/* Completion Status from Redux */}
-              {isCompleted && (
-                <div className="flex items-center gap-2 text-green-700 bg-green-50 px-2 py-1 rounded-lg">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                  </svg>
-                  <span className="text-xs font-medium">Lesson Completed</span>
-                </div>
-              )}
-
-              {/* Quiz Status from Redux */}
-              {quizCompleted && (
-                <div className="flex items-center gap-2 text-purple-700 bg-purple-50 px-2 py-1 rounded-lg">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <span className="text-xs font-medium">Quiz Completed</span>
-                  {currentLessonProgress?.quizScore && (
-                    <span className="text-xs bg-purple-200 px-2 py-0.5 rounded-full">
-                      {currentLessonProgress.quizScore}%
-                    </span>
-                  )}
-                </div>
-              )}
+              
 
               {/* Rewards */}
               <div>

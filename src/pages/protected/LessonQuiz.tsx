@@ -74,16 +74,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     resetQuiz();
   };
 
-  const getOptionColor = (optionId: string) => {
-    const colors = {
-      'a': 'bg-red-400 hover:bg-red-500',
-      'b': 'bg-blue-400 hover:bg-blue-500', 
-      'c': 'bg-green-400 hover:bg-green-500',
-      'd': 'bg-purple-400 hover:bg-purple-500'
-    };
-    return colors[optionId as keyof typeof colors] || 'bg-gray-400 hover:bg-gray-500';
-  };
-
   // Use Redux state instead of local state
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
@@ -128,33 +118,61 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
           {/* Answer Options */}
           <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
-            {questionData?.options.map((option: any) => (
-              <button
-                key={option.id}
-                onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
-                disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning} // Only check Redux state
-                className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
-                  isCurrentQuestion && selectedAnswer === option.id 
-                    ? getOptionColor(option.id) + ' ring-2 ring-white ring-opacity-50 scale-105' 
-                    : getOptionColor(option.id) + (!isCurrentQuestion ? ' opacity-75' : '')
-                }`}
-              >
-                <div className="text-xs text-center">
-                  <div className="font-bold uppercase mb-1">{option.id}</div>
-                  <div className="leading-tight">{option.text}</div>
-                </div>
-              </button>
-            ))}
+            {questionData?.options.map((option: any) => {
+              const isSelected = isCurrentQuestion && selectedAnswer === option.id;
+              const isCorrect = option.isCorrect;
+              const showResult = cardShowFeedback && isSelected;
+              
+              let buttonStyle = {
+                backgroundColor: '#D7DEFF',
+                color: '#3F6CB9'
+              };
+              
+              if (showResult) {
+                if (isCorrect) {
+                  buttonStyle = {
+                    backgroundColor: '#4BD48B',
+                    color: '#FFFFFF'
+                  };
+                } else {
+                  buttonStyle = {
+                    backgroundColor: '#F1746D',
+                    color: '#FFFFFF'
+                  };
+                }
+              } else if (isSelected) {
+                buttonStyle = {
+                  backgroundColor: '#ECFFF5',
+                  color: '#3F6CB9'
+                };
+              }
+              
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
+                  disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning}
+                  style={buttonStyle}
+                  className={`p-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
+                    isSelected ? 'ring-2 ring-white ring-opacity-50 scale-105' : ''
+                  } ${!isCurrentQuestion ? 'opacity-75' : ''}`}
+                >
+                  <div className="text-xs text-center leading-tight">
+                    {option.text}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* FIXED HEIGHT FEEDBACK CONTAINER - Always allocates space */}
           <div className="w-full max-w-sm mx-auto mb-4 flex-shrink-0 h-20 relative overflow-hidden">
-            {/* Feedback Section - Slides in from bottom */}
+            {/* Feedback Section - Slides in from bottom with fade */}
             <div 
-              className={`absolute inset-0 transition-transform duration-300 ease-out ${
+              className={`absolute inset-0 transition-all duration-500 ease-out ${
                 cardShowFeedback && selectedAnswer 
-                  ? 'transform translate-y-0' 
-                  : 'transform translate-y-full'
+                  ? 'transform translate-y-0 opacity-100' 
+                  : 'transform translate-y-full opacity-0'
               }`}
             >
               <div className={`h-full p-3 rounded-lg border-2 flex items-center justify-center ${

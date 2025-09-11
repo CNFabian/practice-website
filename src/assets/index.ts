@@ -19,6 +19,7 @@ export { default as InstagramIcon } from './images/icons/instagram.svg'
 export { default as LinkedInIcon } from './images/icons/linkedin.svg'
 export { default as YouTubeIcon } from './images/icons/youtube.svg'
 export { default as LoadingIcon } from './images/icons/loading-icon.svg'
+export { default as TestResultIcon } from './images/icons/test-results.svg'
 // Static Images
 export { default as SignupImage } from './images/static/signup_page.png'
 export { default as LoginImage } from './images/static/login_page.png'
