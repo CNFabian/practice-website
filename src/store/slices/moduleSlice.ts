@@ -186,70 +186,86 @@ const moduleSlice = createSlice({
       }
     },
     
-    markLessonCompleted: (state, action: PayloadAction<{ lessonId: number; moduleId: number }>) => {
-      const { lessonId, moduleId } = action.payload;
-      if (state.lessonProgress[lessonId]) {
+    markLessonCompleted: (state, action: PayloadAction<{ lessonId: number; moduleId: number; quizScore?: number }>) => {
+      const { lessonId, moduleId, quizScore } = action.payload;
+      
+      if (!state.lessonProgress[lessonId]) {
+        state.lessonProgress[lessonId] = {
+          lessonId,
+          moduleId,
+          completed: true,
+          watchProgress: 100,
+          quizCompleted: !!quizScore,
+          quizScore: quizScore || null,
+          timeSpent: 0,
+          lastAccessed: new Date().toISOString()
+        };
+      } else {
         state.lessonProgress[lessonId].completed = true;
         state.lessonProgress[lessonId].watchProgress = 100;
+        if (quizScore !== undefined) {
+          state.lessonProgress[lessonId].quizCompleted = true;
+          state.lessonProgress[lessonId].quizScore = quizScore;
+        }
+        state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
       }
       
-      // Update module in modules array
-      const module = state.modules.find(m => m.id === moduleId);
-      if (module) {
-        const lesson = module.lessons.find(l => l.id === lessonId);
-        if (lesson) {
-          lesson.completed = true;
-        }
+      // Update module progress
+      const moduleProgress = state.moduleProgress[moduleId];
+      if (moduleProgress) {
+        const completedLessons = Object.values(state.lessonProgress)
+          .filter(lp => lp.moduleId === moduleId && lp.completed).length;
+        
+        moduleProgress.lessonsCompleted = completedLessons;
+        moduleProgress.overallProgress = Math.round((completedLessons / moduleProgress.totalLessons) * 100);
+        moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
+                               completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
+        moduleProgress.lastAccessed = new Date().toISOString();
       }
     },
     
     // Quiz actions
     startQuiz: (state, action: PayloadAction<{ questions: QuizQuestion[]; lessonId: number }>) => {
-      state.currentView = 'quiz';
       state.quizState = {
         ...initialQuizState,
         questions: action.payload.questions,
         isActive: true
       };
+      state.currentView = 'quiz';
     },
     
-    selectQuizAnswer: (state, action: PayloadAction<string>) => {
-      state.quizState.selectedAnswer = action.payload;
-      state.quizState.showFeedback = true;
+    selectQuizAnswer: (state, action: PayloadAction<{ questionIndex: number; answer: string }>) => {
+      const { questionIndex, answer } = action.payload;
+      state.quizState.selectedAnswer = answer;
+      state.quizState.answers[questionIndex] = answer;
     },
     
     nextQuizQuestion: (state) => {
-      if (state.quizState.selectedAnswer) {
-        // Save the answer
-        state.quizState.answers[state.quizState.currentQuestion] = state.quizState.selectedAnswer;
+      if (state.quizState.currentQuestion < state.quizState.questions.length - 1) {
+        state.quizState.isTransitioning = true;
         
-        if (state.quizState.currentQuestion < state.quizState.questions.length - 1) {
-          // Move to next question
-          state.quizState.isTransitioning = true;
-          setTimeout(() => {
-            state.quizState.currentQuestion += 1;
-            state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
-            state.quizState.showFeedback = false;
-            state.quizState.isTransitioning = false;
-          }, 300);
-        } else {
-          // Calculate final score and show results
-          const correctAnswers = state.quizState.questions.reduce((acc, question, index) => {
-            const userAnswer = state.quizState.answers[index];
-            const correctOption = question.options.find(opt => opt.isCorrect);
-            return acc + (userAnswer === correctOption?.id ? 1 : 0);
-          }, 0);
-          
-          const finalScore = Math.round((correctAnswers / state.quizState.questions.length) * 100);
-          state.quizState.score = finalScore;
-          state.quizState.showResults = true;
-        }
+        setTimeout(() => {
+          state.quizState.currentQuestion += 1;
+          state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
+          state.quizState.showFeedback = false;
+          state.quizState.isTransitioning = false;
+        }, 300);
+      } else {
+        // Show results
+        const correctAnswers = state.quizState.questions.filter((question, index) => {
+          const userAnswer = state.quizState.answers[index];
+          return question.options.find(option => option.id === userAnswer)?.isCorrect;
+        }).length;
+        
+        state.quizState.score = Math.round((correctAnswers / state.quizState.questions.length) * 100);
+        state.quizState.showResults = true;
       }
     },
     
     previousQuizQuestion: (state) => {
       if (state.quizState.currentQuestion > 0) {
         state.quizState.isTransitioning = true;
+        
         setTimeout(() => {
           state.quizState.currentQuestion -= 1;
           state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;

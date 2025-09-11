@@ -56,154 +56,124 @@ export const useModules = () => {
     dispatch(updateLessonProgress({ lessonId, ...updates }))
   }, [dispatch])
 
-  const completeLessonById = useCallback((lessonId: number, moduleId: number) => {
-    dispatch(markLessonCompleted({ lessonId, moduleId }))
+  const markCompleted = useCallback((lessonId: number, moduleId: number, quizScore?: number) => {
+    dispatch(markLessonCompleted({ lessonId, moduleId, quizScore }))
   }, [dispatch])
 
-  // Quiz management
-  const handleQuizAnswer = useCallback((answerId: string) => {
-    dispatch(selectQuizAnswer(answerId))
+  // Quiz actions
+  const handleStartQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {
+    dispatch(startQuiz({ questions, lessonId }))
   }, [dispatch])
 
-  const goToNextQuestion = useCallback(() => {
+  const handleSelectAnswer = useCallback((questionIndex: number, answer: string) => {
+    dispatch(selectQuizAnswer({ questionIndex, answer }))
+  }, [dispatch])
+
+  const handleNextQuestion = useCallback(() => {
     dispatch(nextQuizQuestion())
   }, [dispatch])
 
-  const goToPreviousQuestion = useCallback(() => {
+  const handlePreviousQuestion = useCallback(() => {
     dispatch(previousQuizQuestion())
   }, [dispatch])
 
-  const finishQuiz = useCallback((lessonId: number, score: number) => {
+  const handleCompleteQuiz = useCallback((lessonId: number, score: number) => {
     dispatch(completeQuiz({ lessonId, score }))
   }, [dispatch])
 
-  const restartQuiz = useCallback(() => {
+  const handleResetQuiz = useCallback(() => {
     dispatch(resetQuiz())
   }, [dispatch])
 
-  const exitQuiz = useCallback(() => {
+  const handleCloseQuiz = useCallback(() => {
     dispatch(closeQuiz())
   }, [dispatch])
 
-  // UI state management
+  // UI state actions
   const toggleSidebar = useCallback((collapsed: boolean) => {
     dispatch(setSidebarCollapsed(collapsed))
   }, [dispatch])
 
-  const setCompactLayout = useCallback((compact: boolean) => {
+  const toggleCompactLayout = useCallback((compact: boolean) => {
     dispatch(setShowCompactLayout(compact))
   }, [dispatch])
 
-  const changeTab = useCallback((tab: 'All' | 'In Progress' | 'Completed') => {
+  const changeActiveTab = useCallback((tab: 'All' | 'In Progress' | 'Completed') => {
     dispatch(setActiveTab(tab))
   }, [dispatch])
 
   // Error handling
-  const handleError = useCallback((error: string) => {
+  const handleSetError = useCallback((error: string | null) => {
     dispatch(setError(error))
   }, [dispatch])
 
-  const clearErrors = useCallback(() => {
+  const handleClearError = useCallback(() => {
     dispatch(clearError())
   }, [dispatch])
 
-  // Loading state
-  const setLoadingState = useCallback((loading: boolean) => {
+  const handleSetLoading = useCallback((loading: boolean) => {
     dispatch(setLoading(loading))
   }, [dispatch])
 
   // Computed values
-  const getCurrentModule = useCallback((): Module | null => {
-    if (!moduleState.selectedModuleId) return null
-    return moduleState.modules.find(m => m.id === moduleState.selectedModuleId) || null
-  }, [moduleState.selectedModuleId, moduleState.modules])
+  const currentModule = moduleState.selectedModuleId 
+    ? moduleState.modules.find(m => m.id === moduleState.selectedModuleId) 
+    : null
 
-  const getCurrentLesson = useCallback((): Lesson | null => {
-    if (!moduleState.selectedLessonId || !moduleState.selectedModuleId) return null
-    const module = getCurrentModule()
-    return module?.lessons.find(l => l.id === moduleState.selectedLessonId) || null
-  }, [moduleState.selectedLessonId, moduleState.selectedModuleId, getCurrentModule])
+  const currentLesson = currentModule && moduleState.selectedLessonId
+    ? currentModule.lessons.find(l => l.id === moduleState.selectedLessonId)
+    : null
 
-  const getModuleProgress = useCallback((moduleId: number) => {
-    return moduleState.moduleProgress[moduleId] || {
-      moduleId,
-      lessonsCompleted: 0,
-      totalLessons: 0,
-      overallProgress: 0,
-      status: 'Not Started' as const,
-      lastAccessed: new Date().toISOString()
-    }
-  }, [moduleState.moduleProgress])
+  const currentLessonProgress = moduleState.selectedLessonId
+    ? moduleState.lessonProgress[moduleState.selectedLessonId]
+    : null
 
-  const getLessonProgress = useCallback((lessonId: number) => {
-    return moduleState.lessonProgress[lessonId] || null
-  }, [moduleState.lessonProgress])
-
-  const getFilteredModules = useCallback(() => {
-    const { activeTab, modules, moduleProgress } = moduleState
-    
-    if (activeTab === 'All') return modules
-    
-    return modules.filter(module => {
-      const progress = moduleProgress[module.id]
-      if (!progress) return false // If no progress, don't show in 'In Progress' or 'Completed' tabs
-      
-      return activeTab === 'In Progress' 
-        ? progress.status === 'In Progress'
-        : progress.status === 'Completed'
-    })
-  }, [moduleState.activeTab, moduleState.modules, moduleState.moduleProgress])
-
-  // Quiz helpers
-  const getCurrentQuizQuestion = useCallback(() => {
-    const { quizState } = moduleState
-    if (!quizState.isActive || quizState.questions.length === 0) return null
-    return quizState.questions[quizState.currentQuestion] || null
-  }, [moduleState.quizState])
-
-  const getQuizProgress = useCallback(() => {
-    const { quizState } = moduleState
-    return {
-      current: quizState.currentQuestion + 1,
-      total: quizState.questions.length,
-      percentage: quizState.questions.length > 0 
-        ? Math.round(((quizState.currentQuestion + 1) / quizState.questions.length) * 100)
-        : 0
-    }
-  }, [moduleState.quizState])
+  const currentModuleProgress = moduleState.selectedModuleId
+    ? moduleState.moduleProgress[moduleState.selectedModuleId]
+    : null
 
   return {
     // State
     ...moduleState,
     
-    // Actions
+    // Computed values
+    currentModule,
+    currentLesson,
+    currentLessonProgress,
+    currentModuleProgress,
+    
+    // Navigation actions
     goToModules,
     goToLesson,
     goToQuiz,
+    
+    // Module management
     loadModules,
     selectModuleById,
-    updateProgress,
-    completeLessonById,
-    handleQuizAnswer,
-    goToNextQuestion,
-    goToPreviousQuestion,
-    finishQuiz,
-    restartQuiz,
-    exitQuiz,
-    toggleSidebar,
-    setCompactLayout,
-    changeTab,
-    handleError,
-    clearErrors,
-    setLoadingState,
     
-    // Computed values
-    getCurrentModule,
-    getCurrentLesson,
-    getModuleProgress,
-    getLessonProgress,
-    getFilteredModules,
-    getCurrentQuizQuestion,
-    getQuizProgress
+    // Progress tracking
+    updateProgress,
+    markCompleted,
+    
+    // Quiz actions
+    startQuiz: handleStartQuiz,
+    selectAnswer: handleSelectAnswer,
+    nextQuestion: handleNextQuestion,
+    previousQuestion: handlePreviousQuestion,
+    completeQuiz: handleCompleteQuiz,
+    resetQuiz: handleResetQuiz,
+    closeQuiz: handleCloseQuiz,
+    
+    // UI state actions
+    toggleSidebar,
+    toggleCompactLayout,
+    changeActiveTab,
+    
+    // Error handling
+    setError: handleSetError,
+    clearError: handleClearError,
+    setLoading: handleSetLoading,
   }
 }
+
+export default useModules
