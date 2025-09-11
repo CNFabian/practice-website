@@ -310,7 +310,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       }, 500);
       
       return () => clearTimeout(timer);
-    } else if (currentView === 'lesson' && isTransitioning) {
+    } else if ((currentView === 'lesson' || currentView === 'quiz') && isTransitioning) {
       const timer = setTimeout(() => {
         setIsTransitioning(false);
       }, 500);
@@ -324,12 +324,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'lesson'
+          currentView === 'lesson' || currentView === 'quiz'
             ? '-translate-x-full opacity-0'
             : 'translate-x-0 opacity-100'
         }`}
         style={{ 
-          pointerEvents: currentView === 'lesson' ? 'none' : 'auto'
+          pointerEvents: currentView === 'lesson' || currentView === 'quiz' ? 'none' : 'auto'
         }}
       >
         <ModulesView
@@ -342,12 +342,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       {/* LESSON VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'lesson'
+          currentView === 'lesson' || currentView === 'quiz'
             ? 'translate-x-0 opacity-100'
             : 'translate-x-full opacity-0'
         }`}
         style={{ 
-          pointerEvents: currentView === 'lesson' ? 'auto' : 'none'
+          pointerEvents: currentView === 'lesson' || currentView === 'quiz' ? 'auto' : 'none'
         }}
       >
         {currentLesson && currentModule && (
