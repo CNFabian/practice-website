@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useModules } from '../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import { Module, Lesson } from '../../types/modules';
@@ -264,30 +265,47 @@ const modulesData: Module[] = [
 interface ModulesPageProps {}
 
 const ModulesPage: React.FC<ModulesPageProps> = () => {
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [currentView, setCurrentView] = useState<'modules' | 'lesson'>('modules');
+  // Redux state management
+  const {
+    currentView,
+    currentModule,
+    currentLesson,
+    modules,
+    loadModules,
+    goToLesson,
+    goToModules
+  } = useModules();
+
+  // Keep your existing local state for transitions
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Load modules data into Redux on component mount
+  useEffect(() => {
+    if (modules.length === 0) {
+      loadModules(modulesData);
+    }
+  }, [modules.length, loadModules]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     setIsTransitioning(true);
-    setSelectedLesson(lesson);
-    setSelectedModule(module);
+    // Use Redux navigation instead of local state
+    goToLesson(lesson.id, module.id);
     
     requestAnimationFrame(() => {
-      setCurrentView('lesson');
+      // currentView will be updated by Redux, but we can still use local transition state
     });
   };
 
   const handleBackToModule = () => {
     setIsTransitioning(true);
-    setCurrentView('modules');
+    // Use Redux navigation
+    goToModules();
   };
 
+  // Keep your existing transition logic but sync with Redux state
   useEffect(() => {
     if (currentView === 'modules' && isTransitioning) {
       const timer = setTimeout(() => {
-        setSelectedLesson(null);
         setIsTransitioning(false);
       }, 500);
       
@@ -315,7 +333,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         }}
       >
         <ModulesView
-          modulesData={modulesData}
+          modulesData={modules.length > 0 ? modules : modulesData} // Use Redux modules or fallback
           onLessonSelect={handleLessonStart}
           isTransitioning={isTransitioning}
         />
@@ -332,10 +350,10 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
           pointerEvents: currentView === 'lesson' ? 'auto' : 'none'
         }}
       >
-        {selectedLesson && selectedModule && (
+        {currentLesson && currentModule && (
           <LessonView
-            lesson={selectedLesson}
-            module={selectedModule}
+            lesson={currentLesson}
+            module={currentModule}
             onBack={handleBackToModule}
             isTransitioning={isTransitioning}
           />

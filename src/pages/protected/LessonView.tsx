@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { 
   CoinIcon, 
@@ -18,9 +19,22 @@ const LessonView: React.FC<LessonViewProps> = ({
   onBack, 
   isTransitioning = false 
 }) => {
-  const [lessonInfoCollapsed, setLessonInfoCollapsed] = useState(false);
+  // Redux state management
+  const {
+    sidebarCollapsed,
+    toggleSidebar,
+    currentLessonProgress,
+    updateProgress,
+    markCompleted,
+    startQuiz,
+    currentView
+  } = useModules();
+
+  // Keep your existing local state
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
+
+  // Redux handles showQuiz state now via currentView
+  const showQuiz = currentView === 'quiz';
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -29,22 +43,58 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const toggleLessonInfo = () => {
     if (isTransitioning) return;
-    setLessonInfoCollapsed(!lessonInfoCollapsed);
+    toggleSidebar(!sidebarCollapsed);
   };
 
   const handleStartQuiz = () => {
     if (isTransitioning) return;
-    setShowQuiz(true);
+    
+    // Use the same sample questions structure but connect to Redux
+    const sampleQuestions = [
+      {
+        id: 1,
+        question: "What is the first step in preparing for homeownership?",
+        options: [
+          { id: 'a', text: 'Looking at houses online', isCorrect: false },
+          { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
+          { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
+          { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
+        ],
+        explanation: {
+          correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
+          incorrect: {
+            'a': { why_wrong: "Looking at houses online is premature without knowing your budget first.", confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "Talking to a real estate agent should come after you know your financial limits.", confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints." },
+            'd': { why_wrong: "Pre-approval comes after you've assessed what you can afford.", confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders." }
+          }
+        }
+      }
+    ];
+    
+    startQuiz(sampleQuestions, lesson.id);
   };
 
   const handleCloseQuiz = () => {
-    setShowQuiz(false);
+    // Redux will handle closing quiz and returning to lesson view
   };
 
   const handleQuizComplete = (score: number) => {
     console.log(`Quiz completed with score: ${score}%`);
-    // Here you would typically update the lesson completion status
-    // and award coins/badges based on the score
+    // Redux will handle updating lesson progress with quiz completion
+    markCompleted(lesson.id, module.id, score);
+  };
+
+  // Track lesson progress with Redux
+  const handleVideoProgress = (progressPercent: number) => {
+    updateProgress(lesson.id, {
+      watchProgress: progressPercent
+    });
+
+    // Auto-complete lesson when video is 95% watched
+    if (progressPercent >= 95 && !currentLessonProgress?.completed) {
+      markCompleted(lesson.id, module.id);
+    }
   };
 
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
@@ -54,6 +104,11 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
+  // Get progress from Redux
+  const watchProgress = currentLessonProgress?.watchProgress || 0;
+  const isCompleted = currentLessonProgress?.completed || false;
+  const quizCompleted = currentLessonProgress?.quizCompleted || false;
+
   return (
     <div className="pt-6 w-full h-full">
       <div className="flex h-full w-full">
@@ -62,11 +117,11 @@ const LessonView: React.FC<LessonViewProps> = ({
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
           className={`relative ml-4 top-60 x-10 z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
-            lessonInfoCollapsed ? '' : 'left-[calc(30%+2px)]'
+            sidebarCollapsed ? '' : 'left-[calc(30%+2px)]'
           }`}
         >
           <svg 
-            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${lessonInfoCollapsed ? 'rotate-180' : ''}`}
+            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -77,7 +132,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
         {/* Left Column - Lesson Info */}
         <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
+          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
         }`}>
           <div 
             className="h-full px-2 flex flex-col overflow-y-auto -ml-8" 
@@ -123,6 +178,22 @@ const LessonView: React.FC<LessonViewProps> = ({
                       ))}
                     </div>
                   </div>
+                  
+                  {/* Progress Bar from Redux */}
+                  {watchProgress > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-600">Progress</span>
+                        <span className="text-xs text-gray-600">{watchProgress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${watchProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -137,6 +208,22 @@ const LessonView: React.FC<LessonViewProps> = ({
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
                   <img src={lesson.image} alt={lesson.title} className="object-contain w-full h-full" />
+                  
+                  {/* Completion badge from Redux */}
+                  {isCompleted && (
+                    <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                      </svg>
+                    </div>
+                  )}
+                  
+                  {/* Progress overlay from Redux */}
+                  {watchProgress > 0 && (
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                      {watchProgress}%
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -172,10 +259,39 @@ const LessonView: React.FC<LessonViewProps> = ({
               <button 
                 onClick={handleStartQuiz}
                 disabled={isTransitioning}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className={`w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
+                  quizCompleted
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
-                Test Your Knowledge
+                {quizCompleted ? 'Retake Quiz' : 'Test Your Knowledge'}
               </button>
+
+              {/* Completion Status from Redux */}
+              {isCompleted && (
+                <div className="flex items-center gap-2 text-green-700 bg-green-50 px-2 py-1 rounded-lg">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                  </svg>
+                  <span className="text-xs font-medium">Lesson Completed</span>
+                </div>
+              )}
+
+              {/* Quiz Status from Redux */}
+              {quizCompleted && (
+                <div className="flex items-center gap-2 text-purple-700 bg-purple-50 px-2 py-1 rounded-lg">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span className="text-xs font-medium">Quiz Completed</span>
+                  {currentLessonProgress?.quizScore && (
+                    <span className="text-xs bg-purple-200 px-2 py-0.5 rounded-full">
+                      {currentLessonProgress.quizScore}%
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Rewards */}
               <div>
@@ -241,12 +357,12 @@ const LessonView: React.FC<LessonViewProps> = ({
 
         {/* Separator Line */}
         <div className={`transition-all duration-300 ease-in-out ${
-          lessonInfoCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
+          sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
         }`} />
 
         {/* Right Column - Video Player */}
         <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
-          lessonInfoCollapsed ? 'flex-1' : 'w-[70%]'
+          sidebarCollapsed ? 'flex-1' : 'w-[70%]'
         }`}>
           {/* Main Video Content */}
           <div className={`h-full transition-transform duration-700 ease-in-out ${
@@ -258,16 +374,34 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
+                      <button 
+                        onClick={() => handleVideoProgress(Math.min(100, watchProgress + 10))}
+                        className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
+                      >
+                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </button>
                     </div>
                     <div className="text-right text-sm text-gray-500 mt-4">
                       {lesson.duration}
                     </div>
                   </div>
                   
-    
+                  {/* Video Progress Bar */}
+                  {watchProgress > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 bg-white bg-opacity-20 rounded-full h-1">
+                          <div
+                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                            style={{ width: `${watchProgress}%` }}
+                          />
+                        </div>
+                        <span className="text-white text-sm">{watchProgress}%</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Video Transcript */}
@@ -320,13 +454,15 @@ const LessonView: React.FC<LessonViewProps> = ({
           <div className={`absolute top-0 left-0 w-full h-full transition-transform duration-700 ease-in-out ${
             showQuiz ? 'translate-x-0' : 'translate-x-full'
           }`}>
-            <LessonQuiz
-              lesson={lesson}
-              module={module}
-              isVisible={showQuiz}
-              onClose={handleCloseQuiz}
-              onComplete={handleQuizComplete}
-            />
+            {showQuiz && (
+              <LessonQuiz
+                lesson={lesson}
+                module={module}
+                isVisible={showQuiz}
+                onClose={handleCloseQuiz}
+                onComplete={handleQuizComplete}
+              />
+            )}
           </div>
         </div>
       </div>

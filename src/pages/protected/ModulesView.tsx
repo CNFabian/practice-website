@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { CoinIcon } from '../../assets';
 
@@ -13,19 +14,27 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   onLessonSelect, 
   isTransitioning = false 
 }) => {
-  const [activeTab, setActiveTab] = useState<'All' | 'In Progress' | 'Completed'>('All');
-  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [showCompactLayout, setShowCompactLayout] = useState(false);
-  
+  // Redux state management
+  const { 
+    selectModuleById,
+    selectedModuleId, // Get from Redux instead of local state
+    sidebarCollapsed,
+    toggleSidebar,
+    lessonProgress,
+    moduleProgress,
+    activeTab,
+    changeActiveTab
+  } = useModules();
+
+  // Keep only essential refs for scrolling functionality
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
-  const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Use Redux selectedModuleId instead of local selectedModuleId
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
-  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
+  const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayoutLocal;
 
-  // Helper functions
+  // Helper functions (keep your existing ones)
   const getOptimalCardWidth = () => {
     if (typeof window === 'undefined') return 280;
     const screenWidth = window.innerWidth;
@@ -38,7 +47,20 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   const getModuleProgress = (module: Module) => {
-    const completed = module.lessons.filter(lesson => lesson.completed).length;
+    const progress = moduleProgress[module.id];
+    if (progress) {
+      return {
+        completed: progress.lessonsCompleted,
+        total: progress.totalLessons,
+        percentage: progress.overallProgress
+      };
+    }
+    
+    // Fallback to calculating from lesson completion
+    const completed = module.lessons.filter(lesson => {
+      const lessonProg = lessonProgress[lesson.id];
+      return lessonProg?.completed || false;
+    }).length;
     const total = module.lessons.length;
     const percentage = Math.round((completed / total) * 100);
     return { completed, total, percentage };
@@ -109,7 +131,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
       const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
       
-      // Always use smooth animation for subsequent selections
       smoothScrollTo(container, finalScrollTop, 400);
     } else {
       const moduleElement = moduleRefs.current[selectedModuleId];
@@ -138,17 +159,19 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     }
   };
 
+  // Updated to use Redux
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
     
     const wasCollapsed = sidebarCollapsed;
     const previouslySelected = selectedModuleId;
     
-    setSelectedModuleId(moduleId);
+    // Use Redux to save module selection
+    selectModuleById(moduleId);
     
     if (wasCollapsed) {
       // First selection - position immediately without animation
-      setSidebarCollapsed(false);
+      toggleSidebar(false);
       
       // Calculate and apply scroll position immediately for the initial transition
       if (scrollContainerRef.current) {
@@ -159,7 +182,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         
         const selectedIndex = filteredModules.findIndex(m => m.id === moduleId);
         if (selectedIndex !== -1) {
-          const cardHeight = 220; // Compact layout height
+          const cardHeight = 220;
           const stickyHeaderHeight = 120;
           const containerHeight = container.clientHeight;
           const availableHeight = containerHeight - stickyHeaderHeight;
@@ -168,12 +191,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
           const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
           
-          // Apply scroll position immediately without animation
           container.scrollTop = finalScrollTop;
         }
       }
     } else if (previouslySelected !== moduleId) {
-      // Subsequent selection in compact mode - smooth scroll to new position
       setTimeout(() => {
         scrollToSelectedModule();
       }, 50);
@@ -183,12 +204,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       clearTimeout(layoutTimeoutRef.current);
     }
 
-    layoutTimeoutRef.current = setTimeout(() => setShowCompactLayout(true), 0);
+    layoutTimeoutRef.current = setTimeout(() => setShowCompactLayoutLocal(true), 0);
   };
 
-  const toggleSidebar = () => {
+  const toggleSidebarLocal = () => {
     if (isTransitioning) return;
-    setSidebarCollapsed(!sidebarCollapsed);
+    toggleSidebar(!sidebarCollapsed);
   };
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
@@ -196,13 +217,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     onLessonSelect(lesson, module);
   };
 
+  // Update tab change to use Redux
+  const handleTabChange = (tab: 'All' | 'In Progress' | 'Completed') => {
+    if (!isTransitioning) {
+      changeActiveTab(tab);
+    }
+  };
+
   useEffect(() => {
-    // Only handle scroll adjustments for layout changes, not module selections
-    // Module selections are now handled directly in handleModuleSelect
-    if (selectedModuleId && !sidebarCollapsed && showCompactLayout) {
-      // Small delay to ensure layout has settled after showCompactLayout becomes true
+    if (selectedModuleId && !sidebarCollapsed && showCompactLayoutLocal) {
       const timer = setTimeout(() => {
-        // Only scroll if we're not in the middle of a transition and need adjustment
         if (scrollContainerRef.current) {
           const container = scrollContainerRef.current;
           const filteredModules = modulesData.filter(module => 
@@ -220,7 +244,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             const currentModuleTop = moduleTop - container.scrollTop;
             const idealTop = (availableHeight / 2) + stickyHeaderHeight - (cardHeight / 2);
             
-            // Only adjust if significantly off-center (more than 50px)
             if (Math.abs(currentModuleTop - idealTop) > 50) {
               const targetScrollTop = moduleTop - idealTop;
               const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
@@ -231,11 +254,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [showCompactLayout]); // Removed selectedModuleId and sidebarCollapsed dependencies
+  }, [showCompactLayoutLocal]);
 
   useEffect(() => {
     if (!selectedModuleId) {
-      setShowCompactLayout(false);
+      setShowCompactLayoutLocal(false);
       if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
       }
@@ -285,7 +308,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 
                 {selectedModuleId && (
                   <button
-                    onClick={toggleSidebar}
+                    onClick={toggleSidebarLocal}
                     disabled={isTransitioning}
                     className="lg:flex hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -307,7 +330,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 {(['All', 'In Progress', 'Completed'] as const).map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => !isTransitioning && setActiveTab(tab)}
+                    onClick={() => handleTabChange(tab)}
                     disabled={isTransitioning}
                     className={`px-4 py-3 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-b-2 ${
                       activeTab === tab
@@ -338,7 +361,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         transition-all duration-700 ease-in-out
                         ${isSelected ? 'border-blue-400 shadow-lg ring-2 ring-blue-100' : ''}
                         ${isTransitioning ? 'pointer-events-none' : ''}
-                        ${isCompactLayout ? 'min-h-[204px]' : 'min-h-[420px]'}
+                        ${selectedModuleId && !sidebarCollapsed ? 'min-h-[204px]' : 'min-h-[420px]'}
                         flex flex-col
                       `}
                       onClick={() => handleModuleSelect(module.id)}
@@ -480,68 +503,104 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 </div>
               )}
 
-<div className="mr-4 pb-6">
-  {selectedModuleData ? (
-    <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 px-1">
-      {selectedModuleData.lessons.map((lesson, index) => (
-        <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative max-w-sm">
-          <div className="flex flex-col gap-3">
-            <div className="flex-shrink-0">
-              <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-full h-32">
-                <img 
-                  src={lesson.image} 
-                  alt={lesson.title} 
-                  className="object-contain w-full h-full" 
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              </div>
-            </div>
+              <div className="mr-4 pb-6">
+                {selectedModuleData ? (
+                  <div className="space-y-4 px-1">
+                    {selectedModuleData.lessons.map((lesson, index) => {
+                      const progress = lessonProgress[lesson.id];
+                      const isCompleted = progress?.completed || false;
+                      const watchProgress = progress?.watchProgress || 0;
+                      const quizCompleted = progress?.quizCompleted || false;
 
-            <div className="flex-1">
-              <h4 className="text-base font-semibold text-gray-900 mb-1 line-clamp-2">
-                {lesson.title}
-              </h4>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-gray-600 font-medium">Lesson {index + 1}</span>
-                <span className="text-xs text-gray-600">{lesson.duration}</span>
+                      return (
+                        <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
+                          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
+                            <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
+                            <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
+                          </div>
+
+                          <div className="flex gap-4 items-start">
+                            <div className="flex-shrink-0">
+                              <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-20 sm:w-24 md:w-28 lg:w-32 xl:w-36 2xl:w-40">
+                                <img 
+                                  src={lesson.image} 
+                                  alt={lesson.title} 
+                                  className="object-contain w-full h-full" 
+                                  style={{ imageRendering: 'crisp-edges' }}
+                                />
+                                
+                                {/* Progress indicators from Redux */}
+                                {watchProgress > 0 && (
+                                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                    {watchProgress}%
+                                  </div>
+                                )}
+                                {isCompleted && (
+                                  <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex-1 pr-12">
+                              <h4 className="text-base font-semibold text-gray-900 mb-1">
+                                {lesson.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs text-gray-600 font-medium">Lesson {index + 1}</span>
+                                <span className="text-xs text-gray-600">{lesson.duration}</span>
+                                {quizCompleted && (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                    Quiz ✓
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                                {lesson.description}
+                              </p>
+                              
+                              <div className="flex gap-3 max-w-xs">
+                                <button 
+                                  onClick={() => handleLessonStart(lesson, selectedModuleData)}
+                                  disabled={isTransitioning}
+                                  className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
+                                    isCompleted 
+                                      ? 'bg-green-600 text-white hover:bg-green-700'
+                                      : watchProgress > 0
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                                  }`}
+                                >
+                                  {isCompleted ? 'Review' : watchProgress > 0 ? 'Continue' : 'Start Lesson'}
+                                </button>
+                                <button 
+                                  disabled={isTransitioning}
+                                  className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
+                                    quizCompleted
+                                      ? 'bg-green-500 text-white hover:bg-green-600'
+                                      : isCompleted
+                                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                      : 'bg-gray-500 text-white hover:bg-gray-600'
+                                  }`}
+                                >
+                                  {quizCompleted ? 'Retake' : 'Lesson Quiz'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center mx-1">
+                    <p className="text-gray-500">Select a module to view lessons and details</p>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-3">
-                {lesson.description}
-              </p>
-            </div>
-            
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
-                <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
-                <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
-              </div>
-              
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleLessonStart(lesson, selectedModuleData)}
-                  disabled={isTransitioning}
-                  className="bg-blue-600 text-white py-2 px-10 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  Start
-                </button>
-                <button 
-                  disabled={isTransitioning}
-                  className="bg-gray-500 text-white py-2 px-10 rounded-lg text-xs font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  Quiz
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center mx-1">
-      <p className="text-gray-500">Select a module to view lessons and details</p>
-    </div>
-  )}
-</div>
             </div>
           </div>
         </div>

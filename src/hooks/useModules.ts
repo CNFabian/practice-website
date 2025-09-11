@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useCallback } from 'react'
 import type { RootState, AppDispatch } from '../store/store'
-import type { Module, Lesson } from '../types/modules'
+import type { Module } from '../types/modules'
 import type { QuizQuestion } from '../store/slices/moduleSlice'
 import {
   setCurrentView,
