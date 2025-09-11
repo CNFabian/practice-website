@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
 
@@ -28,20 +28,14 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     completeQuiz
   } = useModules();
 
-  // Local state for managing transitions - EXACTLY like module/lesson transitions
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [previousQuestionData, setPreviousQuestionData] = useState<any>(null);
-  const [previousQuestionNumber, setPreviousQuestionNumber] = useState<number>(0);
-  const [previousSelectedAnswer, setPreviousSelectedAnswer] = useState<string | null>(null);
-
   // Keep your exact visual design but use Redux for state
   const handleAnswerSelect = (optionId: string) => {
-    if (quizState.isTransitioning || isTransitioning) return;
+    if (quizState.isTransitioning) return; // Only check Redux state
     selectAnswer(quizState.currentQuestion, optionId);
   };
 
   const handleNext = () => {
-    if (quizState.isTransitioning || !quizState.selectedAnswer || isTransitioning) return;
+    if (quizState.isTransitioning || !quizState.selectedAnswer) return; // Only check Redux state
     
     if (quizState.currentQuestion === quizState.questions.length - 1) {
       // Calculate final score
@@ -58,43 +52,17 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       // Call parent callback
       onComplete(finalScore);
     } else {
-      // Store current question data before transition
-      setPreviousQuestionData(quizState.questions[quizState.currentQuestion]);
-      setPreviousQuestionNumber(quizState.currentQuestion + 1);
-      setPreviousSelectedAnswer(quizState.selectedAnswer);
-      
-      // Start transition
-      setIsTransitioning(true);
+      // Just call Redux action - it handles the transition
       nextQuestion();
     }
   };
 
   const handlePrevious = () => {
-    if (quizState.isTransitioning || quizState.currentQuestion === 0 || isTransitioning) return;
+    if (quizState.isTransitioning || quizState.currentQuestion === 0) return; // Only check Redux state
     
-    // Store current question data before transition
-    setPreviousQuestionData(quizState.questions[quizState.currentQuestion]);
-    setPreviousQuestionNumber(quizState.currentQuestion + 1);
-    setPreviousSelectedAnswer(quizState.selectedAnswer);
-    
-    // Start transition
-    setIsTransitioning(true);
+    // Just call Redux action - it handles the transition
     previousQuestion();
   };
-
-  // Handle transition completion - EXACTLY like module/lesson
-  useEffect(() => {
-    if (isTransitioning) {
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-        setPreviousQuestionData(null);
-        setPreviousQuestionNumber(0);
-        setPreviousSelectedAnswer(null);
-      }, 500); // Same duration as module/lesson transitions
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isTransitioning]);
 
   const handleFinish = () => {
     onComplete(quizState.score);
@@ -118,8 +86,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
   // Use Redux state instead of local state
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
-  const correctAnswer = currentQuestionData?.options.find(opt => opt.isCorrect);
-  const isCorrectAnswer = quizState.selectedAnswer === correctAnswer?.id;
   const showFeedback = !!quizState.selectedAnswer;
 
   // Question Component for reusability
@@ -133,7 +99,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   }> = ({ questionData, questionNumber, totalQuestions, selectedAnswer = null, showFeedback: cardShowFeedback = false, isCurrentQuestion = false }) => {
     
     const cardCorrectAnswer = questionData?.options.find((opt: any) => opt.isCorrect);
-    const cardIsCorrectAnswer = selectedAnswer === cardCorrectAnswer?.id;
 
     return (
       <>
@@ -167,70 +132,57 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               <button
                 key={option.id}
                 onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
-                disabled={!isCurrentQuestion || cardShowFeedback || isTransitioning}
+                disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning} // Only check Redux state
                 className={`p-2 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
                   isCurrentQuestion && selectedAnswer === option.id 
                     ? getOptionColor(option.id) + ' ring-2 ring-white ring-opacity-50 scale-105' 
-                    : getOptionColor(option.id) + (!isCurrentQuestion ? ' opacity-60' : ' opacity-80')
+                    : getOptionColor(option.id) + (!isCurrentQuestion ? ' opacity-75' : '')
                 }`}
               >
-                <span className="text-xs leading-tight">{option.text}</span>
+                <div className="text-xs text-center">
+                  <div className="font-bold uppercase mb-1">{option.id}</div>
+                  <div className="leading-tight">{option.text}</div>
+                </div>
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Feedback Overlay */}
-        {isCurrentQuestion && (
-          <div className={`absolute top-0 left-0 right-0 z-30 transition-all duration-500 ease-in-out transform ${
-            cardShowFeedback && selectedAnswer && !isTransitioning
-              ? 'translate-y-0 opacity-100'
-              : '-translate-y-full opacity-0'
-          }`}>
-            <div className={`p-4 mx-4 rounded-lg shadow-lg ${
-              cardIsCorrectAnswer ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                  cardIsCorrectAnswer ? 'bg-green-500' : 'bg-red-500'
-                }`}>
-                  <span className="text-xs text-white">
-                    {cardIsCorrectAnswer ? '✓' : '✗'}
-                  </span>
-                </div>
-                <h3 className={`text-sm font-semibold ${
-                  cardIsCorrectAnswer ? 'text-green-800' : 'text-red-800'
-                }`}>
-                  {cardIsCorrectAnswer ? 'Correct!' : 'Incorrect'}
-                </h3>
-              </div>
-              
-              <div className={`text-xs ${
-                cardIsCorrectAnswer ? 'text-green-700' : 'text-red-700'
+          {/* FIXED HEIGHT FEEDBACK CONTAINER - Always allocates space */}
+          <div className="w-full max-w-sm mx-auto mb-4 flex-shrink-0 h-20 relative overflow-hidden">
+            {/* Feedback Section - Slides in from bottom */}
+            <div 
+              className={`absolute inset-0 transition-transform duration-300 ease-out ${
+                cardShowFeedback && selectedAnswer 
+                  ? 'transform translate-y-0' 
+                  : 'transform translate-y-full'
+              }`}
+            >
+              <div className={`h-full p-3 rounded-lg border-2 flex items-center justify-center ${
+                selectedAnswer === cardCorrectAnswer?.id 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
               }`}>
-                {cardIsCorrectAnswer ? (
-                  <p>{questionData.explanation.correct}</p>
-                ) : (
-                  selectedAnswer && (
-                    <div className="space-y-2">
-                      <p><strong>Why this is wrong:</strong> {questionData.explanation.incorrect[selectedAnswer]?.why_wrong}</p>
-                      <p><strong>Why you might have chosen this:</strong> {questionData.explanation.incorrect[selectedAnswer]?.confusion_reason}</p>
-                      <p><strong>Correct answer:</strong> {cardCorrectAnswer?.text} - {questionData.explanation.correct}</p>
-                    </div>
-                  )
-                )}
+                <div className="text-center">
+                  <div className="text-xs font-medium mb-1">
+                    {selectedAnswer === cardCorrectAnswer?.id ? 'Correct!' : 'Not quite right'}
+                  </div>
+                  <div className="text-xs leading-tight">
+                    {selectedAnswer === cardCorrectAnswer?.id 
+                      ? questionData?.explanation?.correct 
+                      : (selectedAnswer && questionData?.explanation?.incorrect?.[selectedAnswer]?.why_wrong) || 'Please try again!'
+                    }
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </>
     );
   };
 
-  if (!isVisible || !quizState.isActive) return null;
-
   return (
-    <div className={`absolute top-0 right-0 h-full bg-white transition-all duration-700 ease-in-out z-20 ${
+    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
       isVisible ? 'w-full' : 'w-0'
     } overflow-hidden`}>
       <div className="p-4 h-full flex flex-col relative">
@@ -242,7 +194,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               closeQuiz();
             }}
             className="text-gray-600 hover:text-gray-800 transition-colors"
-            disabled={isTransitioning}
+            disabled={quizState.isTransitioning} // Only check Redux state
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -257,68 +209,31 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
         {!quizState.showResults ? (
           <>
+            {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
             <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
               <div className="relative h-full w-full overflow-hidden">
                 
-                {/* PREVIOUS QUESTION VIEW - Shows during transition out */}
+                {/* Single question container with fade transition */}
                 <div
                   className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-                    isTransitioning
-                      ? '-translate-x-full opacity-0'
-                      : 'translate-x-0 opacity-100'
+                    quizState.isTransitioning
+                      ? 'opacity-0 transform scale-95'
+                      : 'opacity-100 transform scale-100'
                   }`}
                   style={{ 
-                    pointerEvents: isTransitioning ? 'none' : 'auto'
+                    pointerEvents: quizState.isTransitioning ? 'none' : 'auto'
                   }}
                 >
-                  {isTransitioning && previousQuestionData ? (
-                    <div className="h-full flex flex-col relative">
-                      <QuestionCard
-                        questionData={previousQuestionData}
-                        questionNumber={previousQuestionNumber}
-                        totalQuestions={quizState.questions.length}
-                        selectedAnswer={previousSelectedAnswer}
-                        showFeedback={false}
-                        isCurrentQuestion={false}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-full flex flex-col relative">
-                      <QuestionCard
-                        questionData={currentQuestionData}
-                        questionNumber={quizState.currentQuestion + 1}
-                        totalQuestions={quizState.questions.length}
-                        selectedAnswer={quizState.selectedAnswer}
-                        showFeedback={showFeedback}
-                        isCurrentQuestion={true}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* CURRENT QUESTION VIEW - Shows during transition in */}
-                <div
-                  className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-                    isTransitioning
-                      ? 'translate-x-0 opacity-100'
-                      : 'translate-x-full opacity-0'
-                  }`}
-                  style={{ 
-                    pointerEvents: isTransitioning ? 'auto' : 'none'
-                  }}
-                >
-                  {isTransitioning && (
-                    <div className="h-full flex flex-col relative">
-                      <QuestionCard
-                        questionData={currentQuestionData}
-                        questionNumber={quizState.currentQuestion + 1}
-                        totalQuestions={quizState.questions.length}
-                        selectedAnswer={quizState.selectedAnswer}
-                        showFeedback={false}
-                        isCurrentQuestion={false}
-                      />
-                    </div>
-                  )}
+                  <div className="h-full flex flex-col relative">
+                    <QuestionCard
+                      questionData={currentQuestionData}
+                      questionNumber={quizState.currentQuestion + 1}
+                      totalQuestions={quizState.questions.length}
+                      selectedAnswer={quizState.selectedAnswer}
+                      showFeedback={showFeedback}
+                      isCurrentQuestion={true}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -327,7 +242,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             <div className="flex justify-between items-center flex-shrink-0 mt-2">
               <button
                 onClick={handlePrevious}
-                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning || isTransitioning}
+                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
                 className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
@@ -350,7 +265,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
               <button
                 onClick={handleNext}
-                disabled={!quizState.selectedAnswer || quizState.isTransitioning || isTransitioning}
+                disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
                 className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}

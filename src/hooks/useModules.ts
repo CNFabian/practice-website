@@ -5,8 +5,8 @@ import type { Module } from '../types/modules'
 import type { QuizQuestion } from '../store/slices/moduleSlice'
 import {
   setCurrentView,
-  selectModule,
-  selectLesson,
+  setSelectedModule,
+  setSelectedLesson,
   setModules,
   updateLessonProgress,
   markLessonCompleted,
@@ -37,7 +37,9 @@ export const useModules = () => {
   }, [dispatch])
 
   const goToLesson = useCallback((lessonId: number, moduleId: number) => {
-    dispatch(selectLesson({ lessonId, moduleId }))
+    dispatch(setSelectedLesson(lessonId))
+    dispatch(setSelectedModule(moduleId))
+    dispatch(setCurrentView('lesson'))
   }, [dispatch])
 
   const goToQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {
@@ -50,13 +52,23 @@ export const useModules = () => {
   }, [dispatch])
 
   const selectModuleById = useCallback((moduleId: number) => {
-    dispatch(selectModule(moduleId))
+    dispatch(setSelectedModule(moduleId))
   }, [dispatch])
 
-  // Progress tracking
+  // Progress tracking - Fixed to match expected API
   const updateProgress = useCallback((lessonId: number, updates: any) => {
-    dispatch(updateLessonProgress({ lessonId, ...updates }))
-  }, [dispatch])
+    // Handle both old API (object) and new API (individual params)
+    if (typeof updates === 'object') {
+      // Extract required parameters from updates object
+      const moduleId = updates.moduleId || moduleState.selectedModuleId;
+      const watchProgress = updates.watchProgress || 0;
+      const timeSpent = updates.timeSpent || 0;
+      
+      if (moduleId) {
+        dispatch(updateLessonProgress({ lessonId, moduleId, watchProgress, timeSpent }))
+      }
+    }
+  }, [dispatch, moduleState.selectedModuleId])
 
   const markCompleted = useCallback((lessonId: number, moduleId: number, quizScore?: number) => {
     dispatch(markLessonCompleted({ lessonId, moduleId, quizScore }))
@@ -71,22 +83,22 @@ export const useModules = () => {
     dispatch(selectQuizAnswer({ questionIndex, answer }))
   }, [dispatch])
 
-  // Handle next question with proper transition
+  // Handle next question with proper transition - FIXED TIMING
   const handleNextQuestion = useCallback(() => {
     dispatch(startQuizTransition())
     // Use setTimeout outside of reducer to handle the transition delay
     setTimeout(() => {
       dispatch(nextQuizQuestion())
-    }, 300)
+    }, 500) // Changed from 300ms to 500ms to match CSS duration
   }, [dispatch])
 
-  // Handle previous question with proper transition
+  // Handle previous question with proper transition - FIXED TIMING  
   const handlePreviousQuestion = useCallback(() => {
     dispatch(startPreviousQuizTransition())
     // Use setTimeout outside of reducer to handle the transition delay
     setTimeout(() => {
       dispatch(previousQuizQuestion())
-    }, 300)
+    }, 500) // Changed from 300ms to 500ms to match CSS duration
   }, [dispatch])
 
   const handleCompleteQuiz = useCallback((lessonId: number, score: number) => {

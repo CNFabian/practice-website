@@ -31,6 +31,10 @@ export interface QuizState {
   isTransitioning: boolean;
   isActive: boolean;
   questions: QuizQuestion[];
+  // Added for smoother transitions
+  previousQuestionData: QuizQuestion | null;
+  previousQuestionNumber: number;
+  previousSelectedAnswer: string | null;
 }
 
 export interface LessonProgress {
@@ -88,7 +92,10 @@ const initialQuizState: QuizState = {
   score: 0,
   isTransitioning: false,
   isActive: false,
-  questions: []
+  questions: [],
+  previousQuestionData: null,
+  previousQuestionNumber: 0,
+  previousSelectedAnswer: null,
 };
 
 const initialState: ModuleState = {
@@ -115,122 +122,106 @@ const moduleSlice = createSlice({
       state.currentView = action.payload;
     },
     
-    selectModule: (state, action: PayloadAction<number>) => {
+    setSelectedModule: (state, action: PayloadAction<number | null>) => {
       state.selectedModuleId = action.payload;
-      state.currentView = 'modules';
     },
     
-    selectLesson: (state, action: PayloadAction<{ lessonId: number; moduleId: number }>) => {
-      state.selectedLessonId = action.payload.lessonId;
-      state.selectedModuleId = action.payload.moduleId;
-      state.currentView = 'lesson';
-      
-      // Update last accessed time
-      const now = new Date().toISOString();
-      if (!state.lessonProgress[action.payload.lessonId]) {
-        state.lessonProgress[action.payload.lessonId] = {
-          lessonId: action.payload.lessonId,
-          moduleId: action.payload.moduleId,
-          completed: false,
-          watchProgress: 0,
-          quizCompleted: false,
-          quizScore: null,
-          timeSpent: 0,
-          lastAccessed: now
-        };
-      } else {
-        state.lessonProgress[action.payload.lessonId].lastAccessed = now;
-      }
+    setSelectedLesson: (state, action: PayloadAction<number | null>) => {
+      state.selectedLessonId = action.payload;
     },
     
+    // Data loading
     setModules: (state, action: PayloadAction<Module[]>) => {
       state.modules = action.payload;
     },
     
     // Progress tracking
-    updateLessonProgress: (state, action: PayloadAction<{
-      lessonId: number;
-      watchProgress?: number;
-      timeSpent?: number;
+    updateLessonProgress: (state, action: PayloadAction<{ 
+      lessonId: number; 
+      moduleId: number; 
+      watchProgress: number; 
+      timeSpent: number; 
     }>) => {
-      const { lessonId, watchProgress, timeSpent } = action.payload;
-      
-      if (!state.lessonProgress[lessonId]) {
-        state.lessonProgress[lessonId] = {
-          lessonId,
-          moduleId: state.selectedModuleId || 0,
-          completed: false,
-          watchProgress: 0,
-          quizCompleted: false,
-          quizScore: null,
-          timeSpent: 0,
-          lastAccessed: new Date().toISOString()
-        };
-      }
-      
-      if (watchProgress !== undefined) {
-        state.lessonProgress[lessonId].watchProgress = watchProgress;
-      }
-      
-      if (timeSpent !== undefined) {
-        state.lessonProgress[lessonId].timeSpent = timeSpent;
-      }
-      
-      state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
-    },
-    
-    markLessonCompleted: (state, action: PayloadAction<{
-      lessonId: number;
-      moduleId: number;
-      quizScore?: number;
-    }>) => {
-      const { lessonId, moduleId, quizScore } = action.payload;
-      
-      if (!state.lessonProgress[lessonId]) {
-        state.lessonProgress[lessonId] = {
-          lessonId,
-          moduleId,
-          completed: false,
-          watchProgress: 0,
-          quizCompleted: false,
-          quizScore: null,
-          timeSpent: 0,
-          lastAccessed: new Date().toISOString()
-        };
-      }
-      
-      state.lessonProgress[lessonId].completed = true;
-      state.lessonProgress[lessonId].lastAccessed = new Date().toISOString();
-      
-      if (quizScore !== undefined) {
-        state.lessonProgress[lessonId].quizCompleted = true;
-        state.lessonProgress[lessonId].quizScore = quizScore;
-      }
+      const { lessonId, moduleId, watchProgress, timeSpent } = action.payload;
+      state.lessonProgress[lessonId] = {
+        ...state.lessonProgress[lessonId],
+        lessonId,
+        moduleId,
+        watchProgress,
+        timeSpent,
+        lastAccessed: new Date().toISOString(),
+        completed: watchProgress >= 100,
+        quizCompleted: state.lessonProgress[lessonId]?.quizCompleted || false,
+        quizScore: state.lessonProgress[lessonId]?.quizScore || null,
+      };
       
       // Update module progress
       const module = state.modules.find(m => m.id === moduleId);
       if (module) {
-        if (!state.moduleProgress[moduleId]) {
-          state.moduleProgress[moduleId] = {
-            moduleId,
-            lessonsCompleted: 0,
-            totalLessons: module.lessons.length,
-            overallProgress: 0,
-            status: 'Not Started',
-            lastAccessed: new Date().toISOString()
-          };
-        }
+        const moduleProgress = state.moduleProgress[moduleId] || {
+          moduleId,
+          lessonsCompleted: 0,
+          totalLessons: module.lessons.length,
+          overallProgress: 0,
+          status: 'Not Started' as const,
+          lastAccessed: new Date().toISOString()
+        };
         
-        const moduleProgress = state.moduleProgress[moduleId];
-        const completedLessons = Object.values(state.lessonProgress)
-          .filter(progress => progress.moduleId === moduleId && progress.completed).length;
+        const completedLessons = module.lessons.filter(lesson => 
+          state.lessonProgress[lesson.id]?.completed
+        ).length;
         
         moduleProgress.lessonsCompleted = completedLessons;
-        moduleProgress.overallProgress = Math.round((completedLessons / moduleProgress.totalLessons) * 100);
-        moduleProgress.status = completedLessons === 0 ? 
-                               'Not Started' : 
+        moduleProgress.overallProgress = Math.round((completedLessons / module.lessons.length) * 100);
+        moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
                                completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
         moduleProgress.lastAccessed = new Date().toISOString();
+        
+        state.moduleProgress[moduleId] = moduleProgress;
+      }
+    },
+
+    markLessonCompleted: (state, action: PayloadAction<{ 
+      lessonId: number; 
+      moduleId: number; 
+      quizScore?: number 
+    }>) => {
+      const { lessonId, moduleId, quizScore } = action.payload;
+      state.lessonProgress[lessonId] = {
+        ...state.lessonProgress[lessonId],
+        lessonId,
+        moduleId,
+        completed: true,
+        quizCompleted: quizScore !== undefined,
+        quizScore: quizScore || state.lessonProgress[lessonId]?.quizScore || null,
+        lastAccessed: new Date().toISOString(),
+        watchProgress: state.lessonProgress[lessonId]?.watchProgress || 100,
+        timeSpent: state.lessonProgress[lessonId]?.timeSpent || 0,
+      };
+      
+      // Update module progress
+      const module = state.modules.find(m => m.id === moduleId);
+      if (module) {
+        const moduleProgress = state.moduleProgress[moduleId] || {
+          moduleId,
+          lessonsCompleted: 0,
+          totalLessons: module.lessons.length,
+          overallProgress: 0,
+          status: 'Not Started' as const,
+          lastAccessed: new Date().toISOString()
+        };
+        
+        const completedLessons = module.lessons.filter(lesson => 
+          state.lessonProgress[lesson.id]?.completed
+        ).length;
+        
+        moduleProgress.lessonsCompleted = completedLessons;
+        moduleProgress.overallProgress = Math.round((completedLessons / module.lessons.length) * 100);
+        moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
+                               completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
+        moduleProgress.lastAccessed = new Date().toISOString();
+        
+        state.moduleProgress[moduleId] = moduleProgress;
       }
     },
     
@@ -252,6 +243,11 @@ const moduleSlice = createSlice({
     
     // Start transition for next question
     startQuizTransition: (state) => {
+      // Store current question data before transition
+      const currentQ = state.quizState.questions[state.quizState.currentQuestion];
+      state.quizState.previousQuestionData = currentQ;
+      state.quizState.previousQuestionNumber = state.quizState.currentQuestion + 1;
+      state.quizState.previousSelectedAnswer = state.quizState.selectedAnswer;
       state.quizState.isTransitioning = true;
     },
     
@@ -261,7 +257,6 @@ const moduleSlice = createSlice({
         state.quizState.currentQuestion += 1;
         state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
         state.quizState.showFeedback = false;
-        state.quizState.isTransitioning = false;
       } else {
         // Show results
         const correctAnswers = state.quizState.questions.filter((question, index) => {
@@ -271,12 +266,22 @@ const moduleSlice = createSlice({
         
         state.quizState.score = Math.round((correctAnswers / state.quizState.questions.length) * 100);
         state.quizState.showResults = true;
-        state.quizState.isTransitioning = false;
       }
+      
+      // Clear transition state
+      state.quizState.isTransitioning = false;
+      state.quizState.previousQuestionData = null;
+      state.quizState.previousQuestionNumber = 0;
+      state.quizState.previousSelectedAnswer = null;
     },
     
     // Start transition for previous question
     startPreviousQuizTransition: (state) => {
+      // Store current question data before transition
+      const currentQ = state.quizState.questions[state.quizState.currentQuestion];
+      state.quizState.previousQuestionData = currentQ;
+      state.quizState.previousQuestionNumber = state.quizState.currentQuestion + 1;
+      state.quizState.previousSelectedAnswer = state.quizState.selectedAnswer;
       state.quizState.isTransitioning = true;
     },
     
@@ -285,40 +290,54 @@ const moduleSlice = createSlice({
       if (state.quizState.currentQuestion > 0) {
         state.quizState.currentQuestion -= 1;
         state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
-        state.quizState.showFeedback = !!state.quizState.selectedAnswer;
-        state.quizState.isTransitioning = false;
+        state.quizState.showFeedback = false;
       }
+      
+      // Clear transition state
+      state.quizState.isTransitioning = false;
+      state.quizState.previousQuestionData = null;
+      state.quizState.previousQuestionNumber = 0;
+      state.quizState.previousSelectedAnswer = null;
     },
     
     completeQuiz: (state, action: PayloadAction<{ lessonId: number; score: number }>) => {
       const { lessonId, score } = action.payload;
+      state.quizState.score = score;
+      state.quizState.showResults = true;
       
       // Update lesson progress with quiz completion
-      if (state.lessonProgress[lessonId]) {
-        state.lessonProgress[lessonId].quizCompleted = true;
-        state.lessonProgress[lessonId].quizScore = score;
+      if (state.selectedModuleId) {
+        const existingProgress = state.lessonProgress[lessonId] || {
+          lessonId,
+          moduleId: state.selectedModuleId,
+          completed: false,
+          watchProgress: 0,
+          quizCompleted: false,
+          quizScore: null,
+          timeSpent: 0,
+          lastAccessed: new Date().toISOString()
+        };
+        
+        state.lessonProgress[lessonId] = {
+          ...existingProgress,
+          quizCompleted: true,
+          quizScore: score,
+          completed: true,
+          lastAccessed: new Date().toISOString()
+        };
       }
-      
-      // Reset quiz state
-      state.quizState = { ...initialQuizState };
-      state.currentView = 'lesson';
     },
     
     resetQuiz: (state) => {
       state.quizState = {
-        ...state.quizState,
-        currentQuestion: 0,
-        selectedAnswer: null,
-        showFeedback: false,
-        answers: {},
-        showResults: false,
-        score: 0,
-        isTransitioning: false
+        ...initialQuizState,
+        questions: state.quizState.questions,
+        isActive: true
       };
     },
     
     closeQuiz: (state) => {
-      state.quizState = { ...initialQuizState };
+      state.quizState = initialQuizState;
       state.currentView = 'lesson';
     },
     
@@ -335,7 +354,7 @@ const moduleSlice = createSlice({
       state.activeTab = action.payload;
     },
     
-    // Loading and error actions
+    // Loading and error states
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -352,8 +371,8 @@ const moduleSlice = createSlice({
 
 export const {
   setCurrentView,
-  selectModule,
-  selectLesson,
+  setSelectedModule,
+  setSelectedLesson,
   setModules,
   updateLessonProgress,
   markLessonCompleted,
