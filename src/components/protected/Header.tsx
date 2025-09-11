@@ -32,6 +32,45 @@ const Header: React.FC = () => {
     }
   };
 
+  const handleResetProgress = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to reset your progress? This will:\n\n' +
+      '• Reset your coins to 25\n' +
+      '• Clear all completed modules\n' +
+      '• Remove saved items\n' +
+      '• Reset badges and rewards\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (confirmed) {
+      try {
+        // Clear localStorage data
+        localStorage.removeItem('userProgress');
+        localStorage.removeItem('completedModules');
+        localStorage.removeItem('savedItems');
+        localStorage.removeItem('earnedBadges');
+        localStorage.removeItem('userCoins');
+        localStorage.removeItem('claimedRewards');
+        
+        // You can add more specific storage keys based on your app's data structure
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('nest') || key.includes('progress') || key.includes('module'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        // Force page reload to reset app state
+        window.location.reload();
+      } catch (error) {
+        console.error('Reset progress failed:', error);
+        alert('Failed to reset progress. Please try again.');
+      }
+    }
+  };
+
   const getDisplayName = () => {
     if (user?.displayName) {
       return user.displayName.split(' ')[0];
@@ -171,6 +210,24 @@ const Header: React.FC = () => {
                         </button>
                       )}
                     </MenuItem>
+                    
+                    {/* TEMPORARY RESET PROGRESS BUTTON */}
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={handleResetProgress}
+                          className={`${
+                            focus ? 'bg-red-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="text-red-600 font-medium">🚧 Reset Progress (Temp)</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    
                     <div className="h-px bg-gray-200 my-1 mx-3" />
                     <MenuItem>
                       {({ focus }) => (
