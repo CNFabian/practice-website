@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import {Coin1, Coin2, Coin3, Coin4, Coin5, CelebrationImage} from '../../assets'
 
@@ -24,40 +24,23 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Animation states
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
-  const [rewardsAlreadyClaimed, setRewardsAlreadyClaimed] = useState(false);
+  
+  // Use ref instead of state to prevent re-renders
+  const rewardsTriggeredRef = useRef(false);
 
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  useEffect(() => {
-  // Delay content reveal
-  const timer1 = setTimeout(() => setShowContent(true), 300);
-  const timer2 = setTimeout(() => setConfettiVisible(true), 500);
-  
-  // Auto-trigger rewards modal after 1.5 seconds - but only once
-  const timer3 = setTimeout(() => {
-    if (onClaimRewards && !rewardsAlreadyClaimed) {
-      onClaimRewards();
-      setRewardsAlreadyClaimed(true);
-    }
-  }, 1500);
-
-  return () => {
-    clearTimeout(timer1);
-    clearTimeout(timer2);
-    clearTimeout(timer3);
-  };
-}, [onClaimRewards, rewardsAlreadyClaimed]);
-
-  // Trigger celebration sequence when component mounts
+  // Single useEffect to handle all timing - removed the duplicate
   useEffect(() => {
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
     const timer2 = setTimeout(() => setConfettiVisible(true), 500);
     
-    // Auto-trigger rewards modal after 3 seconds
+    // Auto-trigger rewards modal after 1.5 seconds - but only once
     const timer3 = setTimeout(() => {
-      if (onClaimRewards) {
+      if (onClaimRewards && !rewardsTriggeredRef.current) {
+        rewardsTriggeredRef.current = true;
         onClaimRewards();
       }
     }, 1500);
@@ -67,7 +50,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [onClaimRewards]);
+  }, []); // Empty dependency array to prevent re-runs
 
   // Confetti Component with your coin icons
   const Confetti = () => (
