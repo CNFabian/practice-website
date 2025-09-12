@@ -1,6 +1,7 @@
 import React from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
+import FeedbackContainer from './FeedbackContainer'; // Import the new component
 
 interface LessonQuizProps {
   lesson: Lesson;
@@ -89,23 +90,18 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   }> = ({ questionData, questionNumber, totalQuestions, selectedAnswer = null, showFeedback: cardShowFeedback = false, isCurrentQuestion = false }) => {
     
     const cardCorrectAnswer = questionData?.options.find((opt: any) => opt.isCorrect);
+    const isCorrect = selectedAnswer === cardCorrectAnswer?.id;
 
     return (
       <>
-        {/* Quiz Header */}
-        <div className="text-center mb-4 flex-shrink-0">
-          <h1 className="text-lg font-bold text-gray-900 mb-1">Test Your Knowledge</h1>
-          <p className="text-xs text-gray-600">Question {questionNumber} out of {totalQuestions}</p>
-        </div>
-
-        {/* Question Content */}
+        {/* Question Content - Removed "Test Your Knowledge" header from here */}
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-          {/* Illustration */}
+          {/* Illustration - Made larger with rounded-xl and background */}
           <div className="mb-4 flex-shrink-0">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center relative">
-              <div className="text-2xl">🤔</div>
-              <div className="absolute -top-1 -left-1 text-blue-400 text-lg">❓</div>
-              <div className="absolute -top-2 right-1 text-blue-300 text-sm">❓</div>
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center relative shadow-sm border border-blue-200">
+              <div className="text-4xl">🤔</div>
+              <div className="absolute -top-1 -left-1 text-blue-400 text-2xl">❓</div>
+              <div className="absolute -top-2 right-1 text-blue-300 text-lg">❓</div>
             </div>
           </div>
 
@@ -120,7 +116,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
           <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
             {questionData?.options.map((option: any) => {
               const isSelected = isCurrentQuestion && selectedAnswer === option.id;
-              const isCorrect = option.isCorrect;
+              const isOptionCorrect = option.isCorrect;
               const showResult = cardShowFeedback && isSelected;
               
               let buttonStyle = {
@@ -129,7 +125,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               };
               
               if (showResult) {
-                if (isCorrect) {
+                if (isOptionCorrect) {
                   buttonStyle = {
                     backgroundColor: '#4BD48B',
                     color: '#FFFFFF'
@@ -165,35 +161,13 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             })}
           </div>
 
-          {/* FIXED HEIGHT FEEDBACK CONTAINER - Always allocates space */}
-          <div className="w-full max-w-sm mx-auto mb-4 flex-shrink-0 h-20 relative overflow-hidden">
-            {/* Feedback Section - Slides in from bottom with fade */}
-            <div 
-              className={`absolute inset-0 transition-all duration-500 ease-out ${
-                cardShowFeedback && selectedAnswer 
-                  ? 'transform translate-y-0 opacity-100' 
-                  : 'transform translate-y-full opacity-0'
-              }`}
-            >
-              <div className={`h-full p-3 rounded-lg border-2 flex items-center justify-center ${
-                selectedAnswer === cardCorrectAnswer?.id 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="text-center">
-                  <div className="text-xs font-medium mb-1">
-                    {selectedAnswer === cardCorrectAnswer?.id ? 'Correct!' : 'Not quite right'}
-                  </div>
-                  <div className="text-xs leading-tight">
-                    {selectedAnswer === cardCorrectAnswer?.id 
-                      ? questionData?.explanation?.correct 
-                      : (selectedAnswer && questionData?.explanation?.incorrect?.[selectedAnswer]?.why_wrong) || 'Please try again!'
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Use the separate FeedbackContainer component */}
+          <FeedbackContainer
+            isVisible={cardShowFeedback && !!selectedAnswer}
+            isCorrect={isCorrect}
+            correctMessage={questionData?.explanation?.correct || ''}
+            incorrectMessage={(selectedAnswer && questionData?.explanation?.incorrect?.[selectedAnswer]?.why_wrong) || 'Please try again!'}
+          />
         </div>
       </>
     );
@@ -204,7 +178,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       isVisible ? 'w-full' : 'w-0'
     } overflow-hidden`}>
       <div className="p-4 h-full flex flex-col relative">
-        {/* Header */}
+        {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <button
             onClick={() => {
@@ -218,9 +192,9 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <div className="text-center">
-            <h1 className="text-sm font-semibold text-gray-900">Lesson Quiz</h1>
-            <p className="text-xs text-gray-600">{module.title}</p>
+          <div className="text-left flex-1 ml-4">
+            <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
+            <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
           </div>
           <div className="w-6"></div>
         </div>
