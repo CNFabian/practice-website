@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
+import RewardsModal from './RewardsModal';
 
 interface LessonQuizProps {
   lesson: Lesson;
@@ -18,6 +19,9 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   onClose,
   onComplete
 }) => {
+  // Add state for RewardsModal
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+
   // Redux state management - get all quiz state from Redux
   const {
     quizState,
@@ -75,10 +79,17 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     resetQuiz();
   };
 
+  // Modified handleClaimRewards to show the RewardsModal
   const handleClaimRewards = () => {
-    // Add your rewards claiming logic here
     console.log('Claiming rewards for score:', quizState.score);
-    // Could navigate to rewards page, show rewards modal, etc.
+    // Show the rewards modal instead of immediately finishing
+    setShowRewardsModal(true);
+  };
+
+  // Handle when RewardsModal is closed
+  const handleRewardsModalClose = () => {
+    setShowRewardsModal(false);
+    // After closing rewards modal, finish the quiz
     handleFinish();
   };
 
@@ -186,108 +197,116 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   return (
-    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
-      isVisible ? 'w-full' : 'w-0'
-    } overflow-hidden`}>
-      <div className="p-4 h-full flex flex-col relative">
-        {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
-        <div className="flex items-center justify-between mb-4 flex-shrink-0">
-          <button
-            onClick={() => {
-              onClose();
-              closeQuiz();
-            }}
-            className="text-gray-600 hover:text-gray-800 transition-colors"
-            disabled={quizState.isTransitioning} // Only check Redux state
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="text-left flex-1 ml-4">
-            <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
-            <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
+    <>
+      <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
+        isVisible ? 'w-full' : 'w-0'
+      } overflow-hidden`}>
+        <div className="p-4 h-full flex flex-col relative">
+          {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+            <button
+              onClick={() => {
+                onClose();
+                closeQuiz();
+              }}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+              disabled={quizState.isTransitioning} // Only check Redux state
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="text-left flex-1 ml-4">
+              <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
+              <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
+            </div>
+            <div className="w-6"></div>
           </div>
-          <div className="w-6"></div>
-        </div>
 
-        {!quizState.showResults ? (
-          <>
-            {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
-            <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-              <div className="relative h-full w-full overflow-hidden">
-                
-                {/* Single question container with fade transition */}
-                <div
-                  className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-                    quizState.isTransitioning
-                      ? 'opacity-0 transform scale-95'
-                      : 'opacity-100 transform scale-100'
-                  }`}
-                  style={{ 
-                    pointerEvents: quizState.isTransitioning ? 'none' : 'auto'
-                  }}
-                >
-                  <div className="h-full flex flex-col relative">
-                    <QuestionCard
-                      questionData={currentQuestionData}
-                      selectedAnswer={quizState.selectedAnswer}
-                      showFeedback={showFeedback}
-                      isCurrentQuestion={true}
-                    />
+          {!quizState.showResults ? (
+            <>
+              {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
+              <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+                <div className="relative h-full w-full overflow-hidden">
+                  
+                  {/* Single question container with fade transition */}
+                  <div
+                    className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+                      quizState.isTransitioning
+                        ? 'opacity-0 transform scale-95'
+                        : 'opacity-100 transform scale-100'
+                    }`}
+                    style={{ 
+                      pointerEvents: quizState.isTransitioning ? 'none' : 'auto'
+                    }}
+                  >
+                    <div className="h-full flex flex-col relative">
+                      <QuestionCard
+                        questionData={currentQuestionData}
+                        selectedAnswer={quizState.selectedAnswer}
+                        showFeedback={showFeedback}
+                        isCurrentQuestion={true}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between items-center flex-shrink-0 mt-2">
-              <button
-                onClick={handlePrevious}
-                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
-                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
-              <div className="flex gap-1">
-                {quizState.questions.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                      index === quizState.currentQuestion 
-                        ? 'bg-blue-600' 
-                        : index < quizState.currentQuestion 
-                          ? 'bg-green-500' 
-                          : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
+              {/* Navigation */}
+              <div className="flex justify-between items-center flex-shrink-0 mt-2">
+                <button
+                  onClick={handlePrevious}
+                  disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
+                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex gap-1">
+                  {quizState.questions.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                        index === quizState.currentQuestion 
+                          ? 'bg-blue-600' 
+                          : index < quizState.currentQuestion 
+                            ? 'bg-green-500' 
+                            : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleNext}
+                  disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
+                </button>
               </div>
-
-              <button
-                onClick={handleNext}
-                disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
-              </button>
-            </div>
-          </>
-        ) : (
-          /* Use the separate QuizResults component instead of the inline results */
-          <QuizResults
-            score={quizState.score}
-            totalQuestions={quizState.questions.length}
-            correctAnswers={correctAnswers}
-            onContinue={handleFinish}
-            onRetake={handleRetake}
-            onClaimRewards={handleClaimRewards}
-            lessonTitle={lesson.title}
-          />
-        )}
+            </>
+          ) : (
+            /* Use the separate QuizResults component instead of the inline results */
+            <QuizResults
+              score={quizState.score}
+              totalQuestions={quizState.questions.length}
+              correctAnswers={correctAnswers}
+              onContinue={handleFinish}
+              onRetake={handleRetake}
+              onClaimRewards={handleClaimRewards}
+              lessonTitle={lesson.title}
+            />
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* RewardsModal - appears when quiz results trigger it */}
+      <RewardsModal 
+        isOpen={showRewardsModal}
+        onClose={handleRewardsModalClose}
+      />
+    </>
   );
 };
 
