@@ -5,57 +5,107 @@ import { BadgeMedal, Confetti } from '../../assets'
 interface RewardsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToRewards?: () => void;
+  onNavigateToBadges?: () => void;
 }
 
-const RewardsModal: React.FC<RewardsModalProps> = ({ isOpen, onClose }) => {
+const RewardsModal: React.FC<RewardsModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onNavigateToRewards, 
+  onNavigateToBadges 
+}) => {
   if (!isOpen) return null;
+
+  const handleModalClose = () => {
+    // Only close the modal, don't trigger quiz completion
+    onClose();
+  };
+
+  const handleRewardsClick = () => {
+    if (onNavigateToRewards) {
+      onNavigateToRewards();
+    } else {
+      // Fallback navigation
+      window.location.href = '/app/rewards';
+    }
+    // Don't automatically close modal - let user stay on quiz results if they want
+  };
+
+  const handleBadgesClick = () => {
+    if (onNavigateToBadges) {
+      onNavigateToBadges();
+    } else {
+      // Fallback navigation
+      window.location.href = '/app/badges';
+    }
+    // Don't automatically close modal - let user stay on quiz results if they want
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop with fade in */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-50 animate-fade-in"
-        onClick={onClose}
+        onClick={handleModalClose}
       />
       
       {/* Modal with bouncy scale animation */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-modal-bounce">
-        {/* Confetti/Celebration Background - Space for animated asset */}
-        <div className="relative h-20 bg-gradient-to-br from-purple-50 to-blue-50 flex items-end justify-center pb-4">
-          {/* Space for confetti/celebration asset with animation class */}
-          <div className="absolute inset-0 flex items-center justify-center animate-confetti-burst">
-            <img src={Confetti} alt="Confetti" className="w-32 h-32 opacity-70" />
-          </div>
-        </div>
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-modal-bounce">
+        {/* Close X Button */}
+        <button
+          onClick={handleModalClose}
+          className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+        >
+          <svg 
+            className="w-5 h-5 text-gray-600" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M6 18L18 6M6 6l12 12" 
+            />
+          </svg>
+        </button>
 
         {/* Content */}
-        <div className="px-6 py-6 text-center">
+        <div className="px-8 py-8 text-center">
           {/* Title */}
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Rewards Earned!
           </h2>
 
-          {/* Reward Badge */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative animate-badge-bounce">
-              {/* Badge Circle - Space for medal/badge asset with animation */}
-             
-                <div className="w-12 h-12 flex items-center justify-center animate-badge-icon">
-                 <img src={BadgeMedal} alt="Badge" className="w-full h-full" />
-                </div>
-              
+          {/* Confetti and Badge Container */}
+          <div className="relative flex items-center justify-center mb-8 h-32">
+            {/* Confetti in background */}
+            <div className="absolute inset-0 flex items-center justify-center animate-confetti-burst">
+              <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
+            </div>
+            
+            {/* Badge in front of confetti */}
+            <div className="relative z-10 animate-badge-bounce">
+              <div className="w-16 h-16 flex items-center justify-center animate-badge-icon">
+                <img src={BadgeMedal} alt="Badge" className="w-full h-full" />
+              </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-3">
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors transform hover:scale-105">
+          <div className="flex gap-3">
+            <button 
+              onClick={handleRewardsClick}
+              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-full font-semibold hover:bg-blue-700 transition-colors transform hover:scale-105"
+            >
               Go to rewards
             </button>
             
             <button 
-              onClick={onClose}
-              className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors transform hover:scale-105"
+              onClick={handleBadgesClick}
+              className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-full font-medium hover:bg-gray-200 transition-colors transform hover:scale-105"
             >
               Badges
             </button>

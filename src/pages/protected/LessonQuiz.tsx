@@ -89,8 +89,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   // Handle when RewardsModal is closed
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
-    // After closing rewards modal, finish the quiz
-    handleFinish();
   };
 
   // Use Redux state instead of local state
