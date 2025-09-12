@@ -18,7 +18,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   correctAnswers,
   onContinue,
   onRetake,
-  // onClaimRewards and lessonTitle are received but not used - this prevents TS errors
+  onClaimRewards,
+  // lessonTitle is received but not used - this prevents TS errors
 }) => {
   // Animation states
   const [showContent, setShowContent] = useState(false);
@@ -32,12 +33,20 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
     const timer2 = setTimeout(() => setConfettiVisible(true), 500);
+    
+    // Auto-trigger rewards modal after 3 seconds
+    const timer3 = setTimeout(() => {
+      if (onClaimRewards) {
+        onClaimRewards();
+      }
+    }, 1500);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
+      clearTimeout(timer3);
     };
-  }, []);
+  }, [onClaimRewards]);
 
   // Confetti Component with your coin icons
   const Confetti = () => (
