@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import {Coin1, Coin2, Coin3, Coin4, Coin5, CelebrationImage} from '../../assets'
+
 interface QuizResultsProps {
   score: number;
   totalQuestions: number;
@@ -16,12 +18,14 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   correctAnswers,
   onContinue,
   onRetake,
-  onClaimRewards,
-  lessonTitle
+  // onClaimRewards and lessonTitle are received but not used - this prevents TS errors
 }) => {
   // Animation states
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
+
+  // Array of your coin icons for random selection
+  const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
   // Trigger celebration sequence when component mounts
   useEffect(() => {
@@ -37,7 +41,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     };
   }, []);
 
-  // Confetti Component - simpler version
+  // Confetti Component with your coin icons
   const Confetti = () => (
     <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible ? 'block' : 'hidden'}`}>
       {[...Array(30)].map((_, i) => (
@@ -47,12 +51,15 @@ const QuizResults: React.FC<QuizResultsProps> = ({
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 50}%`,
-            fontSize: ['12px', '16px', '20px'][Math.floor(Math.random() * 3)],
             animationDelay: `${Math.random() * 2}s`,
             animationDuration: `${1 + Math.random()}s`
           }}
         >
-          {['🎉', '⭐', '✨', '🎊', '🌟'][Math.floor(Math.random() * 5)]}
+          <img 
+            src={coinIcons[Math.floor(Math.random() * coinIcons.length)]}
+            alt="Coin"
+            className="w-6 h-6"
+          />
         </div>
       ))}
     </div>
@@ -62,64 +69,45 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     <div className="flex-1 flex flex-col items-center justify-center text-center p-6 relative bg-gradient-to-b from-blue-50 to-white">
       <Confetti />
       
-      <div className={`transform transition-all duration-700 ${showContent ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} max-w-sm w-full`}>
+      <div className={`transform transition-all duration-700 ${showContent ? 
+        'scale-100 opacity-100' : 'scale-95 opacity-0'} max-w-sm w-full`}>
         
         {/* Score indicator at top */}
         <div className="bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">
           {correctAnswers}/{totalQuestions} Questions Correct
         </div>
 
-        {/* Celebratory Character Illustration */}
+        {/* Static Image Container */}
         <div className="mb-6 relative">
           <div className="w-48 h-48 mx-auto relative">
-            {/* Character illustration - simplified version matching your design */}
+            {/* Your static celebration image */}
             <div className="absolute inset-0 flex items-center justify-center">
-              {/* Character body */}
-              <div className="relative">
-                {/* Confetti burst behind character */}
-                <div className="absolute -inset-8">
-                  <div className="absolute top-2 left-4 text-yellow-400 animate-bounce" style={{ animationDelay: '0.1s' }}>✨</div>
-                  <div className="absolute top-6 right-2 text-blue-400 animate-bounce" style={{ animationDelay: '0.3s' }}>🎊</div>
-                  <div className="absolute bottom-8 left-2 text-orange-400 animate-bounce" style={{ animationDelay: '0.5s' }}>⭐</div>
-                  <div className="absolute bottom-4 right-6 text-green-400 animate-bounce" style={{ animationDelay: '0.7s' }}>🌟</div>
-                  <div className="absolute top-4 left-8 text-purple-400 animate-bounce" style={{ animationDelay: '0.9s' }}>✨</div>
-                  <div className="absolute top-8 right-8 text-pink-400 animate-bounce" style={{ animationDelay: '1.1s' }}>🎉</div>
-                </div>
+              <img 
+                src={CelebrationImage}
+                alt="Celebration" 
+                className="w-full h-full object-contain"
+              />
+            </div>
 
-                {/* Main character */}
-                <div className="w-32 h-40 mx-auto relative">
-                  {/* Head */}
-                  <div className="w-16 h-16 bg-yellow-100 rounded-full mx-auto mb-2 relative">
-                    {/* Hair */}
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-gray-800 rounded-t-full"></div>
-                    {/* Face */}
-                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
-                      <div className="flex space-x-2 mb-1">
-                        <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-800 rounded-full"></div>
-                      </div>
-                      <div className="w-3 h-2 bg-pink-300 rounded-full"></div>
-                    </div>
-                  </div>
-
-                  {/* Body */}
-                  <div className="w-12 h-16 bg-yellow-400 rounded-t-2xl mx-auto relative">
-                    {/* Arms raised in celebration */}
-                    <div className="absolute -top-2 -left-3 w-3 h-8 bg-yellow-100 rounded-full transform -rotate-45 animate-pulse"></div>
-                    <div className="absolute -top-2 -right-3 w-3 h-8 bg-yellow-100 rounded-full transform rotate-45 animate-pulse"></div>
-                    
-                    {/* Quiz certificate in hand */}
-                    <div className="absolute -top-1 right-0 w-6 h-4 bg-white border-2 border-green-500 rounded text-xs flex items-center justify-center transform rotate-12">
-                      <div className="text-green-600 font-bold text-xs">✓</div>
-                    </div>
-                  </div>
-
-                  {/* Legs */}
-                  <div className="flex justify-center space-x-1">
-                    <div className="w-2 h-6 bg-blue-600 rounded-full"></div>
-                    <div className="w-2 h-6 bg-blue-600 rounded-full"></div>
-                  </div>
-                </div>
+            {/* Coin confetti burst behind image using your coin icons */}
+            <div className="absolute -inset-8">
+              <div className="absolute top-2 left-4 animate-bounce" style={{ animationDelay: '0.1s' }}>
+                <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
+              </div>
+              <div className="absolute top-6 right-2 animate-bounce" style={{ animationDelay: '0.3s' }}>
+                <img src={coinIcons[1]} alt="Coin" className="w-6 h-6" />
+              </div>
+              <div className="absolute bottom-8 left-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
+                <img src={coinIcons[2]} alt="Coin" className="w-6 h-6" />
+              </div>
+              <div className="absolute bottom-4 right-6 animate-bounce" style={{ animationDelay: '0.7s' }}>
+                <img src={coinIcons[3]} alt="Coin" className="w-6 h-6" />
+              </div>
+              <div className="absolute top-4 left-8 animate-bounce" style={{ animationDelay: '0.9s' }}>
+                <img src={coinIcons[4]} alt="Coin" className="w-6 h-6" />
+              </div>
+              <div className="absolute top-8 right-8 animate-bounce" style={{ animationDelay: '1.1s' }}>
+                <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
               </div>
             </div>
           </div>

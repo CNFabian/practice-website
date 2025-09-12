@@ -14,7 +14,6 @@ interface LessonQuizProps {
 
 const LessonQuiz: React.FC<LessonQuizProps> = ({
   lesson,
-  module,
   isVisible,
   onClose,
   onComplete
@@ -97,12 +96,10 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   // Question Component for reusability
   const QuestionCard: React.FC<{
     questionData: any;
-    questionNumber: number;
-    totalQuestions: number;
     selectedAnswer?: string | null;
     showFeedback?: boolean;
     isCurrentQuestion?: boolean;
-  }> = ({ questionData, questionNumber, totalQuestions, selectedAnswer = null, showFeedback: cardShowFeedback = false, isCurrentQuestion = false }) => {
+  }> = ({ questionData, selectedAnswer = null, showFeedback: cardShowFeedback = false, isCurrentQuestion = false }) => {
     
     const cardCorrectAnswer = questionData?.options.find((opt: any) => opt.isCorrect);
     const isCorrect = selectedAnswer === cardCorrectAnswer?.id;
@@ -234,8 +231,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                   <div className="h-full flex flex-col relative">
                     <QuestionCard
                       questionData={currentQuestionData}
-                      questionNumber={quizState.currentQuestion + 1}
-                      totalQuestions={quizState.questions.length}
                       selectedAnswer={quizState.selectedAnswer}
                       showFeedback={showFeedback}
                       isCurrentQuestion={true}
