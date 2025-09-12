@@ -193,9 +193,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <button
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
-          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0 ${
-            sidebarCollapsed ? 'ml-4' : 'ml-4'
-          }`}
+          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0`}
           style={{
             top: '240px'
           }}

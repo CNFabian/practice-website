@@ -32,12 +32,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
     const timer2 = setTimeout(() => setConfettiVisible(true), 500);
-    const timer3 = setTimeout(() => setConfettiVisible(false), 3000);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
     };
   }, []);
 
@@ -78,7 +76,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
         </div>
 
         {/* Static Image Container */}
-        <div className="mb-6 relative">
+        <div className="relative">
           <div className="w-48 h-48 mx-auto relative">
             {/* Your static celebration image */}
             <div className="absolute inset-0 flex items-center justify-center">
