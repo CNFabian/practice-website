@@ -1,7 +1,8 @@
 import React from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
-import FeedbackContainer from './FeedbackContainer'; // Import the new component
+import FeedbackContainer from './FeedbackContainer';
+import QuizResults from './QuizResults';
 
 interface LessonQuizProps {
   lesson: Lesson;
@@ -75,9 +76,23 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     resetQuiz();
   };
 
+  const handleClaimRewards = () => {
+    // Add your rewards claiming logic here
+    console.log('Claiming rewards for score:', quizState.score);
+    // Could navigate to rewards page, show rewards modal, etc.
+    handleFinish();
+  };
+
   // Use Redux state instead of local state
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
+
+  // Calculate correct answers for results
+  const correctAnswers = quizState.questions.reduce((acc, question, index) => {
+    const userAnswer = quizState.answers[index];
+    const correctOption = question.options.find(opt => opt.isCorrect);
+    return acc + (userAnswer === correctOption?.id ? 1 : 0);
+  }, 0);
 
   // Question Component for reusability
   const QuestionCard: React.FC<{
@@ -265,41 +280,16 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             </div>
           </>
         ) : (
-          /* Results Screen */
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="mb-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
-                quizState.score >= 80 ? 'bg-green-100' : quizState.score >= 60 ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
-                {quizState.score >= 80 ? '🎉' : quizState.score >= 60 ? '👍' : '📚'}
-              </div>
-            </div>
-
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {quizState.score >= 80 ? 'Excellent!' : quizState.score >= 60 ? 'Good Job!' : 'Keep Learning!'}
-            </h2>
-            
-            <p className="text-lg text-gray-600 mb-1">Your Score: {quizState.score}%</p>
-            <p className="text-xs text-gray-600 mb-6">
-              You got {Math.round((quizState.score / 100) * quizState.questions.length)} out of {quizState.questions.length} questions correct
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={handleFinish}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Continue Learning
-              </button>
-              
-              <button
-                onClick={handleRetake}
-                className="block px-6 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Retake Quiz
-              </button>
-            </div>
-          </div>
+          /* Use the separate QuizResults component instead of the inline results */
+          <QuizResults
+            score={quizState.score}
+            totalQuestions={quizState.questions.length}
+            correctAnswers={correctAnswers}
+            onContinue={handleFinish}
+            onRetake={handleRetake}
+            onClaimRewards={handleClaimRewards}
+            lessonTitle={lesson.title}
+          />
         )}
       </div>
     </div>
