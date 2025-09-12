@@ -193,9 +193,12 @@ const LessonView: React.FC<LessonViewProps> = ({
         <button
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
-          className={`relative ml-4 top-60 x-10 z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
-            sidebarCollapsed ? '' : 'left-[calc(30%+2px)]'
+          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0 ${
+            sidebarCollapsed ? 'ml-4' : 'ml-4'
           }`}
+          style={{
+            top: '240px'
+          }}
         >
           <svg 
             className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
@@ -212,7 +215,7 @@ const LessonView: React.FC<LessonViewProps> = ({
           sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
         }`}>
           <div 
-            className="h-full px-2 flex flex-col overflow-y-auto -ml-8" 
+            className="h-full px-2 flex flex-col overflow-y-auto" 
             style={{ 
               scrollbarWidth: 'none', 
               msOverflowStyle: 'none'
@@ -413,14 +416,16 @@ const LessonView: React.FC<LessonViewProps> = ({
         }`} />
 
         {/* Right Column - Video Player */}
-        <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
-          sidebarCollapsed ? 'flex-1' : 'w-[70%]'
+           <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
+          sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
         }`}>
           {/* Main Video Content */}
           <div className={`h-full transition-transform duration-700 ease-in-out ${
             showQuiz ? '-translate-x-full' : 'translate-x-0'
           }`}>
-            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-4">
+            <div className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
+              sidebarCollapsed ? 'px-6' : 'px-4'
+            }`}>
               <div className="space-y-6 pb-6">
                 {/* Video Player */}
                 <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
