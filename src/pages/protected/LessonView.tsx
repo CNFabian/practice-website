@@ -224,25 +224,25 @@ const LessonView: React.FC<LessonViewProps> = ({
             {/* Top Fixed Content */}
             <div className="flex-shrink-0">
               {/* Back Button and Quiz Status Row */}
-              <div className="py-2 flex items-center justify-between">
+              <div className="pb-2 flex items-center justify-between gap-2 min-w-0">
                 <button
                   onClick={handleBack}
                   disabled={isTransitioning}
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Back to Module
+                  <span className="whitespace-nowrap">Back to Module</span>
                 </button>
 
                 {/* Quiz Status from Redux */}
                 {quizCompleted && (
-                  <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg">
-                   <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5" color="currentColor"/>
-                    <span className="text-xs font-medium">Quiz Completed</span>
+                  <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg flex-shrink-0 min-w-0">
+                   <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5 flex-shrink-0" color="currentColor"/>
+                    <span className="text-xs font-medium whitespace-nowrap">Quiz Completed</span>
                     {currentLessonProgress?.quizScore && (
-                      <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
                         {currentLessonProgress.quizScore}%
                       </span>
                     )}
@@ -288,17 +288,10 @@ const LessonView: React.FC<LessonViewProps> = ({
                   
                   {/* Completion badge from Redux */}
                   {isCompleted && (
-                    <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
+                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                       </svg>
-                    </div>
-                  )}
-                  
-                  {/* Progress overlay from Redux */}
-                  {watchProgress > 0 && (
-                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                      {watchProgress}%
                     </div>
                   )}
                 </div>
@@ -444,21 +437,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {lesson.duration}
                     </div>
                   </div>
-                  
-                  {/* Video Progress Bar */}
-                  {watchProgress > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1 bg-white bg-opacity-20 rounded-full h-1">
-                          <div
-                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
-                            style={{ width: `${watchProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-white text-sm">{watchProgress}%</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Video Transcript */}
