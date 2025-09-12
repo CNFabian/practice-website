@@ -4,6 +4,7 @@ import { Lesson, Module } from '../../types/modules';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
 import RewardsModal from './RewardsModal';
+import { QuestionImage } from '../../assets';
 
 interface LessonQuizProps {
   lesson: Lesson;
@@ -119,11 +120,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
           {/* Illustration - Made larger with rounded-xl and background */}
           <div className="mb-4 flex-shrink-0">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center relative shadow-sm border border-blue-200">
-              <div className="text-4xl">🤔</div>
-              <div className="absolute -top-1 -left-1 text-blue-400 text-2xl">❓</div>
-              <div className="absolute -top-2 right-1 text-blue-300 text-lg">❓</div>
-            </div>
+           <img src={QuestionImage} alt="Question Illustration" className="w-64 h-64 object-cover rounded-xl" />
           </div>
 
           {/* Question */}

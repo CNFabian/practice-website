@@ -125,7 +125,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
         </div>
 
         {/* Success message */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-gray-900">
           You completed the lesson!
         </h2>
         
@@ -149,15 +149,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
             Try Again
           </button>
         </div>
-
-        {/* Achievement badge if high score */}
-        {score >= 80 && (
-          <div className="mt-6 animate-pulse">
-            <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-xs font-medium">
-              🏆 Great Job! {score}% Score
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

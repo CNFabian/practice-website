@@ -98,14 +98,14 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           <div className="flex gap-3">
             <button 
               onClick={handleRewardsClick}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-full font-semibold hover:bg-blue-700 transition-colors transform hover:scale-105"
+              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors transform hover:scale-105"
             >
               Go to rewards
             </button>
             
             <button 
               onClick={handleBadgesClick}
-              className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-full font-medium hover:bg-gray-200 transition-colors transform hover:scale-105"
+              className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition-colors transform hover:scale-105"
             >
               Badges
             </button>
