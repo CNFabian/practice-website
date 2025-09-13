@@ -116,6 +116,51 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Handle rewards modal actions
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
+    
+    // Trigger coin vacuum animation when modal closes
+    if (containerRef.current) {
+      // Get actual positions of the static coins that are visible on the page
+      const coinPositions = staticCoinRefs.current
+        .filter(ref => ref !== null)
+        .map(ref => {
+          if (ref) {
+            const rect = ref.getBoundingClientRect();
+            return {
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
+            };
+          }
+          return null;
+        })
+        .filter(pos => pos !== null);
+
+      // Create escape coins using actual static coin positions
+      const coins = coinPositions.map((pos, i) => ({
+        id: `coin-${i}`,
+        startX: pos!.x,
+        startY: pos!.y,
+        icon: coinIcons[i % coinIcons.length],
+        delay: Math.random() * 0.8
+      }));
+      
+      setEscapeCoins(coins);
+      setCoinVacuumActive(true);
+      setCoinsHaveBeenVacuumed(true);
+      
+      // Schedule coin increments to happen as coins reach the header
+      coins.forEach((coin) => {
+        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+        setTimeout(() => {
+          incrementCoins(5);
+        }, arrivalTime);
+      });
+      
+      // Clean up after animation
+      setTimeout(() => {
+        setEscapeCoins([]);
+        setCoinVacuumActive(false);
+      }, 2200);
+    }
   };
 
   const handleNavigateToRewards = () => {
