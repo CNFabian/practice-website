@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
-import RewardsModal from './RewardsModal';
-import { QuestionImage } from '../../assets';
 
 interface LessonQuizProps {
   lesson: Lesson;
@@ -20,11 +18,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   onClose,
   onComplete
 }) => {
-  // Add state for RewardsModal
-  const [showRewardsModal, setShowRewardsModal] = useState(false);
-  // Add state to trigger coin vacuum animation
-  const [triggerCoinVacuum, setTriggerCoinVacuum] = useState(false);
-
   // Redux state management - get all quiz state from Redux
   const {
     quizState,
@@ -36,13 +29,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     completeQuiz
   } = useModules();
 
-  // Reset triggerCoinVacuum when quiz starts or when component becomes visible
-  useEffect(() => {
-    if (isVisible && !quizState.showResults) {
-      setTriggerCoinVacuum(false);
-    }
-  }, [isVisible, quizState.showResults]);
-
   // Keep your exact visual design but use Redux for state
   const handleAnswerSelect = (optionId: string) => {
     if (quizState.isTransitioning) return; // Only check Redux state
@@ -52,8 +38,24 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   const handleNext = () => {
     if (quizState.isTransitioning || !quizState.selectedAnswer) return; // Only check Redux state
     
-    // Always call nextQuestion() - it handles both advancing to next question AND showing results
-    nextQuestion();
+    if (quizState.currentQuestion === quizState.questions.length - 1) {
+      // Calculate final score
+      const correctAnswers = quizState.questions.reduce((acc, question, index) => {
+        const userAnswer = quizState.answers[index];
+        const correctOption = question.options.find(opt => opt.isCorrect);
+        return acc + (userAnswer === correctOption?.id ? 1 : 0);
+      }, 0);
+      
+      const finalScore = Math.round((correctAnswers / quizState.questions.length) * 100);
+      
+      // Complete quiz through Redux
+      completeQuiz(lesson.id, finalScore);
+      // Call parent callback
+      onComplete(finalScore);
+    } else {
+      // Just call Redux action - it handles the transition
+      nextQuestion();
+    }
   };
 
   const handlePrevious = () => {
@@ -64,31 +66,20 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleFinish = () => {
-    // Complete quiz through Redux when user clicks "Next Lesson" on results screen
-    completeQuiz(lesson.id, quizState.score);
     onComplete(quizState.score);
     onClose();
     closeQuiz();
   };
 
   const handleRetake = () => {
-    // Reset coin vacuum state when retaking quiz
-    setTriggerCoinVacuum(false);
     resetQuiz();
   };
 
-  // Modified handleClaimRewards to show the RewardsModal
   const handleClaimRewards = () => {
+    // Add your rewards claiming logic here
     console.log('Claiming rewards for score:', quizState.score);
-    // Show the rewards modal instead of immediately finishing
-    setShowRewardsModal(true);
-  };
-
-  // Handle when RewardsModal is closed - trigger coin vacuum animation
-  const handleRewardsModalClose = () => {
-    setShowRewardsModal(false);
-    // Trigger the coin vacuum animation
-    setTriggerCoinVacuum(true);
+    // Could navigate to rewards page, show rewards modal, etc.
+    handleFinish();
   };
 
   // Use Redux state instead of local state
@@ -119,7 +110,11 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
           {/* Illustration - Made larger with rounded-xl and background */}
           <div className="mb-4 flex-shrink-0">
-           <img src={QuestionImage} alt="Question Illustration" className="w-64 h-64 object-cover rounded-xl" />
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center relative shadow-sm border border-blue-200">
+              <div className="text-4xl">🤔</div>
+              <div className="absolute -top-1 -left-1 text-blue-400 text-2xl">❓</div>
+              <div className="absolute -top-2 right-1 text-blue-300 text-lg">❓</div>
+            </div>
           </div>
 
           {/* Question */}
@@ -191,117 +186,108 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   return (
-    <>
-      <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
-        isVisible ? 'w-full' : 'w-0'
-      } overflow-hidden`}>
-        <div className="p-4 h-full flex flex-col relative">
-          {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
-          <div className="flex items-center justify-between mb-4 flex-shrink-0">
-            <button
-              onClick={() => {
-                onClose();
-                closeQuiz();
-              }}
-              className="text-gray-600 hover:text-gray-800 transition-colors"
-              disabled={quizState.isTransitioning} // Only check Redux state
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="text-left flex-1 ml-4">
-              <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
-              <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
-            </div>
-            <div className="w-6"></div>
+    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
+      isVisible ? 'w-full' : 'w-0'
+    } overflow-hidden`}>
+      <div className="p-4 h-full flex flex-col relative">
+        {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <button
+            onClick={() => {
+              onClose();
+              closeQuiz();
+            }}
+            className="text-gray-600 hover:text-gray-800 transition-colors"
+            disabled={quizState.isTransitioning} // Only check Redux state
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="text-left flex-1 ml-4">
+            <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
+            <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
           </div>
+          <div className="w-6"></div>
+        </div>
 
-          {!quizState.showResults ? (
-            <>
-              {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
-              <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-                <div className="relative h-full w-full overflow-hidden">
-                  
-                  {/* Single question container with fade transition */}
-                  <div
-                    className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-                      quizState.isTransitioning
-                        ? 'opacity-0 transform scale-95'
-                        : 'opacity-100 transform scale-100'
-                    }`}
-                    style={{ 
-                      pointerEvents: quizState.isTransitioning ? 'none' : 'auto'
-                    }}
-                  >
-                    <div className="h-full flex flex-col relative">
-                      <QuestionCard
-                        questionData={currentQuestionData}
-                        selectedAnswer={quizState.selectedAnswer}
-                        showFeedback={showFeedback}
-                        isCurrentQuestion={true}
-                      />
-                    </div>
+        {!quizState.showResults ? (
+          <>
+            {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
+            <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+              <div className="relative h-full w-full overflow-hidden">
+                
+                {/* Single question container with fade transition */}
+                <div
+                  className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+                    quizState.isTransitioning
+                      ? 'opacity-0 transform scale-95'
+                      : 'opacity-100 transform scale-100'
+                  }`}
+                  style={{ 
+                    pointerEvents: quizState.isTransitioning ? 'none' : 'auto'
+                  }}
+                >
+                  <div className="h-full flex flex-col relative">
+                    <QuestionCard
+                      questionData={currentQuestionData}
+                      selectedAnswer={quizState.selectedAnswer}
+                      showFeedback={showFeedback}
+                      isCurrentQuestion={true}
+                    />
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Navigation */}
-              <div className="flex justify-between items-center flex-shrink-0 mt-2">
-                <button
-                  onClick={handlePrevious}
-                  disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
-                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                
-                <div className="flex gap-1">
-                  {quizState.questions.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                        index === quizState.currentQuestion 
-                          ? 'bg-blue-600' 
-                          : index < quizState.currentQuestion 
-                            ? 'bg-green-500' 
-                            : 'bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={handleNext}
-                  disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
-                </button>
+            {/* Navigation */}
+            <div className="flex justify-between items-center flex-shrink-0 mt-2">
+              <button
+                onClick={handlePrevious}
+                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-1">
+                {quizState.questions.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      index === quizState.currentQuestion 
+                        ? 'bg-blue-600' 
+                        : index < quizState.currentQuestion 
+                          ? 'bg-green-500' 
+                          : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
               </div>
-            </>
-          ) : (
-            /* Use the separate QuizResults component instead of the inline results */
-            <QuizResults
-              score={quizState.score}
-              totalQuestions={quizState.questions.length}
-              correctAnswers={correctAnswers}
-              onContinue={handleFinish}
-              onRetake={handleRetake}
-              onClaimRewards={handleClaimRewards}
-              triggerCoinVacuum={triggerCoinVacuum}
-              lessonTitle={lesson.title}
-            />
-          )}
-        </div>
-      </div>
 
-      {/* RewardsModal - appears when quiz results trigger it */}
-      <RewardsModal 
-        isOpen={showRewardsModal}
-        onClose={handleRewardsModalClose}
-      />
-    </>
+              <button
+                onClick={handleNext}
+                disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
+              </button>
+            </div>
+          </>
+        ) : (
+          /* Use the separate QuizResults component instead of the inline results */
+          <QuizResults
+            score={quizState.score}
+            totalQuestions={quizState.questions.length}
+            correctAnswers={correctAnswers}
+            onContinue={handleFinish}
+            onRetake={handleRetake}
+            onClaimRewards={handleClaimRewards}
+            lessonTitle={lesson.title}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
