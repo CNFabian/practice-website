@@ -3,6 +3,7 @@ import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/r
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
+import { useModules } from '../../hooks/useModules';
 import { logoutUser } from '../../services/auth';
 import { logout } from '../../store/slices/authSlice';
 import { 
@@ -21,6 +22,7 @@ const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { totalCoins } = useModules();
 
   const handleLogout = async () => {
     try {
@@ -105,7 +107,7 @@ const Header: React.FC = () => {
               Hello, {getDisplayName()}
             </h1>
             <p className="text-sm text-gray-600">
-              Here's 25 Nest coins to get you started.
+              Here's {totalCoins} Nest coins to get you started.
             </p>
           </div>
         </div>
@@ -114,7 +116,7 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {/* Coins Counter */}
           <div className="flex items-center space-x-2 rounded-full px-3 py-2">
-            <span className="text-lg font-bold text-gray-800">25</span>
+            <span className="text-lg font-bold text-gray-800">{totalCoins}</span>
             <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
           </div>
 

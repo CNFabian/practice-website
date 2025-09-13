@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useModules } from '../../hooks/useModules';
 import { 
   CelebrationImage,
   Coin1, Coin2, Coin3, Coin4, Coin5 
@@ -25,6 +26,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   triggerCoinVacuum = false,
   // lessonTitle is received but not used - this prevents TS errors
 }) => {
+  const { incrementCoins } = useModules();
+  
   // Animation states
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
@@ -101,13 +104,22 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true); // Mark coins as vacuumed permanently
       
+      // Schedule coin increments to happen as coins reach the header
+      // Animation duration is 1.8s, so coins should arrive around 1.8s + their delay
+      coins.forEach((coin) => {
+        const arrivalTime = 1000 + (coin.delay * 1000) + 800; // Base time + delay + animation time
+        setTimeout(() => {
+          incrementCoins(5); // Add 5 coins when this coin reaches the header
+        }, arrivalTime);
+      });
+      
       // Clean up after animation
       setTimeout(() => {
         setEscapeCoins([]);
         setCoinVacuumActive(false);
       }, 2200);
     }
-  }, [triggerCoinVacuum]);
+  }, [triggerCoinVacuum, incrementCoins, coinIcons]);
 
   // Generate coin positions for the earned coins
   const generateCoinPositions = () => {

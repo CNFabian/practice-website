@@ -62,7 +62,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       
       const finalScore = Math.round((correctAnswers / quizState.questions.length) * 100);
       
-      // Complete quiz through Redux
+      // Complete quiz through Redux - this will automatically add coins to the store
       completeQuiz(lesson.id, finalScore);
       // Call parent callback
       onComplete(finalScore);

@@ -73,6 +73,9 @@ interface ModuleState {
   // Quiz state
   quizState: QuizState;
   
+  // Coin tracking
+  totalCoins: number;
+  
   // UI state
   sidebarCollapsed: boolean;
   showCompactLayout: boolean;
@@ -106,6 +109,7 @@ const initialState: ModuleState = {
   lessonProgress: {},
   moduleProgress: {},
   quizState: initialQuizState,
+  totalCoins: 25, // Starting with 25 coins as shown in header
   sidebarCollapsed: true,
   showCompactLayout: false,
   activeTab: 'All',
@@ -133,6 +137,19 @@ const moduleSlice = createSlice({
     // Data loading
     setModules: (state, action: PayloadAction<Module[]>) => {
       state.modules = action.payload;
+    },
+    
+    // Coin management
+    addCoins: (state, action: PayloadAction<number>) => {
+      state.totalCoins += action.payload;
+    },
+    
+    spendCoins: (state, action: PayloadAction<number>) => {
+      state.totalCoins = Math.max(0, state.totalCoins - action.payload);
+    },
+    
+    setCoins: (state, action: PayloadAction<number>) => {
+      state.totalCoins = action.payload;
     },
     
     // Progress tracking
@@ -184,19 +201,26 @@ const moduleSlice = createSlice({
     markLessonCompleted: (state, action: PayloadAction<{ 
       lessonId: number; 
       moduleId: number; 
-      quizScore?: number 
+      quizScore?: number;
     }>) => {
       const { lessonId, moduleId, quizScore } = action.payload;
-      state.lessonProgress[lessonId] = {
-        ...state.lessonProgress[lessonId],
+      const existingProgress = state.lessonProgress[lessonId] || {
         lessonId,
         moduleId,
+        completed: false,
+        watchProgress: 0,
+        quizCompleted: false,
+        quizScore: null,
+        timeSpent: 0,
+        lastAccessed: new Date().toISOString()
+      };
+      
+      state.lessonProgress[lessonId] = {
+        ...existingProgress,
         completed: true,
         quizCompleted: quizScore !== undefined,
-        quizScore: quizScore || state.lessonProgress[lessonId]?.quizScore || null,
-        lastAccessed: new Date().toISOString(),
-        watchProgress: state.lessonProgress[lessonId]?.watchProgress || 100,
-        timeSpent: state.lessonProgress[lessonId]?.timeSpent || 0,
+        quizScore: quizScore || existingProgress.quizScore,
+        lastAccessed: new Date().toISOString()
       };
       
       // Update module progress
@@ -266,46 +290,41 @@ const moduleSlice = createSlice({
         
         state.quizState.score = Math.round((correctAnswers / state.quizState.questions.length) * 100);
         state.quizState.showResults = true;
+        state.quizState.showFeedback = false;
       }
-      
-      // Clear transition state
       state.quizState.isTransitioning = false;
-      state.quizState.previousQuestionData = null;
-      state.quizState.previousQuestionNumber = 0;
-      state.quizState.previousSelectedAnswer = null;
     },
     
-    // Start transition for previous question
+    // Start transition for previous question  
     startPreviousQuizTransition: (state) => {
-      // Store current question data before transition
-      const currentQ = state.quizState.questions[state.quizState.currentQuestion];
-      state.quizState.previousQuestionData = currentQ;
-      state.quizState.previousQuestionNumber = state.quizState.currentQuestion + 1;
-      state.quizState.previousSelectedAnswer = state.quizState.selectedAnswer;
       state.quizState.isTransitioning = true;
     },
     
-    // Complete transition to previous question  
+    // Complete transition to previous question
     previousQuizQuestion: (state) => {
       if (state.quizState.currentQuestion > 0) {
         state.quizState.currentQuestion -= 1;
         state.quizState.selectedAnswer = state.quizState.answers[state.quizState.currentQuestion] || null;
         state.quizState.showFeedback = false;
       }
-      
-      // Clear transition state
       state.quizState.isTransitioning = false;
-      state.quizState.previousQuestionData = null;
-      state.quizState.previousQuestionNumber = 0;
-      state.quizState.previousSelectedAnswer = null;
     },
     
     completeQuiz: (state, action: PayloadAction<{ lessonId: number; score: number }>) => {
       const { lessonId, score } = action.payload;
-      state.quizState.score = score;
-      state.quizState.showResults = true;
       
-      // Update lesson progress with quiz completion
+      // Calculate coins earned (5 coins per correct answer)
+      const correctAnswers = state.quizState.questions.filter((question, index) => {
+        const userAnswer = state.quizState.answers[index];
+        return question.options.find(option => option.id === userAnswer)?.isCorrect;
+      }).length;
+      
+      const coinsEarned = correctAnswers * 5;
+      
+      // Add coins to total (will be animated by the UI)
+      state.totalCoins += coinsEarned;
+      
+      // Mark lesson as completed with quiz score
       if (state.selectedModuleId) {
         const existingProgress = state.lessonProgress[lessonId] || {
           lessonId,
@@ -374,6 +393,9 @@ export const {
   setSelectedModule,
   setSelectedLesson,
   setModules,
+  addCoins,
+  spendCoins,
+  setCoins,
   updateLessonProgress,
   markLessonCompleted,
   startQuiz,
