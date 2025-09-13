@@ -52,23 +52,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   const handleNext = () => {
     if (quizState.isTransitioning || !quizState.selectedAnswer) return; // Only check Redux state
     
-    if (quizState.currentQuestion === quizState.questions.length - 1) {
-      // Calculate final score
-      const correctAnswers = quizState.questions.reduce((acc, question, index) => {
-        const userAnswer = quizState.answers[index];
-        const correctOption = question.options.find(opt => opt.isCorrect);
-        return acc + (userAnswer === correctOption?.id ? 1 : 0);
-      }, 0);
-      
-      const finalScore = Math.round((correctAnswers / quizState.questions.length) * 100);
-      
-      // Complete quiz through Redux - this will automatically add coins to the store AND show results
-      completeQuiz(lesson.id, finalScore);
-      // DO NOT call onComplete here - it will be called from handleFinish when user clicks "Next Lesson"
-    } else {
-      // Just call Redux action - it handles the transition
-      nextQuestion();
-    }
+    // Always call nextQuestion() - it handles both advancing to next question AND showing results
+    nextQuestion();
   };
 
   const handlePrevious = () => {

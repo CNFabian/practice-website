@@ -187,40 +187,33 @@ const LessonView: React.FC<LessonViewProps> = ({
   const quizCompleted = currentLessonProgress?.quizCompleted || false;
 
   return (
-    <div className="pt-6 w-full h-full">
-      <div className="flex h-full w-full">
+    <div className="w-full h-screen flex flex-col">
+      <div className="flex flex-1 min-h-0">
         {/* Arrow Toggle */}
-        <button
-          onClick={toggleLessonInfo}
-          disabled={isTransitioning}
-          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0`}
-          style={{
-            top: '240px'
-          }}
-        >
-          <svg 
-            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+        <div className="flex items-center">
+          <button
+            onClick={toggleLessonInfo}
+            disabled={isTransitioning}
+            className="relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+            <svg 
+              className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
 
         {/* Left Column - Lesson Info */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
+        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-80 opacity-100'
         }`}>
-          <div 
-            className="h-full px-2 flex flex-col overflow-y-auto" 
-            style={{ 
-              scrollbarWidth: 'none', 
-              msOverflowStyle: 'none'
-            }}
-          >
+          <div className="h-full px-4 flex flex-col">
             {/* Top Fixed Content */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 pt-6">
               {/* Back Button and Quiz Status Row */}
               <div className="pb-2 flex items-center justify-between gap-2 min-w-0">
                 <button
@@ -273,7 +266,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center min-h-0">
               <div 
                 className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
@@ -336,9 +329,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                 {quizCompleted ? 'Retake Quiz' : 'Test Your Knowledge'}
               </button>
 
-              {/* Completion Status from Redux */}
-              
-
               {/* Rewards */}
               <div>
                 <h3 className="text-sm font-semibold mb-2">Rewards</h3>
@@ -373,7 +363,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               )}
 
               {/* Navigation Buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pb-4">
                 <button 
                   disabled={isTransitioning || currentLessonIndex === 0}
                   className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -402,21 +392,17 @@ const LessonView: React.FC<LessonViewProps> = ({
         </div>
 
         {/* Separator Line */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
+        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+          sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-4'
         }`} />
 
         {/* Right Column - Video Player */}
-           <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
-          sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
-        }`}>
+        <div className="flex-1 min-w-0 relative overflow-hidden">
           {/* Main Video Content */}
           <div className={`h-full transition-transform duration-700 ease-in-out ${
             showQuiz ? '-translate-x-full' : 'translate-x-0'
           }`}>
-            <div className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
-              sidebarCollapsed ? 'px-6' : 'px-4'
-            }`}>
+            <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 px-6 pt-6">
               <div className="space-y-6 pb-6">
                 {/* Video Player */}
                 <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
