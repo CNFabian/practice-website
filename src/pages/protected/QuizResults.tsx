@@ -9,6 +9,7 @@ interface QuizResultsProps {
   onContinue: () => void;
   onRetake: () => void;
   onClaimRewards?: () => void;
+  triggerCoinVacuum?: boolean;
   lessonTitle?: string;
 }
 
@@ -19,11 +20,13 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   onContinue,
   onRetake,
   onClaimRewards,
+  triggerCoinVacuum = false,
   // lessonTitle is received but not used - this prevents TS errors
 }) => {
   // Animation states
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
+  const [coinVacuumActive, setCoinVacuumActive] = useState(false);
   
   // Use ref instead of state to prevent re-renders
   const rewardsTriggeredRef = useRef(false);
@@ -52,27 +55,63 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     };
   }, []); // Empty dependency array to prevent re-runs
 
+  // New useEffect to handle the vacuum animation when triggered
+  useEffect(() => {
+    if (triggerCoinVacuum) {
+      setCoinVacuumActive(true);
+    }
+  }, [triggerCoinVacuum]);
+
   // Confetti Component with your coin icons
   const Confetti = () => (
     <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible ? 'block' : 'hidden'}`}>
-      {[...Array(30)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute animate-bounce"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 50}%`,
-            animationDelay: `${Math.random() * 2}s`,
-            animationDuration: `${1 + Math.random()}s`
-          }}
-        >
-          <img 
-            src={coinIcons[Math.floor(Math.random() * coinIcons.length)]}
-            alt="Coin"
-            className="w-6 h-6"
-          />
-        </div>
-      ))}
+      {[...Array(30)].map((_, i) => {
+        const startX = Math.random() * 100;
+        const startY = Math.random() * 50;
+        return (
+          <div
+            key={i}
+            className={`absolute ${coinVacuumActive ? 'animate-coin-vacuum-upward' : 'animate-bounce'}`}
+            style={{
+              left: `${startX}%`,
+              top: `${startY}%`,
+              animationDelay: coinVacuumActive ? `${Math.random() * 0.8}s` : `${Math.random() * 2}s`,
+              animationDuration: coinVacuumActive ? '1.8s' : `${1 + Math.random()}s`,
+              '--start-x': `${startX}vw`,
+              '--start-y': `${startY}vh`,
+            } as React.CSSProperties}
+          >
+            <img 
+              src={coinIcons[Math.floor(Math.random() * coinIcons.length)]}
+              alt="Coin"
+              className="w-6 h-6"
+            />
+          </div>
+        );
+      })}
+      
+      {/* CSS for the vacuum animation - coins go straight up to header center */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes coin-vacuum-upward {
+            0% {
+              opacity: 1;
+              transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(calc(50vw - var(--start-x))) 
+                         translateY(-40vh) 
+                         scale(0.1) 
+                         rotate(720deg);
+            }
+          }
+          
+          .animate-coin-vacuum-upward {
+            animation: coin-vacuum-upward 1.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+          }
+        `
+      }} />
     </div>
   );
 
@@ -100,27 +139,29 @@ const QuizResults: React.FC<QuizResultsProps> = ({
               />
             </div>
 
-            {/* Coin confetti burst behind image using your coin icons */}
-            <div className="absolute -inset-8">
-              <div className="absolute top-2 left-4 animate-bounce" style={{ animationDelay: '0.1s' }}>
-                <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
+            {/* Coin confetti burst behind image using your coin icons - ONLY VISIBLE BEFORE VACUUM */}
+            {!coinVacuumActive && (
+              <div className="absolute -inset-8">
+                <div className="absolute top-2 left-4 animate-bounce" style={{ animationDelay: '0.1s' }}>
+                  <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
+                </div>
+                <div className="absolute top-6 right-2 animate-bounce" style={{ animationDelay: '0.3s' }}>
+                  <img src={coinIcons[1]} alt="Coin" className="w-6 h-6" />
+                </div>
+                <div className="absolute bottom-8 left-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
+                  <img src={coinIcons[2]} alt="Coin" className="w-6 h-6" />
+                </div>
+                <div className="absolute bottom-4 right-6 animate-bounce" style={{ animationDelay: '0.7s' }}>
+                  <img src={coinIcons[3]} alt="Coin" className="w-6 h-6" />
+                </div>
+                <div className="absolute top-4 left-8 animate-bounce" style={{ animationDelay: '0.9s' }}>
+                  <img src={coinIcons[4]} alt="Coin" className="w-6 h-6" />
+                </div>
+                <div className="absolute top-8 right-8 animate-bounce" style={{ animationDelay: '1.1s' }}>
+                  <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
+                </div>
               </div>
-              <div className="absolute top-6 right-2 animate-bounce" style={{ animationDelay: '0.3s' }}>
-                <img src={coinIcons[1]} alt="Coin" className="w-6 h-6" />
-              </div>
-              <div className="absolute bottom-8 left-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
-                <img src={coinIcons[2]} alt="Coin" className="w-6 h-6" />
-              </div>
-              <div className="absolute bottom-4 right-6 animate-bounce" style={{ animationDelay: '0.7s' }}>
-                <img src={coinIcons[3]} alt="Coin" className="w-6 h-6" />
-              </div>
-              <div className="absolute top-4 left-8 animate-bounce" style={{ animationDelay: '0.9s' }}>
-                <img src={coinIcons[4]} alt="Coin" className="w-6 h-6" />
-              </div>
-              <div className="absolute top-8 right-8 animate-bounce" style={{ animationDelay: '1.1s' }}>
-                <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

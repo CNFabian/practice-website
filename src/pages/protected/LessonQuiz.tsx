@@ -22,6 +22,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 }) => {
   // Add state for RewardsModal
   const [showRewardsModal, setShowRewardsModal] = useState(false);
+  // Add state to trigger coin vacuum animation
+  const [triggerCoinVacuum, setTriggerCoinVacuum] = useState(false);
 
   // Redux state management - get all quiz state from Redux
   const {
@@ -87,9 +89,11 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     setShowRewardsModal(true);
   };
 
-  // Handle when RewardsModal is closed
+  // Handle when RewardsModal is closed - trigger coin vacuum animation
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
+    // Trigger the coin vacuum animation
+    setTriggerCoinVacuum(true);
   };
 
   // Use Redux state instead of local state
@@ -290,6 +294,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
               onContinue={handleFinish}
               onRetake={handleRetake}
               onClaimRewards={handleClaimRewards}
+              triggerCoinVacuum={triggerCoinVacuum}
               lessonTitle={lesson.title}
             />
           )}
