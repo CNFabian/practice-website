@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useModules } from '../../hooks/useModules';
+import RewardsModal from './RewardsModal';
 import { 
   CelebrationImage,
   Coin1, Coin2, Coin3, Coin4, Coin5 
@@ -22,7 +23,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   correctAnswers,
   onContinue,
   onRetake,
-  onClaimRewards,
   triggerCoinVacuum = false,
   // lessonTitle is received but not used - this prevents TS errors
 }) => {
@@ -30,9 +30,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   
   // Animation states
   const [showContent, setShowContent] = useState(false);
-  const [confettiVisible, setConfettiVisible] = useState(false);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [coinVacuumActive, setCoinVacuumActive] = useState(false);
-  const [coinsHaveBeenVacuumed, setCoinsHaveBeenVacuumed] = useState(false); // New state to track if coins were vacuumed
+  const [coinsHaveBeenVacuumed, setCoinsHaveBeenVacuumed] = useState(false);
   const [escapeCoins, setEscapeCoins] = useState<Array<{
     id: string;
     startX: number;
@@ -41,10 +41,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     delay: number;
   }>>([]);
   
-  // Use ref instead of state to prevent re-renders
-  const rewardsTriggeredRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]); // Refs for static coins
+  const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
@@ -52,28 +50,23 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Calculate total coins earned (5 coins per correct answer)
   const totalCoinsEarned = correctAnswers * 5;
 
-  // Single useEffect to handle all timing - removed the duplicate
+  // Show content and rewards modal with proper timing
   useEffect(() => {
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
-    const timer2 = setTimeout(() => setConfettiVisible(true), 500);
     
-    // Auto-trigger rewards modal after 1.5 seconds - but only once
-    const timer3 = setTimeout(() => {
-      if (onClaimRewards && !rewardsTriggeredRef.current) {
-        rewardsTriggeredRef.current = true;
-        onClaimRewards();
-      }
-    }, 1500);
+    // Show rewards modal after 2 seconds
+    const timer2 = setTimeout(() => {
+      setShowRewardsModal(true);
+    }, 2000);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
     };
-  }, []); // Empty dependency array to prevent re-runs
+  }, []);
 
-  // New useEffect to handle the vacuum animation when triggered
+  // Handle coin vacuum animation when triggered
   useEffect(() => {
     if (triggerCoinVacuum && containerRef.current) {
       // Get actual positions of the static coins that are visible on the page
@@ -83,8 +76,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({
           if (ref) {
             const rect = ref.getBoundingClientRect();
             return {
-              x: rect.left + rect.width / 2, // Center of the coin
-              y: rect.top + rect.height / 2   // Center of the coin
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
             };
           }
           return null;
@@ -102,14 +95,13 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       
       setEscapeCoins(coins);
       setCoinVacuumActive(true);
-      setCoinsHaveBeenVacuumed(true); // Mark coins as vacuumed permanently
+      setCoinsHaveBeenVacuumed(true);
       
       // Schedule coin increments to happen as coins reach the header
-      // Animation duration is 1.8s, so coins should arrive around 1.8s + their delay
       coins.forEach((coin) => {
-        const arrivalTime = 1000 + (coin.delay * 1000) + 800; // Base time + delay + animation time
+        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
         setTimeout(() => {
-          incrementCoins(5); // Add 5 coins when this coin reaches the header
+          incrementCoins(5);
         }, arrivalTime);
       });
       
@@ -121,14 +113,28 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     }
   }, [triggerCoinVacuum, incrementCoins, coinIcons]);
 
+  // Handle rewards modal actions
+  const handleRewardsModalClose = () => {
+    setShowRewardsModal(false);
+  };
+
+  const handleNavigateToRewards = () => {
+    setShowRewardsModal(false);
+    console.log('Navigating to rewards page');
+  };
+
+  const handleNavigateToBadges = () => {
+    setShowRewardsModal(false);
+    console.log('Navigating to badges page');
+  };
+
   // Generate coin positions for the earned coins
   const generateCoinPositions = () => {
     const positions = [];
-    const maxRadius = 120; // Maximum distance from center
-    const minRadius = 60;  // Minimum distance from center
+    const maxRadius = 120;
+    const minRadius = 60;
     
     for (let i = 0; i < totalCoinsEarned; i++) {
-      // Generate random position within a circular area around the image
       const angle = Math.random() * 2 * Math.PI;
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
       const x = Math.cos(angle) * radius;
@@ -137,7 +143,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       positions.push({
         x: x,
         y: y,
-        delay: i * 0.1, // Stagger animation
+        delay: i * 0.1,
         coinType: coinIcons[i % coinIcons.length]
       });
     }
@@ -151,8 +157,8 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
 
-    const targetX = window.innerWidth * 0.87; // 75% from left (more to the right)
-    const targetY = 25; // Just below header
+    const targetX = window.innerWidth * 0.87;
+    const targetY = 25;
 
     return createPortal(
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
@@ -274,6 +280,14 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
       {/* Render escape coins */}
       <EscapeCoins />
+
+      {/* Rewards Modal */}
+      <RewardsModal
+        isOpen={showRewardsModal}
+        onClose={handleRewardsModalClose}
+        onNavigateToRewards={handleNavigateToRewards}
+        onNavigateToBadges={handleNavigateToBadges}
+      />
     </div>
   );
 };

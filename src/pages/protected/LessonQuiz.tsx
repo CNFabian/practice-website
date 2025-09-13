@@ -40,6 +40,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     
     // FIXED: Always call nextQuestion() - it handles both advancing to next question AND showing results
     // The Redux nextQuizQuestion action will set showResults=true when it's the last question
+    // Do NOT call onComplete here - only call it when user clicks button in results
     nextQuestion();
   };
 
@@ -66,6 +67,19 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     console.log('Claiming rewards for score:', quizState.score);
     // Could navigate to rewards page, show rewards modal, etc.
     handleFinish();
+  };
+
+  const handleCloseQuiz = () => {
+    // FIXED: Only allow closing if not showing results, or if user explicitly wants to close during results
+    if (quizState.showResults) {
+      // If showing results, treat close as "finish without completing"
+      onClose();
+      closeQuiz();
+    } else {
+      // Normal close behavior for questions
+      onClose();
+      closeQuiz();
+    }
   };
 
   // Use Redux state instead of local state
@@ -179,10 +193,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
         {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <button
-            onClick={() => {
-              onClose();
-              closeQuiz();
-            }}
+            onClick={handleCloseQuiz}
             className="text-gray-600 hover:text-gray-800 transition-colors"
             disabled={quizState.isTransitioning} // Only check Redux state
           >
