@@ -1,6 +1,7 @@
 import React from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
+import { QuestionImage } from '../../assets';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
 
@@ -107,25 +108,25 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     return (
       <>
         {/* Question Content - Removed "Test Your Knowledge" header from here */}
-        <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-          {/* Illustration - Made larger with rounded-xl and background */}
-          <div className="mb-4 flex-shrink-0">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center relative shadow-sm border border-blue-200">
-              <div className="text-4xl">🤔</div>
-              <div className="absolute -top-1 -left-1 text-blue-400 text-2xl">❓</div>
-              <div className="absolute -top-2 right-1 text-blue-300 text-lg">❓</div>
-            </div>
+     <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+          {/* Illustration - Improved styling */}
+          <div className="mb-6 relative">
+            <img 
+              src={QuestionImage} 
+              alt="Question Illustration" 
+              className="w-64 h-64 object-cover rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 p-3" 
+            />
           </div>
 
           {/* Question */}
-          <div className="text-center mb-4 flex-shrink-0">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3 leading-tight px-2">
+          <div className="text-center mb-6 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3 leading-tight px-2">
               {questionData?.question}
             </h2>
           </div>
 
           {/* Answer Options */}
-          <div className="grid grid-cols-2 gap-2 w-full mb-4 flex-shrink-0">
+          <div className="grid grid-cols-2 gap-3 w-full mb-4 flex-shrink-0">
             {questionData?.options.map((option: any) => {
               const isSelected = isCurrentQuestion && selectedAnswer === option.id;
               const isOptionCorrect = option.isCorrect;
@@ -161,11 +162,11 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
                   onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
                   disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning}
                   style={buttonStyle}
-                  className={`p-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed ${
+                  className={`p-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed shadow-sm ${
                     isSelected ? 'ring-2 ring-white ring-opacity-50 scale-105' : ''
                   } ${!isCurrentQuestion ? 'opacity-75' : ''}`}
                 >
-                  <div className="text-xs text-center leading-tight">
+                  <div className="text-sm text-center leading-tight">
                     {option.text}
                   </div>
                 </button>

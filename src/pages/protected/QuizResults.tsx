@@ -4,7 +4,7 @@ import { useModules } from '../../hooks/useModules';
 import RewardsModal from './RewardsModal';
 import { 
   CelebrationImage,
-  Coin1, Coin2, Coin3, Coin4, Coin5 
+  Coin1, Coin2, Coin3, Coin4, Coin5,
 } from '../../assets';
 
 interface QuizResultsProps {
@@ -87,7 +87,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   }, []);
 
   // Handle coin vacuum animation when triggered
-  useEffect(() => {
+useEffect(() => {
     if (triggerCoinVacuum && containerRef.current) {
       // Get actual positions of the static coins that are visible on the page
       const coinPositions = staticCoinRefs.current
@@ -117,11 +117,12 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
-      // Schedule coin increments to happen as coins reach the header
+      // FIXED: Schedule coin increments properly - increment by total earned divided by number of coins
+      const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
         const arrivalTime = 1000 + (coin.delay * 1000) + 800;
         setTimeout(() => {
-          incrementCoins(5);
+          incrementCoins(coinsPerAnimation);
         }, arrivalTime);
       });
       
@@ -131,10 +132,10 @@ const QuizResults: React.FC<QuizResultsProps> = ({
         setCoinVacuumActive(false);
       }, 2200);
     }
-  }, [triggerCoinVacuum, incrementCoins, coinIcons]);
+  }, [triggerCoinVacuum, incrementCoins, coinIcons, totalCoinsEarned]);
 
   // Handle rewards modal actions
-  const handleRewardsModalClose = () => {
+const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
     
     // Trigger coin vacuum animation when modal closes
@@ -167,11 +168,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
-      // Schedule coin increments to happen as coins reach the header
+      const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
         const arrivalTime = 1000 + (coin.delay * 1000) + 800;
         setTimeout(() => {
-          incrementCoins(5);
+          incrementCoins(coinsPerAnimation);
         }, arrivalTime);
       });
       
