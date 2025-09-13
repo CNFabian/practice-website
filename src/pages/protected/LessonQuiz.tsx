@@ -62,10 +62,9 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       
       const finalScore = Math.round((correctAnswers / quizState.questions.length) * 100);
       
-      // Complete quiz through Redux - this will automatically add coins to the store
+      // Complete quiz through Redux - this will automatically add coins to the store AND show results
       completeQuiz(lesson.id, finalScore);
-      // Call parent callback
-      onComplete(finalScore);
+      // DO NOT call onComplete here - it will be called from handleFinish when user clicks "Next Lesson"
     } else {
       // Just call Redux action - it handles the transition
       nextQuestion();
@@ -80,6 +79,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleFinish = () => {
+    // Complete quiz through Redux when user clicks "Next Lesson" on results screen
+    completeQuiz(lesson.id, quizState.score);
     onComplete(quizState.score);
     onClose();
     closeQuiz();
