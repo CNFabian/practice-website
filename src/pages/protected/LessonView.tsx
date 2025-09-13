@@ -271,7 +271,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
                   height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
-                  minHeight: descriptionExpanded ? '64px' : '120px'
+                  minHeight: descriptionExpanded ? '64px' : '150px'
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
