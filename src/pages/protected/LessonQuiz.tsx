@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Lesson, Module } from '../../types/modules';
 import FeedbackContainer from './FeedbackContainer';
@@ -35,6 +35,13 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     closeQuiz,
     completeQuiz
   } = useModules();
+
+  // Reset triggerCoinVacuum when quiz starts or when component becomes visible
+  useEffect(() => {
+    if (isVisible && !quizState.showResults) {
+      setTriggerCoinVacuum(false);
+    }
+  }, [isVisible, quizState.showResults]);
 
   // Keep your exact visual design but use Redux for state
   const handleAnswerSelect = (optionId: string) => {
@@ -79,6 +86,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleRetake = () => {
+    // Reset coin vacuum state when retaking quiz
+    setTriggerCoinVacuum(false);
     resetQuiz();
   };
 

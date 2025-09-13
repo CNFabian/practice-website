@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
+import { createPortal } from 'react-dom';
 import {Coin1, Coin2, Coin3, Coin4, Coin5, CelebrationImage} from '../../assets'
 
 interface QuizResultsProps {
@@ -27,9 +27,17 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
   const [coinVacuumActive, setCoinVacuumActive] = useState(false);
+  const [escapeCoins, setEscapeCoins] = useState<Array<{
+    id: number;
+    startX: number;
+    startY: number;
+    icon: string;
+    delay: number;
+  }>>([]);
   
   // Use ref instead of state to prevent re-renders
   const rewardsTriggeredRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
@@ -57,29 +65,52 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   // New useEffect to handle the vacuum animation when triggered
   useEffect(() => {
-    if (triggerCoinVacuum) {
+    if (triggerCoinVacuum && containerRef.current) {
+      // Get container position for proper coin placement
+      const rect = containerRef.current.getBoundingClientRect();
+      
+      // Create escape coins with absolute positions
+      const coins = Array.from({ length: 30 }, (_, i) => {
+        // Random position within the visible container
+        const relativeX = Math.random() * 80 + 10; // 10% to 90% to avoid edges
+        const relativeY = Math.random() * 60 + 20; // 20% to 80% to stay in visible area
+        
+        return {
+          id: i,
+          startX: rect.left + (rect.width * relativeX / 100),
+          startY: rect.top + (rect.height * relativeY / 100),
+          icon: coinIcons[Math.floor(Math.random() * coinIcons.length)],
+          delay: Math.random() * 0.8
+        };
+      });
+      
+      setEscapeCoins(coins);
       setCoinVacuumActive(true);
+      
+      // Hide regular confetti and clean up after animation
+      setTimeout(() => {
+        setEscapeCoins([]);
+        setCoinVacuumActive(false);
+      }, 2200);
     }
   }, [triggerCoinVacuum]);
 
-  // Confetti Component with your coin icons
+  // Regular Confetti Component (only shows when vacuum is not active)
   const Confetti = () => (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible ? 'block' : 'hidden'}`}>
+    <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible && !coinVacuumActive ? 'block' : 'hidden'}`}>
       {[...Array(30)].map((_, i) => {
         const startX = Math.random() * 100;
         const startY = Math.random() * 50;
         return (
           <div
             key={i}
-            className={`absolute ${coinVacuumActive ? 'animate-coin-vacuum-upward' : 'animate-bounce'}`}
+            className="absolute animate-bounce"
             style={{
               left: `${startX}%`,
               top: `${startY}%`,
-              animationDelay: coinVacuumActive ? `${Math.random() * 0.8}s` : `${Math.random() * 2}s`,
-              animationDuration: coinVacuumActive ? '1.8s' : `${1 + Math.random()}s`,
-              '--start-x': `${startX}vw`,
-              '--start-y': `${startY}vh`,
-            } as React.CSSProperties}
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${1 + Math.random()}s`,
+            }}
           >
             <img 
               src={coinIcons[Math.floor(Math.random() * coinIcons.length)]}
@@ -89,34 +120,65 @@ const QuizResults: React.FC<QuizResultsProps> = ({
           </div>
         );
       })}
-      
-      {/* CSS for the vacuum animation - coins go straight up to header center */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes coin-vacuum-upward {
-            0% {
-              opacity: 1;
-              transform: translateX(0) translateY(0) scale(1) rotate(0deg);
-            }
-            100% {
-              opacity: 0;
-              transform: translateX(calc(50vw - var(--start-x))) 
-                         translateY(-40vh) 
-                         scale(0.1) 
-                         rotate(720deg);
-            }
-          }
-          
-          .animate-coin-vacuum-upward {
-            animation: coin-vacuum-upward 1.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
-          }
-        `
-      }} />
     </div>
   );
 
+  // Escape Coins Portal Component
+  const EscapeCoins = () => {
+    if (escapeCoins.length === 0) return null;
+
+    const targetX = window.innerWidth * 0.87; // 75% from left (more to the right)
+    const targetY = 25; // Just below header
+
+    return createPortal(
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
+        {escapeCoins.map((coin) => (
+          <div
+            key={coin.id}
+            className="absolute w-6 h-6"
+            style={{
+              left: `${coin.startX}px`,
+              top: `${coin.startY}px`,
+              animation: `coinEscape-${coin.id} 1.8s cubic-bezier(0.4, 0.0, 0.2, 1) ${coin.delay}s forwards`,
+            }}
+          >
+            <img 
+              src={coin.icon}
+              alt="Coin"
+              className="w-full h-full"
+            />
+          </div>
+        ))}
+        
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            ${escapeCoins.map(coin => `
+              @keyframes coinEscape-${coin.id} {
+                0% {
+                  opacity: 1;
+                  transform: scale(1) rotate(0deg);
+                }
+                100% {
+                  opacity: 1;
+                  transform: translateX(${targetX - coin.startX}px) 
+                             translateY(${targetY - coin.startY}px) 
+                             scale(1) 
+                             rotate(720deg);
+                }
+              }
+            `).join('')}
+          `
+        }} />
+      </div>,
+      document.body
+    );
+  };
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 relative bg-gradient-to-b from-blue-50 to-white">
+    <div 
+      ref={containerRef}
+      className="flex-1 flex flex-col items-center justify-center text-center p-6 relative bg-gradient-to-b from-blue-50 to-white"
+    >
       <Confetti />
       
       <div className={`transform transition-all duration-700 ${showContent ? 
@@ -191,6 +253,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Render escape coins */}
+      <EscapeCoins />
     </div>
   );
 };
