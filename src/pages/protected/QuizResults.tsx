@@ -46,6 +46,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
+  // Calculate total coins earned (5 coins per correct answer)
+  const totalCoinsEarned = correctAnswers * 5;
+
   // Single useEffect to handle all timing - removed the duplicate
   useEffect(() => {
     // Delay content reveal
@@ -106,33 +109,31 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     }
   }, [triggerCoinVacuum]);
 
-  // Regular Confetti Component (only shows when vacuum is not active AND coins haven't been vacuumed)
-  const Confetti = () => (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible && !coinVacuumActive && !coinsHaveBeenVacuumed ? 'block' : 'hidden'}`}>
-      {[...Array(30)].map((_, i) => {
-        const startX = Math.random() * 100;
-        const startY = Math.random() * 50;
-        return (
-          <div
-            key={i}
-            className="absolute animate-bounce"
-            style={{
-              left: `${startX}%`,
-              top: `${startY}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${1 + Math.random()}s`,
-            }}
-          >
-            <img 
-              src={coinIcons[Math.floor(Math.random() * coinIcons.length)]}
-              alt="Coin"
-              className="w-6 h-6"
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
+  // Generate coin positions for the earned coins
+  const generateCoinPositions = () => {
+    const positions = [];
+    const maxRadius = 120; // Maximum distance from center
+    const minRadius = 60;  // Minimum distance from center
+    
+    for (let i = 0; i < totalCoinsEarned; i++) {
+      // Generate random position within a circular area around the image
+      const angle = Math.random() * 2 * Math.PI;
+      const radius = minRadius + Math.random() * (maxRadius - minRadius);
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
+      positions.push({
+        x: x,
+        y: y,
+        delay: i * 0.1, // Stagger animation
+        coinType: coinIcons[i % coinIcons.length]
+      });
+    }
+    
+    return positions;
+  };
+
+  const coinPositions = generateCoinPositions();
 
   // Escape Coins Portal Component
   const EscapeCoins = () => {
@@ -190,8 +191,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       ref={containerRef}
       className="flex-1 flex flex-col items-center justify-center text-center p-6 relative bg-gradient-to-b from-blue-50 to-white"
     >
-      <Confetti />
-      
       <div className={`transform transition-all duration-700 ${showContent ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} max-w-sm w-full`}>
         
         {/* Score indicator at top */}
@@ -211,51 +210,24 @@ const QuizResults: React.FC<QuizResultsProps> = ({
               />
             </div>
 
-            {/* Coin confetti burst behind image using your coin icons - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
+            {/* Dynamic coin confetti burst behind image - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
             {!coinVacuumActive && !coinsHaveBeenVacuumed && (
-              <div className="absolute -inset-8">
-                <div 
-                  ref={(el) => staticCoinRefs.current[0] = el}
-                  className="absolute top-2 left-4 animate-bounce" 
-                  style={{ animationDelay: '0.1s' }}
-                >
-                  <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
-                </div>
-                <div 
-                  ref={(el) => staticCoinRefs.current[1] = el}
-                  className="absolute top-6 right-2 animate-bounce" 
-                  style={{ animationDelay: '0.3s' }}
-                >
-                  <img src={coinIcons[1]} alt="Coin" className="w-6 h-6" />
-                </div>
-                <div 
-                  ref={(el) => staticCoinRefs.current[2] = el}
-                  className="absolute bottom-8 left-2 animate-bounce" 
-                  style={{ animationDelay: '0.5s' }}
-                >
-                  <img src={coinIcons[2]} alt="Coin" className="w-6 h-6" />
-                </div>
-                <div 
-                  ref={(el) => staticCoinRefs.current[3] = el}
-                  className="absolute bottom-4 right-6 animate-bounce" 
-                  style={{ animationDelay: '0.7s' }}
-                >
-                  <img src={coinIcons[3]} alt="Coin" className="w-6 h-6" />
-                </div>
-                <div 
-                  ref={(el) => staticCoinRefs.current[4] = el}
-                  className="absolute top-4 left-8 animate-bounce" 
-                  style={{ animationDelay: '0.9s' }}
-                >
-                  <img src={coinIcons[4]} alt="Coin" className="w-6 h-6" />
-                </div>
-                <div 
-                  ref={(el) => staticCoinRefs.current[5] = el}
-                  className="absolute top-8 right-8 animate-bounce" 
-                  style={{ animationDelay: '1.1s' }}
-                >
-                  <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
-                </div>
+              <div className="absolute -inset-24">
+                {coinPositions.map((position, index) => (
+                  <div 
+                    key={index}
+                    ref={(el) => staticCoinRefs.current[index] = el}
+                    className="absolute animate-bounce" 
+                    style={{ 
+                      left: `calc(50% + ${position.x}px)`,
+                      top: `calc(50% + ${position.y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      animationDelay: `${position.delay}s`
+                    }}
+                  >
+                    <img src={position.coinType} alt="Coin" className="w-6 h-6" />
+                  </div>
+                ))}
               </div>
             )}
           </div>
