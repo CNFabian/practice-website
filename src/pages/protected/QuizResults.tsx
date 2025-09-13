@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {Coin1, Coin2, Coin3, Coin4, Coin5, CelebrationImage} from '../../assets'
+import { 
+  CelebrationImage,
+  Coin1, Coin2, Coin3, Coin4, Coin5 
+} from '../../assets';
 
 interface QuizResultsProps {
   score: number;
@@ -14,7 +17,6 @@ interface QuizResultsProps {
 }
 
 const QuizResults: React.FC<QuizResultsProps> = ({
-  score,
   totalQuestions,
   correctAnswers,
   onContinue,
@@ -27,8 +29,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const [showContent, setShowContent] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(false);
   const [coinVacuumActive, setCoinVacuumActive] = useState(false);
+  const [coinsHaveBeenVacuumed, setCoinsHaveBeenVacuumed] = useState(false); // New state to track if coins were vacuumed
   const [escapeCoins, setEscapeCoins] = useState<Array<{
-    id: number;
+    id: string;
     startX: number;
     startY: number;
     icon: string;
@@ -38,6 +41,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Use ref instead of state to prevent re-renders
   const rewardsTriggeredRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]); // Refs for static coins
 
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
@@ -66,28 +70,35 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // New useEffect to handle the vacuum animation when triggered
   useEffect(() => {
     if (triggerCoinVacuum && containerRef.current) {
-      // Get container position for proper coin placement
-      const rect = containerRef.current.getBoundingClientRect();
-      
-      // Create escape coins with absolute positions
-      const coins = Array.from({ length: 30 }, (_, i) => {
-        // Random position within the visible container
-        const relativeX = Math.random() * 80 + 10; // 10% to 90% to avoid edges
-        const relativeY = Math.random() * 60 + 20; // 20% to 80% to stay in visible area
-        
-        return {
-          id: i,
-          startX: rect.left + (rect.width * relativeX / 100),
-          startY: rect.top + (rect.height * relativeY / 100),
-          icon: coinIcons[Math.floor(Math.random() * coinIcons.length)],
-          delay: Math.random() * 0.8
-        };
-      });
+      // Get actual positions of the static coins that are visible on the page
+      const coinPositions = staticCoinRefs.current
+        .filter(ref => ref !== null)
+        .map(ref => {
+          if (ref) {
+            const rect = ref.getBoundingClientRect();
+            return {
+              x: rect.left + rect.width / 2, // Center of the coin
+              y: rect.top + rect.height / 2   // Center of the coin
+            };
+          }
+          return null;
+        })
+        .filter(pos => pos !== null);
+
+      // Create escape coins using actual static coin positions
+      const coins = coinPositions.map((pos, i) => ({
+        id: `coin-${i}`,
+        startX: pos!.x,
+        startY: pos!.y,
+        icon: coinIcons[i % coinIcons.length],
+        delay: Math.random() * 0.8
+      }));
       
       setEscapeCoins(coins);
       setCoinVacuumActive(true);
+      setCoinsHaveBeenVacuumed(true); // Mark coins as vacuumed permanently
       
-      // Hide regular confetti and clean up after animation
+      // Clean up after animation
       setTimeout(() => {
         setEscapeCoins([]);
         setCoinVacuumActive(false);
@@ -95,9 +106,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     }
   }, [triggerCoinVacuum]);
 
-  // Regular Confetti Component (only shows when vacuum is not active)
+  // Regular Confetti Component (only shows when vacuum is not active AND coins haven't been vacuumed)
   const Confetti = () => (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible && !coinVacuumActive ? 'block' : 'hidden'}`}>
+    <div className={`absolute inset-0 pointer-events-none overflow-hidden ${confettiVisible && !coinVacuumActive && !coinsHaveBeenVacuumed ? 'block' : 'hidden'}`}>
       {[...Array(30)].map((_, i) => {
         const startX = Math.random() * 100;
         const startY = Math.random() * 50;
@@ -181,8 +192,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     >
       <Confetti />
       
-      <div className={`transform transition-all duration-700 ${showContent ? 
-        'scale-100 opacity-100' : 'scale-95 opacity-0'} max-w-sm w-full`}>
+      <div className={`transform transition-all duration-700 ${showContent ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} max-w-sm w-full`}>
         
         {/* Score indicator at top */}
         <div className="bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6 inline-block">
@@ -201,25 +211,49 @@ const QuizResults: React.FC<QuizResultsProps> = ({
               />
             </div>
 
-            {/* Coin confetti burst behind image using your coin icons - ONLY VISIBLE BEFORE VACUUM */}
-            {!coinVacuumActive && (
+            {/* Coin confetti burst behind image using your coin icons - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
+            {!coinVacuumActive && !coinsHaveBeenVacuumed && (
               <div className="absolute -inset-8">
-                <div className="absolute top-2 left-4 animate-bounce" style={{ animationDelay: '0.1s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[0] = el}
+                  className="absolute top-2 left-4 animate-bounce" 
+                  style={{ animationDelay: '0.1s' }}
+                >
                   <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
                 </div>
-                <div className="absolute top-6 right-2 animate-bounce" style={{ animationDelay: '0.3s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[1] = el}
+                  className="absolute top-6 right-2 animate-bounce" 
+                  style={{ animationDelay: '0.3s' }}
+                >
                   <img src={coinIcons[1]} alt="Coin" className="w-6 h-6" />
                 </div>
-                <div className="absolute bottom-8 left-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[2] = el}
+                  className="absolute bottom-8 left-2 animate-bounce" 
+                  style={{ animationDelay: '0.5s' }}
+                >
                   <img src={coinIcons[2]} alt="Coin" className="w-6 h-6" />
                 </div>
-                <div className="absolute bottom-4 right-6 animate-bounce" style={{ animationDelay: '0.7s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[3] = el}
+                  className="absolute bottom-4 right-6 animate-bounce" 
+                  style={{ animationDelay: '0.7s' }}
+                >
                   <img src={coinIcons[3]} alt="Coin" className="w-6 h-6" />
                 </div>
-                <div className="absolute top-4 left-8 animate-bounce" style={{ animationDelay: '0.9s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[4] = el}
+                  className="absolute top-4 left-8 animate-bounce" 
+                  style={{ animationDelay: '0.9s' }}
+                >
                   <img src={coinIcons[4]} alt="Coin" className="w-6 h-6" />
                 </div>
-                <div className="absolute top-8 right-8 animate-bounce" style={{ animationDelay: '1.1s' }}>
+                <div 
+                  ref={(el) => staticCoinRefs.current[5] = el}
+                  className="absolute top-8 right-8 animate-bounce" 
+                  style={{ animationDelay: '1.1s' }}
+                >
                   <img src={coinIcons[0]} alt="Coin" className="w-6 h-6" />
                 </div>
               </div>
