@@ -26,7 +26,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   triggerCoinVacuum = false,
   // lessonTitle is received but not used - this prevents TS errors
 }) => {
-  const { incrementCoins } = useModules();
+  const { incrementCoins, quizState, lessonProgress, selectedLessonId } = useModules();
   
   // Animation states
   const [showContent, setShowContent] = useState(false);
@@ -47,8 +47,28 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  // Calculate total coins earned (5 coins per correct answer)
-  const totalCoinsEarned = correctAnswers * 5;
+  // Calculate newly earned coins (only for questions not previously completed correctly)
+  const calculateNewlyEarnedCoins = () => {
+    if (!selectedLessonId) return correctAnswers * 5;
+    
+    const existingProgress = lessonProgress[selectedLessonId];
+    const previouslyCompleted = existingProgress?.completedQuestions || {};
+    
+    let newlyEarnedCoins = 0;
+    
+    quizState.questions.forEach((question, index) => {
+      const userAnswer = quizState.answers[index];
+      const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
+      
+      if (isCorrect && !previouslyCompleted[question.id]) {
+        newlyEarnedCoins += 5;
+      }
+    });
+    
+    return newlyEarnedCoins;
+  };
+
+  const totalCoinsEarned = calculateNewlyEarnedCoins();
 
   // Show content and rewards modal with proper timing
   useEffect(() => {

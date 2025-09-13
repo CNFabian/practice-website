@@ -46,6 +46,7 @@ export interface LessonProgress {
   quizScore: number | null;
   timeSpent: number; // in seconds
   lastAccessed: string;
+  completedQuestions: { [questionId: number]: boolean }; // Track which questions were answered correctly
 }
 
 export interface ModuleProgress {
@@ -170,6 +171,7 @@ const moduleSlice = createSlice({
         completed: watchProgress >= 100,
         quizCompleted: state.lessonProgress[lessonId]?.quizCompleted || false,
         quizScore: state.lessonProgress[lessonId]?.quizScore || null,
+        completedQuestions: state.lessonProgress[lessonId]?.completedQuestions || {},
       };
       
       // Update module progress
@@ -212,7 +214,8 @@ const moduleSlice = createSlice({
         quizCompleted: false,
         quizScore: null,
         timeSpent: 0,
-        lastAccessed: new Date().toISOString()
+        lastAccessed: new Date().toISOString(),
+        completedQuestions: {}
       };
       
       state.lessonProgress[lessonId] = {
@@ -313,15 +316,28 @@ const moduleSlice = createSlice({
     completeQuiz: (state, action: PayloadAction<{ lessonId: number; score: number }>) => {
       const { lessonId, score } = action.payload;
       
-      // Calculate coins earned (5 coins per correct answer)
-      const correctAnswers = state.quizState.questions.filter((question, index) => {
+      // Get existing progress to check previously completed questions
+      const existingProgress = state.lessonProgress[lessonId];
+      const previouslyCompleted = existingProgress?.completedQuestions || {};
+      
+      let coinsEarned = 0;
+      const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...previouslyCompleted };
+      
+      // Calculate coins only for newly correct answers
+      state.quizState.questions.forEach((question, index) => {
         const userAnswer = state.quizState.answers[index];
-        return question.options.find(option => option.id === userAnswer)?.isCorrect;
-      }).length;
+        const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
+        
+        if (isCorrect) {
+          // Only award coins if this question wasn't previously completed correctly
+          if (!previouslyCompleted[question.id]) {
+            coinsEarned += 5;
+            newlyCompletedQuestions[question.id] = true;
+          }
+        }
+      });
       
-      const coinsEarned = correctAnswers * 5;
-      
-      // Add coins to total (will be animated by the UI)
+      // Add only newly earned coins
       state.totalCoins += coinsEarned;
       
       // Mark lesson as completed with quiz score
@@ -334,17 +350,46 @@ const moduleSlice = createSlice({
           quizCompleted: false,
           quizScore: null,
           timeSpent: 0,
-          lastAccessed: new Date().toISOString()
+          lastAccessed: new Date().toISOString(),
+          completedQuestions: {}
         };
-        
+
         state.lessonProgress[lessonId] = {
           ...existingProgress,
           quizCompleted: true,
           quizScore: score,
-          completed: true,
+          completedQuestions: newlyCompletedQuestions,
           lastAccessed: new Date().toISOString()
         };
+        
+        // Update module progress
+        const module = state.modules.find(m => m.id === state.selectedModuleId!);
+        if (module) {
+          const moduleProgress = state.moduleProgress[state.selectedModuleId] || {
+            moduleId: state.selectedModuleId,
+            lessonsCompleted: 0,
+            totalLessons: module.lessons.length,
+            overallProgress: 0,
+            status: 'Not Started' as const,
+            lastAccessed: new Date().toISOString()
+          };
+          
+          const completedLessons = module.lessons.filter(lesson => 
+            state.lessonProgress[lesson.id]?.completed
+          ).length;
+          
+          moduleProgress.lessonsCompleted = completedLessons;
+          moduleProgress.overallProgress = Math.round((completedLessons / module.lessons.length) * 100);
+          moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
+                                 completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
+          moduleProgress.lastAccessed = new Date().toISOString();
+          
+          state.moduleProgress[state.selectedModuleId] = moduleProgress;
+        }
       }
+      
+      // Reset quiz state but keep results visible
+      state.quizState.isActive = false;
     },
     
     resetQuiz: (state) => {
@@ -360,8 +405,16 @@ const moduleSlice = createSlice({
       state.currentView = 'lesson';
     },
     
-    // UI state actions
-    setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
+    showQuizFeedback: (state) => {
+      state.quizState.showFeedback = true;
+    },
+    
+    hideQuizFeedback: (state) => {
+      state.quizState.showFeedback = false;
+    },
+    
+    // UI state management
+    toggleSidebar: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
     },
     
@@ -373,17 +426,13 @@ const moduleSlice = createSlice({
       state.activeTab = action.payload;
     },
     
-    // Loading and error states
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
-    },
-    
+    // Error handling
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
     
-    clearError: (state) => {
-      state.error = null;
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
     }
   }
 });
@@ -407,12 +456,13 @@ export const {
   completeQuiz,
   resetQuiz,
   closeQuiz,
-  setSidebarCollapsed,
+  showQuizFeedback,
+  hideQuizFeedback,
+  toggleSidebar,
   setShowCompactLayout,
   setActiveTab,
-  setLoading,
   setError,
-  clearError
+  setLoading
 } = moduleSlice.actions;
 
 export default moduleSlice.reducer;

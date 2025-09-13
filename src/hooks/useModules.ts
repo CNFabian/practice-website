@@ -22,12 +22,11 @@ import {
   completeQuiz,
   resetQuiz,
   closeQuiz,
-  setSidebarCollapsed,
+  toggleSidebar,
   setShowCompactLayout,
   setActiveTab,
   setLoading,
-  setError,
-  clearError
+  setError
 } from '../store/slices/moduleSlice'
 
 export const useModules = () => {
@@ -126,8 +125,8 @@ export const useModules = () => {
   }, [dispatch])
 
   // UI state actions
-  const toggleSidebar = useCallback((collapsed?: boolean) => {
-    dispatch(setSidebarCollapsed(collapsed ?? !moduleState.sidebarCollapsed))
+  const toggleSidebarState = useCallback((collapsed?: boolean) => {
+    dispatch(toggleSidebar(collapsed ?? !moduleState.sidebarCollapsed))
   }, [dispatch, moduleState.sidebarCollapsed])
 
   const toggleCompactLayout = useCallback((compact?: boolean) => {
@@ -148,7 +147,7 @@ export const useModules = () => {
   }, [dispatch])
 
   const clearErrorMessage = useCallback(() => {
-    dispatch(clearError())
+    dispatch(setError(null))
   }, [dispatch])
 
   // Computed properties - keep all your existing getters
@@ -213,7 +212,7 @@ export const useModules = () => {
     closeQuiz: exitQuiz,
 
     // UI state
-    toggleSidebar,
+    toggleSidebar: toggleSidebarState,
     toggleCompactLayout,
     changeActiveTab,
 
