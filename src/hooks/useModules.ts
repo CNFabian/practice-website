@@ -11,6 +11,7 @@ import {
   addCoins,
   spendCoins,
   setCoins,
+  incrementCoinsWithAnimation,
   updateLessonProgress,
   markLessonCompleted,
   startQuiz,
@@ -31,7 +32,13 @@ import {
 
 export const useModules = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const moduleState = useSelector((state: RootState) => state.modules)
+  const moduleState = useSelector
+  
+  ((state: RootState) => state.modules)
+
+  const incrementCoinsWithAnimationHandler = useCallback((lessonId: number, amount: number, isFromAnimation: boolean = false) => {
+  dispatch(incrementCoinsWithAnimation({ lessonId, amount, isFromAnimation }))
+}, [dispatch])
 
   // Navigation actions
   const goToModules = useCallback(() => {
@@ -112,9 +119,9 @@ export const useModules = () => {
     }, 300)
   }, [dispatch])
 
-  const completeQuizWithScore = useCallback((lessonId: number, score: number) => {
-    dispatch(completeQuiz({ lessonId, score }))
-  }, [dispatch])
+  const completeQuizWithScore = useCallback((lessonId: number, score: number, skipCoinIncrement: boolean = false) => {
+  dispatch(completeQuiz({ lessonId, score, skipCoinIncrement }))
+}, [dispatch])
 
   const restartQuiz = useCallback(() => {
     dispatch(resetQuiz())
@@ -195,8 +202,9 @@ export const useModules = () => {
 
     // Coin management
     incrementCoins,
-    decrementCoins,
-    updateTotalCoins,
+  incrementCoinsWithAnimation: incrementCoinsWithAnimationHandler,
+  decrementCoins,
+  updateTotalCoins,
 
     // Progress tracking
     updateProgress,
@@ -204,12 +212,12 @@ export const useModules = () => {
 
     // Quiz actions
     startQuiz: startLessonQuiz,
-    selectAnswer,
-    nextQuestion,
-    previousQuestion,
-    completeQuiz: completeQuizWithScore,
-    resetQuiz: restartQuiz,
-    closeQuiz: exitQuiz,
+  selectAnswer,
+  nextQuestion,
+  previousQuestion,
+  completeQuiz: completeQuizWithScore,
+  resetQuiz: restartQuiz,
+  closeQuiz: exitQuiz,
 
     // UI state
     toggleSidebar: toggleSidebarState,

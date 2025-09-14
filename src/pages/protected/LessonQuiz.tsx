@@ -53,8 +53,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleFinish = () => {
-    // Complete quiz through Redux when user clicks "Continue" on results screen
-    completeQuiz(lesson.id, quizState.score);
+    completeQuiz(lesson.id, quizState.score, true);
     onComplete(quizState.score);
     closeQuiz();
   };

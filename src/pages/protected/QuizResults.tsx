@@ -26,7 +26,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   triggerCoinVacuum = false,
   // lessonTitle is received but not used - this prevents TS errors
 }) => {
-  const { incrementCoins, quizState, lessonProgress, selectedLessonId } = useModules();
+  const { incrementCoinsWithAnimation, quizState, lessonProgress, selectedLessonId } = useModules();
   
   // Animation states
   const [showContent, setShowContent] = useState(false);
@@ -130,56 +130,57 @@ useEffect(() => {
 
   // Handle rewards modal actions
 const handleRewardsModalClose = () => {
-  setShowRewardsModal(false);
-  
-  // Only trigger coin vacuum animation when modal closes AND coins haven't been vacuumed yet
-  if (containerRef.current && !coinsHaveBeenVacuumed) {
-    // Get actual positions of the static coins that are visible on the page
-    const coinPositions = staticCoinRefs.current
-      .filter(ref => ref !== null)
-      .map(ref => {
-        if (ref) {
-          const rect = ref.getBoundingClientRect();
-          return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-          };
-        }
-        return null;
-      })
-      .filter((pos): pos is { x: number; y: number } => pos !== null);
+    setShowRewardsModal(false);
+    
+    // Only trigger coin vacuum animation when modal closes AND coins haven't been vacuumed yet
+    if (containerRef.current && !coinsHaveBeenVacuumed && selectedLessonId) {
+      // Get actual positions of the static coins that are visible on the page
+      const coinPositions = staticCoinRefs.current
+        .filter(ref => ref !== null)
+        .map(ref => {
+          if (ref) {
+            const rect = ref.getBoundingClientRect();
+            return {
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
+            };
+          }
+          return null;
+        })
+        .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-    // Create escape coins using actual static coin positions
-    const coins = coinPositions.map((pos, i) => ({
-      id: `coin-${i}`,
-      startX: pos!.x,
-      startY: pos!.y,
-      icon: coinIcons[i % coinIcons.length],
-      delay: Math.random() * 0.8
-    }));
-    
-    setEscapeCoins(coins);
-    setCoinVacuumActive(true);
-    setCoinsHaveBeenVacuumed(true);
-    
-    // Schedule coin increments properly - increment by total earned divided by number of coins
-    if (coins.length > 0) {
-      const coinsPerAnimation = totalCoinsEarned / coins.length;
-      coins.forEach((coin) => {
-        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
-        setTimeout(() => {
-          incrementCoins(coinsPerAnimation);
-        }, arrivalTime);
-      });
+      // Create escape coins using actual static coin positions
+      const coins = coinPositions.map((pos, i) => ({
+        id: `coin-${i}`,
+        startX: pos!.x,
+        startY: pos!.y,
+        icon: coinIcons[i % coinIcons.length],
+        delay: Math.random() * 0.8
+      }));
+      
+      setEscapeCoins(coins);
+      setCoinVacuumActive(true);
+      setCoinsHaveBeenVacuumed(true);
+      
+      // UPDATED: Use Redux to increment coins during animation
+      if (coins.length > 0) {
+        const coinsPerAnimation = totalCoinsEarned / coins.length;
+        coins.forEach((coin) => {
+          const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+          setTimeout(() => {
+            // Use Redux action instead of direct incrementCoins
+            incrementCoinsWithAnimation(selectedLessonId, coinsPerAnimation, true);
+          }, arrivalTime);
+        });
+      }
+      
+      // Clean up after animation
+      setTimeout(() => {
+        setEscapeCoins([]);
+        setCoinVacuumActive(false);
+      }, 2200);
     }
-    
-    // Clean up after animation
-    setTimeout(() => {
-      setEscapeCoins([]);
-      setCoinVacuumActive(false);
-    }, 2200);
-  }
-};
+  };
 
   const handleNavigateToRewards = () => {
     setShowRewardsModal(false);
