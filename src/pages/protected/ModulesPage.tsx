@@ -2,8 +2,53 @@ import React, { useState, useEffect } from 'react';
 import { useModules } from '../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
+import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../types/modules';
 import { SignupImage } from '../../assets';
+
+// Sample module quiz questions for testing
+const sampleModuleQuizQuestions = [
+  {
+    id: 1,
+    question: "What is the main goal of this module?",
+    image: null,
+    options: [
+      { id: 'a', text: "To learn basic concepts", isCorrect: true },
+      { id: 'b', text: "To complete assignments", isCorrect: false },
+      { id: 'c', text: "To earn coins", isCorrect: false },
+      { id: 'd', text: "To watch videos", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Great! The main goal is to understand and apply the core concepts taught in this module.",
+      incorrect: {
+        'a': { why_wrong: "This is actually correct, but you may have misunderstood the question.", confusion_reason: "Correct answer selected incorrectly" },
+        'b': { why_wrong: "While assignments help, the main goal is conceptual understanding.", confusion_reason: "Common misconception about learning objectives" },
+        'c': { why_wrong: "Coins are rewards, not the primary learning objective.", confusion_reason: "Gamification elements vs core purpose" },
+        'd': { why_wrong: "Videos are just one delivery method for the content.", confusion_reason: "Medium vs message confusion" }
+      }
+    }
+  },
+  {
+    id: 2,
+    question: "Which of the following represents best practices covered in this module?",
+    image: null,
+    options: [
+      { id: 'a', text: "Following step-by-step procedures", isCorrect: false },
+      { id: 'b', text: "Understanding underlying principles", isCorrect: true },
+      { id: 'c', text: "Memorizing facts", isCorrect: false },
+      { id: 'd', text: "Completing tasks quickly", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Excellent! Understanding principles allows you to apply knowledge flexibly.",
+      incorrect: {
+        'a': { why_wrong: "Procedures are helpful but understanding principles is more important.", confusion_reason: "Surface vs deep learning approach" },
+        'b': { why_wrong: "This is actually correct, but you may have misunderstood the question.", confusion_reason: "Correct answer selected incorrectly" },
+        'c': { why_wrong: "Memorization without understanding limits practical application.", confusion_reason: "Rote learning vs comprehension" },
+        'd': { why_wrong: "Speed without comprehension can lead to errors.", confusion_reason: "Efficiency vs effectiveness" }
+      }
+    }
+  }
+];
 
 const modulesData: Module[] = [
   {
@@ -273,7 +318,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     modules,
     loadModules,
     goToLesson,
-    goToModules
+    goToModules,
+    goToModuleQuiz // NEW: Add module quiz navigation
   } = useModules();
 
   // Keep your existing local state for transitions
@@ -296,6 +342,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     });
   };
 
+  // NEW: Handle module quiz navigation
+  const handleModuleQuizStart = (module: Module) => {
+    setIsTransitioning(true);
+    // Use Redux navigation for module quiz
+    goToModuleQuiz(sampleModuleQuizQuestions, module.id);
+  };
+
   const handleBackToModule = () => {
     setIsTransitioning(true);
     // Use Redux navigation
@@ -310,7 +363,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       }, 500);
       
       return () => clearTimeout(timer);
-    } else if ((currentView === 'lesson' || currentView === 'quiz') && isTransitioning) {
+    } else if ((currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz') && isTransitioning) {
       const timer = setTimeout(() => {
         setIsTransitioning(false);
       }, 500);
@@ -324,17 +377,18 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'lesson' || currentView === 'quiz'
+          currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz'
             ? '-translate-x-full opacity-0'
             : 'translate-x-0 opacity-100'
         }`}
         style={{ 
-          pointerEvents: currentView === 'lesson' || currentView === 'quiz' ? 'none' : 'auto'
+          pointerEvents: currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz' ? 'none' : 'auto'
         }}
       >
         <ModulesView
           modulesData={modules.length > 0 ? modules : modulesData} // Use Redux modules or fallback
           onLessonSelect={handleLessonStart}
+          onModuleQuizSelect={handleModuleQuizStart} // NEW: Pass the module quiz handler
           isTransitioning={isTransitioning}
         />
       </div>
@@ -353,6 +407,26 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         {currentLesson && currentModule && (
           <LessonView
             lesson={currentLesson}
+            module={currentModule}
+            onBack={handleBackToModule}
+            isTransitioning={isTransitioning}
+          />
+        )}
+      </div>
+
+      {/* MODULE QUIZ VIEW - NEW */}
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+          currentView === 'moduleQuiz'
+            ? 'translate-x-0 opacity-100'
+            : 'translate-x-full opacity-0'
+        }`}
+        style={{ 
+          pointerEvents: currentView === 'moduleQuiz' ? 'auto' : 'none'
+        }}
+      >
+        {currentModule && currentView === 'moduleQuiz' && (
+          <ModuleQuizView
             module={currentModule}
             onBack={handleBackToModule}
             isTransitioning={isTransitioning}
