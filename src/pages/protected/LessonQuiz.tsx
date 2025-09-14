@@ -15,6 +15,7 @@ interface LessonQuizProps {
 
 const LessonQuiz: React.FC<LessonQuizProps> = ({
   lesson,
+  module,
   isVisible,
   onClose,
   onComplete
@@ -27,7 +28,10 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     previousQuestion,
     resetQuiz,
     closeQuiz,
-    completeQuiz
+    completeQuiz,
+    goToLesson,
+    toggleSidebar,
+    sidebarCollapsed
   } = useModules();
 
   // Keep your exact visual design but use Redux for state
@@ -50,6 +54,32 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     
     // Just call Redux action - it handles the transition
     previousQuestion();
+  };
+
+  // NEW: Handle next lesson navigation from quiz results
+  const handleNextLesson = () => {
+    const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
+    const nextLesson = currentLessonIndex < module.lessons.length - 1 
+      ? module.lessons[currentLessonIndex + 1] 
+      : null;
+
+    if (nextLesson) {
+      // Ensure sidebar is open when navigating to next lesson
+      if (sidebarCollapsed) {
+        toggleSidebar(false); // false = open sidebar
+      }
+      
+      // Navigate to next lesson
+      goToLesson(nextLesson.id, module.id);
+      
+      // Complete the quiz and close it
+      completeQuiz(lesson.id, quizState.score, true);
+      onComplete(quizState.score);
+      closeQuiz();
+    } else {
+      // No next lesson, just finish normally
+      handleFinish();
+    }
   };
 
   const handleFinish = () => {
@@ -92,6 +122,12 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     const correctOption = question.options.find(opt => opt.isCorrect);
     return acc + (userAnswer === correctOption?.id ? 1 : 0);
   }, 0);
+
+  // Check if there's a next lesson
+  const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
+  const nextLesson = currentLessonIndex < module.lessons.length - 1 
+    ? module.lessons[currentLessonIndex + 1] 
+    : null;
 
   // Question Component for reusability
   const QuestionCard: React.FC<{
@@ -272,15 +308,16 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             </div>
           </>
         ) : (
-          /* Use the separate QuizResults component instead of the inline results */
+          /* Use the separate QuizResults component with updated handler */
           <QuizResults
             score={quizState.score}
             totalQuestions={quizState.questions.length}
             correctAnswers={correctAnswers}
-            onContinue={handleFinish}
+            onContinue={nextLesson ? handleNextLesson : handleFinish}
             onRetake={handleRetake}
             onClaimRewards={handleClaimRewards}
             lessonTitle={lesson.title}
+            nextLesson={nextLesson}
           />
         )}
       </div>

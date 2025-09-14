@@ -28,7 +28,8 @@ const LessonView: React.FC<LessonViewProps> = ({
     updateProgress,
     markCompleted,
     startQuiz,
-    currentView
+    currentView,
+    goToLesson
   } = useModules();
 
   // Keep your existing local state
@@ -45,6 +46,24 @@ const LessonView: React.FC<LessonViewProps> = ({
   const toggleLessonInfo = () => {
     if (isTransitioning) return;
     toggleSidebar(!sidebarCollapsed);
+  };
+
+  // Navigation handlers for next/previous lessons
+  const handleNextLesson = () => {
+    if (!nextLesson || isTransitioning) return;
+    
+    // Use Redux navigation to go to the next lesson
+    goToLesson(nextLesson.id, module.id);
+  };
+
+  const handlePreviousLesson = () => {
+    if (currentLessonIndex === 0 || isTransitioning) return;
+    
+    const previousLesson = module.lessons[currentLessonIndex - 1];
+    if (previousLesson) {
+      // Use Redux navigation to go to the previous lesson
+      goToLesson(previousLesson.id, module.id);
+    }
   };
 
   const handleStartQuiz = () => {
@@ -375,6 +394,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* Navigation Buttons */}
               <div className="flex gap-2">
                 <button 
+                  onClick={handlePreviousLesson}
                   disabled={isTransitioning || currentLessonIndex === 0}
                   className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -382,6 +402,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 </button>
                 {nextLesson ? (
                   <button 
+                    onClick={handleNextLesson}
                     disabled={isTransitioning}
                     className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -457,6 +478,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 {/* Lesson Navigation */}
                 <div className="flex gap-3">
                   <button 
+                    onClick={handlePreviousLesson}
                     disabled={isTransitioning || currentLessonIndex === 0}
                     className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -464,6 +486,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </button>
                   {nextLesson ? (
                     <button 
+                      onClick={handleNextLesson}
                       disabled={isTransitioning}
                       className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
