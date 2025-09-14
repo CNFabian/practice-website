@@ -31,7 +31,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   // Animation states
   const [showContent, setShowContent] = useState(false);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
-  const [coinVacuumActive, setCoinVacuumActive] = useState(false);
   const [coinsHaveBeenVacuumed, setCoinsHaveBeenVacuumed] = useState(false);
   const [escapeCoins, setEscapeCoins] = useState<Array<{
     id: string;
@@ -39,7 +38,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     startY: number;
     icon: string;
     delay: number;
+    duration: number;
   }>>([]);
+  const [animatingCoinIds, setAnimatingCoinIds] = useState<Set<string>>(new Set());
   
   const containerRef = useRef<HTMLDivElement>(null);
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -87,8 +88,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   }, []);
 
   // Handle coin vacuum animation when triggered
-useEffect(() => {
+  useEffect(() => {
     if (triggerCoinVacuum && containerRef.current) {
+      const targetX = window.innerWidth * 0.89;
+      const targetY = 25;
+
       // Get actual positions of the static coins that are visible on the page
       const coinPositions = staticCoinRefs.current
         .filter(ref => ref !== null)
@@ -104,42 +108,60 @@ useEffect(() => {
         })
         .filter(pos => pos !== null);
 
-      // Create escape coins using actual static coin positions
-      const coins = coinPositions.map((pos, i) => ({
-        id: `coin-${i}`,
-        startX: pos!.x,
-        startY: pos!.y,
-        icon: coinIcons[i % coinIcons.length],
-        delay: Math.random() * 1.5
-      }));
+      // Create escape coins using actual static coin positions with distance-based duration
+      const coins = coinPositions.map((pos, i) => {
+        const distance = Math.sqrt(Math.pow(targetX - pos!.x, 2) + Math.pow(targetY - pos!.y, 2));
+        const baseDuration = 2000; // Base duration in ms
+        const duration = Math.max(1000, baseDuration * (distance / 1000)); // Scale duration based on distance
+        
+        return {
+          id: `coin-${i}`,
+          startX: pos!.x,
+          startY: pos!.y,
+          icon: coinIcons[i % coinIcons.length],
+          delay: Math.random() * 1.5,
+          duration: duration
+        };
+      });
       
       setEscapeCoins(coins);
-      setCoinVacuumActive(true);
-      setCoinsHaveBeenVacuumed(true);
+      
+      // Start animation for each coin and track when they start
+      coins.forEach((coin) => {
+        const startTime = coin.delay * 1000;
+        setTimeout(() => {
+          setAnimatingCoinIds(prev => new Set([...prev, coin.id]));
+        }, startTime);
+      });
       
       // FIXED: Schedule coin increments properly - increment by total earned divided by number of coins
       const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
-        const arrivalTime = 2000 + (coin.delay * 1000);
+        const arrivalTime = coin.duration + (coin.delay * 1000);
         setTimeout(() => {
           incrementCoins(coinsPerAnimation);
         }, arrivalTime);
       });
       
-      // Clean up after animation
+      // Clean up after the longest animation completes
+      const maxDuration = Math.max(...coins.map(coin => coin.duration + (coin.delay * 1000)));
       setTimeout(() => {
         setEscapeCoins([]);
-        setCoinVacuumActive(false);
-      }, 3000);
+        setAnimatingCoinIds(new Set());
+        setCoinsHaveBeenVacuumed(true);
+      }, maxDuration + 500);
     }
   }, [triggerCoinVacuum, incrementCoins, coinIcons, totalCoinsEarned]);
 
   // Handle rewards modal actions
-const handleRewardsModalClose = () => {
+  const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
     
     // Trigger coin vacuum animation when modal closes
     if (containerRef.current) {
+      const targetX = window.innerWidth * 0.89;
+      const targetY = 25;
+
       // Get actual positions of the static coins that are visible on the page
       const coinPositions = staticCoinRefs.current
         .filter(ref => ref !== null)
@@ -155,33 +177,48 @@ const handleRewardsModalClose = () => {
         })
         .filter(pos => pos !== null);
 
-      // Create escape coins using actual static coin positions with staggered delays
-      const coins = coinPositions.map((pos, i) => ({
-        id: `coin-${i}`,
-        startX: pos!.x,
-        startY: pos!.y,
-        icon: coinIcons[i % coinIcons.length],
-        delay: i * 0.15 // Stagger each coin by 150ms for smoother sequence
-      }));
+      // Create escape coins using actual static coin positions with staggered delays and distance-based duration
+      const coins = coinPositions.map((pos, i) => {
+        const distance = Math.sqrt(Math.pow(targetX - pos!.x, 2) + Math.pow(targetY - pos!.y, 2));
+        const baseDuration = 2000; // Base duration in ms
+        const duration = Math.max(1000, baseDuration * (distance / 1000)); // Scale duration based on distance
+        
+        return {
+          id: `coin-${i}`,
+          startX: pos!.x,
+          startY: pos!.y,
+          icon: coinIcons[i % coinIcons.length],
+          delay: i * 0.15, // Stagger each coin by 150ms for smoother sequence
+          duration: duration
+        };
+      });
       
       setEscapeCoins(coins);
-      setCoinVacuumActive(true);
-      setCoinsHaveBeenVacuumed(true);
+      
+      // Start animation for each coin and track when they start
+      coins.forEach((coin) => {
+        const startTime = coin.delay * 1000;
+        setTimeout(() => {
+          setAnimatingCoinIds(prev => new Set([...prev, coin.id]));
+        }, startTime);
+      });
       
       // Keep original logic: divide total coins by number of animations
       const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
-        const arrivalTime = 2000 + (coin.delay * 1000);
+        const arrivalTime = coin.duration + (coin.delay * 1000);
         setTimeout(() => {
           incrementCoins(coinsPerAnimation);
         }, arrivalTime);
       });
       
-      // Clean up after animation
+      // Clean up after the longest animation completes
+      const maxDuration = Math.max(...coins.map(coin => coin.duration + (coin.delay * 1000)));
       setTimeout(() => {
         setEscapeCoins([]);
-        setCoinVacuumActive(false);
-      }, 3000);
+        setAnimatingCoinIds(new Set());
+        setCoinsHaveBeenVacuumed(true);
+      }, maxDuration + 500);
     }
   };
 
@@ -236,7 +273,7 @@ const handleRewardsModalClose = () => {
             style={{
               left: `${coin.startX}px`,
               top: `${coin.startY}px`,
-              animation: `coinEscape-${coin.id} 2s cubic-bezier(0.4, 0.0, 0.2, 1) ${coin.delay}s forwards`,
+              animation: `coinEscape-${coin.id} ${coin.duration}ms cubic-bezier(0.4, 0.0, 0.2, 1) ${coin.delay}s forwards`,
             }}
           >
             <img 
@@ -254,13 +291,6 @@ const handleRewardsModalClose = () => {
                 0% {
                   opacity: 1;
                   transform: scale(1) rotate(0deg);
-                }
-                99% {
-                  opacity: 1;
-                  transform: translateX(${targetX - coin.startX}px) 
-                             translateY(${targetY - coin.startY}px) 
-                             scale(1) 
-                             rotate(720deg);
                 }
                 100% {
                   opacity: 0;
@@ -302,24 +332,30 @@ const handleRewardsModalClose = () => {
               />
             </div>
 
-            {/* Dynamic coin confetti burst behind image - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
-            {!coinVacuumActive && !coinsHaveBeenVacuumed && (
+            {/* Dynamic coin confetti burst behind image - HIDE COINS THAT ARE ANIMATING */}
+            {!coinsHaveBeenVacuumed && (
               <div className="absolute -inset-24">
-                {coinPositions.map((position, index) => (
-                  <div 
-                    key={index}
-                    ref={(el) => staticCoinRefs.current[index] = el}
-                    className="absolute animate-bounce" 
-                    style={{ 
-                      left: `calc(50% + ${position.x}px)`,
-                      top: `calc(50% + ${position.y}px)`,
-                      transform: 'translate(-50%, -50%)',
-                      animationDelay: `${position.delay}s`
-                    }}
-                  >
-                    <img src={position.coinType} alt="Coin" className="w-6 h-6" />
-                  </div>
-                ))}
+                {coinPositions.map((position, index) => {
+                  const coinId = `coin-${index}`;
+                  const isAnimating = animatingCoinIds.has(coinId);
+                  
+                  return (
+                    <div 
+                      key={index}
+                      ref={(el) => staticCoinRefs.current[index] = el}
+                      className={`absolute animate-bounce ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                      style={{ 
+                        left: `calc(50% + ${position.x}px)`,
+                        top: `calc(50% + ${position.y}px)`,
+                        transform: 'translate(-50%, -50%)',
+                        animationDelay: `${position.delay}s`,
+                        transition: 'opacity 0.1s ease-out'
+                      }}
+                    >
+                      <img src={position.coinType} alt="Coin" className="w-6 h-6" />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
