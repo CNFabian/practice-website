@@ -242,7 +242,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             <div className="flex justify-between items-center flex-shrink-0 mt-2">
               <button
                 onClick={handlePrevious}
-                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning} // Only check Redux state
+                disabled={quizState.currentQuestion === 0 || quizState.isTransitioning}
                 className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous

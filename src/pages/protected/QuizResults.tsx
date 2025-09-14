@@ -110,7 +110,7 @@ useEffect(() => {
         startX: pos!.x,
         startY: pos!.y,
         icon: coinIcons[i % coinIcons.length],
-        delay: Math.random() * 0.8
+        delay: Math.random() * 1.5
       }));
       
       setEscapeCoins(coins);
@@ -120,7 +120,7 @@ useEffect(() => {
       // FIXED: Schedule coin increments properly - increment by total earned divided by number of coins
       const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
-        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+        const arrivalTime = 2000 + (coin.delay * 1000);
         setTimeout(() => {
           incrementCoins(coinsPerAnimation);
         }, arrivalTime);
@@ -130,7 +130,7 @@ useEffect(() => {
       setTimeout(() => {
         setEscapeCoins([]);
         setCoinVacuumActive(false);
-      }, 2200);
+      }, 3000);
     }
   }, [triggerCoinVacuum, incrementCoins, coinIcons, totalCoinsEarned]);
 
@@ -161,7 +161,7 @@ const handleRewardsModalClose = () => {
         startX: pos!.x,
         startY: pos!.y,
         icon: coinIcons[i % coinIcons.length],
-        delay: Math.random() * 0.8
+        delay: Math.random() * 1.5
       }));
       
       setEscapeCoins(coins);
@@ -170,7 +170,7 @@ const handleRewardsModalClose = () => {
       
       const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
-        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+        const arrivalTime = 2000 + (coin.delay * 1000);
         setTimeout(() => {
           incrementCoins(coinsPerAnimation);
         }, arrivalTime);
@@ -180,7 +180,7 @@ const handleRewardsModalClose = () => {
       setTimeout(() => {
         setEscapeCoins([]);
         setCoinVacuumActive(false);
-      }, 2200);
+      }, 3000);
     }
   };
 
@@ -223,11 +223,11 @@ const handleRewardsModalClose = () => {
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
 
-    const targetX = window.innerWidth * 0.87;
+    const targetX = window.innerWidth * 0.89;
     const targetY = 25;
 
     return createPortal(
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 40 }}>
         {escapeCoins.map((coin) => (
           <div
             key={coin.id}
@@ -235,7 +235,7 @@ const handleRewardsModalClose = () => {
             style={{
               left: `${coin.startX}px`,
               top: `${coin.startY}px`,
-              animation: `coinEscape-${coin.id} 1.8s cubic-bezier(0.4, 0.0, 0.2, 1) ${coin.delay}s forwards`,
+              animation: `coinEscape-${coin.id} 2s cubic-bezier(0.4, 0.0, 0.2, 1) ${coin.delay}s forwards`,
             }}
           >
             <img 
@@ -254,8 +254,15 @@ const handleRewardsModalClose = () => {
                   opacity: 1;
                   transform: scale(1) rotate(0deg);
                 }
-                100% {
+                99% {
                   opacity: 1;
+                  transform: translateX(${targetX - coin.startX}px) 
+                             translateY(${targetY - coin.startY}px) 
+                             scale(1) 
+                             rotate(720deg);
+                }
+                100% {
+                  opacity: 0;
                   transform: translateX(${targetX - coin.startX}px) 
                              translateY(${targetY - coin.startY}px) 
                              scale(1) 
