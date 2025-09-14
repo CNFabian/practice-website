@@ -149,7 +149,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             <img 
               src={QuestionImage} 
               alt="Question Illustration" 
-              className="w-64 h-64 object-cover rounded-2xl p-3" 
+              className="w-48 h-48 object-cover rounded-2xl p-3" 
             />
           </div>
 
