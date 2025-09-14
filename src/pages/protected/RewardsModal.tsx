@@ -44,12 +44,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop with fade in */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-50 animate-fade-in"
-        onClick={handleModalClose}
-      />
-      
+     
       {/* Modal with bouncy scale animation */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-modal-bounce">
         {/* Close X Button */}

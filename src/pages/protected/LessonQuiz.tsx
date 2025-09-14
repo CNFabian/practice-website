@@ -114,7 +114,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             <img 
               src={QuestionImage} 
               alt="Question Illustration" 
-              className="w-64 h-64 object-cover rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 p-3" 
+              className="w-64 h-64 object-cover rounded-2xl p-3" 
             />
           </div>
 
@@ -187,7 +187,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   return (
-    <div className={`fixed top-0 right-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out ${
+    <div className={`fixed top-0 right-0 h-full shadow-lg z-50 transition-all duration-300 ease-in-out ${
       isVisible ? 'w-full' : 'w-0'
     } overflow-hidden`}>
       <div className="p-4 h-full flex flex-col relative">
