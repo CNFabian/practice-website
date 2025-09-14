@@ -78,7 +78,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     // Show rewards modal after 2 seconds
     const timer2 = setTimeout(() => {
       setShowRewardsModal(true);
-    }, 2000);
+    }, 0);
 
     return () => {
       clearTimeout(timer1);
@@ -227,7 +227,7 @@ const handleRewardsModalClose = () => {
     const targetY = 25;
 
     return createPortal(
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 40 }}>
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 20 }}>
         {escapeCoins.map((coin) => (
           <div
             key={coin.id}
