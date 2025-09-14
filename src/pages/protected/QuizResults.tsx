@@ -155,19 +155,20 @@ const handleRewardsModalClose = () => {
         })
         .filter(pos => pos !== null);
 
-      // Create escape coins using actual static coin positions
+      // Create escape coins using actual static coin positions with staggered delays
       const coins = coinPositions.map((pos, i) => ({
         id: `coin-${i}`,
         startX: pos!.x,
         startY: pos!.y,
         icon: coinIcons[i % coinIcons.length],
-        delay: Math.random() * 1.5
+        delay: i * 0.15 // Stagger each coin by 150ms for smoother sequence
       }));
       
       setEscapeCoins(coins);
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
+      // Keep original logic: divide total coins by number of animations
       const coinsPerAnimation = totalCoinsEarned / coins.length;
       coins.forEach((coin) => {
         const arrivalTime = 2000 + (coin.delay * 1000);
