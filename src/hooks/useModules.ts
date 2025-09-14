@@ -15,12 +15,14 @@ import {
   updateLessonProgress,
   markLessonCompleted,
   startQuiz,
+  startModuleQuiz, // NEW
   selectQuizAnswer,
   startQuizTransition,
   nextQuizQuestion,
   startPreviousQuizTransition,
   previousQuizQuestion,
   completeQuiz,
+  completeModuleQuiz, // NEW
   resetQuiz,
   closeQuiz,
   toggleSidebar,
@@ -32,13 +34,11 @@ import {
 
 export const useModules = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const moduleState = useSelector
-  
-  ((state: RootState) => state.modules)
+  const moduleState = useSelector((state: RootState) => state.modules)
 
   const incrementCoinsWithAnimationHandler = useCallback((lessonId: number, amount: number, isFromAnimation: boolean = false) => {
-  dispatch(incrementCoinsWithAnimation({ lessonId, amount, isFromAnimation }))
-}, [dispatch])
+    dispatch(incrementCoinsWithAnimation({ lessonId, amount, isFromAnimation }))
+  }, [dispatch])
 
   // Navigation actions
   const goToModules = useCallback(() => {
@@ -53,6 +53,12 @@ export const useModules = () => {
 
   const goToQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {
     dispatch(startQuiz({ questions, lessonId }))
+  }, [dispatch])
+
+  // NEW: Module quiz navigation
+  const goToModuleQuiz = useCallback((questions: QuizQuestion[], moduleId: number) => {
+    dispatch(setSelectedModule(moduleId))
+    dispatch(startModuleQuiz({ questions, moduleId }))
   }, [dispatch])
 
   // Module management
@@ -101,6 +107,11 @@ export const useModules = () => {
     dispatch(startQuiz({ questions, lessonId }))
   }, [dispatch])
 
+  // NEW: Start module quiz
+  const startModuleQuizAction = useCallback((questions: QuizQuestion[], moduleId: number) => {
+    dispatch(startModuleQuiz({ questions, moduleId }))
+  }, [dispatch])
+
   const selectAnswer = useCallback((questionIndex: number, answer: string) => {
     dispatch(selectQuizAnswer({ questionIndex, answer }))
   }, [dispatch])
@@ -120,8 +131,13 @@ export const useModules = () => {
   }, [dispatch])
 
   const completeQuizWithScore = useCallback((lessonId: number, score: number, skipCoinIncrement: boolean = false) => {
-  dispatch(completeQuiz({ lessonId, score, skipCoinIncrement }))
-}, [dispatch])
+    dispatch(completeQuiz({ lessonId, score, skipCoinIncrement }))
+  }, [dispatch])
+
+  // NEW: Complete module quiz
+  const completeModuleQuizWithScore = useCallback((moduleId: number, score: number, skipCoinIncrement: boolean = false) => {
+    dispatch(completeModuleQuiz({ moduleId, score, skipCoinIncrement }))
+  }, [dispatch])
 
   const restartQuiz = useCallback(() => {
     dispatch(resetQuiz())
@@ -195,6 +211,7 @@ export const useModules = () => {
     goToModules,
     goToLesson,
     goToQuiz,
+    goToModuleQuiz, // NEW
 
     // Module management
     loadModules,
@@ -202,9 +219,9 @@ export const useModules = () => {
 
     // Coin management
     incrementCoins,
-  incrementCoinsWithAnimation: incrementCoinsWithAnimationHandler,
-  decrementCoins,
-  updateTotalCoins,
+    incrementCoinsWithAnimation: incrementCoinsWithAnimationHandler,
+    decrementCoins,
+    updateTotalCoins,
 
     // Progress tracking
     updateProgress,
@@ -212,12 +229,14 @@ export const useModules = () => {
 
     // Quiz actions
     startQuiz: startLessonQuiz,
-  selectAnswer,
-  nextQuestion,
-  previousQuestion,
-  completeQuiz: completeQuizWithScore,
-  resetQuiz: restartQuiz,
-  closeQuiz: exitQuiz,
+    startModuleQuiz: startModuleQuizAction, // NEW
+    selectAnswer,
+    nextQuestion,
+    previousQuestion,
+    completeQuiz: completeQuizWithScore,
+    completeModuleQuiz: completeModuleQuizWithScore, // NEW
+    resetQuiz: restartQuiz,
+    closeQuiz: exitQuiz,
 
     // UI state
     toggleSidebar: toggleSidebarState,

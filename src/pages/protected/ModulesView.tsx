@@ -6,12 +6,14 @@ import { CoinIcon } from '../../assets';
 interface ModulesViewProps {
   modulesData: Module[];
   onLessonSelect: (lesson: Lesson, module: Module) => void;
+  onModuleQuizSelect?: (module: Module) => void; // NEW: Module quiz handler
   isTransitioning?: boolean;
 }
 
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
   onLessonSelect, 
+  onModuleQuizSelect, // NEW
   isTransitioning = false 
 }) => {
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -219,6 +221,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
     onLessonSelect(lesson, module);
+  };
+
+  // NEW: Handle module quiz selection
+  const handleModuleQuizStart = (module: Module) => {
+    if (isTransitioning || !onModuleQuizSelect) return;
+    onModuleQuizSelect(module);
   };
 
   // Update tab change to use Redux
@@ -496,6 +504,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           Quiz Battle
                         </button>
                         <button 
+                          onClick={() => handleModuleQuizStart(selectedModuleData)}
                           disabled={isTransitioning}
                           className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
