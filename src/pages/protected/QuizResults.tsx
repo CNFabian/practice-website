@@ -89,27 +89,23 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const totalCoinsEarned = calculateNewlyEarnedCoins();
   const hasEarnedCoins = totalCoinsEarned > 0;
 
-  // Show content and rewards modal with proper timing - ALWAYS SHOW MODAL
+  // FIXED: Show content and rewards modal with proper timing - Only show modal for 100% scores
   useEffect(() => {
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
     
-    // Only show rewards modal after 2 seconds IF user has earned coins OR badges
-    const hasEarnedBadge = correctAnswers === totalQuestions;
-    const shouldShowRewards = hasEarnedCoins || hasEarnedBadge;
-    
-    let timer2: NodeJS.Timeout;
-    if (shouldShowRewards) {
-      timer2 = setTimeout(() => {
+    // Show rewards modal after 2 seconds for 100% score only
+    const timer2 = setTimeout(() => {
+      if (correctAnswers === totalQuestions) {
         setShowRewardsModal(true);
-      }, 100);
-    }
+      }
+    }, 2000);
 
     return () => {
       clearTimeout(timer1);
-      if (timer2) clearTimeout(timer2);
+      clearTimeout(timer2);
     };
-  }, [hasEarnedCoins, correctAnswers, totalQuestions]); // Add dependencies to recalculate when values change
+  }, []); // No dependencies - only run once on mount
 
   // Handle coin vacuum animation when triggered
   useEffect(() => {
