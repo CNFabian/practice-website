@@ -6,19 +6,18 @@ import { CoinIcon } from '../../assets';
 interface ModulesViewProps {
   modulesData: Module[];
   onLessonSelect: (lesson: Lesson, module: Module) => void;
-  onModuleQuizSelect?: (module: Module) => void; // NEW: Module quiz handler
+  onModuleQuizSelect?: (module: Module) => void;
   isTransitioning?: boolean;
 }
 
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
   onLessonSelect, 
-  onModuleQuizSelect, // NEW
+  onModuleQuizSelect,
   isTransitioning = false 
 }) => {
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Redux state management
   const { 
     selectModuleById,
     selectedModuleId,
@@ -32,15 +31,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     toggleCompactLayout
   } = useModules();
 
-  // Keep only essential refs for scrolling functionality
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Use Redux state instead of local state
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
-  // Helper functions
   const getOptimalCardWidth = () => {
     if (typeof window === 'undefined') return 280;
     const screenWidth = window.innerWidth;
@@ -54,22 +50,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
   const getModuleProgress = (module: Module) => {
     const progress = moduleProgress[module.id];
-    if (progress) {
-      return {
-        completed: progress.lessonsCompleted,
-        total: progress.totalLessons,
-        percentage: progress.overallProgress
-      };
-    }
+    if (progress) return progress;
     
-    // Fallback to calculating from lesson completion
-    const completed = module.lessons.filter(lesson => {
-      const lessonProg = lessonProgress[lesson.id];
-      return lessonProg?.completed || false;
-    }).length;
+    const completed = module.lessons.filter(lesson => lessonProgress[lesson.id]?.completed).length;
     const total = module.lessons.length;
-    const percentage = Math.round((completed / total) * 100);
-    return { completed, total, percentage };
+    return {
+      lessonsCompleted: completed,
+      totalLessons: total,
+      overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
   };
 
   const getProgressBarColor = (status: string) => {
@@ -93,123 +82,52 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     ))
   );
 
-  const smoothScrollTo = (container: HTMLElement, targetScrollTop: number, duration: number = 600) => {
-    const startScrollTop = container.scrollTop;
-    const distance = targetScrollTop - startScrollTop;
-    
-    if (Math.abs(distance) < 10) return;
-    
-    const startTime = performance.now();
-    const animateScroll = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeProgress = progress < 0.5 
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      
-      container.scrollTop = startScrollTop + (distance * easeProgress);
-
-      if (progress < 1) {
-        requestAnimationFrame(animateScroll);
-      }
-    };
-    requestAnimationFrame(animateScroll);
-  };
-
-  const scrollToSelectedModule = () => {
-    if (!selectedModuleId || sidebarCollapsed || !scrollContainerRef.current) return;
-
-    const container = scrollContainerRef.current;
-    const filteredModules = modulesData.filter(module => 
-      activeTab === 'All' || module.status === activeTab
-    );
-    
-    const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
-    if (selectedIndex === -1) return;
-    
-    if (isCompactLayout) {
-      const cardHeight = 220;
-      const stickyHeaderHeight = 120;
-      const containerHeight = container.clientHeight;
-      const availableHeight = containerHeight - stickyHeaderHeight;
-      
-      const moduleTop = selectedIndex * cardHeight;
-      const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
-      const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
-      
-      smoothScrollTo(container, finalScrollTop, 400);
-    } else {
-      const moduleElement = moduleRefs.current[selectedModuleId];
-      if (moduleElement) {
-        const moduleRect = moduleElement.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const stickyHeaderHeight = 120;
-        
-        const isVisible = moduleRect.top >= containerRect.top + stickyHeaderHeight &&
-                         moduleRect.bottom <= containerRect.bottom;
-        
-        if (!isVisible) {
-          const containerHeight = container.clientHeight;
-          const availableHeight = containerHeight - stickyHeaderHeight;
-          const moduleHeight = moduleRect.height;
-          
-          const targetScrollTop = container.scrollTop + 
-            (moduleRect.top - containerRect.top) - 
-            stickyHeaderHeight - 
-            (availableHeight / 2) + 
-            (moduleHeight / 2);
-          
-          smoothScrollTo(container, Math.max(0, targetScrollTop), 400);
-        }
-      }
-    }
-  };
-
-  // Updated to use Redux
+  // MODIFIED: Added a delay to the initial scroll to wait for the layout animation.
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
-    
+
     const wasCollapsed = sidebarCollapsed;
     const previouslySelected = selectedModuleId;
-    
-    // Use Redux to save module selection
+
     selectModuleById(moduleId);
-    
+
     if (wasCollapsed) {
-      // First selection - position immediately without animation
-      toggleSidebar(false);
-      
-      // Calculate and apply scroll position immediately for the initial transition
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const filteredModules = modulesData.filter(module => 
-          activeTab === 'All' || module.status === activeTab
-        );
-        
-        const selectedIndex = filteredModules.findIndex(m => m.id === moduleId);
-        if (selectedIndex !== -1) {
-          const cardHeight = 220;
-          const stickyHeaderHeight = 120;
-          const containerHeight = container.clientHeight;
-          const availableHeight = containerHeight - stickyHeaderHeight;
-          
-          const moduleTop = selectedIndex * cardHeight;
-          const targetScrollTop = moduleTop - (availableHeight / 2) + (cardHeight / 2) + stickyHeaderHeight;
-          const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
-          
-          container.scrollTop = finalScrollTop;
-        }
-      }
-    } else if (previouslySelected !== moduleId) {
-      setTimeout(() => {
-        scrollToSelectedModule();
-      }, 50);
+        toggleSidebar(false);
     }
+    
+    // If the sidebar was collapsed, wait for the 700ms width transition to finish.
+    // Otherwise, scroll immediately.
+    const scrollDelay = wasCollapsed ? 700 : 0;
+
+    setTimeout(() => {
+        const moduleElement = moduleRefs.current[moduleId];
+        if (!moduleElement) return;
+
+        const filteredModules = modulesData.filter(module =>
+            activeTab === 'All' || module.status === activeTab
+        );
+        const selectedIndex = filteredModules.findIndex(m => m.id === moduleId);
+        if (selectedIndex === -1) return;
+
+        const totalModules = filteredModules.length;
+        let blockAlignment: 'start' | 'center' | 'end' = 'center';
+
+        if (selectedIndex === 0) {
+            blockAlignment = 'start';
+        } else if (selectedIndex === totalModules - 1) {
+            blockAlignment = 'end';
+        }
+
+        moduleElement.scrollIntoView({
+            // Scroll instantly ('auto') when opening, scroll smoothly when switching.
+            behavior: wasCollapsed ? 'auto' : 'smooth',
+            block: blockAlignment,
+        });
+    }, scrollDelay);
 
     if (layoutTimeoutRef.current) {
-      clearTimeout(layoutTimeoutRef.current);
+        clearTimeout(layoutTimeoutRef.current);
     }
-
     layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
   };
 
@@ -223,50 +141,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     onLessonSelect(lesson, module);
   };
 
-  // NEW: Handle module quiz selection
   const handleModuleQuizStart = (module: Module) => {
     if (isTransitioning || !onModuleQuizSelect) return;
     onModuleQuizSelect(module);
   };
 
-  // Update tab change to use Redux
   const handleTabChange = (tab: 'All' | 'In Progress' | 'Completed') => {
     if (!isTransitioning) {
       changeActiveTab(tab);
     }
   };
-
-  useEffect(() => {
-    if (selectedModuleId && !sidebarCollapsed && showCompactLayout) {
-      const timer = setTimeout(() => {
-        if (scrollContainerRef.current) {
-          const container = scrollContainerRef.current;
-          const filteredModules = modulesData.filter(module => 
-            activeTab === 'All' || module.status === activeTab
-          );
-          
-          const selectedIndex = filteredModules.findIndex(m => m.id === selectedModuleId);
-          if (selectedIndex !== -1) {
-            const cardHeight = 220;
-            const stickyHeaderHeight = 120;
-            const containerHeight = container.clientHeight;
-            const availableHeight = containerHeight - stickyHeaderHeight;
-            
-            const moduleTop = selectedIndex * cardHeight;
-            const currentModuleTop = moduleTop - container.scrollTop;
-            const idealTop = (availableHeight / 2) + stickyHeaderHeight - (cardHeight / 2);
-            
-            if (Math.abs(currentModuleTop - idealTop) > 50) {
-              const targetScrollTop = moduleTop - idealTop;
-              const finalScrollTop = Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight));
-              smoothScrollTo(container, finalScrollTop, 300);
-            }
-          }
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [showCompactLayout, selectedModuleId, sidebarCollapsed, activeTab, modulesData]);
 
   useEffect(() => {
     if (!selectedModuleId) {
@@ -304,7 +188,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   return (
     <div className="w-full h-full">
       <div className="flex gap-8 h-full">
-        {/* Main Content Area */}
         <div className={`transition-[width] duration-700 ease-in-out ${
           selectedModuleId && !sidebarCollapsed ? 'w-[30%]' : 'flex-1'
         }`}>
@@ -313,11 +196,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
             className={scrollContainerClass}
             style={scrollContainerStyle}
           >
-            {/* Sticky Header */}
             <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900">Modules</h1>
-                
                 {selectedModuleId && (
                   <button
                     onClick={toggleSidebarLocal}
@@ -336,8 +217,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                   </button>
                 )}
               </div>
-              
-              {/* Tabs */}
               <div className={`flex justify-center border-b border-gray-200 ${sidebarCollapsed ? '-mt-8' : ''}`}>
                 {(['All', 'In Progress', 'Completed'] as const).map((tab) => (
                   <button
@@ -356,7 +235,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               </div>
             </div>
 
-            {/* Module Cards */}
             <div className="px-4 pb-6">
               <div className="transition-all duration-700 ease-in-out" style={gridStyles}>
                 {filteredModules.map((module, index) => {
@@ -375,11 +253,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         ${isTransitioning ? 'pointer-events-none' : ''}
                         ${selectedModuleId && !sidebarCollapsed ? 'min-h-[204px]' : 'min-h-[420px]'}
                         flex flex-col
+                        scroll-mt-32
                       `}
                       onClick={() => handleModuleSelect(module.id)}
                       style={{ backgroundColor: '#F7F9FF' }}
                     >
-                      {/* Header */}
                       <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0">
                         <div className="flex items-center gap-3">
                           <div 
@@ -397,7 +275,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Image */}
                       <div className={`px-6 transition-[margin] duration-700 ease-in-out ${isCompactLayout ? 'mb-0' : 'mb-6'} flex-shrink-0`}>
                         <div className={`
                           w-full bg-gradient-to-br from-blue-100 via-blue-50 to-yellow-50 
@@ -409,32 +286,27 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Content */}
                       <div className="px-6 flex-1 flex flex-col">
                         <div className="flex-1 mb-6">
                           <p className="text-sm text-gray-700 leading-relaxed">
                             {module.description}
                           </p>
                         </div>
-
-                        {/* Footer */}
                         <div className="space-y-4 pb-6">
                           <div className="flex items-center gap-2">
                             {renderTags(module.tags)}
                           </div>
-
-                          {/* Progress Bar */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-600">
-                                {progress.completed}/{progress.total} lessons completed
+                                {progress.lessonsCompleted}/{progress.totalLessons} lessons completed
                               </span>
-                              <span className="text-gray-600">{progress.percentage}%</span>
+                              <span className="text-gray-600">{progress.overallProgress}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
                                 className={`h-2 rounded-full transition-all duration-500 ${getProgressBarColor(module.status)}`}
-                                style={{ width: `${progress.percentage}%` }}
+                                style={{ width: `${progress.overallProgress}%` }}
                               />
                             </div>
                           </div>
@@ -448,12 +320,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           </div>
         </div>
 
-        {/* Separator Line */}
         <div className={`transition-all duration-700 ease-in-out mt-6 m-2 ${
           selectedModuleId && !sidebarCollapsed ? 'w-px bg-gray-200 mx-2' : 'w-0'
         }`} />
 
-        {/* Right Sidebar */}
         <div className={`transition-[width] duration-700 ease-in-out -ml-6 ${
           selectedModuleId && !sidebarCollapsed ? 'w-[70%]' : 'w-0'
         }`}>
@@ -531,7 +401,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
                             <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
                           </div>
-
                           <div className="flex gap-4 items-start">
                             <div className="flex-shrink-0">
                               <div className="aspect-square bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden w-20 sm:w-24 md:w-28 lg:w-32 xl:w-36 2xl:w-40">
@@ -541,8 +410,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                   className="object-contain w-full h-full" 
                                   style={{ imageRendering: 'crisp-edges' }}
                                 />
-                                
-                                {/* Progress indicators from Redux */}
                                 {watchProgress > 0 && (
                                   <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                                     {watchProgress}%
@@ -557,7 +424,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 )}
                               </div>
                             </div>
-
                             <div className="flex-1 pr-12">
                               <h4 className="text-base font-semibold text-gray-900 mb-1">
                                 {lesson.title}
@@ -574,7 +440,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                               <p className="text-xs text-gray-600 mb-4 leading-relaxed">
                                 {lesson.description}
                               </p>
-                              
                               <div className="flex gap-3 max-w-xs">
                                 <button 
                                   onClick={() => handleLessonStart(lesson, selectedModuleData)}
@@ -582,8 +447,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                   className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
                                     isCompleted 
                                       ? 'bg-green-600 text-white hover:bg-green-700'
-                                      : watchProgress > 0
-                                      ? 'bg-blue-600 text-white hover:bg-blue-700'
                                       : 'bg-blue-600 text-white hover:bg-blue-700'
                                   }`}
                                 >
@@ -592,11 +455,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <button 
                                   disabled={isTransitioning}
                                   className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
-                                    quizCompleted
-                                      ? 'bg-green-500 text-white hover:bg-green-600'
-                                      : isCompleted
-                                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                                      : 'bg-gray-500 text-white hover:bg-gray-600'
+                                    quizCompleted ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
                                   }`}
                                 >
                                   {quizCompleted ? 'Retake' : 'Lesson Quiz'}
