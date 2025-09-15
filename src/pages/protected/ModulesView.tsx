@@ -398,10 +398,18 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       const watchProgress = progress?.watchProgress || 0;
                       const quizCompleted = progress?.quizCompleted || false;
 
+                      // Calculate remaining coins to collect
+                      const totalCoinsAvailable = lesson.coins;
+                      const quizScore = progress?.quizScore || 0; // Number of correct answers
+                      const coinsEarned = quizScore * 5; // 5 coins per correct answer
+                      const coinsRemaining = Math.max(0, totalCoinsAvailable - coinsEarned);
+
                       return (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
                           <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
-                            <span className="text-xs font-semibold text-gray-900">+{lesson.coins}</span>
+                            <span className="text-xs font-semibold text-gray-900">
+                              {coinsRemaining > 0 ? `+${coinsRemaining}` : '✓'}
+                            </span>
                             <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
                           </div>
                           <div className="flex gap-4 items-start">
