@@ -51,32 +51,42 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   // Calculate newly earned coins (only for questions not previously completed correctly)
   const calculateNewlyEarnedCoins = () => {
-    if (!selectedLessonId) return 0;
-    
-    const existingProgress = lessonProgress[selectedLessonId];
-    const previousQuizScore = existingProgress?.quizScore || 0;
-    const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
-    
-    // Calculate current percentage and previous percentage
-    const totalQuestions = quizState.questions.length;
-    const currentPercentage = Math.round((correctAnswers / totalQuestions) * 100);
-    const previousPercentage = Math.round((previousQuizScore / totalQuestions) * 100);
-    
-    let coinsEarned = 0;
-    
-    if (!wasQuizAlreadyCompleted) {
-      // First time completing this quiz - award coins for correct answers
-      coinsEarned = correctAnswers * 5; // 5 coins per correct answer
-    } else if (currentPercentage > previousPercentage && previousPercentage < 100) {
-      // User improved their score and hasn't achieved 100% yet
-      // Award coins only for the improvement (difference in correct answers)
-      const improvement = correctAnswers - previousQuizScore;
-      coinsEarned = improvement * 5;
-    }
-    // If user already had 100% or got same/lower score, no coins awarded
-    
-    return Math.max(0, coinsEarned); // Ensure never negative
-  };
+  if (!selectedLessonId) return 0;
+  
+  const existingProgress = lessonProgress[selectedLessonId];
+  const previousQuizScore = existingProgress?.quizScore || 0;
+  const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
+  
+  // Calculate total questions and thresholds
+  const totalQuestions = quizState.questions.length;
+  const passingThreshold = Math.ceil(totalQuestions * 0.6); // 60% threshold
+  const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
+  
+  let coinsEarned = 0;
+  
+  // Check if current score meets minimum threshold
+  if (correctAnswers < passingThreshold) {
+    return 0; // No coins if below 60% threshold
+  }
+  
+  // Check if user has already achieved perfect score
+  if (hasAchievedPerfectScore) {
+    return 0; // No more coins can be earned if already perfect
+  }
+  
+  if (!wasQuizAlreadyCompleted) {
+    // First time completing this quiz - award coins for correct answers
+    coinsEarned = correctAnswers * 5; // 5 coins per correct answer
+  } else if (correctAnswers > previousQuizScore) {
+    // User improved their score and hasn't achieved perfect score yet
+    // Award coins only for the improvement (difference in correct answers)
+    const improvement = correctAnswers - previousQuizScore;
+    coinsEarned = improvement * 5;
+  }
+  // If user already had perfect score or got same/lower score, no coins awarded
+  
+  return Math.max(0, coinsEarned); // Ensure never negative
+};
 
   const totalCoinsEarned = calculateNewlyEarnedCoins();
   const hasEarnedCoins = totalCoinsEarned > 0;

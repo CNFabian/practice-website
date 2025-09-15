@@ -16,8 +16,9 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   onClose,
   onNavigateToRewards,
   onNavigateToBadges,
-  coinsEarned = 0,
-  hasEarnedCoins = false
+  // FIXED: Removed unused destructured props that were causing TS errors
+  // coinsEarned = 0,
+  // hasEarnedCoins = false
 }) => {
   if (!isOpen) return null;
 

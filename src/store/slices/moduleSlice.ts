@@ -358,31 +358,44 @@ completeQuiz: (state, action: PayloadAction<{
     const existingProgress = state.lessonProgress[lessonId];
     const previousQuizScore = existingProgress?.quizScore || 0;
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
-    const previouslyCompleted = existingProgress?.completedQuestions || {};
     
-    // Calculate current percentage score
+    // Calculate total questions and maximum possible coins for this lesson
     const totalQuestions = state.quizState.questions.length;
-    const currentPercentage = Math.round((score / totalQuestions) * 100);
-    const previousPercentage = Math.round((previousQuizScore / totalQuestions) * 100);
+    const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question
     
     let coinsEarned = 0;
-    const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...previouslyCompleted };
+    const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...existingProgress?.completedQuestions || {} };
     
     // Determine if coins should be awarded
     let shouldAwardCoins = false;
+    
+    // Check if user has already achieved 100% (perfect score)
+    const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
     
     if (!wasQuizAlreadyCompleted) {
       // First time completing this quiz - award coins for correct answers
       shouldAwardCoins = true;
       coinsEarned = score * 5; // 5 coins per correct answer
-    } else if (currentPercentage > previousPercentage && previousPercentage < 100) {
-      // User improved their score and hasn't achieved 100% yet
+    } else if (score > previousQuizScore && !hasAchievedPerfectScore) {
+      // User improved their score AND hasn't achieved perfect score yet
       shouldAwardCoins = true;
       // Award coins only for the improvement (difference in correct answers)
       const improvement = score - previousQuizScore;
       coinsEarned = improvement * 5;
     }
-    // If user already had 100% or got same/lower score, no coins awarded
+    // If user already had perfect score (100%) or got same/lower score, no coins awarded
+    
+    // Cap the total coins to the maximum possible for this lesson
+    // This ensures users can never earn more than the lesson's total coin value
+    if (coinsEarned > maxCoinsForLesson) {
+      coinsEarned = maxCoinsForLesson;
+    }
+    
+    // Users need at least 1 correct answer to earn coins
+    if (score < 1) {
+      coinsEarned = 0;
+      shouldAwardCoins = false;
+    }
     
     // Update completed questions based on current attempt
     state.quizState.questions.forEach((question, index) => {
@@ -398,7 +411,8 @@ completeQuiz: (state, action: PayloadAction<{
     // 1. skipCoinIncrement is false (meaning animation hasn't already added them)
     // 2. User qualifies for coins based on score improvement logic
     // 3. There are actually coins to be earned
-    if (!skipCoinIncrement && shouldAwardCoins && coinsEarned > 0) {
+    // 4. User hasn't already achieved perfect score
+    if (!skipCoinIncrement && shouldAwardCoins && coinsEarned > 0 && !hasAchievedPerfectScore) {
       state.totalCoins += coinsEarned;
     }
     

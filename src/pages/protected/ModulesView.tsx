@@ -87,7 +87,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     if (isTransitioning) return;
 
     const wasCollapsed = sidebarCollapsed;
-    const previouslySelected = selectedModuleId;
+    // FIXED: Removed unused variable `previouslySelected`
 
     selectModuleById(moduleId);
 
