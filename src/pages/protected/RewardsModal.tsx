@@ -25,8 +25,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   hasEarnedBadge = false,
   lessonId,
 }) => {
-  const { incrementCoinsWithAnimation } = useModules();
-  
   // Animation states - ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
   const [coinsAnimated, setCoinsAnimated] = useState(false);
   const [escapeCoins, setEscapeCoins] = useState<Array<{
@@ -82,16 +80,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     setEscapeCoins(coins);
     setCoinsAnimated(true);
     
-    // Schedule coin increments with animation
-    if (coins.length > 0 && lessonId) {
-      const coinsPerAnimation = coinsEarned / coins.length;
-      coins.forEach((coin) => {
-        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
-        setTimeout(() => {
-          incrementCoinsWithAnimation(lessonId, coinsPerAnimation, true);
-        }, arrivalTime);
-      });
-    }
+    // REMOVED: DO NOT ADD COINS HERE - QuizResults component handles coin addition
+    // The RewardsModal should only handle visual animation, not actual coin rewards
     
     // Clean up animation
     setTimeout(() => {
