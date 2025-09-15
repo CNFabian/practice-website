@@ -57,33 +57,22 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const previousQuizScore = existingProgress?.quizScore || 0;
   const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
   
-  // Calculate total questions and thresholds
-  const totalQuestions = quizState.questions.length;
-  const passingThreshold = Math.ceil(totalQuestions * 0.6); // 60% threshold
-  const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
-  
   let coinsEarned = 0;
   
-  // Check if current score meets minimum threshold
-  if (correctAnswers < passingThreshold) {
-    return 0; // No coins if below 60% threshold
+  // Check if at least 1 question is correct
+  if (correctAnswers < 1) {
+    return 0; // No coins if no questions correct
   }
   
-  // Check if user has already achieved perfect score
-  if (hasAchievedPerfectScore) {
-    return 0; // No more coins can be earned if already perfect
-  }
-  
-  if (!wasQuizAlreadyCompleted) {
-    // First time completing this quiz - award coins for correct answers
+  if (!wasQuizAlreadyCompleted || previousQuizScore === 0) {
+    // First time completing this quiz OR previous score was 0 - award coins for correct answers
     coinsEarned = correctAnswers * 5; // 5 coins per correct answer
   } else if (correctAnswers > previousQuizScore) {
-    // User improved their score and hasn't achieved perfect score yet
-    // Award coins only for the improvement (difference in correct answers)
+    // User improved their score - award coins only for the improvement (difference in correct answers)
     const improvement = correctAnswers - previousQuizScore;
     coinsEarned = improvement * 5;
   }
-  // If user already had perfect score or got same/lower score, no coins awarded
+  // If user got same/lower score, no coins awarded
   
   return Math.max(0, coinsEarned); // Ensure never negative
 };
@@ -107,7 +96,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     clearTimeout(timer1);
     clearTimeout(timer2);
   };
-}, []);
+}, [hasEarnedCoins]); // Added hasEarnedCoins as dependency
 
   // Handle coin vacuum animation when triggered
 useEffect(() => {
