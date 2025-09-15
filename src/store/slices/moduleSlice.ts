@@ -372,6 +372,12 @@ completeQuiz: (state, action: PayloadAction<{
     // Check if user has already achieved 100% (perfect score)
     const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
     
+    // Calculate coins that SHOULD be earned based on current score
+    const totalCoinsForCurrentScore = score * 5; // Total coins for current performance
+    
+    // Calculate coins already earned from previous attempts
+    const coinsAlreadyEarned = previousQuizScore * 5; // Coins earned from previous best score
+    
     if (!wasQuizAlreadyCompleted) {
       // First time completing this quiz - award coins for correct answers
       shouldAwardCoins = true;
@@ -379,9 +385,8 @@ completeQuiz: (state, action: PayloadAction<{
     } else if (score > previousQuizScore && !hasAchievedPerfectScore) {
       // User improved their score AND hasn't achieved perfect score yet
       shouldAwardCoins = true;
-      // Award coins only for the improvement (difference in correct answers)
-      const improvement = score - previousQuizScore;
-      coinsEarned = improvement * 5;
+      // Award coins only for the improvement (difference between what they should have total vs what they already earned)
+      coinsEarned = totalCoinsForCurrentScore - coinsAlreadyEarned;
     }
     // If user already had perfect score (100%) or got same/lower score, no coins awarded
     
@@ -396,6 +401,9 @@ completeQuiz: (state, action: PayloadAction<{
       coinsEarned = 0;
       shouldAwardCoins = false;
     }
+    
+    // Ensure coins earned is never negative (safety check)
+    coinsEarned = Math.max(0, coinsEarned);
     
     // Update completed questions based on current attempt
     state.quizState.questions.forEach((question, index) => {
