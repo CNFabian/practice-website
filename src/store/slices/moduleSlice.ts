@@ -345,7 +345,7 @@ const moduleSlice = createSlice({
       state.quizState.isTransitioning = false;
     },
     
-    completeQuiz: (state, action: PayloadAction<{ 
+completeQuiz: (state, action: PayloadAction<{ 
   lessonId: number; 
   score: number; 
   skipCoinIncrement?: boolean; 
@@ -354,33 +354,51 @@ const moduleSlice = createSlice({
   
   // Handle lesson quiz completion
   if (state.quizState.quizType === 'lesson') {
-    // Get existing progress to check previously completed questions
+    // Get existing progress to check previous score
     const existingProgress = state.lessonProgress[lessonId];
-    const previouslyCompleted = existingProgress?.completedQuestions || {};
+    const previousQuizScore = existingProgress?.quizScore || 0;
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
+    const previouslyCompleted = existingProgress?.completedQuestions || {};
+    
+    // Calculate current percentage score
+    const totalQuestions = state.quizState.questions.length;
+    const currentPercentage = Math.round((score / totalQuestions) * 100);
+    const previousPercentage = Math.round((previousQuizScore / totalQuestions) * 100);
     
     let coinsEarned = 0;
     const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...previouslyCompleted };
     
-    // Calculate coins only for newly correct answers
+    // Determine if coins should be awarded
+    let shouldAwardCoins = false;
+    
+    if (!wasQuizAlreadyCompleted) {
+      // First time completing this quiz - award coins for correct answers
+      shouldAwardCoins = true;
+      coinsEarned = score * 5; // 5 coins per correct answer
+    } else if (currentPercentage > previousPercentage && previousPercentage < 100) {
+      // User improved their score and hasn't achieved 100% yet
+      shouldAwardCoins = true;
+      // Award coins only for the improvement (difference in correct answers)
+      const improvement = score - previousQuizScore;
+      coinsEarned = improvement * 5;
+    }
+    // If user already had 100% or got same/lower score, no coins awarded
+    
+    // Update completed questions based on current attempt
     state.quizState.questions.forEach((question, index) => {
       const userAnswer = state.quizState.answers[index];
       const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
       
       if (isCorrect) {
-        // Only award coins if this question wasn't previously completed correctly
-        if (!previouslyCompleted[question.id]) {
-          coinsEarned += 5;
-          newlyCompletedQuestions[question.id] = true;
-        }
+        newlyCompletedQuestions[question.id] = true;
       }
     });
     
     // Only add coins if:
     // 1. skipCoinIncrement is false (meaning animation hasn't already added them)
-    // 2. Quiz wasn't already completed before (prevent duplicate completion bonuses)
+    // 2. User qualifies for coins based on score improvement logic
     // 3. There are actually coins to be earned
-    if (!skipCoinIncrement && !wasQuizAlreadyCompleted && coinsEarned > 0) {
+    if (!skipCoinIncrement && shouldAwardCoins && coinsEarned > 0) {
       state.totalCoins += coinsEarned;
     }
     
@@ -398,8 +416,7 @@ const moduleSlice = createSlice({
         completedQuestions: {}
       };
 
-      // Update quiz score even if quiz was completed before (allow for improvement)
-      // But maintain the previously completed questions
+      // Update quiz score - keep the higher score
       state.lessonProgress[lessonId] = {
         ...currentProgress,
         quizCompleted: true,
@@ -438,7 +455,8 @@ const moduleSlice = createSlice({
   // Reset quiz state but keep results visible
   state.quizState.isActive = false;
 },
-   completeModuleQuiz: (state, action: PayloadAction<{ 
+
+completeModuleQuiz: (state, action: PayloadAction<{ 
   moduleId: number; 
   score: number; 
   skipCoinIncrement?: boolean; 

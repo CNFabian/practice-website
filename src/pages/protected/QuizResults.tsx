@@ -51,30 +51,31 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   // Calculate newly earned coins (only for questions not previously completed correctly)
   const calculateNewlyEarnedCoins = () => {
-    if (!selectedLessonId) return correctAnswers * 5;
+    if (!selectedLessonId) return 0;
     
     const existingProgress = lessonProgress[selectedLessonId];
-    const previouslyCompleted = existingProgress?.completedQuestions || {};
+    const previousQuizScore = existingProgress?.quizScore || 0;
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
     
-    // If quiz was already completed, show 0 coins earned
-    if (wasQuizAlreadyCompleted) {
-      return 0;
+    // Calculate current percentage and previous percentage
+    const totalQuestions = quizState.questions.length;
+    const currentPercentage = Math.round((correctAnswers / totalQuestions) * 100);
+    const previousPercentage = Math.round((previousQuizScore / totalQuestions) * 100);
+    
+    let coinsEarned = 0;
+    
+    if (!wasQuizAlreadyCompleted) {
+      // First time completing this quiz - award coins for correct answers
+      coinsEarned = correctAnswers * 5; // 5 coins per correct answer
+    } else if (currentPercentage > previousPercentage && previousPercentage < 100) {
+      // User improved their score and hasn't achieved 100% yet
+      // Award coins only for the improvement (difference in correct answers)
+      const improvement = correctAnswers - previousQuizScore;
+      coinsEarned = improvement * 5;
     }
+    // If user already had 100% or got same/lower score, no coins awarded
     
-    let newlyEarnedCoins = 0;
-    
-    quizState.questions.forEach((question, index) => {
-      const userAnswer = quizState.answers[index];
-      const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
-      
-      // Only count coins for newly correct answers
-      if (isCorrect && !previouslyCompleted[question.id]) {
-        newlyEarnedCoins += 5;
-      }
-    });
-    
-    return newlyEarnedCoins;
+    return Math.max(0, coinsEarned); // Ensure never negative
   };
 
   const totalCoinsEarned = calculateNewlyEarnedCoins();
