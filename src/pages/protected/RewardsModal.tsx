@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useModules } from '../../hooks/useModules';
 import { BadgeMedal, Confetti, Coin1, Coin2, Coin3, Coin4, Coin5 } from '../../assets';
 
 interface RewardsModalProps {
@@ -13,6 +12,8 @@ interface RewardsModalProps {
   hasEarnedBadge?: boolean;
   lessonId?: number | null;
   quizScore?: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
 }
 
 const RewardsModal: React.FC<RewardsModalProps> = ({
@@ -23,7 +24,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   coinsEarned = 0,
   hasEarnedCoins = false,
   hasEarnedBadge = false,
-  lessonId,
+  totalQuestions = 0,
+  correctAnswers = 0,
 }) => {
   // Animation states - ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
   const [coinsAnimated, setCoinsAnimated] = useState(false);
@@ -38,6 +40,19 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
+
+  // Calculate if user earned a badge (100% score)
+  const earnedBadge = hasEarnedBadge || (totalQuestions > 0 && correctAnswers === totalQuestions);
+  
+  // Debug logging to see what's happening
+  console.log('RewardsModal Debug:', {
+    totalQuestions,
+    correctAnswers,
+    hasEarnedBadge,
+    earnedBadge,
+    hasEarnedCoins,
+    coinsEarned
+  });
 
   // Reset animation states when modal opens
   useEffect(() => {
@@ -79,9 +94,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     
     setEscapeCoins(coins);
     setCoinsAnimated(true);
-    
-    // REMOVED: DO NOT ADD COINS HERE - QuizResults component handles coin addition
-    // The RewardsModal should only handle visual animation, not actual coin rewards
     
     // Clean up animation
     setTimeout(() => {
@@ -259,7 +271,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           <div className="px-8 py-8 text-center">
             {/* Title */}
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Rewards Earned!
+              {earnedBadge ? 'Perfect Score!' : 'Rewards Earned!'}
             </h2>
 
             {/* Confetti and Badge/Coins Container */}
@@ -269,43 +281,34 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
                 <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
               </div>
               
-              {/* If both badge and coins earned - badge in center, coins on side */}
-              {hasEarnedBadge && hasEarnedCoins && (
-                <div className="relative z-10 flex items-center justify-center">
-                  {/* Badge in center */}
+              {/* PERFECT SCORE (100%) - Badge centered with coins in upper right */}
+              {earnedBadge && (
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
+                  {/* Badge in center - LARGE and prominent for 100% */}
                   <div className="animate-badge-bounce">
-                    <div className="w-20 h-20 flex items-center justify-center animate-badge-icon">
-                      <img src={BadgeMedal} alt="Badge" className="w-full h-full" />
+                    <div className="w-32 h-32 flex items-center justify-center animate-badge-icon">
+                      <img src={BadgeMedal} alt="Perfect Score Badge" className="w-full h-full" />
                     </div>
                   </div>
-                  {/* Coins indicator on the side - positioned absolutely to be distinct */}
-                  <div className="absolute -right-12 top-1/2 transform -translate-y-1/2 bg-yellow-100 rounded-full px-3 py-2 border-2 border-yellow-300">
+                  {/* Coins indicator in upper right corner - SMALL */}
+                  <div className="absolute -top-2 -right-2 bg-yellow-200 rounded-full px-3 py-2 border-2 border-yellow-400 shadow-lg">
                     <div className="flex items-center gap-1">
                       <img 
                         ref={el => staticCoinRefs.current[0] = el}
                         src={coinIcons[0]} 
                         alt="Coins" 
-                        className="w-6 h-6" 
+                        className="w-5 h-5" 
                       />
-                      <span className="text-lg font-bold text-yellow-700">+{coinsEarned}</span>
+                      <span className="text-base font-bold text-yellow-800">+{coinsEarned || 0}</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* If only badge earned */}
-              {hasEarnedBadge && !hasEarnedCoins && (
-                <div className="relative z-10 animate-badge-bounce">
-                  <div className="w-16 h-16 flex items-center justify-center animate-badge-icon">
-                    <img src={BadgeMedal} alt="Badge" className="w-full h-full" />
-                  </div>
-                </div>
-              )}
-
-              {/* If only coins earned - center everything */}
-              {!hasEarnedBadge && hasEarnedCoins && (
+              {/* PARTIAL SCORE - Only coins centered (no badge) */}
+              {!earnedBadge && hasEarnedCoins && (
                 <div className="relative z-10 flex items-center justify-center">
-                  {/* Animated coins around center */}
+                  {/* Animated coins around center - NORMAL layout for partial scores */}
                   {coinPositions.map((pos, index) => (
                     <div
                       key={index}
@@ -323,11 +326,19 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
                       />
                     </div>
                   ))}
-                  {/* Center coins count */}
+                  {/* Center coins count - LARGE display for partial scores */}
                   <div className="flex items-center justify-center gap-3 bg-yellow-100 rounded-full px-6 py-3 border-2 border-yellow-300">
                     <img src={coinIcons[0]} alt="Coins" className="w-12 h-12" />
                     <span className="text-2xl font-bold text-yellow-700">+{coinsEarned}</span>
                   </div>
+                </div>
+              )}
+
+              {/* NO REWARDS - Motivational message */}
+              {!earnedBadge && !hasEarnedCoins && (
+                <div className="relative z-10 text-center">
+                  <div className="text-6xl mb-4">🎯</div>
+                  <p className="text-gray-600">Keep practicing to earn rewards!</p>
                 </div>
               )}
             </div>
