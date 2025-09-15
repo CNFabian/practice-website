@@ -51,12 +51,14 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     hasEarnedBadge,
     earnedBadge,
     hasEarnedCoins,
-    coinsEarned
+    coinsEarned,
+    isOpen
   });
 
   // Reset animation states when modal opens
   useEffect(() => {
     if (isOpen) {
+      console.log('RewardsModal opened - resetting animation states');
       setCoinsAnimated(false);
       setEscapeCoins([]);
     }
@@ -102,8 +104,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   };
 
   const handleModalClose = () => {
-    // Trigger coin animation when modal closes
-    if (hasEarnedCoins && !coinsAnimated) {
+    // Only trigger coin animation for partial scores (not badges)
+    if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
       // Delay the actual close to allow animation to start
       setTimeout(() => {
@@ -115,8 +117,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   };
 
   const handleRewardsClick = () => {
-    // Trigger coin animation when navigating to rewards
-    if (hasEarnedCoins && !coinsAnimated) {
+    // Only trigger coin animation for partial scores (not badges)
+    if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
       // Delay navigation to allow animation to start
       setTimeout(() => {
@@ -138,8 +140,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   };
 
   const handleBadgesClick = () => {
-    // Trigger coin animation when navigating to badges
-    if (hasEarnedCoins && !coinsAnimated) {
+    // Only trigger coin animation for partial scores (not badges)
+    if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
       // Delay navigation to allow animation to start
       setTimeout(() => {
@@ -251,10 +253,12 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
 
             {/* Confetti and Badge/Coins Container */}
             <div className="relative flex items-center justify-center mb-8 h-32">
-              {/* Confetti in background */}
-              <div className="absolute inset-0 flex items-center justify-center animate-confetti-burst">
-                <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
-              </div>
+              {/* Confetti in background - ONLY FOR BADGE */}
+              {earnedBadge && (
+                <div className="absolute inset-0 flex items-center justify-center animate-confetti-burst">
+                  <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
+                </div>
+              )}
               
               {/* PERFECT SCORE (100%) - Badge ONLY centered (NO coin container) */}
               {earnedBadge && (

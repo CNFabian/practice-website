@@ -102,7 +102,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     if (shouldShowRewards) {
       timer2 = setTimeout(() => {
         setShowRewardsModal(true);
-      }, 0);
+      }, 100);
     }
 
     return () => {
