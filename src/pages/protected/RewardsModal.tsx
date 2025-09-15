@@ -5,15 +5,19 @@ import { BadgeMedal, Confetti } from '../../assets'
 interface RewardsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigateToRewards?: () => void;
-  onNavigateToBadges?: () => void;
+  onNavigateToRewards: () => void;
+  onNavigateToBadges: () => void;
+  coinsEarned?: number; // Add this prop to pass the actual coins earned
+  hasEarnedCoins?: boolean; // Add this prop to indicate if coins were earned
 }
 
-const RewardsModal: React.FC<RewardsModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onNavigateToRewards, 
-  onNavigateToBadges 
+const RewardsModal: React.FC<RewardsModalProps> = ({
+  isOpen,
+  onClose,
+  onNavigateToRewards,
+  onNavigateToBadges,
+  coinsEarned = 0,
+  hasEarnedCoins = false
 }) => {
   if (!isOpen) return null;
 

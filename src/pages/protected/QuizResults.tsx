@@ -55,6 +55,12 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     
     const existingProgress = lessonProgress[selectedLessonId];
     const previouslyCompleted = existingProgress?.completedQuestions || {};
+    const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
+    
+    // If quiz was already completed, show 0 coins earned
+    if (wasQuizAlreadyCompleted) {
+      return 0;
+    }
     
     let newlyEarnedCoins = 0;
     
@@ -62,80 +68,37 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       const userAnswer = quizState.answers[index];
       const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
       
+      // Only count coins for newly correct answers
       if (isCorrect && !previouslyCompleted[question.id]) {
         newlyEarnedCoins += 5;
       }
     });
     
-    return newlyEarnedCoins > 0 ? newlyEarnedCoins : correctAnswers * 5; // Fallback for mock data
+    return newlyEarnedCoins;
   };
 
   const totalCoinsEarned = calculateNewlyEarnedCoins();
+  const hasEarnedCoins = totalCoinsEarned > 0;
 
   // Show content and rewards modal with proper timing - FIXED
   useEffect(() => {
     // Delay content reveal
     const timer1 = setTimeout(() => setShowContent(true), 300);
     
-    // Show rewards modal after 2 seconds - FIX: Complete the setTimeout call
+    // Show rewards modal after 2 seconds - only if coins were earned
     const timer2 = setTimeout(() => {
       setShowRewardsModal(true);
-    }, 0);
+    }, hasEarnedCoins ? 2000 : 0); // Show immediately if no coins, after delay if coins earned
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, []);
+  }, [hasEarnedCoins]);
 
   // Handle coin vacuum animation when triggered
-useEffect(() => {
-  if (triggerCoinVacuum && containerRef.current && !coinsHaveBeenVacuumed) {
-    // Get actual positions of the static coins that are visible on the page
-    const coinPositions = staticCoinRefs.current
-      .filter(ref => ref !== null)
-      .map(ref => {
-        if (ref) {
-          const rect = ref.getBoundingClientRect();
-          return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-          };
-        }
-        return null;
-      })
-      .filter((pos): pos is { x: number; y: number } => pos !== null);
-
-    // Create escape coins using actual static coin positions
-    const coins = coinPositions.map((pos, i) => ({
-      id: `coin-${i}`,
-      startX: pos!.x,
-      startY: pos!.y,
-      icon: coinIcons[i % coinIcons.length],
-      delay: Math.random() * 0.8
-    }));
-    
-    setEscapeCoins(coins);
-    setCoinVacuumActive(true);
-    setCoinsHaveBeenVacuumed(true);
-    
-    // REMOVED: No coin increments here - only visual animation
-    // Coins will be incremented by handleRewardsModalClose when the modal is actually closed
-    
-    // Clean up after animation
-    setTimeout(() => {
-      setEscapeCoins([]);
-      setCoinVacuumActive(false);
-    }, 2200);
-  }
-}, [triggerCoinVacuum, coinIcons, totalCoinsEarned]);
-
-  // Handle rewards modal actions
-const handleRewardsModalClose = () => {
-    setShowRewardsModal(false);
-    
-    // Trigger coin vacuum animation when modal closes
-    if (containerRef.current) {
+  useEffect(() => {
+    if (triggerCoinVacuum && containerRef.current && !coinsHaveBeenVacuumed && hasEarnedCoins) {
       // Get actual positions of the static coins that are visible on the page
       const coinPositions = staticCoinRefs.current
         .filter(ref => ref !== null)
@@ -164,7 +127,60 @@ const handleRewardsModalClose = () => {
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
-      // FIXED: Schedule coin increments properly - increment by total earned divided by number of coins
+      // Schedule coin increments properly - increment by total earned divided by number of coins
+      if (coins.length > 0) {
+        const coinsPerAnimation = totalCoinsEarned / coins.length;
+        coins.forEach((coin) => {
+          const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+          setTimeout(() => {
+            incrementCoinsWithAnimation(selectedLessonId || 0, coinsPerAnimation, true);
+          }, arrivalTime);
+        });
+      }
+      
+      // Clean up after animation
+      setTimeout(() => {
+        setEscapeCoins([]);
+        setCoinVacuumActive(false);
+      }, 2200);
+    }
+  }, [triggerCoinVacuum, incrementCoinsWithAnimation, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed]);
+
+  // Handle rewards modal actions
+  const handleRewardsModalClose = () => {
+    setShowRewardsModal(false);
+    
+    // Only trigger coin vacuum animation if there are coins to be earned
+    if (containerRef.current && hasEarnedCoins) {
+      // Get actual positions of the static coins that are visible on the page
+      const coinPositions = staticCoinRefs.current
+        .filter(ref => ref !== null)
+        .map(ref => {
+          if (ref) {
+            const rect = ref.getBoundingClientRect();
+            return {
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
+            };
+          }
+          return null;
+        })
+        .filter((pos): pos is { x: number; y: number } => pos !== null);
+
+      // Create escape coins using actual static coin positions
+      const coins = coinPositions.map((pos, i) => ({
+        id: `coin-${i}`,
+        startX: pos!.x,
+        startY: pos!.y,
+        icon: coinIcons[i % coinIcons.length],
+        delay: Math.random() * 0.8
+      }));
+      
+      setEscapeCoins(coins);
+      setCoinVacuumActive(true);
+      setCoinsHaveBeenVacuumed(true);
+      
+      // Schedule coin increments properly
       if (coins.length > 0) {
         const coinsPerAnimation = totalCoinsEarned / coins.length;
         coins.forEach((coin) => {
@@ -195,6 +211,8 @@ const handleRewardsModalClose = () => {
 
   // Generate coin positions for the earned coins
   const generateCoinPositions = () => {
+    if (!hasEarnedCoins) return []; // Return empty array if no coins earned
+    
     const positions = [];
     const maxRadius = 120;
     const minRadius = 60;
@@ -217,6 +235,16 @@ const handleRewardsModalClose = () => {
   };
 
   const coinPositions = generateCoinPositions();
+
+  const getRewardsMessage = () => {
+    if (!hasEarnedCoins) {
+      if (selectedLessonId && lessonProgress[selectedLessonId]?.quizCompleted) {
+        return "You've already completed this quiz. Keep practicing to improve your skills!";
+      }
+      return "Good effort! Keep practicing to improve your score.";
+    }
+    return `Great job! You've earned ${totalCoinsEarned} coins!`;
+  };
 
   // Escape Coins Portal Component
   const EscapeCoins = () => {
@@ -281,6 +309,23 @@ const handleRewardsModalClose = () => {
           {correctAnswers}/{totalQuestions} Questions Correct
         </div>
 
+        {/* Coins earned indicator - only show if coins earned */}
+        {hasEarnedCoins && (
+          <div className="bg-green-100 text-green-600 px-4 py-2 rounded-full text-sm font-medium mb-4 inline-block">
+            +{totalCoinsEarned} coins earned! 🎉
+          </div>
+        )}
+
+        {/* No coins message - show if no coins earned */}
+        {!hasEarnedCoins && (
+          <div className="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium mb-4 inline-block">
+            {selectedLessonId && lessonProgress[selectedLessonId]?.quizCompleted 
+              ? "Quiz already completed"
+              : "No coins earned - try again!"
+            }
+          </div>
+        )}
+
         {/* Static Image Container */}
         <div className="relative">
           <div className="w-48 h-48 mx-auto relative">
@@ -294,7 +339,7 @@ const handleRewardsModalClose = () => {
             </div>
 
             {/* Dynamic coin confetti burst behind image - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
-            {!coinVacuumActive && !coinsHaveBeenVacuumed && (
+            {!coinVacuumActive && !coinsHaveBeenVacuumed && hasEarnedCoins && (
               <div className="absolute -inset-24">
                 {coinPositions.map((position, index) => (
                   <div 
@@ -318,11 +363,14 @@ const handleRewardsModalClose = () => {
 
         {/* Success message */}
         <h2 className="text-2xl font-bold text-gray-900">
-          You completed the lesson!
+          {hasEarnedCoins ? 'Great Work!' : 'Quiz Complete!'}
         </h2>
         
         <p className="text-gray-600 text-sm mb-8 leading-relaxed">
-          In this module, you learned the key financial requirements lenders evaluate and your next steps!
+          {hasEarnedCoins 
+            ? "In this module, you learned the key financial requirements lenders evaluate and your next steps!"
+            : getRewardsMessage()
+          }
         </p>
 
         {/* Action buttons */}
@@ -352,6 +400,8 @@ const handleRewardsModalClose = () => {
         onClose={handleRewardsModalClose}
         onNavigateToRewards={handleNavigateToRewards}
         onNavigateToBadges={handleNavigateToBadges}
+        coinsEarned={totalCoinsEarned}
+        hasEarnedCoins={hasEarnedCoins}
       />
     </div>
   );

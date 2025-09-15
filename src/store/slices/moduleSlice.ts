@@ -346,132 +346,141 @@ const moduleSlice = createSlice({
     },
     
     completeQuiz: (state, action: PayloadAction<{ 
-      lessonId: number; 
-      score: number; 
-      skipCoinIncrement?: boolean; 
-    }>) => {
-      const { lessonId, score, skipCoinIncrement = false } = action.payload;
+  lessonId: number; 
+  score: number; 
+  skipCoinIncrement?: boolean; 
+}>) => {
+  const { lessonId, score, skipCoinIncrement = false } = action.payload;
+  
+  // Handle lesson quiz completion
+  if (state.quizState.quizType === 'lesson') {
+    // Get existing progress to check previously completed questions
+    const existingProgress = state.lessonProgress[lessonId];
+    const previouslyCompleted = existingProgress?.completedQuestions || {};
+    const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
+    
+    let coinsEarned = 0;
+    const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...previouslyCompleted };
+    
+    // Calculate coins only for newly correct answers
+    state.quizState.questions.forEach((question, index) => {
+      const userAnswer = state.quizState.answers[index];
+      const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
       
-      // Handle lesson quiz completion
-      if (state.quizState.quizType === 'lesson') {
-        // Get existing progress to check previously completed questions
-        const existingProgress = state.lessonProgress[lessonId];
-        const previouslyCompleted = existingProgress?.completedQuestions || {};
-        
-        let coinsEarned = 0;
-        const newlyCompletedQuestions: { [questionId: number]: boolean } = { ...previouslyCompleted };
-        
-        // Calculate coins only for newly correct answers
-        state.quizState.questions.forEach((question, index) => {
-          const userAnswer = state.quizState.answers[index];
-          const isCorrect = question.options.find(option => option.id === userAnswer)?.isCorrect;
-          
-          if (isCorrect) {
-            // Only award coins if this question wasn't previously completed correctly
-            if (!previouslyCompleted[question.id]) {
-              coinsEarned += 5;
-              newlyCompletedQuestions[question.id] = true;
-            }
-          }
-        });
-        
-        // Only add coins if skipCoinIncrement is false (meaning animation hasn't already added them)
-        if (!skipCoinIncrement && !existingProgress?.quizCompleted) {
-          state.totalCoins += coinsEarned;
-        }
-        
-        // Mark lesson as completed with quiz score
-        if (state.selectedModuleId) {
-          const currentProgress = state.lessonProgress[lessonId] || {
-            lessonId,
-            moduleId: state.selectedModuleId,
-            completed: false,
-            watchProgress: 0,
-            quizCompleted: false,
-            quizScore: null,
-            timeSpent: 0,
-            lastAccessed: new Date().toISOString(),
-            completedQuestions: {}
-          };
-
-          state.lessonProgress[lessonId] = {
-            ...currentProgress,
-            quizCompleted: true,
-            quizScore: score,
-            completedQuestions: newlyCompletedQuestions,
-            lastAccessed: new Date().toISOString()
-          };
-          
-          // Update module progress
-          const module = state.modules.find(m => m.id === state.selectedModuleId!);
-          if (module) {
-            const moduleProgress = state.moduleProgress[state.selectedModuleId] || {
-              moduleId: state.selectedModuleId,
-              lessonsCompleted: 0,
-              totalLessons: module.lessons.length,
-              overallProgress: 0,
-              status: 'Not Started' as const,
-              lastAccessed: new Date().toISOString()
-            };
-            
-            const completedLessons = module.lessons.filter(lesson => 
-              state.lessonProgress[lesson.id]?.completed
-            ).length;
-            
-            moduleProgress.lessonsCompleted = completedLessons;
-            moduleProgress.overallProgress = Math.round((completedLessons / module.lessons.length) * 100);
-            moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
-                                   completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
-            moduleProgress.lastAccessed = new Date().toISOString();
-            
-            state.moduleProgress[state.selectedModuleId] = moduleProgress;
-          }
+      if (isCorrect) {
+        // Only award coins if this question wasn't previously completed correctly
+        if (!previouslyCompleted[question.id]) {
+          coinsEarned += 5;
+          newlyCompletedQuestions[question.id] = true;
         }
       }
-      
-      // Reset quiz state but keep results visible
-      state.quizState.isActive = false;
-    },
+    });
+    
+    // Only add coins if:
+    // 1. skipCoinIncrement is false (meaning animation hasn't already added them)
+    // 2. Quiz wasn't already completed before (prevent duplicate completion bonuses)
+    // 3. There are actually coins to be earned
+    if (!skipCoinIncrement && !wasQuizAlreadyCompleted && coinsEarned > 0) {
+      state.totalCoins += coinsEarned;
+    }
+    
+    // Mark lesson as completed with quiz score
+    if (state.selectedModuleId) {
+      const currentProgress = state.lessonProgress[lessonId] || {
+        lessonId,
+        moduleId: state.selectedModuleId,
+        completed: false,
+        watchProgress: 0,
+        quizCompleted: false,
+        quizScore: null,
+        timeSpent: 0,
+        lastAccessed: new Date().toISOString(),
+        completedQuestions: {}
+      };
 
-    // NEW: Complete module quiz action
-    completeModuleQuiz: (state, action: PayloadAction<{ 
-      moduleId: number; 
-      score: number; 
-      skipCoinIncrement?: boolean; 
-    }>) => {
-      const { moduleId, score, skipCoinIncrement = false } = action.payload;
-      
-      // Award bonus coins for module completion
-      const bonusCoins = score >= 80 ? 50 : score >= 60 ? 30 : 20;
-      
-      if (!skipCoinIncrement) {
-        state.totalCoins += bonusCoins;
-      }
-      
-      // Update module progress with quiz completion
-      const moduleProgress = state.moduleProgress[moduleId] || {
-        moduleId,
-        lessonsCompleted: 0,
-        totalLessons: state.modules.find(m => m.id === moduleId)?.lessons.length || 0,
-        overallProgress: 0,
-        status: 'Not Started' as const,
+      // Update quiz score even if quiz was completed before (allow for improvement)
+      // But maintain the previously completed questions
+      state.lessonProgress[lessonId] = {
+        ...currentProgress,
+        quizCompleted: true,
+        quizScore: Math.max(currentProgress.quizScore || 0, score), // Keep the higher score
+        completedQuestions: newlyCompletedQuestions,
         lastAccessed: new Date().toISOString()
       };
       
-      moduleProgress.moduleQuizCompleted = true;
-      moduleProgress.moduleQuizScore = score;
-      moduleProgress.lastAccessed = new Date().toISOString();
-      
-      // Mark module as completed if quiz passed
-      if (score >= 60) {
-        moduleProgress.status = 'Completed';
+      // Update module progress
+      const module = state.modules.find(m => m.id === state.selectedModuleId!);
+      if (module) {
+        const moduleProgress = state.moduleProgress[state.selectedModuleId] || {
+          moduleId: state.selectedModuleId,
+          lessonsCompleted: 0,
+          totalLessons: module.lessons.length,
+          overallProgress: 0,
+          status: 'Not Started' as const,
+          lastAccessed: new Date().toISOString()
+        };
+        
+        const completedLessons = module.lessons.filter(lesson => 
+          state.lessonProgress[lesson.id]?.completed
+        ).length;
+        
+        moduleProgress.lessonsCompleted = completedLessons;
+        moduleProgress.overallProgress = Math.round((completedLessons / module.lessons.length) * 100);
+        moduleProgress.status = completedLessons === 0 ? 'Not Started' : 
+                               completedLessons === moduleProgress.totalLessons ? 'Completed' : 'In Progress';
+        moduleProgress.lastAccessed = new Date().toISOString();
+        
+        state.moduleProgress[state.selectedModuleId] = moduleProgress;
       }
-      
-      state.moduleProgress[moduleId] = moduleProgress;
-      
-      // Reset quiz state
-      state.quizState.isActive = false;
-    },
+    }
+  }
+  
+  // Reset quiz state but keep results visible
+  state.quizState.isActive = false;
+},
+   completeModuleQuiz: (state, action: PayloadAction<{ 
+  moduleId: number; 
+  score: number; 
+  skipCoinIncrement?: boolean; 
+}>) => {
+  const { moduleId, score, skipCoinIncrement = false } = action.payload;
+  
+  // Check if module quiz was already completed
+  const existingModuleProgress = state.moduleProgress[moduleId];
+  const wasModuleQuizAlreadyCompleted = existingModuleProgress?.moduleQuizCompleted || false;
+  
+  // Award bonus coins for module completion only if not already completed
+  const bonusCoins = score >= 80 ? 50 : score >= 60 ? 30 : 20;
+  
+  if (!skipCoinIncrement && !wasModuleQuizAlreadyCompleted) {
+    state.totalCoins += bonusCoins;
+  }
+  
+  // Update module progress with quiz completion
+  const moduleProgress = state.moduleProgress[moduleId] || {
+    moduleId,
+    lessonsCompleted: 0,
+    totalLessons: state.modules.find(m => m.id === moduleId)?.lessons.length || 0,
+    overallProgress: 0,
+    status: 'Not Started' as const,
+    lastAccessed: new Date().toISOString()
+  };
+  
+  moduleProgress.moduleQuizCompleted = true;
+  // Keep the higher score if retaking
+  moduleProgress.moduleQuizScore = Math.max(moduleProgress.moduleQuizScore || 0, score);
+  moduleProgress.lastAccessed = new Date().toISOString();
+  
+  // Mark module as completed if quiz passed
+  if (score >= 60) {
+    moduleProgress.status = 'Completed';
+  }
+  
+  state.moduleProgress[moduleId] = moduleProgress;
+  
+  // Reset quiz state
+  state.quizState.isActive = false;
+},
     
     resetQuiz: (state) => {
       state.quizState = {

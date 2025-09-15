@@ -14,7 +14,8 @@ const modulesPersistConfig = {
     'selectedModuleId', 
     'selectedLessonId',
     'sidebarCollapsed',
-    'showCompactLayout'
+    'showCompactLayout',
+    'totalCoins' // Added coin persistence
   ]
 }
 
