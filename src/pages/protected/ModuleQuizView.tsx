@@ -81,10 +81,10 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
   // Calculate correct answers for results
   const correctAnswers = quizState.questions.reduce((acc, question, index) => {
-    const userAnswer = quizState.answers[index];
-    const correctOption = question.options.find(opt => opt.isCorrect);
-    return acc + (userAnswer === correctOption?.id ? 1 : 0);
-  }, 0);
+  const userAnswer = quizState.answers[index];
+  const correctOption = question.options.find(opt => opt.isCorrect);
+  return acc + (userAnswer === correctOption?.id ? 1 : 0);
+}, 0);
 
   // Question Component - EXACT COPY from LessonQuiz
   const QuestionCard: React.FC<{
@@ -406,15 +406,15 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
             ) : (
               /* Use the separate QuizResults component with updated handler */
               <QuizResults
-                score={quizState.score}
-                totalQuestions={quizState.questions.length}
-                correctAnswers={correctAnswers}
-                onContinue={handleFinish}
-                onRetake={handleRetake}
-                onClaimRewards={handleClaimRewards}
-                lessonTitle={`${module.title} - Module Quiz`}
-                nextLesson={null} // No next lesson for module quiz
-              />
+              score={quizState.score}
+              totalQuestions={quizState.questions.length}
+              correctAnswers={correctAnswers}
+              onContinue={handleFinish}
+              onRetake={handleRetake}
+              onClaimRewards={handleClaimRewards}
+              lessonTitle={`${module.title} - Module Quiz`}
+              nextLesson={null}
+            />
             )}
           </div>
         </div>

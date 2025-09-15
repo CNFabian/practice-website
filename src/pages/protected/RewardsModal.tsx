@@ -241,6 +241,9 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
 
   return (
     <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={handleModalClose} />
+      <EscapeCoins />
+      
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Modal with bouncy scale animation */}
         <div 
@@ -281,25 +284,13 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
                 <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
               </div>
               
-              {/* PERFECT SCORE (100%) - Badge centered with coins in upper right */}
+              {/* PERFECT SCORE (100%) - Badge ONLY centered (NO coin container) */}
               {earnedBadge && (
                 <div className="relative z-10 w-full h-full flex items-center justify-center">
                   {/* Badge in center - LARGE and prominent for 100% */}
                   <div className="animate-badge-bounce">
                     <div className="w-32 h-32 flex items-center justify-center animate-badge-icon">
                       <img src={BadgeMedal} alt="Perfect Score Badge" className="w-full h-full" />
-                    </div>
-                  </div>
-                  {/* Coins indicator in upper right corner - SMALL */}
-                  <div className="absolute -top-2 -right-2 bg-yellow-200 rounded-full px-3 py-2 border-2 border-yellow-400 shadow-lg">
-                    <div className="flex items-center gap-1">
-                      <img 
-                        ref={el => staticCoinRefs.current[0] = el}
-                        src={coinIcons[0]} 
-                        alt="Coins" 
-                        className="w-5 h-5" 
-                      />
-                      <span className="text-base font-bold text-yellow-800">+{coinsEarned || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -346,25 +337,22 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button 
-                onClick={handleRewardsClick}
+                onClick={earnedBadge ? handleBadgesClick : handleRewardsClick}
                 className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors transform hover:scale-105"
               >
-                Go to rewards
+                {earnedBadge ? 'View Badges' : 'Go to rewards'}
               </button>
               
               <button 
-                onClick={handleBadgesClick}
+                onClick={handleModalClose}
                 className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition-colors transform hover:scale-105"
               >
-                Badges
+                Continue
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Render escape coins */}
-      <EscapeCoins />
 
       <style dangerouslySetInnerHTML={{
         __html: `

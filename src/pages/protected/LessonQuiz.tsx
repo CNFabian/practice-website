@@ -117,11 +117,11 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   const showFeedback = !!quizState.selectedAnswer;
 
   // Calculate correct answers for results
-  const correctAnswers = quizState.questions.reduce((acc, question, index) => {
-    const userAnswer = quizState.answers[index];
-    const correctOption = question.options.find(opt => opt.isCorrect);
-    return acc + (userAnswer === correctOption?.id ? 1 : 0);
-  }, 0);
+ const correctAnswers = quizState.questions.reduce((acc, question, index) => {
+  const userAnswer = quizState.answers[index];
+  const correctOption = question.options.find(opt => opt.isCorrect);
+  return acc + (userAnswer === correctOption?.id ? 1 : 0);
+}, 0);
 
   // Check if there's a next lesson
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
