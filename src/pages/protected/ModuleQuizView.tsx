@@ -106,7 +106,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
             <img 
               src={QuestionImage} 
               alt="Question Illustration" 
-              className="w-64 h-64 object-cover rounded-2xl p-3" 
+              className="w-48 h-48 object-cover rounded-2xl p-3" 
             />
           </div>
 
@@ -326,7 +326,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
           sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
         }`} />
 
-        {/* Right Column - Quiz Content - EXACT COPY from LessonQuiz */}
+        {/* Right Column - Quiz Content - FIXED HEIGHT STRUCTURE */}
         <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
           sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
         }`}>
