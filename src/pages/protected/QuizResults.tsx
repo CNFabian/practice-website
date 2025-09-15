@@ -50,11 +50,11 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
   // Calculate newly earned coins from this specific attempt
-  const calculateNewlyEarnedCoins = () => {
+   const calculateNewlyEarnedCoins = () => {
     if (!selectedLessonId) return 0;
     
     const existingProgress = lessonProgress[selectedLessonId];
-    const previousQuizScore = existingProgress?.quizScore || 0;
+    const previousCorrectAnswers = existingProgress?.quizScore || 0; // Now stored as number of correct answers
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
     
     let coinsEarned = 0;
@@ -65,20 +65,20 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     }
     
     // Check if user has already achieved 100% (perfect score)
-    const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
+    const hasAchievedPerfectScore = previousCorrectAnswers === totalQuestions;
     
     // Calculate coins that SHOULD be earned based on current score
     const totalCoinsForCurrentScore = correctAnswers * 5; // Total coins for current performance
     
     // Calculate coins already earned from previous attempts
-    const coinsAlreadyEarned = previousQuizScore * 5; // Coins earned from previous best score
+    const coinsAlreadyEarned = previousCorrectAnswers * 5; // Coins earned from previous best score
     
     if (!wasQuizAlreadyCompleted) {
       // First time completing this quiz - award coins for correct answers
       coinsEarned = correctAnswers * 5; // 5 coins per correct answer
-    } else if (correctAnswers > previousQuizScore && !hasAchievedPerfectScore) {
+    } else if (correctAnswers > previousCorrectAnswers && !hasAchievedPerfectScore) {
       // User improved their score AND hasn't achieved perfect score yet
-      // Award coins only for the improvement (difference between what they should have total vs what they already earned)
+      // Award coins only for the improvement
       coinsEarned = totalCoinsForCurrentScore - coinsAlreadyEarned;
     }
     // If user already had perfect score (100%) or got same/lower score, no coins awarded

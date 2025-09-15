@@ -356,11 +356,18 @@ completeQuiz: (state, action: PayloadAction<{
   if (state.quizState.quizType === 'lesson') {
     // Get existing progress to check previous score
     const existingProgress = state.lessonProgress[lessonId];
-    const previousQuizScore = existingProgress?.quizScore || 0;
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
     
-    // Calculate total questions and maximum possible coins for this lesson
+    // Calculate total questions
     const totalQuestions = state.quizState.questions.length;
+    
+    // Convert percentage score to number of correct answers
+    const correctAnswers = Math.round((score / 100) * totalQuestions);
+    
+    // Get previous score as number of correct answers (for consistency)
+    const previousCorrectAnswers = existingProgress?.quizScore || 0;
+    
+    // Maximum possible coins for this lesson
     const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question
     
     let coinsEarned = 0;
@@ -370,34 +377,33 @@ completeQuiz: (state, action: PayloadAction<{
     let shouldAwardCoins = false;
     
     // Check if user has already achieved 100% (perfect score)
-    const hasAchievedPerfectScore = previousQuizScore === totalQuestions;
+    const hasAchievedPerfectScore = previousCorrectAnswers === totalQuestions;
     
     // Calculate coins that SHOULD be earned based on current score
-    const totalCoinsForCurrentScore = score * 5; // Total coins for current performance
+    const totalCoinsForCurrentScore = correctAnswers * 5; // Total coins for current performance
     
     // Calculate coins already earned from previous attempts
-    const coinsAlreadyEarned = previousQuizScore * 5; // Coins earned from previous best score
+    const coinsAlreadyEarned = previousCorrectAnswers * 5; // Coins earned from previous best score
     
     if (!wasQuizAlreadyCompleted) {
       // First time completing this quiz - award coins for correct answers
       shouldAwardCoins = true;
-      coinsEarned = score * 5; // 5 coins per correct answer
-    } else if (score > previousQuizScore && !hasAchievedPerfectScore) {
+      coinsEarned = correctAnswers * 5; // 5 coins per correct answer
+    } else if (correctAnswers > previousCorrectAnswers && !hasAchievedPerfectScore) {
       // User improved their score AND hasn't achieved perfect score yet
       shouldAwardCoins = true;
-      // Award coins only for the improvement (difference between what they should have total vs what they already earned)
+      // Award coins only for the improvement
       coinsEarned = totalCoinsForCurrentScore - coinsAlreadyEarned;
     }
     // If user already had perfect score (100%) or got same/lower score, no coins awarded
     
     // Cap the total coins to the maximum possible for this lesson
-    // This ensures users can never earn more than the lesson's total coin value
     if (coinsEarned > maxCoinsForLesson) {
       coinsEarned = maxCoinsForLesson;
     }
     
     // Users need at least 1 correct answer to earn coins
-    if (score < 1) {
+    if (correctAnswers < 1) {
       coinsEarned = 0;
       shouldAwardCoins = false;
     }
@@ -415,11 +421,7 @@ completeQuiz: (state, action: PayloadAction<{
       }
     });
     
-    // Only add coins if:
-    // 1. skipCoinIncrement is false (meaning animation hasn't already added them)
-    // 2. User qualifies for coins based on score improvement logic
-    // 3. There are actually coins to be earned
-    // 4. User hasn't already achieved perfect score
+    // Only add coins if conditions are met
     if (!skipCoinIncrement && shouldAwardCoins && coinsEarned > 0 && !hasAchievedPerfectScore) {
       state.totalCoins += coinsEarned;
     }
@@ -438,11 +440,11 @@ completeQuiz: (state, action: PayloadAction<{
         completedQuestions: {}
       };
 
-      // Update quiz score - keep the higher score
+      // Update quiz score - keep the higher score (store as number of correct answers)
       state.lessonProgress[lessonId] = {
         ...currentProgress,
         quizCompleted: true,
-        quizScore: Math.max(currentProgress.quizScore || 0, score), // Keep the higher score
+        quizScore: Math.max(currentProgress.quizScore || 0, correctAnswers), // Store number of correct answers
         completedQuestions: newlyCompletedQuestions,
         lastAccessed: new Date().toISOString()
       };
