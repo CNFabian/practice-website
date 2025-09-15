@@ -82,7 +82,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     ))
   );
 
-  // MODIFIED: Added a delay to the initial scroll to wait for the layout animation.
+  // MODIFIED: Enhanced to handle smooth transition from grid to column layout
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
 
@@ -95,9 +95,17 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         toggleSidebar(false);
     }
     
-    // If the sidebar was collapsed, wait for the 700ms width transition to finish.
-    // Otherwise, scroll immediately.
-    const scrollDelay = wasCollapsed ? 700 : 0;
+    // Start the compact layout transition immediately to begin the visual change
+    if (layoutTimeoutRef.current) {
+        clearTimeout(layoutTimeoutRef.current);
+    }
+    layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
+
+    // Calculate scroll timing based on whether sidebar needs to expand
+    const sidebarTransitionDelay = wasCollapsed ? 700 : 0;
+    // Add extra time for the layout to settle after compact mode activates
+    const layoutSettleDelay = 100;
+    const totalScrollDelay = sidebarTransitionDelay + layoutSettleDelay;
 
     setTimeout(() => {
         const moduleElement = moduleRefs.current[moduleId];
@@ -119,16 +127,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         }
 
         moduleElement.scrollIntoView({
-            // Scroll instantly ('auto') when opening, scroll smoothly when switching.
-            behavior: wasCollapsed ? 'auto' : 'smooth',
+            // Use smooth scrolling for both sidebar expansion and layout change
+            behavior: 'smooth',
             block: blockAlignment,
         });
-    }, scrollDelay);
-
-    if (layoutTimeoutRef.current) {
-        clearTimeout(layoutTimeoutRef.current);
-    }
-    layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
+    }, totalScrollDelay);
   };
 
   const toggleSidebarLocal = () => {
