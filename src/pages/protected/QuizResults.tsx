@@ -276,16 +276,6 @@ const handleNavigateToBadges = () => {
 
   const coinPositions = generateCoinPositions();
 
-  const getRewardsMessage = () => {
-    if (!hasEarnedCoins) {
-      if (selectedLessonId && lessonProgress[selectedLessonId]?.quizCompleted) {
-        return "You've already completed this quiz. Keep practicing to improve your skills!";
-      }
-      return "Good effort! Keep practicing to improve your score.";
-    }
-    return `Great job! You've earned ${totalCoinsEarned} coins!`;
-  };
-
   // Escape Coins Portal Component
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
@@ -349,23 +339,6 @@ const handleNavigateToBadges = () => {
           {correctAnswers}/{totalQuestions} Questions Correct
         </div>
 
-        {/* Coins earned indicator - only show if coins earned */}
-        {hasEarnedCoins && (
-          <div className="bg-green-100 text-green-600 px-4 py-2 rounded-full text-sm font-medium mb-4 inline-block">
-            +{totalCoinsEarned} coins earned! 🎉
-          </div>
-        )}
-
-        {/* No coins message - show if no coins earned */}
-        {!hasEarnedCoins && (
-          <div className="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium mb-4 inline-block">
-            {selectedLessonId && lessonProgress[selectedLessonId]?.quizCompleted 
-              ? "Quiz already completed"
-              : "No coins earned - try again!"
-            }
-          </div>
-        )}
-
         {/* Static Image Container */}
         <div className="relative">
           <div className="w-48 h-48 mx-auto relative">
@@ -405,13 +378,6 @@ const handleNavigateToBadges = () => {
         <h2 className="text-2xl font-bold text-gray-900">
           {hasEarnedCoins ? 'Great Work!' : 'Quiz Complete!'}
         </h2>
-        
-        <p className="text-gray-600 text-sm mb-8 leading-relaxed">
-          {hasEarnedCoins 
-            ? "In this module, you learned the key financial requirements lenders evaluate and your next steps!"
-            : getRewardsMessage()
-          }
-        </p>
 
         {/* Action buttons */}
         <div className="space-y-3 w-full">
