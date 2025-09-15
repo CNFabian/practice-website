@@ -160,34 +160,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     }
   };
 
-  // Generate coin positions for display
-  const generateCoinPositions = () => {
-    if (!hasEarnedCoins) return [];
-    
-    const positions = [];
-    const maxRadius = 60;
-    const minRadius = 30;
-    const numCoins = Math.min(coinsEarned, 8); // Limit visual coins to 8
-    
-    for (let i = 0; i < numCoins; i++) {
-      const angle = (i / numCoins) * 2 * Math.PI;
-      const radius = minRadius + Math.random() * (maxRadius - minRadius);
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      
-      positions.push({
-        x: x,
-        y: y,
-        delay: i * 0.1,
-        coinType: coinIcons[i % coinIcons.length]
-      });
-    }
-    
-    return positions;
-  };
-
-  const coinPositions = generateCoinPositions();
-
   // Escape Coins Component
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
@@ -296,40 +268,21 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
                 </div>
               )}
 
-              {/* PARTIAL SCORE - Only coins centered (no badge) */}
+              {/* PARTIAL SCORE - Only single coin centered (no multiple jumping coins) */}
               {!earnedBadge && hasEarnedCoins && (
                 <div className="relative z-10 flex items-center justify-center">
-                  {/* Animated coins around center - NORMAL layout for partial scores */}
-                  {coinPositions.map((pos, index) => (
-                    <div
-                      key={index}
-                      ref={el => staticCoinRefs.current[index] = el}
-                      className="absolute w-8 h-8 animate-bounce"
-                      style={{
-                        transform: `translate(${pos.x}px, ${pos.y}px)`,
-                        animationDelay: `${pos.delay}s`,
-                      }}
-                    >
-                      <img 
-                        src={pos.coinType} 
-                        alt="Coin" 
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  ))}
-                  {/* Center coins count - LARGE display for partial scores */}
-                  <div className="flex items-center justify-center gap-3 bg-yellow-100 rounded-full px-6 py-3 border-2 border-yellow-300">
-                    <img src={coinIcons[0]} alt="Coins" className="w-12 h-12" />
+                  {/* Single static coin with minimal jump animation */}
+                  <div
+                    ref={el => staticCoinRefs.current[0] = el}
+                    className="flex items-center justify-center gap-1 bg-yellow-100 rounded-full px-6 py-3 border-2 border-yellow-300 animate-coin-jump"
+                  >
+                    <img 
+                      src={coinIcons[0]} 
+                      alt="Coin" 
+                      className="w-12 h-12 "
+                    />
                     <span className="text-2xl font-bold text-yellow-700">+{coinsEarned}</span>
                   </div>
-                </div>
-              )}
-
-              {/* NO REWARDS - Motivational message */}
-              {!earnedBadge && !hasEarnedCoins && (
-                <div className="relative z-10 text-center">
-                  <div className="text-6xl mb-4">🎯</div>
-                  <p className="text-gray-600">Keep practicing to earn rewards!</p>
                 </div>
               )}
             </div>
@@ -435,6 +388,15 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
               transform: translateY(2px) rotate(-1deg); 
             }
           }
+
+          @keyframes coinJump {
+            0%, 100% { 
+              transform: translateY(0); 
+            }
+            50% { 
+              transform: translateY(-8px); 
+            }
+          }
           
           .animate-fade-in {
             animation: fadeIn 0.3s ease-out;
@@ -466,6 +428,10 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           
           .animate-ribbon-wave {
             animation: ribbonWave 3s ease-in-out 1s infinite;
+          }
+
+          .animate-coin-jump {
+            animation: coinJump 1.5s ease-in-out infinite;
           }
         `
       }} />
