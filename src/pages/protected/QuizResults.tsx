@@ -396,7 +396,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
       {/* Render escape coins */}
       <EscapeCoins />
 
-      {/* Rewards Modal - ALWAYS PASS totalCoinsEarned (newly earned from this attempt) */}
+      {/* Rewards Modal - FIXED: Added lessonId prop */}
       <RewardsModal
         isOpen={showRewardsModal}
         onClose={handleRewardsModalClose}
@@ -404,6 +404,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
         onNavigateToBadges={handleNavigateToBadges}
         coinsEarned={totalCoinsEarned}
         hasEarnedCoins={hasEarnedCoins}
+        lessonId={selectedLessonId}
       />
     </div>
   );
