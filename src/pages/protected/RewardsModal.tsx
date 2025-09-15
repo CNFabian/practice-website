@@ -248,7 +248,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           <div className="px-8 py-8 text-center">
             {/* Title */}
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {earnedBadge ? 'Perfect Score!' : 'Rewards Earned!'}
+              {earnedBadge ? 'Badge Earned!' : 'Coins Earned!'}
             </h2>
 
             {/* Confetti and Badge/Coins Container */}
