@@ -52,7 +52,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     const progress = moduleProgress[module.id];
     if (progress) return progress;
     
-    const completed = module.lessons.filter(lesson => lessonProgress[lesson.id]?.completed).length;
+    // Updated logic: A lesson is completed when quiz is completed (100%)
+    const completed = module.lessons.filter(lesson => {
+      const lessonProgressData = lessonProgress[lesson.id];
+      return lessonProgressData?.quizCompleted || lessonProgressData?.completed;
+    }).length;
+    
     const total = module.lessons.length;
     return {
       lessonsCompleted: completed,
