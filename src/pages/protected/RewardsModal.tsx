@@ -23,28 +23,28 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   if (!isOpen) return null;
 
   const handleModalClose = () => {
-    // Only close the modal, don't trigger quiz completion
+    // Close the modal and trigger quiz completion through onClose
     onClose();
   };
 
   const handleRewardsClick = () => {
     if (onNavigateToRewards) {
-      onNavigateToRewards();
+      onNavigateToRewards(); // This will now trigger quiz completion
     } else {
       // Fallback navigation
       window.location.href = '/app/rewards';
     }
-    // Don't automatically close modal - let user stay on quiz results if they want
+    onClose(); // Close the modal after navigation
   };
 
   const handleBadgesClick = () => {
     if (onNavigateToBadges) {
-      onNavigateToBadges();
+      onNavigateToBadges(); // This will now trigger quiz completion
     } else {
       // Fallback navigation
       window.location.href = '/app/badges';
     }
-    // Don't automatically close modal - let user stay on quiz results if they want
+    onClose(); // Close the modal after navigation
   };
 
   return (
