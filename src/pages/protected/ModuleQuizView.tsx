@@ -77,7 +77,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
   // Get module progress from Redux
   const currentModuleProgress = moduleProgress[module.id];
-  const isModuleCompleted = currentModuleProgress?.overallProgress === 100 || false;
+  const isCompleted = currentModuleProgress?.overallProgress === 100 || false;
 
   // Calculate correct answers for results
   const correctAnswers = quizState.questions.reduce((acc, question, index) => {
@@ -238,7 +238,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                       {module.tags.map((tag) => (
                         <span 
                           key={tag}
-                          className={`px-2 py-1 text-xs rounded-md font-medium ${
+                          className={`px-1.5 py-0.5 text-xs rounded-full ${
                             tag === 'Beginner' 
                               ? 'bg-blue-100 text-blue-700' 
                               : tag === 'Finance'
@@ -256,12 +256,12 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
               </div>
             </div>
 
-                  <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center">
               <div 
                 className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
                 style={{ 
-                  height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
-                  minHeight: descriptionExpanded ? '64px' : '120px'
+                  height: 'min(calc(100vh - 550px), 300px)',
+                  minHeight: '120px'
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
