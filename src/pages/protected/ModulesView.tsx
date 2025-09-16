@@ -38,6 +38,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
+  // Helper function to get module quiz completion status
+  const getModuleQuizStatus = (moduleId: number) => {
+    const progress = moduleProgress[moduleId];
+    return {
+      isCompleted: progress?.moduleQuizCompleted || false,
+      score: progress?.moduleQuizScore || null
+    };
+  };
+
   const getOptimalCardWidth = () => {
     if (typeof window === 'undefined') return 280;
     const screenWidth = window.innerWidth;
@@ -66,6 +75,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0,
     };
   };
+  
 
   const getProgressBarColor = (status: string) => {
     switch (status) {
@@ -302,6 +312,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 {filteredModules.map((module, index) => {
                   const progress = getModuleProgress(module);
                   const isSelected = selectedModuleId === module.id;
+                  const quizStatus = getModuleQuizStatus(module.id);
                   
                   return (
                     <div 
@@ -345,6 +356,36 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           ${isCompactLayout ? 'h-0' : 'h-48'}
                         `}>
                          <img src={module.image} alt={module.title} className="object-cover w-full h-full" />
+                         
+                         {/* Module Quiz Completion Indicator */}
+                         {quizStatus.isCompleted && (
+                           <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm border border-green-200">
+                             {/* Check mark icon */}
+                             <svg 
+                               className="w-3 h-3 text-green-600" 
+                               fill="currentColor" 
+                               viewBox="0 0 20 20"
+                             >
+                               <path 
+                                 fillRule="evenodd" 
+                                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
+                                 clipRule="evenodd" 
+                               />
+                             </svg>
+                             
+                             {/* Score badge if available */}
+                             {quizStatus.score !== null && (
+                               <span className="text-xs font-medium text-green-700">
+                                 {Math.round((quizStatus.score / 10) * 100)}%
+                               </span>
+                             )}
+                             
+                             {/* "Quiz" text */}
+                             <span className="text-xs font-medium text-green-700">
+                               Quiz
+                             </span>
+                           </div>
+                         )}
                         </div>
                       </div>
 
@@ -508,9 +549,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <span className="text-xs text-gray-600 font-medium">Lesson {index + 1}</span>
                                 <span className="text-xs text-gray-600">{lesson.duration}</span>
                                 {quizCompleted && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                                    Quiz ✓
-                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                      Quiz ✓
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                               <p className="text-xs text-gray-600 mb-4 leading-relaxed">
