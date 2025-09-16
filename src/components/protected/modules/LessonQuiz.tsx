@@ -1,7 +1,7 @@
 import React from 'react';
-import { useModules } from '../../hooks/useModules';
-import { Lesson, Module } from '../../types/modules';
-import { QuestionImage } from '../../assets';
+import { useModules } from '../../../hooks/useModules';
+import { Lesson, Module } from '../../../types/modules';
+import { QuestionImage } from '../../../assets';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
 

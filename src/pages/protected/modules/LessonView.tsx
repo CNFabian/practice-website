@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useModules } from '../../hooks/useModules';
-import { Module, Lesson } from '../../types/modules';
+import { useModules } from '../../../hooks/useModules';
+import { Module, Lesson } from '../../../types/modules';
 import { 
   CoinIcon,
   BadgeMedal
-} from '../../assets';
-import LessonQuiz from './LessonQuiz';
+} from '../../../assets';
+import LessonQuiz from '../../../components/protected/modules/LessonQuiz';
 
 interface LessonViewProps {
   lesson: Lesson;

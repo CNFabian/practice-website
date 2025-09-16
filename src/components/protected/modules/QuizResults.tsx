@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useModules } from '../../hooks/useModules';
+import { useModules } from '../../../hooks/useModules';
 
 import RewardsModal from './RewardsModal';
 import { 
   CelebrationImage, TryAgainImage,
   Coin1, Coin2, Coin3, Coin4, Coin5,
-} from '../../assets';
+} from '../../../assets';
 
 interface QuizResultsProps {
   score: number;

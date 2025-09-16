@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { useModules } from '../../hooks/useModules';
-import { Module, Lesson } from '../../types/modules';
-import { CoinIcon} from '../../assets';
+import { useModules } from '../../../hooks/useModules';
+import { Module, Lesson } from '../../../types/modules';
+import { CoinIcon} from '../../../assets';
 
 interface ModulesViewProps {
   modulesData: Module[];

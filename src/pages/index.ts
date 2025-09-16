@@ -1,5 +1,5 @@
 export { default as OverviewPage } from './protected/OverviewPage';
-export { default as ModulesPage } from './protected/ModulesPage';
+export { default as ModulesPage } from './protected/modules/ModulesPage';
 export { default as SavedPage } from './protected/SavedPage';
 export { default as RewardsPage } from './protected/RewardsPage';
 export { default as BadgesPage } from './protected/BadgesPage';

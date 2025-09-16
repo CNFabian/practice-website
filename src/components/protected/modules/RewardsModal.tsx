@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { BadgeMedal, Confetti, Coin1, Coin2, Coin3, Coin4, Coin5 } from '../../assets';
+import { BadgeMedal, Confetti, Coin1, Coin2, Coin3, Coin4, Coin5 } from '../../../assets';
 
 interface RewardsModalProps {
   isOpen: boolean;

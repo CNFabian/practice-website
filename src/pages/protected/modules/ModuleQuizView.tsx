@@ -1,9 +1,9 @@
 import React from 'react';
-import { useModules } from '../../hooks/useModules';
-import { Module } from '../../types/modules';
-import { CoinIcon, QuestionImage, BadgeMedal } from '../../assets';
-import FeedbackContainer from './FeedbackContainer';
-import QuizResults from './QuizResults';
+import { useModules } from '../../../hooks/useModules';
+import { Module } from '../../../types/modules';
+import { CoinIcon, QuestionImage, BadgeMedal } from '../../../assets';
+import FeedbackContainer from '../../../components/protected/modules/FeedbackContainer';
+import QuizResults from '../../../components/protected/modules/QuizResults';
 
 interface ModuleQuizViewProps {
   module: Module;

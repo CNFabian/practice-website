@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useModules } from '../../hooks/useModules';
+import { useModules } from '../../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
-import { Module, Lesson } from '../../types/modules';
-import { SignupImage } from '../../assets';
+import { Module, Lesson } from '../../../types/modules';
+import { SignupImage } from '../../../assets';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
