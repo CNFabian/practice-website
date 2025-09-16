@@ -2,8 +2,7 @@ import React from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module } from '../../../types/modules';
 import { CoinIcon, QuestionImage, BadgeMedal } from '../../../assets';
-import FeedbackContainer from '../../../components/protected/modules/FeedbackContainer';
-import QuizResults from '../../../components/protected/modules/QuizResults';
+import { FeedbackContainer, QuizResults } from '../../../components';
 
 interface ModuleQuizViewProps {
   module: Module;

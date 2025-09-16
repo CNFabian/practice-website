@@ -5,7 +5,7 @@ import {
   CoinIcon,
   BadgeMedal
 } from '../../../assets';
-import LessonQuiz from '../../../components/protected/modules/LessonQuiz';
+import { LessonQuiz } from '../../../components';
 
 interface LessonViewProps {
   lesson: Lesson;
