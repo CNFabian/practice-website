@@ -381,8 +381,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </div>
                   <div className="flex items-center gap-1 bg-orange-50 px-2 pt-1.5 rounded-lg">
                     {(() => {
-                      // Check if badge has been claimed (100% score achieved)
-                      const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
+                      const totalQuestions = 5;
                       const currentCorrectAnswers = currentLessonProgress?.quizScore || 0;
                       const hasEarnedBadge = currentCorrectAnswers === totalQuestions;
                       
