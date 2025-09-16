@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
-import { CoinIcon } from '../../assets';
+import { CoinIcon, TestResultIcon } from '../../assets';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -451,6 +451,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       <h2 className="whitespace-nowrap text-xl font-bold text-gray-900">
                         {selectedModuleData.title}
                       </h2>
+                      
                       <p className="text-gray-600 text-sm leading-normal">
                         {selectedModuleData.description}
                       </p>
@@ -469,6 +470,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     </div>
 
                     <div className="absolute right-0 bottom-5 pr-4 pb-3 w-[calc(50%-1rem)]">
+                      {/* Module Quiz Completion Indicator - RIGHT ALIGNED ABOVE BUTTONS */}
+                      {getModuleQuizStatus(selectedModuleData.id).isCompleted && (
+                        <div className="flex justify-end mb-2">
+                          <div className="flex items-center gap-2 text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                            <img src={TestResultIcon} alt="Quiz Complete" className="w-4 h-4" />
+                            <span className="text-xs font-medium">Quiz Complete</span>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2">
                         <button 
                           disabled={isTransitioning}

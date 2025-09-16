@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { 
-  CoinIcon, 
-  TestResultIcon,
+  CoinIcon,
   BadgeMedal
 } from '../../assets';
 import LessonQuiz from './LessonQuiz';
