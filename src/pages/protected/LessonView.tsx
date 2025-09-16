@@ -255,7 +255,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                 {/* Quiz Status from Redux */}
                {quizCompleted && (
                 <div className="flex items-center gap-2 bg-blue-200 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
-
                   {currentLessonProgress?.quizScore !== undefined && currentLessonProgress?.quizScore !== null && (
                     <span className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
                       {/* FIXED: Convert number of correct answers to percentage */}

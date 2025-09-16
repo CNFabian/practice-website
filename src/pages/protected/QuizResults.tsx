@@ -4,7 +4,7 @@ import { useModules } from '../../hooks/useModules';
 
 import RewardsModal from './RewardsModal';
 import { 
-  CelebrationImage,
+  CelebrationImage, TryAgainImage,
   Coin1, Coin2, Coin3, Coin4, Coin5,
 } from '../../assets';
 
@@ -447,17 +447,17 @@ useEffect(() => {
         {/* Static Image Container */}
         <div className="relative">
           <div className="w-48 h-48 mx-auto relative">
-            {/* Your static celebration image */}
+            {/* Conditional image based on score */}
             <div className="absolute inset-0 flex items-center justify-center">
               <img 
-                src={CelebrationImage}
-                alt="Celebration" 
+                src={correctAnswers === 0 ? TryAgainImage : CelebrationImage}
+                alt={correctAnswers === 0 ? "Try Again" : "Celebration"} 
                 className="w-full h-full object-contain"
               />
             </div>
 
-            {/* Dynamic coin confetti burst behind image - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM */}
-            {!coinVacuumActive && !coinsHaveBeenVacuumed && hasEarnedCoins && (
+            {/* Dynamic coin confetti burst behind image - ONLY VISIBLE BEFORE VACUUM AND NOT AFTER VACUUM AND NOT FOR 0% */}
+            {!coinVacuumActive && !coinsHaveBeenVacuumed && hasEarnedCoins && correctAnswers > 0 && (
               <div className="absolute -inset-24">
                 {coinPositions.map((position, index) => (
                   <div 
@@ -479,10 +479,21 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Success message */}
+        {/* Conditional success/failure message */}
         <h2 className="text-2xl font-bold text-gray-900">
-          {hasEarnedCoins ? 'Great Work!' : 'Quiz Complete!'}
+          {correctAnswers === 0 ? 'Keep Trying!' : hasEarnedCoins ? 'Great Work!' : 'Quiz Complete!'}
         </h2>
+
+        {/* Conditional description message */}
+        {correctAnswers === 0 ? (
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+            Don't worry! Learning takes practice. Review the material and try again to master the concepts.
+          </p>
+        ) : (
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+            Great job completing the quiz! You're making excellent progress in your learning journey.
+          </p>
+        )}
 
         {/* Action buttons */}
         <div className="space-y-3 w-full">

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
-import { CoinIcon, TestResultIcon } from '../../assets';
+import { CoinIcon} from '../../assets';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -474,7 +474,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       {getModuleQuizStatus(selectedModuleData.id).isCompleted && (
                         <div className="flex justify-end mb-2">
                           <div className="flex items-center gap-2 text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200">
-                            <img src={TestResultIcon} alt="Quiz Complete" className="w-4 h-4" />
                             <span className="text-xs font-medium">Quiz Complete</span>
                           </div>
                         </div>
