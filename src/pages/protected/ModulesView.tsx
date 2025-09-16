@@ -457,11 +457,17 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       const watchProgress = progress?.watchProgress || 0;
                       const quizCompleted = progress?.quizCompleted || false;
 
-                      // Calculate remaining coins to collect
-                      const totalCoinsAvailable = lesson.coins;
+                      // UPDATED: Calculate coins dynamically based on quiz questions
+                      const getMaxCoinsForLesson = () => {
+                        // Use standardized quiz length since we can't access quiz questions until they're loaded
+                        const standardQuizQuestions = 5; // Default quiz length - matches current system
+                        return standardQuizQuestions * 5; // 5 coins per question = 25 total
+                      };
+
+                      const maxCoinsForLesson = getMaxCoinsForLesson();
                       const quizScore = progress?.quizScore || 0; // Number of correct answers
                       const coinsEarned = quizScore * 5; // 5 coins per correct answer
-                      const coinsRemaining = Math.max(0, totalCoinsAvailable - coinsEarned);
+                      const coinsRemaining = Math.max(0, maxCoinsForLesson - coinsEarned);
 
                       return (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">

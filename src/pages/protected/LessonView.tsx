@@ -70,7 +70,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   const handleStartQuiz = () => {
     if (isTransitioning) return;
     
-    // Expanded quiz questions for first module first lesson - all with complete explanation structures
     const sampleQuestions = [
       {
         id: 1,
