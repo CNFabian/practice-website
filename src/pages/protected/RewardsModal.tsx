@@ -61,7 +61,52 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
       console.log('RewardsModal opened - resetting animation states');
       setCoinsAnimated(false);
       setEscapeCoins([]);
+      
+      // Disable scrolling on the body when modal opens
+      document.body.style.overflow = 'hidden';
+      
+      // Add a class to the body to disable all interactions
+      document.body.classList.add('modal-open');
+      
+      // Create and inject CSS to disable all interactions except modal
+      const styleElement = document.createElement('style');
+      styleElement.id = 'rewards-modal-styles';
+      styleElement.innerHTML = `
+        body.modal-open * {
+          pointer-events: none !important;
+        }
+        body.modal-open .rewards-modal-content,
+        body.modal-open .rewards-modal-content * {
+          pointer-events: auto !important;
+        }
+        body.modal-open .rewards-modal-overlay {
+          pointer-events: auto !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+    } else {
+      // Re-enable scrolling when modal closes
+      document.body.style.overflow = '';
+      
+      // Remove the modal-open class
+      document.body.classList.remove('modal-open');
+      
+      // Remove the injected styles
+      const styleElement = document.getElementById('rewards-modal-styles');
+      if (styleElement) {
+        document.head.removeChild(styleElement);
+      }
     }
+
+    // Cleanup function to restore everything if component unmounts
+    return () => {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
+      const styleElement = document.getElementById('rewards-modal-styles');
+      if (styleElement) {
+        document.head.removeChild(styleElement);
+      }
+    };
   }, [isOpen]);
 
   // MOVED EARLY RETURN AFTER ALL HOOKS
@@ -170,7 +215,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     const targetY = 25;
 
     return createPortal(
-      <div className="fixed inset-0 pointer-events-none z-[60]">
+      <div className="fixed inset-0 pointer-events-none z-[70]">
         {escapeCoins.map((coin) => (
           <div
             key={coin.id}
@@ -213,16 +258,31 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     );
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={handleModalClose} />
       <EscapeCoins />
       
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Modal with bouncy scale animation */}
+      {/* Full-screen overlay that blocks ALL background interactions */}
+      <div 
+        className="rewards-modal-overlay fixed inset-0 z-[9999]" 
+        style={{ 
+          backgroundColor: 'transparent',
+          pointerEvents: 'all'
+        }}
+        onClick={handleModalClose}
+      />
+      
+      {/* Modal Container - Centered in viewport */}
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+        {/* Modal with bouncy scale animation - Re-enable pointer events for modal content */}
         <div 
           ref={containerRef}
-          className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-modal-bounce"
+          className="rewards-modal-content relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-modal-bounce pointer-events-auto"
+          style={{
+            // Ensure modal stays centered and above everything
+            zIndex: 10000
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Close X Button */}
           <button
@@ -321,18 +381,18 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           @keyframes modalBounce {
             0% { 
               opacity: 0;
-              transform: translate(-50%, -50%) scale(0.3) rotate(-10deg);
+              transform: scale(0.3) rotate(-10deg);
             }
             50% { 
               opacity: 1;
-              transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+              transform: scale(1.05) rotate(2deg);
             }
             70% { 
-              transform: translate(-50%, -50%) scale(0.9) rotate(-1deg);
+              transform: scale(0.9) rotate(-1deg);
             }
             100% { 
               opacity: 1;
-              transform: translate(-50%, -50%) scale(1) rotate(0deg);
+              transform: scale(1) rotate(0deg);
             }
           }
           
@@ -407,10 +467,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           }
           
           .animate-modal-bounce {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             animation: modalBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           }
           
@@ -439,7 +495,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
           }
         `
       }} />
-    </>
+    </>,
+    document.body
   );
 };
 

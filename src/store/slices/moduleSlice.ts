@@ -487,15 +487,33 @@ completeModuleQuiz: (state, action: PayloadAction<{
 }>) => {
   const { moduleId, score, skipCoinIncrement = false } = action.payload;
   
-  // Check if module quiz was already completed
+  // Get existing module progress
   const existingModuleProgress = state.moduleProgress[moduleId];
-  const wasModuleQuizAlreadyCompleted = existingModuleProgress?.moduleQuizCompleted || false;
   
-  // Award bonus coins for module completion only if not already completed
-  const bonusCoins = score >= 80 ? 50 : score >= 60 ? 30 : 20;
+  // Calculate total questions and correct answers
+  const totalQuestions = state.quizState.questions.length;
+  const correctAnswers = Math.round((score / 100) * totalQuestions);
   
-  if (!skipCoinIncrement && !wasModuleQuizAlreadyCompleted) {
-    state.totalCoins += bonusCoins;
+  // Get previous score as number of correct answers (for consistency)
+  const previousCorrectAnswers = existingModuleProgress?.moduleQuizScore || 0;
+  
+  // Module quiz specific logic: Only award coins if user gets 100%
+  let coinsEarned = 0;
+  let shouldAwardCoins = false;
+  
+  // Check if user achieved perfect score (100%)
+  const hasAchievedPerfectScore = correctAnswers === totalQuestions;
+  const hadPreviousPerfectScore = previousCorrectAnswers === totalQuestions;
+  
+  // Only award coins for 100% score and only if they haven't achieved it before
+  if (hasAchievedPerfectScore && !hadPreviousPerfectScore) {
+    shouldAwardCoins = true;
+    coinsEarned = totalQuestions * 10; // 10 coins per question for module quiz
+  }
+  
+  // Add coins if conditions are met
+  if (!skipCoinIncrement && shouldAwardCoins) {
+    state.totalCoins += coinsEarned;
   }
   
   // Update module progress with quiz completion
@@ -509,12 +527,12 @@ completeModuleQuiz: (state, action: PayloadAction<{
   };
   
   moduleProgress.moduleQuizCompleted = true;
-  // Keep the higher score if retaking
-  moduleProgress.moduleQuizScore = Math.max(moduleProgress.moduleQuizScore || 0, score);
+  // Keep the higher score if retaking (store as number of correct answers)
+  moduleProgress.moduleQuizScore = Math.max(moduleProgress.moduleQuizScore || 0, correctAnswers);
   moduleProgress.lastAccessed = new Date().toISOString();
   
-  // Mark module as completed if quiz passed
-  if (score >= 60) {
+  // Mark module as completed only if quiz passed with 100%
+  if (hasAchievedPerfectScore) {
     moduleProgress.status = 'Completed';
   }
   

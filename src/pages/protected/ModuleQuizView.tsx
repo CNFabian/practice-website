@@ -445,17 +445,19 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 </div>
               </>
             ) : (
-              /* Use the separate QuizResults component with updated handler */
+              /* UPDATED: QuizResults component with module quiz props */
               <QuizResults
-              score={quizState.score}
-              totalQuestions={quizState.questions.length}
-              correctAnswers={correctAnswers}
-              onContinue={handleFinish}
-              onRetake={handleRetake}
-              onClaimRewards={handleClaimRewards}
-              lessonTitle={`${module.title} - Module Quiz`}
-              nextLesson={null}
-            />
+                score={quizState.score}
+                totalQuestions={quizState.questions.length}
+                correctAnswers={correctAnswers}
+                onContinue={handleFinish}
+                onRetake={handleRetake}
+                onClaimRewards={handleClaimRewards}
+                lessonTitle={`${module.title} - Module Quiz`}
+                nextLesson={null}
+                isModuleQuiz={true}
+                moduleId={module.id}
+              />
             )}
           </div>
         </div>
