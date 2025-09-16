@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useModules } from '../../hooks/useModules';
+
 import RewardsModal from './RewardsModal';
 import { 
   CelebrationImage,
