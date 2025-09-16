@@ -28,7 +28,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     activeTab,
     changeActiveTab,
     showCompactLayout,
-    toggleCompactLayout
+    toggleCompactLayout,
+    goToQuiz // Add this to access the quiz navigation function
   } = useModules();
 
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -147,6 +148,59 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     if (isTransitioning) return;
     onLessonSelect(lesson, module);
+  };
+
+  const handleLessonQuizStart = (lesson: Lesson, module: Module) => {
+    if (isTransitioning) return;
+    
+    // Sample quiz questions for the lesson
+    const sampleQuestions = [
+      {
+        id: 1,
+        question: "What is the first step in preparing for homeownership?",
+        options: [
+          { id: 'a', text: 'Looking at houses online', isCorrect: false },
+          { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
+          { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
+          { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
+        ],
+        explanation: {
+          correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
+          incorrect: {
+            'a': { why_wrong: "Looking at houses online is premature without knowing your budget first.", confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes." },
+            'c': { why_wrong: "While talking to a real estate agent is important, you should know your budget first.", confusion_reason: "Real estate agents can help, but they need to know your financial limits." },
+            'd': { why_wrong: "Pre-approval comes after you've assessed your finances and know what you can afford.", confusion_reason: "Pre-approval is important but it's a later step in the process." }
+          }
+        }
+      },
+      {
+        id: 2,
+        question: "What percentage of your monthly income should ideally go toward housing costs?",
+        options: [
+          { id: 'a', text: '20%', isCorrect: false },
+          { id: 'b', text: '28%', isCorrect: true },
+          { id: 'c', text: '35%', isCorrect: false },
+          { id: 'd', text: '40%', isCorrect: false }
+        ],
+        explanation: {
+          correct: "The 28% rule is a widely accepted guideline that helps ensure you don't become house poor and have money left for other expenses and savings.",
+          incorrect: {
+            'a': { why_wrong: "20% is too conservative and might limit your housing options unnecessarily.", confusion_reason: "While being conservative with money is good, 20% might be too restrictive for most markets." },
+            'c': { why_wrong: "35% is getting into risky territory and could strain your budget.", confusion_reason: "Higher percentages leave less room for other expenses and unexpected costs." },
+            'd': { why_wrong: "40% is considered house poor territory and not financially sustainable.", confusion_reason: "Spending this much on housing leaves little room for other necessities and emergencies." }
+          }
+        }
+      }
+    ];
+    
+    // First navigate to the lesson, then start the quiz
+    onLessonSelect(lesson, module);
+    
+    // Use a small delay to ensure the lesson view is rendered before starting the quiz
+    setTimeout(() => {
+      // Use the goToQuiz function from useModules hook
+      goToQuiz(sampleQuestions, lesson.id);
+    }, 100);
   };
 
   const handleModuleQuizStart = (module: Module) => {
@@ -468,14 +522,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 >
                                   {isCompleted ? 'Review' : watchProgress > 0 ? 'Continue' : 'Start Lesson'}
                                 </button>
-                                <button 
-                                  disabled={isTransitioning}
-                                  className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
-                                    quizCompleted ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-                                  }`}
-                                >
-                                  {quizCompleted ? 'Retake' : 'Lesson Quiz'}
-                                </button>
+                               <button 
+                                onClick={() => handleLessonQuizStart(lesson, selectedModuleData)}
+                                disabled={isTransitioning}
+                                className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
+                                  quizCompleted ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                                }`}
+                              >
+                                {quizCompleted ? 'Retake' : 'Lesson Quiz'}
+                              </button>
                               </div>
                             </div>
                           </div>
