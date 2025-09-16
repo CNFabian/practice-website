@@ -3,7 +3,8 @@ import { useModules } from '../../hooks/useModules';
 import { Module, Lesson } from '../../types/modules';
 import { 
   CoinIcon, 
-  TestResultIcon
+  TestResultIcon,
+  BadgeMedal
 } from '../../assets';
 import LessonQuiz from './LessonQuiz';
 
@@ -253,14 +254,15 @@ const LessonView: React.FC<LessonViewProps> = ({
                   <span className="whitespace-nowrap">Back to Module</span>
                 </button>
 
-                {/* Quiz Status from Redux */}
+                {/* Quiz Status from Redux - FIXED PERCENTAGE CALCULATION */}
                 {quizCompleted && (
                   <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg flex-shrink-0 min-w-0">
                    <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5 flex-shrink-0" color="currentColor"/>
                     <span className="text-xs font-medium whitespace-nowrap">Quiz Completed</span>
                     {currentLessonProgress?.quizScore && (
                       <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                        {currentLessonProgress.quizScore}%
+                        {/* FIXED: Convert number of correct answers to percentage */}
+                        {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
                       </span>
                     )}
                   </div>
@@ -358,19 +360,43 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* Completion Status from Redux */}
               
 
-              {/* Rewards */}
+              {/* ENHANCED Rewards Section with Remaining Coins and Badge Status */}
               <div>
                 <h3 className="text-sm font-semibold mb-2">Rewards</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1.5 rounded-lg">
                     <img src={CoinIcon} alt="Coins" className="w-5 h-5" />
-                    <span className="text-xs font-medium">+{lesson.coins} NestCoins</span>
+                    <span className="text-xs font-medium">
+                      {(() => {
+                        // Calculate remaining coins that can be earned
+                        const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
+                        const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question = 25 total
+                        const currentCorrectAnswers = currentLessonProgress?.quizScore || 0;
+                        const coinsAlreadyEarned = currentCorrectAnswers * 5;
+                        const remainingCoins = maxCoinsForLesson - coinsAlreadyEarned;
+                        
+                        return `+${remainingCoins} NestCoins`;
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 bg-orange-50 px-2 py-1.5 rounded-lg">
-                    <div className="w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">🎖️</span>
-                    </div>
-                    <span className="text-xs font-medium">Badge Progress</span>
+                    {(() => {
+                      // Check if badge has been claimed (100% score achieved)
+                      const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
+                      const currentCorrectAnswers = currentLessonProgress?.quizScore || 0;
+                      const hasEarnedBadge = currentCorrectAnswers === totalQuestions;
+                      
+                      return (
+                        <img 
+                          src={BadgeMedal} 
+                          alt="Badge" 
+                          className={`w-5 h-5 transition-opacity duration-300 ${
+                            hasEarnedBadge ? 'opacity-100' : 'opacity-25'
+                          }`}
+                        />
+                      );
+                    })()}
+                    <span className="text-xs font-medium">Lesson Badge</span>
                   </div>
                 </div>
               </div>
