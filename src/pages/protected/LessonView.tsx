@@ -365,7 +365,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <h3 className="text-sm font-semibold mb-2">Rewards</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1.5 rounded-lg">
-                    <img src={CoinIcon} alt="Coins" className="w-5 h-5" />
+                    <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
                     <span className="text-xs font-medium">
                       {(() => {
                         // Calculate remaining coins that can be earned
@@ -379,7 +379,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                       })()}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 bg-orange-50 px-2 py-1.5 rounded-lg">
+                  <div className="flex items-center gap-1 bg-orange-50 px-2 pt-1.5 rounded-lg">
                     {(() => {
                       // Check if badge has been claimed (100% score achieved)
                       const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
@@ -390,8 +390,8 @@ const LessonView: React.FC<LessonViewProps> = ({
                         <img 
                           src={BadgeMedal} 
                           alt="Badge" 
-                          className={`w-5 h-5 transition-opacity duration-300 ${
-                            hasEarnedBadge ? 'opacity-100' : 'opacity-25'
+                          className={`w-7 h-7 transition-all duration-300 ${
+                            hasEarnedBadge ? 'opacity-100' : 'opacity-100 brightness-0'
                           }`}
                         />
                       );
@@ -403,7 +403,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Next Lesson */}
               {nextLesson && (
-                <div className="bg-gray-50 rounded-lg p-2">
+                <div className="bg-gray-50 rounded-lg pb-2 px-2">
                   <h4 className="text-sm font-semibold mb-1">Next Lesson</h4>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
