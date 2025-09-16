@@ -117,7 +117,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const totalCoinsEarned = calculateNewlyEarnedCoins();
   const hasEarnedCoins = totalCoinsEarned > 0;
 
-  // FIXED: Show content and rewards modal with proper timing - Only show modal for 100% scores
 useEffect(() => {
   // Delay content reveal
   const timer1 = setTimeout(() => setShowContent(true), 300);
@@ -129,11 +128,24 @@ useEffect(() => {
     }
   }, 2000);
 
+  // NEW: Handle quiz completion for 0% scores where modal doesn't appear
+  const timer3 = setTimeout(() => {
+    if (correctAnswers === 0 && !hasEarnedCoins) {
+      // Trigger quiz completion directly for 0% scores since modal won't show
+      if (isModuleQuiz && moduleId) {
+        completeModuleQuiz(moduleId, quizState.score, false);
+      } else if (selectedLessonId) {
+        completeQuiz(selectedLessonId, quizState.score, false);
+      }
+    }
+  }, 2500); // Slightly after the modal would have appeared
+
   return () => {
     clearTimeout(timer1);
     clearTimeout(timer2);
+    clearTimeout(timer3);
   };
-}, []);
+}, [correctAnswers, totalQuestions, hasEarnedCoins, isModuleQuiz, moduleId, selectedLessonId, completeModuleQuiz, completeQuiz, quizState.score]);
 
   // Handle coin vacuum animation when triggered
   useEffect(() => {

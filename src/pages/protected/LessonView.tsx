@@ -253,19 +253,18 @@ const LessonView: React.FC<LessonViewProps> = ({
                   <span className="whitespace-nowrap">Back to Module</span>
                 </button>
 
-                {/* Quiz Status from Redux - FIXED PERCENTAGE CALCULATION */}
-                {quizCompleted && (
-                  <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg flex-shrink-0 min-w-0">
-                   <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5 flex-shrink-0" color="currentColor"/>
-                    <span className="text-xs font-medium whitespace-nowrap">Quiz Completed</span>
-                    {currentLessonProgress?.quizScore && (
-                      <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                        {/* FIXED: Convert number of correct answers to percentage */}
-                        {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
-                      </span>
-                    )}
-                  </div>
-                )}
+                {/* Quiz Status from Redux */}
+               {quizCompleted && (
+                <div className="flex items-center gap-2 bg-blue-200 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
+
+                  {currentLessonProgress?.quizScore !== undefined && currentLessonProgress?.quizScore !== null && (
+                    <span className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+                      {/* FIXED: Convert number of correct answers to percentage */}
+                      {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
+                    </span>
+                  )}
+                </div>
+              )}
               </div>
 
               {/* Lesson Header */}
@@ -278,7 +277,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     <span className="text-xs text-gray-600">{lesson.duration}</span>
                     <div className="flex gap-1">
                       {module.tags.map((tag) => (
-                        <span 
+                        <span
                           key={tag}
                           className={`px-1.5 py-0.5 text-xs rounded-full ${
                             tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'

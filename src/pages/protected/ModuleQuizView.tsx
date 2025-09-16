@@ -232,7 +232,6 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 {moduleQuizCompleted && (
                   <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-2 py-1 rounded-lg flex-shrink-0 min-w-0">
                     <img src={TestResultIcon} alt="Test Result Icon" className="w-5 h-5 flex-shrink-0" color="currentColor"/>
-                    <span className="text-xs font-medium whitespace-nowrap">Module Quiz Completed</span>
                     {moduleQuizScore && (
                       <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
                         {/* Convert number of correct answers to percentage */}
