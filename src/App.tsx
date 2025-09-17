@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from './store/store'
 import { setLoading } from './store/slices/authSlice'
+console.log('apiKey present?', Boolean(import.meta.env.VITE_FIREBASE_API_KEY));
+console.log('apiKey (first 6 chars):', String(import.meta.env.VITE_FIREBASE_API_KEY || '').slice(0, 6));
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
@@ -15,6 +17,7 @@ import LoadingSpinner from './components/common/LoadingSpinner'
 import SplashPage from './pages/public/SplashPage'
 import LoginPage from './pages/public/LoginPage'
 import SignupPage from './pages/public/SignupPage'
+import OnBoardingPage from './pages/public/OnBoardingPage'
 
 // Protected Pages
 import {
@@ -27,9 +30,20 @@ import {
   SettingsPage
 } from './pages'
 
+import type { Location as RouterLocation } from 'react-router-dom'
+
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch()
+
+  const location = useLocation()
+  const state = location.state as { background?: RouterLocation } | null
+
+  const background: RouterLocation | undefined =
+    state?.background ||
+    (location.pathname === '/onboarding'
+      ? ({ ...location, pathname: '/app' } as RouterLocation)
+      : undefined)
 
   const handleLoadingComplete = () => {
     console.log('App: Loading complete - hiding spinner')
@@ -47,48 +61,72 @@ function App() {
           onReadyToShow={true}
         />
       ) : (
-        <Routes>
-          {/* Public Routes - Auth Layout */}
-          <Route path="/splash" element={
-            isAuthenticated ? <Navigate to="/app" replace /> : (
-              <AuthLayout>
-                <SplashPage />
-              </AuthLayout>
-            )
-          } />
+        <>
+          <Routes location={background || location}>
+            {/* Public Routes - Auth Layout */}
+            <Route path="/splash" element={
+              isAuthenticated ? <Navigate to="/app" replace /> : (
+                <AuthLayout>
+                  <SplashPage />
+                </AuthLayout>
+              )
+            } />
 
-          {/* Public Routes - Public Layout */}
-          <Route path="/auth" element={
-            isAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
-          }>
-            <Route path="login" element={<LoginPage />} />
-            <Route path="signup" element={<SignupPage />} />
-          </Route>
-          
-          {/* Redirect old paths to new structure */}
-          <Route path="/login" element={<Navigate to="/auth/login" replace />} />
-          <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
+            {/* Public Routes - Public Layout */}
+            <Route path="/auth" element={
+              isAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
+            }>
+              <Route path="login" element={<LoginPage />} />
+              <Route path="signup" element={<SignupPage />} />
+            </Route>
+            
+            {/* Redirect old paths to new structure */}
+            <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+            <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
 
-          {/* Protected Routes - Main Layout */}
-          <Route path="/app" element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<OverviewPage />} />
-            <Route path="modules" element={<ModulesPage />} />
-            <Route path="saved" element={<SavedPage />} />
-            <Route path="rewards" element={<RewardsPage />} />
-            <Route path="badges" element={<BadgesPage />} />
-            <Route path="help" element={<HelpPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnBoardingPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Default redirect based on auth state */}
-          <Route path="/" element={
-            isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
-          } />
-        </Routes>
+            {/* Protected Routes - Main Layout */}
+            <Route path="/app" element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<OverviewPage />} />
+              <Route path="modules" element={<ModulesPage />} />
+              <Route path="saved" element={<SavedPage />} />
+              <Route path="rewards" element={<RewardsPage />} />
+              <Route path="badges" element={<BadgesPage />} />
+              <Route path="help" element={<HelpPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+
+            {/* Default redirect based on auth state */}
+            <Route path="/" element={
+              isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
+            } />
+          </Routes>
+
+          {background && (
+            <Routes>
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <OnBoardingPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          )}
+        </>
       )}
     </AuthProvider>
   )

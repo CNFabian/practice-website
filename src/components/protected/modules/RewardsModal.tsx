@@ -27,7 +27,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   totalQuestions = 0,
   correctAnswers = 0,
 }) => {
-  // Animation states - ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  // Animation states
   const [coinsAnimated, setCoinsAnimated] = useState(false);
   const [escapeCoins, setEscapeCoins] = useState<Array<{
     id: string;
@@ -55,20 +55,16 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     isOpen
   });
 
-  // Reset animation states when modal opens
   useEffect(() => {
     if (isOpen) {
       console.log('RewardsModal opened - resetting animation states');
       setCoinsAnimated(false);
       setEscapeCoins([]);
       
-      // Disable scrolling on the body when modal opens
       document.body.style.overflow = 'hidden';
       
-      // Add a class to the body to disable all interactions
       document.body.classList.add('modal-open');
       
-      // Create and inject CSS to disable all interactions except modal
       const styleElement = document.createElement('style');
       styleElement.id = 'rewards-modal-styles';
       styleElement.innerHTML = `
@@ -85,20 +81,16 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
       `;
       document.head.appendChild(styleElement);
     } else {
-      // Re-enable scrolling when modal closes
       document.body.style.overflow = '';
       
-      // Remove the modal-open class
       document.body.classList.remove('modal-open');
       
-      // Remove the injected styles
       const styleElement = document.getElementById('rewards-modal-styles');
       if (styleElement) {
         document.head.removeChild(styleElement);
       }
     }
 
-    // Cleanup function to restore everything if component unmounts
     return () => {
       document.body.style.overflow = '';
       document.body.classList.remove('modal-open');
@@ -109,7 +101,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     };
   }, [isOpen]);
 
-  // MOVED EARLY RETURN AFTER ALL HOOKS
   if (!isOpen) return null;
 
   const triggerCoinAnimation = () => {
@@ -142,17 +133,15 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     setEscapeCoins(coins);
     setCoinsAnimated(true);
     
-    // Clean up animation
+    // Clean up
     setTimeout(() => {
       setEscapeCoins([]);
     }, 2200);
   };
 
   const handleModalClose = () => {
-    // Only trigger coin animation for partial scores (not badges)
     if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
-      // Delay the actual close to allow animation to start
       setTimeout(() => {
         onClose();
       }, 100);
@@ -162,10 +151,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   };
 
   const handleRewardsClick = () => {
-    // Only trigger coin animation for partial scores (not badges)
     if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
-      // Delay navigation to allow animation to start
       setTimeout(() => {
         if (onNavigateToRewards) {
           onNavigateToRewards();
@@ -185,10 +172,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   };
 
   const handleBadgesClick = () => {
-    // Only trigger coin animation for partial scores (not badges)
     if (hasEarnedCoins && !coinsAnimated && !earnedBadge) {
       triggerCoinAnimation();
-      // Delay navigation to allow animation to start
       setTimeout(() => {
         if (onNavigateToBadges) {
           onNavigateToBadges();
@@ -207,7 +192,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     }
   };
 
-  // Escape Coins Component
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
 
@@ -262,7 +246,7 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     <>
       <EscapeCoins />
       
-      {/* Full-screen overlay that blocks ALL background interactions */}
+      {/* Full-screen overlay */}
       <div 
         className="rewards-modal-overlay fixed inset-0 z-[9999]" 
         style={{ 
@@ -272,19 +256,16 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
         onClick={handleModalClose}
       />
       
-      {/* Modal Container - Centered in viewport */}
+      {/* Modal Container */}
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-        {/* Modal with bouncy scale animation - Re-enable pointer events for modal content */}
         <div 
           ref={containerRef}
           className="rewards-modal-content relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-modal-bounce pointer-events-auto"
           style={{
-            // Ensure modal stays centered and above everything
             zIndex: 10000
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close X Button */}
           <button
             onClick={handleModalClose}
             className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -304,26 +285,20 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
             </svg>
           </button>
 
-          {/* Content */}
           <div className="px-8 py-8 text-center">
-            {/* Title */}
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {earnedBadge ? 'Badge Earned!' : 'Coins Earned!'}
             </h2>
 
-            {/* Confetti and Badge/Coins Container */}
             <div className="relative flex items-center justify-center mb-8 h-32">
-              {/* Confetti in background - ONLY FOR BADGE */}
               {earnedBadge && (
                 <div className="absolute inset-0 flex items-center justify-center animate-confetti-burst">
                   <img src={Confetti} alt="Confetti" className="w-40 h-40 opacity-70" />
                 </div>
               )}
               
-              {/* PERFECT SCORE (100%) - Badge ONLY centered (NO coin container) */}
               {earnedBadge && (
                 <div className="relative z-10 w-full h-full flex items-center justify-center">
-                  {/* Badge in center - LARGE and prominent for 100% */}
                   <div className="animate-badge-bounce">
                     <div className="w-32 h-32 flex items-center justify-center animate-badge-icon">
                       <img src={BadgeMedal} alt="Perfect Score Badge" className="w-full h-full" />
@@ -332,10 +307,8 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
                 </div>
               )}
 
-              {/* PARTIAL SCORE - Only single coin centered (no multiple jumping coins) */}
               {!earnedBadge && hasEarnedCoins && (
                 <div className="relative z-10 flex items-center justify-center">
-                  {/* Single static coin with minimal jump animation */}
                   <div
                     ref={el => staticCoinRefs.current[0] = el}
                     className="flex items-center justify-center gap-1 bg-yellow-100 rounded-full px-6 py-3 border-2 border-yellow-300 animate-coin-jump"

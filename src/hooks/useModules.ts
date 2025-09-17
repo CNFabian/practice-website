@@ -15,14 +15,14 @@ import {
   updateLessonProgress,
   markLessonCompleted,
   startQuiz,
-  startModuleQuiz, // NEW
+  startModuleQuiz,
   selectQuizAnswer,
   startQuizTransition,
   nextQuizQuestion,
   startPreviousQuizTransition,
   previousQuizQuestion,
   completeQuiz,
-  completeModuleQuiz, // NEW
+  completeModuleQuiz,
   resetQuiz,
   closeQuiz,
   toggleSidebar,
@@ -55,7 +55,6 @@ export const useModules = () => {
     dispatch(startQuiz({ questions, lessonId }))
   }, [dispatch])
 
-  // NEW: Module quiz navigation
   const goToModuleQuiz = useCallback((questions: QuizQuestion[], moduleId: number) => {
     dispatch(setSelectedModule(moduleId))
     dispatch(startModuleQuiz({ questions, moduleId }))
@@ -83,7 +82,7 @@ export const useModules = () => {
     dispatch(setCoins(amount))
   }, [dispatch])
 
-  // Progress tracking - Fixed to match expected API
+  // Progress tracking
   const updateProgress = useCallback((lessonId: number, updates: any) => {
     // Handle both old API (object) and new API (individual params)
     if (typeof updates === 'object') {
@@ -107,7 +106,6 @@ export const useModules = () => {
     dispatch(startQuiz({ questions, lessonId }))
   }, [dispatch])
 
-  // NEW: Start module quiz
   const startModuleQuizAction = useCallback((questions: QuizQuestion[], moduleId: number) => {
     dispatch(startModuleQuiz({ questions, moduleId }))
   }, [dispatch])
@@ -134,7 +132,6 @@ export const useModules = () => {
     dispatch(completeQuiz({ lessonId, score, skipCoinIncrement }))
   }, [dispatch])
 
-  // NEW: Complete module quiz
   const completeModuleQuizWithScore = useCallback((moduleId: number, score: number, skipCoinIncrement: boolean = false) => {
     dispatch(completeModuleQuiz({ moduleId, score, skipCoinIncrement }))
   }, [dispatch])
@@ -173,7 +170,7 @@ export const useModules = () => {
     dispatch(setError(null))
   }, [dispatch])
 
-  // Computed properties - keep all your existing getters
+  // Computed properties
   const currentModule = moduleState.selectedModuleId 
     ? moduleState.modules.find(m => m.id === moduleState.selectedModuleId) 
     : undefined;
@@ -211,7 +208,7 @@ export const useModules = () => {
     goToModules,
     goToLesson,
     goToQuiz,
-    goToModuleQuiz, // NEW
+    goToModuleQuiz,
 
     // Module management
     loadModules,
@@ -229,12 +226,12 @@ export const useModules = () => {
 
     // Quiz actions
     startQuiz: startLessonQuiz,
-    startModuleQuiz: startModuleQuizAction, // NEW
+    startModuleQuiz: startModuleQuizAction,
     selectAnswer,
     nextQuestion,
     previousQuestion,
     completeQuiz: completeQuizWithScore,
-    completeModuleQuiz: completeModuleQuizWithScore, // NEW
+    completeModuleQuiz: completeModuleQuizWithScore,
     resetQuiz: restartQuiz,
     closeQuiz: exitQuiz,
 

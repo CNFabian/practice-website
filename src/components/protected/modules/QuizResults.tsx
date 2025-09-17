@@ -17,8 +17,7 @@ interface QuizResultsProps {
   onClaimRewards?: () => void;
   triggerCoinVacuum?: boolean;
   lessonTitle?: string;
-  nextLesson?: any; // Add nextLesson prop to determine button text
-  // NEW: Add these props for module quiz support
+  nextLesson?: any;
   isModuleQuiz?: boolean;
   moduleId?: number;
 }
@@ -29,19 +28,18 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   onContinue,
   onRetake,
   triggerCoinVacuum = false,
-  nextLesson, // NEW: Use this to determine button text
+  nextLesson,
   isModuleQuiz = false,
   moduleId,
-  // lessonTitle is received but not used - this prevents TS errors
 }) => {
   const { 
     incrementCoinsWithAnimation, 
     quizState, 
     lessonProgress, 
-    moduleProgress, // ADD this for module quiz support
+    moduleProgress,
     selectedLessonId, 
     completeQuiz,
-    completeModuleQuiz // ADD this for module quiz support
+    completeModuleQuiz
   } = useModules();
   
   // Animation states
@@ -60,85 +58,67 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Array of your coin icons for random selection
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  // UPDATED: Calculate newly earned coins from this specific attempt
   const calculateNewlyEarnedCoins = () => {
-    // Handle module quiz differently
     if (isModuleQuiz && moduleId) {
       const existingModuleProgress = moduleProgress[moduleId];
       const previousCorrectAnswers = existingModuleProgress?.moduleQuizScore || 0;
       const hadPreviousPerfectScore = previousCorrectAnswers === totalQuestions;
       
-      // Module quiz: Only award coins for 100% and only if not achieved before
       if (correctAnswers === totalQuestions && !hadPreviousPerfectScore) {
-        return totalQuestions * 10; // 10 coins per question for module quiz
+        return totalQuestions * 10;
       }
       return 0;
     }
     
-    // Original lesson quiz logic
     if (!selectedLessonId) return 0;
     
     const existingProgress = lessonProgress[selectedLessonId];
-    const previousCorrectAnswers = existingProgress?.quizScore || 0; // Now stored as number of correct answers
+    const previousCorrectAnswers = existingProgress?.quizScore || 0;
     const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
     
     let coinsEarned = 0;
     
-    // Check if at least 1 question is correct
     if (correctAnswers < 1) {
-      return 0; // No coins if no questions correct
+      return 0;
     }
     
-    // Check if user has already achieved 100% (perfect score)
     const hasAchievedPerfectScore = previousCorrectAnswers === totalQuestions;
     
-    // Calculate coins that SHOULD be earned based on current score
-    const totalCoinsForCurrentScore = correctAnswers * 5; // Total coins for current performance
-    
-    // Calculate coins already earned from previous attempts
-    const coinsAlreadyEarned = previousCorrectAnswers * 5; // Coins earned from previous best score
-    
+    const totalCoinsForCurrentScore = correctAnswers * 5;
+
+    const coinsAlreadyEarned = previousCorrectAnswers * 5;
+
     if (!wasQuizAlreadyCompleted) {
-      // First time completing this quiz - award coins for correct answers
-      coinsEarned = correctAnswers * 5; // 5 coins per correct answer
+      coinsEarned = correctAnswers * 5;
     } else if (correctAnswers > previousCorrectAnswers && !hasAchievedPerfectScore) {
-      // User improved their score AND hasn't achieved perfect score yet
-      // Award coins only for the improvement
       coinsEarned = totalCoinsForCurrentScore - coinsAlreadyEarned;
-    }
-    // If user already had perfect score (100%) or got same/lower score, no coins awarded
-    
-    return Math.max(0, coinsEarned); // Ensure never negative
+    }    
+    return Math.max(0, coinsEarned);
   };
 
   const totalCoinsEarned = calculateNewlyEarnedCoins();
   const hasEarnedCoins = totalCoinsEarned > 0;
 
 useEffect(() => {
-  // Delay content reveal
   const timer1 = setTimeout(() => setShowContent(true), 300);
   
-  // Show rewards modal after 2 seconds when coins are earned OR perfect score
   const timer2 = setTimeout(() => {
     if (hasEarnedCoins || correctAnswers === totalQuestions) {
       setShowRewardsModal(true);
     }
   }, 2000);
 
-  // NEW: Handle quiz completion for 0% scores where modal doesn't appear
   const timer3 = setTimeout(() => {
     if (correctAnswers === 0 && !hasEarnedCoins) {
-      // Trigger quiz completion directly for 0% scores since modal won't show
       if (isModuleQuiz && moduleId) {
         completeModuleQuiz(moduleId, quizState.score, false);
       } else if (selectedLessonId) {
         completeQuiz(selectedLessonId, quizState.score, false);
       }
     }
-  }, 2500); // Slightly after the modal would have appeared
+  }, 2500);
 
   return () => {
     clearTimeout(timer1);
@@ -147,10 +127,8 @@ useEffect(() => {
   };
 }, [correctAnswers, totalQuestions, hasEarnedCoins, isModuleQuiz, moduleId, selectedLessonId, completeModuleQuiz, completeQuiz, quizState.score]);
 
-  // Handle coin vacuum animation when triggered
   useEffect(() => {
     if (triggerCoinVacuum && containerRef.current && !coinsHaveBeenVacuumed && hasEarnedCoins) {
-      // Get actual positions of the static coins that are visible on the page
       const coinPositions = staticCoinRefs.current
         .filter(ref => ref !== null)
         .map(ref => {
@@ -165,7 +143,6 @@ useEffect(() => {
         })
         .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-      // Create escape coins using actual static coin positions
       const coins = coinPositions.map((pos, i) => ({
         id: `coin-${i}`,
         startX: pos!.x,
@@ -178,20 +155,18 @@ useEffect(() => {
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
-      // Schedule coin increments properly - increment by total earned divided by number of coins
       if (coins.length > 0) {
         const coinsPerAnimation = totalCoinsEarned / coins.length;
         coins.forEach((coin) => {
           const arrivalTime = 1000 + (coin.delay * 1000) + 800;
           setTimeout(() => {
-            // Use appropriate identifier based on quiz type
             const identifier = isModuleQuiz && moduleId ? moduleId : selectedLessonId || 0;
             incrementCoinsWithAnimation(identifier, coinsPerAnimation, true);
           }, arrivalTime);
         });
       }
       
-      // Clean up after animation
+      // Clean up
       setTimeout(() => {
         setEscapeCoins([]);
         setCoinVacuumActive(false);
@@ -199,16 +174,12 @@ useEffect(() => {
     }
   }, [triggerCoinVacuum, incrementCoinsWithAnimation, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed, isModuleQuiz, moduleId, selectedLessonId]);
 
-  // UPDATED: Handle rewards modal actions
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
     
-    // Handle module quiz vs lesson quiz differently
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Complete the module quiz - SKIP coin increment here since animation will handle it
-      completeModuleQuiz(moduleId, quizState.score, true); // true = skip coin increment
+      completeModuleQuiz(moduleId, quizState.score, true);
       
-      // Trigger coin vacuum animation when modal closes
       if (containerRef.current) {
         const coinPositions = staticCoinRefs.current
           .filter(ref => ref !== null)
@@ -236,13 +207,11 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
-        // Schedule coin increments properly
         if (coins.length > 0) {
           const coinsPerAnimation = totalCoinsEarned / coins.length;
           coins.forEach((coin) => {
             const arrivalTime = 1000 + (coin.delay * 1000) + 800;
             setTimeout(() => {
-              // For module quiz, use moduleId as identifier
               incrementCoinsWithAnimation(moduleId, coinsPerAnimation, true);
             }, arrivalTime);
           });
@@ -254,12 +223,9 @@ useEffect(() => {
         }, 2200);
       }
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Original lesson quiz logic
-      completeQuiz(selectedLessonId, quizState.score, true); // true = skip coin increment
+      completeQuiz(selectedLessonId, quizState.score, true);
       
-      // Trigger coin vacuum animation when modal closes
       if (containerRef.current) {
-        // Get actual positions of the static coins that are visible on the page
         const coinPositions = staticCoinRefs.current
           .filter(ref => ref !== null)
           .map(ref => {
@@ -274,7 +240,6 @@ useEffect(() => {
           })
           .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-        // Create escape coins using actual static coin positions
         const coins = coinPositions.map((pos, i) => ({
           id: `coin-${i}`,
           startX: pos!.x,
@@ -287,19 +252,17 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
-        // Schedule coin increments properly - increment by total earned divided by number of coins
         if (coins.length > 0) {
           const coinsPerAnimation = totalCoinsEarned / coins.length;
           coins.forEach((coin) => {
             const arrivalTime = 1000 + (coin.delay * 1000) + 800;
             setTimeout(() => {
-              // Use the animation function to add coins - this is the ONLY place coins should be added
               incrementCoinsWithAnimation(selectedLessonId || 0, coinsPerAnimation, true);
             }, arrivalTime);
           });
         }
         
-        // Clean up after animation
+        // Clean up
         setTimeout(() => {
           setEscapeCoins([]);
           setCoinVacuumActive(false);
@@ -308,21 +271,13 @@ useEffect(() => {
     }
   };
 
-  // UPDATED: Handle navigation to rewards
   const handleNavigateToRewards = () => {
-    // Handle module quiz vs lesson quiz differently
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Complete the module quiz - SKIP coin increment since we're adding them immediately below
-      completeModuleQuiz(moduleId, quizState.score, true); // true = skip coin increment
-      
-      // Add coins immediately without animation since user is navigating away
+      completeModuleQuiz(moduleId, quizState.score, true);
       incrementCoinsWithAnimation(moduleId, totalCoinsEarned, true);
       setCoinsHaveBeenVacuumed(true);
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Original lesson quiz logic
-      completeQuiz(selectedLessonId, quizState.score, true); // true = skip coin increment
-      
-      // Add coins immediately without animation since user is navigating away
+      completeQuiz(selectedLessonId, quizState.score, true);
       incrementCoinsWithAnimation(selectedLessonId || 0, totalCoinsEarned, true);
       setCoinsHaveBeenVacuumed(true);
     }
@@ -331,21 +286,13 @@ useEffect(() => {
     console.log('Navigating to rewards page');
   };
 
-  // UPDATED: Handle navigation to badges
   const handleNavigateToBadges = () => {
-    // Handle module quiz vs lesson quiz differently
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Complete the module quiz - SKIP coin increment since we're adding them immediately below
-      completeModuleQuiz(moduleId, quizState.score, true); // true = skip coin increment
-      
-      // Add coins immediately without animation since user is navigating away
+      completeModuleQuiz(moduleId, quizState.score, true);
       incrementCoinsWithAnimation(moduleId, totalCoinsEarned, true);
       setCoinsHaveBeenVacuumed(true);
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      // Original lesson quiz logic
-      completeQuiz(selectedLessonId, quizState.score, true); // true = skip coin increment
-      
-      // Add coins immediately without animation since user is navigating away
+      completeQuiz(selectedLessonId, quizState.score, true);
       incrementCoinsWithAnimation(selectedLessonId || 0, totalCoinsEarned, true);
       setCoinsHaveBeenVacuumed(true);
     }
@@ -356,7 +303,7 @@ useEffect(() => {
 
   // Generate coin positions for the earned coins
   const generateCoinPositions = () => {
-    if (!hasEarnedCoins) return []; // Return empty array if no coins earned
+    if (!hasEarnedCoins) return [];
     
     const positions = [];
     const maxRadius = 120;
@@ -381,7 +328,6 @@ useEffect(() => {
 
   const coinPositions = generateCoinPositions();
 
-  // Escape Coins Portal Component
   const EscapeCoins = () => {
     if (escapeCoins.length === 0) return null;
 
@@ -516,7 +462,7 @@ useEffect(() => {
       {/* Render escape coins */}
       <EscapeCoins />
 
-      {/* UPDATED: Rewards Modal with proper props */}
+      {/* Rewards Modal with proper props */}
       <RewardsModal
         isOpen={showRewardsModal}
         onClose={handleRewardsModalClose}

@@ -20,7 +20,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   onClose,
   onComplete
 }) => {
-  // Redux state management - get all quiz state from Redux
   const {
     quizState,
     selectAnswer,
@@ -34,29 +33,21 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     sidebarCollapsed
   } = useModules();
 
-  // Keep your exact visual design but use Redux for state
   const handleAnswerSelect = (optionId: string) => {
-    if (quizState.isTransitioning) return; // Only check Redux state
+    if (quizState.isTransitioning) return;
     selectAnswer(quizState.currentQuestion, optionId);
   };
 
   const handleNext = () => {
-    if (quizState.isTransitioning || !quizState.selectedAnswer) return; // Only check Redux state
-    
-    // FIXED: Always call nextQuestion() - it handles both advancing to next question AND showing results
-    // The Redux nextQuizQuestion action will set showResults=true when it's the last question
-    // Do NOT call onComplete here - only call it when user clicks button in results
+    if (quizState.isTransitioning || !quizState.selectedAnswer) return;
     nextQuestion();
   };
 
   const handlePrevious = () => {
-    if (quizState.isTransitioning || quizState.currentQuestion === 0) return; // Only check Redux state
-    
-    // Just call Redux action - it handles the transition
+    if (quizState.isTransitioning || quizState.currentQuestion === 0) return;
     previousQuestion();
   };
 
-  // NEW: Handle next lesson navigation from quiz results
   const handleNextLesson = () => {
     const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
     const nextLesson = currentLessonIndex < module.lessons.length - 1 
@@ -64,9 +55,8 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       : null;
 
     if (nextLesson) {
-      // Ensure sidebar is open when navigating to next lesson
       if (sidebarCollapsed) {
-        toggleSidebar(false); // false = open sidebar
+        toggleSidebar(false);
       }
       
       // Navigate to next lesson
@@ -93,43 +83,34 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleClaimRewards = () => {
-    // Add your rewards claiming logic here
     console.log('Claiming rewards for score:', quizState.score);
-    // Could navigate to rewards page, show rewards modal, etc.
     handleFinish();
   };
 
   const handleCloseQuiz = () => {
-    // FIXED: Only allow closing if not showing results, or if user explicitly wants to close during results
     if (quizState.showResults) {
-      // If showing results, treat close as "finish without completing"
       onClose();
       closeQuiz();
     } else {
-      // Normal close behavior for questions
       onClose();
       closeQuiz();
     }
   };
 
-  // Use Redux state instead of local state
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
 
-  // Calculate correct answers for results
  const correctAnswers = quizState.questions.reduce((acc, question, index) => {
   const userAnswer = quizState.answers[index];
   const correctOption = question.options.find(opt => opt.isCorrect);
   return acc + (userAnswer === correctOption?.id ? 1 : 0);
 }, 0);
 
-  // Check if there's a next lesson
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
   const nextLesson = currentLessonIndex < module.lessons.length - 1 
     ? module.lessons[currentLessonIndex + 1] 
     : null;
 
-  // Question Component for reusability
   const QuestionCard: React.FC<{
     questionData: any;
     selectedAnswer?: string | null;
@@ -142,7 +123,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
     return (
       <>
-        {/* Question Content - Removed "Test Your Knowledge" header from here */}
+        {/* Question Content */}
      <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
           {/* Illustration - Improved styling */}
           <div className="mb-6 relative">
@@ -209,7 +190,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             })}
           </div>
 
-          {/* Use the separate FeedbackContainer component */}
           <FeedbackContainer
             isVisible={cardShowFeedback && !!selectedAnswer}
             isCorrect={isCorrect}
@@ -226,12 +206,12 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       isVisible ? 'w-full' : 'w-0'
     } overflow-hidden`}>
       <div className="p-4 h-full flex flex-col relative">
-        {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <button
             onClick={handleCloseQuiz}
             className="text-gray-600 hover:text-gray-800 transition-colors"
-            disabled={quizState.isTransitioning} // Only check Redux state
+            disabled={quizState.isTransitioning}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -246,11 +226,9 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
         {!quizState.showResults ? (
           <>
-            {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
             <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
               <div className="relative h-full w-full overflow-hidden">
                 
-                {/* Single question container with fade transition */}
                 <div
                   className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
                     quizState.isTransitioning
@@ -300,7 +278,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
 
               <button
                 onClick={handleNext}
-                disabled={!quizState.selectedAnswer || quizState.isTransitioning} // Only check Redux state
+                disabled={!quizState.selectedAnswer || quizState.isTransitioning}
                 className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
@@ -308,7 +286,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             </div>
           </>
         ) : (
-          /* Use the separate QuizResults component with updated handler */
           <QuizResults
             score={quizState.score}
             totalQuestions={quizState.questions.length}

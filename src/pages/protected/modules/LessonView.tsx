@@ -20,7 +20,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   onBack, 
   isTransitioning = false 
 }) => {
-  // Redux state management
   const {
     sidebarCollapsed,
     toggleSidebar,
@@ -32,10 +31,8 @@ const LessonView: React.FC<LessonViewProps> = ({
     goToLesson
   } = useModules();
 
-  // Keep your existing local state
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-  // Redux handles showQuiz state now via currentView
   const showQuiz = currentView === 'quiz';
 
   const handleBack = () => {
@@ -48,11 +45,9 @@ const LessonView: React.FC<LessonViewProps> = ({
     toggleSidebar(!sidebarCollapsed);
   };
 
-  // Navigation handlers for next/previous lessons
   const handleNextLesson = () => {
     if (!nextLesson || isTransitioning) return;
     
-    // Use Redux navigation to go to the next lesson
     goToLesson(nextLesson.id, module.id);
   };
 
@@ -61,7 +56,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     
     const previousLesson = module.lessons[currentLessonIndex - 1];
     if (previousLesson) {
-      // Use Redux navigation to go to the previous lesson
       goToLesson(previousLesson.id, module.id);
     }
   };
@@ -171,22 +165,18 @@ const LessonView: React.FC<LessonViewProps> = ({
   };
 
   const handleCloseQuiz = () => {
-    // Redux will handle closing quiz and returning to lesson view
   };
 
   const handleQuizComplete = (score: number) => {
     console.log(`Quiz completed with score: ${score}%`);
-    // Redux will handle updating lesson progress with quiz completion
     markCompleted(lesson.id, module.id, score);
   };
 
-  // Track lesson progress with Redux
   const handleVideoProgress = (progressPercent: number) => {
     updateProgress(lesson.id, {
       watchProgress: progressPercent
     });
 
-    // Auto-complete lesson when video is 95% watched
     if (progressPercent >= 95 && !currentLessonProgress?.completed) {
       markCompleted(lesson.id, module.id);
     }
@@ -199,7 +189,6 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
-  // Get progress from Redux
   const watchProgress = currentLessonProgress?.watchProgress || 0;
   const isCompleted = currentLessonProgress?.completed || false;
   const quizCompleted = currentLessonProgress?.quizCompleted || false;
@@ -207,7 +196,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   return (
     <div className="pt-6 w-full h-full">
       <div className="flex h-full w-full">
-        {/* Arrow Toggle */}
         <button
           onClick={toggleLessonInfo}
           disabled={isTransitioning}
@@ -257,7 +245,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <div className="flex items-center gap-2 bg-blue-200 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
                   {currentLessonProgress?.quizScore !== undefined && currentLessonProgress?.quizScore !== null && (
                     <span className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
-                      {/* FIXED: Convert number of correct answers to percentage */}
                       {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
                     </span>
                   )}

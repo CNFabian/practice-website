@@ -17,7 +17,6 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
 
   useEffect(() => {
     if (isVisible) {
-      // Trigger enter animation after a small delay to ensure it's visible
       const timer = setTimeout(() => setShouldAnimate(true), 50);
       return () => clearTimeout(timer);
     } else {

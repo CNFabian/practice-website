@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon} from '../../../assets';
@@ -16,6 +17,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   onModuleQuizSelect,
   isTransitioning = false 
 }) => {
+  // Quiz Battle Modal State
+  const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
+  
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { 
@@ -481,6 +485,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       
                       <div className="flex gap-2">
                         <button 
+                          onClick={() => setIsQuizBattleModalOpen(true)}
                           disabled={isTransitioning}
                           className="flex-1 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -607,6 +612,42 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Quiz Battle Development Modal */}
+      <Dialog 
+        open={isQuizBattleModalOpen} 
+        onClose={() => setIsQuizBattleModalOpen(false)}
+        className="relative z-50"
+      >
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black/25" aria-hidden="true" />
+        
+        {/* Full-screen container to center the panel */}
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          {/* The actual dialog panel */}
+          <DialogPanel className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-lg">
+            <DialogTitle className="text-lg font-semibold text-gray-900 mb-4">
+              Quiz Battles
+            </DialogTitle>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 text-sm">
+                Quiz Battles are currently in development! 🚀
+              </p>
+              <p className="text-gray-600 text-sm mt-2">
+                We're working hard to bring you an exciting multiplayer quiz experience. Check back soon!
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setIsQuizBattleModalOpen(false)}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Got it!
+            </button>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </div>
   );
 };
