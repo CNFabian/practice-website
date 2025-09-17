@@ -17,3 +17,7 @@ export { default as LessonQuiz } from './protected/modules/LessonQuiz';
 
 // Protected Material components
 export { default as MortgageCalculator } from './protected/materials/MortgageCalculator';
+export { default as DebtToIncomeCalculator } from './protected/materials/DebtToIncomeCalculator';
+export { default as CreditScoreCalculator } from './protected/materials/CreditScoreCalculator';
+export { default as FirstTimeBuyerChecklist } from './protected/materials/FirstTimeBuyerChecklist';
+export { default as HomeInspectionChecklist } from './protected/materials/HomeInspectionChecklist';
