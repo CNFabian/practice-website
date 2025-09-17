@@ -78,42 +78,44 @@ const MaterialsPage: React.FC = () => {
   return (
     <div className="p-6">
       {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Materials
-        </h1>
-        <p className="text-gray-600 text-sm">
-          Financial tools and resources to help with your homeownership journey
-        </p>
-      </div>
-
-      {/* Category Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            onClick={() => setActiveCategory(category.id)}
-            className={`rounded-2xl border-2 p-6 cursor-pointer transition-all duration-200 ${
-              activeCategory === category.id
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-25'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl">{category.icon}</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {category.title}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {category.description}
-                </p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Materials
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Financial tools and resources to help with your homeownership journey
+          </p>
+        </div>
+        
+        {/* Category Cards */}
+        <div className="flex gap-3">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              onClick={() => setActiveCategory(category.id)}
+              className={`rounded-lg border-2 p-3 cursor-pointer transition-all duration-200 ${
+                activeCategory === category.id
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-25'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">{category.icon}</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {category.title}
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    {category.description}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Content Section */}
