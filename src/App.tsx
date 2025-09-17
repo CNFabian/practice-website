@@ -23,7 +23,7 @@ import OnBoardingPage from './pages/public/OnBoardingPage'
 import {
   OverviewPage,
   ModulesPage,
-  SavedPage,
+  MaterialsPage,
   RewardsPage,
   BadgesPage,
   HelpPage,
@@ -101,7 +101,7 @@ function App() {
             }>
               <Route index element={<OverviewPage />} />
               <Route path="modules" element={<ModulesPage />} />
-              <Route path="saved" element={<SavedPage />} />
+              <Route path="materials" element={<MaterialsPage />} />
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="badges" element={<BadgesPage />} />
               <Route path="help" element={<HelpPage />} />

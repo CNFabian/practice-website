@@ -16,7 +16,7 @@ const Sidebar: React.FC = () => {
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app', icon: HomeIcon },
     { id: 'modules', label: 'Modules', path: '/app/modules', icon: ModuleIcon },
-    { id: 'saved', label: 'Saved', path: '/app/saved', icon: SavedIcon },
+    { id: 'materials', label: 'Materials', path: '/app/materials', icon: SavedIcon },
     { id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon },
     { id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon },
   ];
