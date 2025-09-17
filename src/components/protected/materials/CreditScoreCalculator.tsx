@@ -162,10 +162,10 @@ const CreditScoreCalculator: React.FC = () => {
   const targetCategory = getScoreCategory(targetScore);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Current Score Input Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit">
           <div className="mb-6">
             <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white text-2xl">📈</span>
@@ -219,7 +219,7 @@ const CreditScoreCalculator: React.FC = () => {
         </div>
 
         {/* Target Score Input Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit">
           <div className="mb-6">
             <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white text-2xl">🎯</span>
@@ -325,77 +325,79 @@ const CreditScoreCalculator: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Improvement Tips */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Tips</h3>
-            <div className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <div>
-                  <span className="font-medium">Payment History (35%)</span>
-                  <p>Make all payments on time. Set up automatic payments to never miss a due date.</p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Improvement Tips - Spans first two columns */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 -mt-24">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Tips</h3>
+          <div className="space-y-3 text-sm text-gray-600">
+            <div className="flex items-start gap-2">
+              <span className="text-green-500 mt-1">✓</span>
+              <div>
+                <span className="font-medium">Payment History (35%)</span>
+                <p>Make all payments on time. Set up automatic payments to never miss a due date.</p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <div>
-                  <span className="font-medium">Credit Utilization (30%)</span>
-                  <p>Keep credit card balances below 30% of limits, ideally under 10%.</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-500 mt-1">✓</span>
+              <div>
+                <span className="font-medium">Credit Utilization (30%)</span>
+                <p>Keep credit card balances below 30% of limits, ideally under 10%.</p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <div>
-                  <span className="font-medium">Credit Age (15%)</span>
-                  <p>Keep old accounts open and avoid opening too many new accounts.</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-500 mt-1">✓</span>
+              <div>
+                <span className="font-medium">Credit Age (15%)</span>
+                <p>Keep old accounts open and avoid opening too many new accounts.</p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <div>
-                  <span className="font-medium">Credit Mix (10%)</span>
-                  <p>Maintain a healthy mix of credit cards, loans, and other credit types.</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-500 mt-1">✓</span>
+              <div>
+                <span className="font-medium">Credit Mix (10%)</span>
+                <p>Maintain a healthy mix of credit cards, loans, and other credit types.</p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <div>
-                  <span className="font-medium">New Credit (10%)</span>
-                  <p>Limit hard inquiries and space out credit applications.</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-500 mt-1">✓</span>
+              <div>
+                <span className="font-medium">New Credit (10%)</span>
+                <p>Limit hard inquiries and space out credit applications.</p>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Timeline */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Timeline</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 font-semibold text-xs">1M</span>
-                </div>
-                <span>Lower credit utilization shows improvement</span>
+        {/* Timeline - Third column */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Timeline</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 font-semibold text-xs">1M</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-xs">3M</span>
-                </div>
-                <span>Consistent payment history starts building</span>
+              <span>Lower credit utilization shows improvement</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-xs">3M</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-semibold text-xs">6M</span>
-                </div>
-                <span>Significant score improvements visible</span>
+              <span>Consistent payment history starts building</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <span className="text-purple-600 font-semibold text-xs">6M</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <span className="text-indigo-600 font-semibold text-xs">12M</span>
-                </div>
-                <span>Credit age benefits and full optimization</span>
+              <span>Significant score improvements visible</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span className="text-indigo-600 font-semibold text-xs">12M</span>
               </div>
+              <span>Credit age benefits and full optimization</span>
             </div>
           </div>
         </div>
