@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
+import { MortgageCalculator } from '../../components';
 
 const MaterialsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'Calculators' | 'Worksheets' | 'Checklists'>('Calculators');
+  const [showCalculator, setShowCalculator] = useState<string | null>(null);
 
   const calculators = [
     {
-      id: 1,
+      id: 'mortgage',
       title: 'Mortgage Calculator',
       description: 'Calculate your estimated monthly mortgage payments based on loan amount, interest rate, and term.',
       icon: '🏠'
     },
     {
-      id: 2,
+      id: 'debt-to-income',
       title: 'Debt-to-Income Calculator',
       description: 'Determine your debt-to-income ratio to understand your borrowing capacity.',
       icon: '⚖️'
     },
     {
-      id: 3,
+      id: 'credit-score',
       title: 'Credit Score Calculator',
       description: 'Estimate your credit score improvement based on your financial actions.',
       icon: '📈'
@@ -75,6 +77,71 @@ const MaterialsPage: React.FC = () => {
     }
   ];
 
+  const handleCalculatorClick = (calculatorId: string) => {
+    if (calculatorId === 'mortgage') {
+      setShowCalculator(calculatorId);
+    } else {
+      // For other calculators, you can add functionality later
+      console.log(`${calculatorId} calculator clicked - functionality coming soon`);
+    }
+  };
+
+  const handleCategoryClick = (categoryId: 'Calculators' | 'Worksheets' | 'Checklists') => {
+    setActiveCategory(categoryId);
+    setShowCalculator(null); // This will navigate back to materials view
+  };
+
+  // If showing calculator, render the calculator component with the header
+  if (showCalculator === 'mortgage') {
+    return (
+      <div className="p-6">
+        {/* Keep the Materials Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Materials
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Financial tools and resources to help with your homeownership journey
+            </p>
+          </div>
+          
+          {/* Category Cards */}
+          <div className="flex gap-3">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                onClick={() => handleCategoryClick(category.id)}
+                className={`rounded-lg border-2 p-3 cursor-pointer transition-all duration-200 ${
+                  activeCategory === category.id
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-25'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-sm">{category.icon}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {category.title}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mortgage Calculator Component */}
+        <MortgageCalculator />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Header Section */}
@@ -93,7 +160,7 @@ const MaterialsPage: React.FC = () => {
           {categories.map((category) => (
             <div
               key={category.id}
-              onClick={() => setActiveCategory(category.id)}
+              onClick={() => handleCategoryClick(category.id)}
               className={`rounded-lg border-2 p-3 cursor-pointer transition-all duration-200 ${
                 activeCategory === category.id
                   ? 'border-blue-500 bg-blue-50' 
@@ -137,7 +204,10 @@ const MaterialsPage: React.FC = () => {
                 {calculator.description}
               </p>
             </div>
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => handleCalculatorClick(calculator.id)}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+            >
               Use Calculator
             </button>
           </div>
@@ -161,13 +231,13 @@ const MaterialsPage: React.FC = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex-1 bg-green-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+              <button className="flex-1 bg-green-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Download PDF
+                Download
               </button>
-              <button className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+              <button className="flex-1 bg-white text-green-600 py-3 px-6 rounded-xl font-medium border border-green-600 hover:bg-green-50 transition-colors flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
