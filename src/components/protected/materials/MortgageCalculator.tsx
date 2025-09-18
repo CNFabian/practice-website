@@ -1,53 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
+import { calculatorInfoData } from './InfoData';
 
 const MortgageCalculator: React.FC = () => {
-  const [loanAmount, setLoanAmount] = useState<string>('');
-  const [interestRate, setInterestRate] = useState<string>('');
-  const [loanTerm, setLoanTerm] = useState<string>('30');
+  // Existing state variables
+  const [homePrice, setHomePrice] = useState<string>('');
   const [downPayment, setDownPayment] = useState<string>('');
+  const [loanTerm, setLoanTerm] = useState<string>('30');
+  const [interestRate, setInterestRate] = useState<string>('');
   const [propertyTax, setPropertyTax] = useState<string>('');
   const [homeInsurance, setHomeInsurance] = useState<string>('');
   const [pmi, setPmi] = useState<string>('');
 
-  const [monthlyPayment, setMonthlyPayment] = useState<number>(0);
-  const [totalInterest, setTotalInterest] = useState<number>(0);
-  const [totalPayment, setTotalPayment] = useState<number>(0);
-  const [principalAmount, setPrincipalAmount] = useState<number>(0);
+  // New state for info modal
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  const calculateMortgage = () => {
-    const principal = parseFloat(loanAmount) || 0;
-    const rate = (parseFloat(interestRate) || 0) / 100 / 12;
-    const payments = (parseFloat(loanTerm) || 0) * 12;
-    const tax = (parseFloat(propertyTax) || 0) / 12;
-    const insurance = parseFloat(homeInsurance) || 0;
-    const pmiAmount = parseFloat(pmi) || 0;
+  // Existing calculation functions
+  const calculateMortgage = (): number => {
+    const principal = parseFloat(homePrice) - parseFloat(downPayment || '0');
+    const monthlyRate = parseFloat(interestRate) / 100 / 12;
+    const numPayments = parseInt(loanTerm) * 12;
 
-    if (principal > 0 && rate > 0 && payments > 0) {
-      // Calculate monthly principal and interest payment
-      const monthlyPI = principal * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
-      
-      // Total monthly payment including taxes, insurance, and PMI
-      const totalMonthly = monthlyPI + tax + insurance + pmiAmount;
-      
-      // Calculate totals
-      const totalPaid = monthlyPI * payments;
-      const totalInt = totalPaid - principal;
+    if (principal <= 0 || monthlyRate <= 0 || numPayments <= 0) return 0;
 
-      setMonthlyPayment(totalMonthly);
-      setTotalInterest(totalInt);
-      setTotalPayment(totalPaid);
-      setPrincipalAmount(principal);
-    } else {
-      setMonthlyPayment(0);
-      setTotalInterest(0);
-      setTotalPayment(0);
-      setPrincipalAmount(0);
-    }
+    const monthlyPI = (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                     (Math.pow(1 + monthlyRate, numPayments) - 1);
+
+    const monthlyTax = parseFloat(propertyTax || '0');
+    const monthlyInsurance = parseFloat(homeInsurance || '0');
+    const monthlyPMI = parseFloat(pmi || '0');
+
+    return monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI;
   };
-
-  useEffect(() => {
-    calculateMortgage();
-  }, [loanAmount, interestRate, loanTerm, downPayment, propertyTax, homeInsurance, pmi]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -63,20 +48,29 @@ const MortgageCalculator: React.FC = () => {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(amount);
   };
 
+  const monthlyPayment = calculateMortgage();
+  const principalAmount = parseFloat(homePrice) - parseFloat(downPayment || '0');
+  const totalPayment = monthlyPayment * parseInt(loanTerm) * 12;
+  const totalInterest = totalPayment - principalAmount;
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="mb-6">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit relative">
+          {/* Info Button - positioned in top right */}
+          <div className="absolute top-6 right-6">
+            <InfoButton onClick={() => setIsInfoModalOpen(true)} />
+          </div>
+          
+          <div className="mb-6 pr-12">
             <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white text-2xl">🏠</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
               Mortgage Calculator
             </h2>
             <p className="text-gray-600 text-center text-sm">
@@ -85,19 +79,19 @@ const MortgageCalculator: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {/* Loan Amount */}
+            {/* Home Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Home Price / Loan Amount
+                Home Price
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
-                  value={loanAmount}
-                  onChange={(e) => setLoanAmount(e.target.value)}
+                  value={homePrice}
+                  onChange={(e) => setHomePrice(e.target.value)}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="400,000"
+                  placeholder="500000"
                 />
               </div>
             </div>
@@ -114,9 +108,25 @@ const MortgageCalculator: React.FC = () => {
                   value={downPayment}
                   onChange={(e) => setDownPayment(e.target.value)}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="80,000"
+                  placeholder="100000"
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">Typically 10-20% of home price</p>
+            </div>
+
+            {/* Loan Term */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Loan Term
+              </label>
+              <select
+                value={loanTerm}
+                onChange={(e) => setLoanTerm(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="15">15 years</option>
+                <option value="30">30 years</option>
+              </select>
             </div>
 
             {/* Interest Rate */}
@@ -137,75 +147,61 @@ const MortgageCalculator: React.FC = () => {
               </div>
             </div>
 
-            {/* Loan Term */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Loan Term
-              </label>
-              <select
-                value={loanTerm}
-                onChange={(e) => setLoanTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="15">15 years</option>
-                <option value="20">20 years</option>
-                <option value="25">25 years</option>
-                <option value="30">30 years</option>
-              </select>
-            </div>
-
             {/* Additional Costs */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Monthly Costs</h3>
               
-              {/* Property Tax */}
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Property Tax (Monthly)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={propertyTax}
-                    onChange={(e) => setPropertyTax(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="400"
-                  />
+              <div className="space-y-3">
+                {/* Property Tax */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Tax
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={propertyTax}
+                      onChange={(e) => setPropertyTax(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="500"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Home Insurance */}
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Home Insurance (Monthly)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={homeInsurance}
-                    onChange={(e) => setHomeInsurance(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="150"
-                  />
+                {/* Home Insurance */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Home Insurance
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={homeInsurance}
+                      onChange={(e) => setHomeInsurance(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="100"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* PMI */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PMI (Monthly)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={pmi}
-                    onChange={(e) => setPmi(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="200"
-                  />
+                {/* PMI */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    PMI (Private Mortgage Insurance)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={pmi}
+                      onChange={(e) => setPmi(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="200"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Required if down payment is less than 20%</p>
                 </div>
               </div>
             </div>
@@ -301,6 +297,16 @@ const MortgageCalculator: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Info Modal */}
+      <InfoModal
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        title={calculatorInfoData.mortgage.title}
+        description={calculatorInfoData.mortgage.description}
+        howToUse={calculatorInfoData.mortgage.howToUse}
+        terms={calculatorInfoData.mortgage.terms}
+      />
     </div>
   );
 };
