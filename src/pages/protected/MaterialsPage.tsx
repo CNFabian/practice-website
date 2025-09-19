@@ -118,7 +118,6 @@ const MaterialsPage: React.FC = () => {
     setShowChecklist(null);
   };
 
-  // Worksheet Handler
    const handleWorksheetDownload = (worksheetId: string) => {
     const worksheetPaths: Record<string, string> = {
       'expense-tracking': ExpenseTrackingPDF,
@@ -142,7 +141,6 @@ const MaterialsPage: React.FC = () => {
     }
   };
 
-  // Function to handle worksheet preview - using imported PDFs
   const handleWorksheetPreview = (worksheetId: string) => {
     const worksheetPaths: Record<string, string> = {
       'expense-tracking': ExpenseTrackingPDF,
@@ -155,7 +153,6 @@ const MaterialsPage: React.FC = () => {
     }
   };
 
-  // Reusable Header Component
   const HeaderSection = () => (
     <div className="flex justify-between items-center mb-8 mr-8">
       <div>
@@ -203,7 +200,6 @@ const MaterialsPage: React.FC = () => {
     </div>
   );
 
-  // Reusable Material Card Component
   const MaterialCard = ({ 
     item, 
     colorClass, 
@@ -266,7 +262,6 @@ const MaterialsPage: React.FC = () => {
     </div>
   );
 
-  // Render calculator or checklist components
   const renderActiveComponent = () => {
     if (showCalculator === 'mortgage') return <MortgageCalculator />;
     if (showCalculator === 'debt-to-income') return <DebtToIncomeCalculator />;

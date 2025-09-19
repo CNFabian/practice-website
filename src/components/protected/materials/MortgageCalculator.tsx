@@ -70,7 +70,7 @@ const MortgageCalculator: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Section */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit relative">
-          {/* Info Button - positioned in top right */}
+          {/* Info Button */}
           <div className="absolute top-6 right-6">
             <InfoButton onClick={() => setIsInfoModalOpen(true)} />
           </div>

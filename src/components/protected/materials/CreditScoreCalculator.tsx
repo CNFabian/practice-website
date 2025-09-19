@@ -147,7 +147,6 @@ const CreditScoreCalculator: React.FC = () => {
     ));
   };
 
-  // Calculate current estimated score
   const estimatedScore = calculateCreditScore();
 
   const getScoreCategory = (score: number): { level: string; color: string; range: string } => {
@@ -166,7 +165,6 @@ const CreditScoreCalculator: React.FC = () => {
 
   const currentCategory = getScoreCategory(estimatedScore);
 
-  // Calculate improvement suggestions
   const getImprovementPotential = (): Improvement[] => {
     const improvements: Improvement[] = [];
     
@@ -235,7 +233,7 @@ const CreditScoreCalculator: React.FC = () => {
         <div className="space-y-6">
           {/* Current Score Input Section */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 relative">
-            {/* Info Button - positioned in top right */}
+            {/* Info Button */}
             <div className="absolute top-6 right-6">
               <InfoButton onClick={() => setIsInfoModalOpen(true)} />
             </div>

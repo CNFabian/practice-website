@@ -7,6 +7,7 @@ interface InfoModalProps {
   title: string;
   description: string;
   howToUse: string[];
+  howToUseTitle?: string; // Optional custom title for the "How to Use" section
   terms: {
     term: string;
     definition: string;
@@ -19,6 +20,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
   title,
   description,
   howToUse,
+  howToUseTitle = "How to Use", // Default fallback title
   terms
 }) => {
   return (
@@ -77,7 +79,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                       <span className="text-blue-600">📋</span>
-                      How to Use This Calculator
+                      {howToUseTitle}
                     </h4>
                     <div className="bg-blue-50 rounded-xl p-4">
                       <ol className="space-y-2">

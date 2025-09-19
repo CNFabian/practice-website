@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
+import { calculatorInfoData } from './InfoData';
 
 interface InspectionItem {
   id: string;
@@ -12,6 +15,7 @@ interface InspectionItem {
 
 const HomeInspectionChecklist: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const [inspectionItems, setInspectionItems] = useState<InspectionItem[]>([
     // Exterior
@@ -261,12 +265,10 @@ const HomeInspectionChecklist: React.FC = () => {
 
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
 
-  // PDF Download Handler
   const handleDownloadPDF = () => {
     setShowModal(true);
   };
 
-  // Share Progress Handler
   const handleShareProgress = () => {
     setShowModal(true);
   };
@@ -283,14 +285,12 @@ const HomeInspectionChecklist: React.FC = () => {
     setNotes(prev => ({ ...prev, [id]: noteText }));
   };
 
-  // Group items by category
   const categories = [...new Set(inspectionItems.map(item => item.category))];
   const groupedItems = categories.map(category => ({
     name: category,
     items: inspectionItems.filter(item => item.category === category)
   }));
 
-  // Calculate statistics
   const totalItems = inspectionItems.length;
   const completedItems = inspectionItems.filter(item => item.completed).length;
   const highPriorityItems = inspectionItems.filter(item => item.priority === 'High').length;
@@ -303,7 +303,6 @@ const HomeInspectionChecklist: React.FC = () => {
     Low: 'bg-green-100 text-green-700 border-green-200'
   };
 
-  // Modal Component
   const Modal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
@@ -326,8 +325,13 @@ const HomeInspectionChecklist: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+      <div className="mb-8 relative">
+        {/* Info Button - positioned in top right */}
+        <div className="absolute top-0 right-0">
+          <InfoButton onClick={() => setIsInfoModalOpen(true)} />
+        </div>
+        
+        <h1 className="text-3xl font-bold text-gray-900 mb-3 pr-12">
           Home Inspection Checklist
         </h1>
         <p className="text-gray-600 leading-relaxed">
@@ -518,6 +522,17 @@ const HomeInspectionChecklist: React.FC = () => {
 
       {/* Modal */}
       {showModal && <Modal />}
+
+      {/* Info Modal */}
+      <InfoModal
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        title={calculatorInfoData["home-inspection"].title}
+        description={calculatorInfoData["home-inspection"].description}
+        howToUse={calculatorInfoData["home-inspection"].howToUse}
+        howToUseTitle={calculatorInfoData["home-inspection"].howToUseTitle}
+        terms={calculatorInfoData["home-inspection"].terms}
+      />
     </div>
   );
 };

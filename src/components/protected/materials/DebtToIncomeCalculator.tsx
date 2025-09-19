@@ -5,18 +5,14 @@ import { calculatorInfoData } from './InfoData';
 import { ScalesIcon } from '../../../assets';
 
 const DebtToIncomeCalculator: React.FC = () => {
-  // Existing state variables
   const [monthlyIncome, setMonthlyIncome] = useState<string>('');
   const [housingPayment, setHousingPayment] = useState<string>('');
   const [creditCardPayments, setCreditCardPayments] = useState<string>('');
   const [carPayments, setCarPayments] = useState<string>('');
   const [studentLoans, setStudentLoans] = useState<string>('');
   const [otherDebts, setOtherDebts] = useState<string>('');
-
-  // New state for info modal
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  // Existing calculation functions
   const calculateDTI = (): number => {
     const income = parseFloat(monthlyIncome) || 0;
     const totalDebts = (parseFloat(housingPayment) || 0) +
