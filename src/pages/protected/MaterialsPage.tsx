@@ -6,7 +6,7 @@ import {
   FirstTimeBuyerChecklist,
   HomeInspectionChecklist
 } from '../../components';
-import { CalculatorIcon, DocumentIcon, ChecklistIcon } from '../../assets';
+import { CalculatorIcon, DocumentIcon, ChecklistIcon, MaterialHomeIcon, ScalesIcon, ChartIcon } from '../../assets';
 
 const MaterialsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'Calculators' | 'Worksheets' | 'Checklists'>('Calculators');
@@ -18,19 +18,19 @@ const MaterialsPage: React.FC = () => {
       id: 'mortgage',
       title: 'Mortgage Calculator',
       description: 'Calculate your estimated monthly mortgage payments based on loan amount, interest rate, and term.',
-      icon: '🏠'
+      icon: MaterialHomeIcon
     },
     {
       id: 'debt-to-income',
       title: 'Debt-to-Income Calculator',
       description: 'Determine your debt-to-income ratio to understand your borrowing capacity.',
-      icon: '⚖️'
+      icon: ScalesIcon
     },
     {
       id: 'credit-score',
       title: 'Credit Score Calculator',
       description: 'Estimate your credit score improvement based on your financial actions.',
-      icon: '📈'
+      icon: ChartIcon
     }
   ];
 
@@ -168,7 +168,12 @@ const MaterialsPage: React.FC = () => {
     <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-200">
       <div className="mb-6">
         <div className={`w-20 h-20 ${colorClass} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-          <span className="text-white text-2xl">{item.icon}</span>
+            <img 
+              src={item.icon} 
+              alt={item.title}
+              className="w-8 h-8"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
           {item.title}
@@ -236,7 +241,6 @@ const MaterialsPage: React.FC = () => {
                 colorClass="bg-blue-600"
                 onAction={handleCalculatorClick}
                 actionText="Use Calculator"
-                actionIcon={null}
               />
             ))}
 
