@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 import { calculatorInfoData } from './InfoData';
+import { MaterialHomeIcon } from '../../../assets';
 
 const MortgageCalculator: React.FC = () => {
-  // Existing state variables
   const [homePrice, setHomePrice] = useState<string>('');
   const [downPayment, setDownPayment] = useState<string>('');
   const [loanTerm, setLoanTerm] = useState<string>('30');
@@ -12,26 +12,45 @@ const MortgageCalculator: React.FC = () => {
   const [propertyTax, setPropertyTax] = useState<string>('');
   const [homeInsurance, setHomeInsurance] = useState<string>('');
   const [pmi, setPmi] = useState<string>('');
-
-  // New state for info modal
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  // Existing calculation functions
-  const calculateMortgage = (): number => {
-    const principal = parseFloat(homePrice) - parseFloat(downPayment || '0');
-    const monthlyRate = parseFloat(interestRate) / 100 / 12;
-    const numPayments = parseInt(loanTerm) * 12;
+  const calculateMortgage = () => {
+    const price = parseFloat(homePrice) || 0;
+    const down = parseFloat(downPayment) || 0;
+    const term = parseFloat(loanTerm) || 30;
+    const rate = parseFloat(interestRate) || 0;
+    const tax = parseFloat(propertyTax) || 0;
+    const insurance = parseFloat(homeInsurance) || 0;
+    const pmiAmount = parseFloat(pmi) || 0;
 
-    if (principal <= 0 || monthlyRate <= 0 || numPayments <= 0) return 0;
+    const principal = price - down;
+    const monthlyRate = rate / 100 / 12;
+    const totalPayments = term * 12;
 
-    const monthlyPI = (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-                     (Math.pow(1 + monthlyRate, numPayments) - 1);
+    if (principal <= 0 || rate <= 0) {
+      return {
+        monthlyPayment: 0,
+        principalAndInterest: 0,
+        totalPayment: 0,
+        totalInterest: 0,
+        principalAmount: principal
+      };
+    }
 
-    const monthlyTax = parseFloat(propertyTax || '0');
-    const monthlyInsurance = parseFloat(homeInsurance || '0');
-    const monthlyPMI = parseFloat(pmi || '0');
+    const monthlyPI = principal * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
+                     (Math.pow(1 + monthlyRate, totalPayments) - 1);
 
-    return monthlyPI + monthlyTax + monthlyInsurance + monthlyPMI;
+    const monthlyPayment = monthlyPI + tax + insurance + pmiAmount;
+    const totalPayment = monthlyPI * totalPayments;
+    const totalInterest = totalPayment - principal;
+
+    return {
+      monthlyPayment,
+      principalAndInterest: monthlyPI,
+      totalPayment,
+      totalInterest,
+      principalAmount: principal
+    };
   };
 
   const formatCurrency = (amount: number): string => {
@@ -39,22 +58,12 @@ const MortgageCalculator: React.FC = () => {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
 
-  const formatCurrencyDecimal = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const monthlyPayment = calculateMortgage();
-  const principalAmount = parseFloat(homePrice) - parseFloat(downPayment || '0');
-  const totalPayment = monthlyPayment * parseInt(loanTerm) * 12;
-  const totalInterest = totalPayment - principalAmount;
+  const results = calculateMortgage();
+  const { monthlyPayment, principalAndInterest, totalPayment, totalInterest, principalAmount } = results;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -68,7 +77,12 @@ const MortgageCalculator: React.FC = () => {
           
           <div className="mb-6 pr-12">
             <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">🏠</span>
+              <img 
+                src={MaterialHomeIcon} 
+                alt="Home"
+                className="w-8 h-8"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </div>
             <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
               Mortgage Calculator
@@ -111,13 +125,12 @@ const MortgageCalculator: React.FC = () => {
                   placeholder="100000"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Typically 10-20% of home price</p>
             </div>
 
             {/* Loan Term */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Loan Term
+                Loan Term (Years)
               </label>
               <select
                 value={loanTerm}
@@ -125,6 +138,8 @@ const MortgageCalculator: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="15">15 years</option>
+                <option value="20">20 years</option>
+                <option value="25">25 years</option>
                 <option value="30">30 years</option>
               </select>
             </div>
@@ -132,7 +147,7 @@ const MortgageCalculator: React.FC = () => {
             {/* Interest Rate */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Interest Rate
+                Interest Rate (%)
               </label>
               <div className="relative">
                 <input
@@ -140,7 +155,7 @@ const MortgageCalculator: React.FC = () => {
                   step="0.01"
                   value={interestRate}
                   onChange={(e) => setInterestRate(e.target.value)}
-                  className="w-full pl-4 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="6.5"
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
@@ -151,58 +166,56 @@ const MortgageCalculator: React.FC = () => {
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Monthly Costs</h3>
               
-              <div className="space-y-3">
-                {/* Property Tax */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Property Tax
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={propertyTax}
-                      onChange={(e) => setPropertyTax(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="500"
-                    />
-                  </div>
+              {/* Property Tax */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Property Tax (Monthly)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={propertyTax}
+                    onChange={(e) => setPropertyTax(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="400"
+                  />
                 </div>
+              </div>
 
-                {/* Home Insurance */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Home Insurance
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={homeInsurance}
-                      onChange={(e) => setHomeInsurance(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="100"
-                    />
-                  </div>
+              {/* Home Insurance */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Home Insurance (Monthly)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={homeInsurance}
+                    onChange={(e) => setHomeInsurance(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="150"
+                  />
                 </div>
+              </div>
 
-                {/* PMI */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PMI (Private Mortgage Insurance)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={pmi}
-                      onChange={(e) => setPmi(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="200"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Required if down payment is less than 20%</p>
+              {/* PMI */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PMI (Monthly)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={pmi}
+                    onChange={(e) => setPmi(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="200"
+                  />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">Required if down payment is less than 20%</p>
               </div>
             </div>
           </div>
@@ -210,52 +223,40 @@ const MortgageCalculator: React.FC = () => {
 
         {/* Results Section */}
         <div className="space-y-6">
-          {/* Monthly Payment Card */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
-            <h3 className="text-lg font-semibold mb-4">Monthly Payment</h3>
-            <div className="text-3xl font-bold mb-2">
-              {formatCurrencyDecimal(monthlyPayment)}
-            </div>
-            <p className="text-blue-100 text-sm">
-              Principal, Interest, Taxes, Insurance & PMI
-            </p>
-          </div>
-
-          {/* Payment Breakdown */}
+          {/* Monthly Payment Breakdown */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Breakdown</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Principal & Interest</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrencyDecimal(monthlyPayment - (parseFloat(propertyTax) || 0) - (parseFloat(homeInsurance) || 0) - (parseFloat(pmi) || 0))}
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Payment</h3>
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                {formatCurrency(monthlyPayment)}
+              </div>
+              <p className="text-gray-600 text-sm">Total monthly payment</p>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                <span className="font-medium text-blue-800">Principal & Interest</span>
+                <span className="text-blue-600 font-semibold">
+                  {formatCurrency(principalAndInterest)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Property Tax</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrencyDecimal(parseFloat(propertyTax) || 0)}
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium text-gray-700">Property Tax</span>
+                <span className="text-gray-600 font-semibold">
+                  {formatCurrency(parseFloat(propertyTax) || 0)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Home Insurance</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrencyDecimal(parseFloat(homeInsurance) || 0)}
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium text-gray-700">Home Insurance</span>
+                <span className="text-gray-600 font-semibold">
+                  {formatCurrency(parseFloat(homeInsurance) || 0)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">PMI</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrencyDecimal(parseFloat(pmi) || 0)}
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium text-gray-700">PMI</span>
+                <span className="text-gray-600 font-semibold">
+                  {formatCurrency(parseFloat(pmi) || 0)}
                 </span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-900">Total Monthly Payment</span>
-                  <span className="font-bold text-blue-600 text-lg">
-                    {formatCurrencyDecimal(monthlyPayment)}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

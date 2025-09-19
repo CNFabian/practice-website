@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 import { calculatorInfoData } from './InfoData';
+import { ScalesIcon } from '../../../assets';
 
 const DebtToIncomeCalculator: React.FC = () => {
   // Existing state variables
@@ -75,7 +76,12 @@ const DebtToIncomeCalculator: React.FC = () => {
 
           <div className="mb-6 pr-12">
             <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">⚖️</span>
+              <img 
+                src={ScalesIcon} 
+                alt="Scales"
+                className="w-8 h-8"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </div>
             <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
               Debt-to-Income Calculator
@@ -146,7 +152,7 @@ const DebtToIncomeCalculator: React.FC = () => {
               {/* Car Payments */}
               <div className="mb-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Car Loan Payments
+                  Auto Loan Payments
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -155,7 +161,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     value={carPayments}
                     onChange={(e) => setCarPayments(e.target.value)}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="350"
+                    placeholder="300"
                   />
                 </div>
               </div>
@@ -172,7 +178,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     value={studentLoans}
                     onChange={(e) => setStudentLoans(e.target.value)}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="200"
+                    placeholder="250"
                   />
                 </div>
               </div>
@@ -200,43 +206,53 @@ const DebtToIncomeCalculator: React.FC = () => {
 
         {/* Results Section */}
         <div className="space-y-6">
-          {/* DTI Ratio Card */}
-          <div className={`rounded-2xl p-6 border-2 ${category.color}`}>
-            <h3 className="text-lg font-semibold mb-4">Your Debt-to-Income Ratio</h3>
-            <div className="text-4xl font-bold mb-2">
-              {dtiRatio.toFixed(1)}%
+          {/* DTI Ratio Display */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Debt-to-Income Ratio</h3>
+            
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-purple-600 mb-2">
+                {dtiRatio.toFixed(1)}%
+              </div>
+              <div className={`inline-block px-4 py-2 rounded-full border-2 ${category.color} font-medium`}>
+                {category.level}
+              </div>
             </div>
-            <div className="text-lg font-semibold mb-2">
-              {category.level}
-            </div>
-            <p className="text-sm">
+
+            <p className="text-center text-gray-600 text-sm mb-6">
               {category.description}
             </p>
-          </div>
 
-          {/* Ratio Breakdown */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ratio Breakdown</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Monthly Income</span>
-                  <span className="font-semibold">${parseFloat(monthlyIncome) || 0}</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Total Monthly Debts</span>
-                  <span className="font-semibold">${totalDebts.toFixed(0)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full transition-all duration-300 ${
-                      dtiRatio <= 20 ? 'bg-green-500' :
-                      dtiRatio <= 36 ? 'bg-blue-500' :
-                      dtiRatio <= 43 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${Math.min(dtiRatio, 100)}%` }}
-                  ></div>
-                </div>
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>0%</span>
+                <span>20%</span>
+                <span>36%</span>
+                <span>43%</span>
+                <span>50%+</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className={`h-3 rounded-full transition-all duration-500 ${
+                    dtiRatio <= 20 ? 'bg-green-500' :
+                    dtiRatio <= 36 ? 'bg-blue-500' :
+                    dtiRatio <= 43 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(dtiRatio, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Debt Breakdown */}
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Monthly Income:</span>
+                <span className="font-semibold">${parseFloat(monthlyIncome) || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Monthly Debt:</span>
+                <span className="font-semibold">${totalDebts}</span>
               </div>
             </div>
           </div>

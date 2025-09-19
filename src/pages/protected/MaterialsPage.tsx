@@ -6,7 +6,18 @@ import {
   FirstTimeBuyerChecklist,
   HomeInspectionChecklist
 } from '../../components';
-import { CalculatorIcon, DocumentIcon, ChecklistIcon, MaterialHomeIcon, ScalesIcon, ChartIcon } from '../../assets';
+import { 
+  CalculatorIcon, 
+  DocumentIcon, 
+  ChecklistIcon, 
+  MaterialHomeIcon, 
+  ScalesIcon, 
+  ChartIcon,
+  SearchIcon,
+  ToDoListIcon,
+  MoneyBoxIcon,
+  AnalyzeIcon
+ } from '../../assets';
 
 const MaterialsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'Calculators' | 'Worksheets' | 'Checklists'>('Calculators');
@@ -39,13 +50,13 @@ const MaterialsPage: React.FC = () => {
       id: 1,
       title: 'Expense Tracking Worksheet',
       description: 'Track your daily expenses and identify spending patterns to better manage your budget.',
-      icon: '📊'
+      icon: AnalyzeIcon
     },
     {
       id: 2,
       title: 'Budget Planning Worksheet',
       description: 'Create and manage your monthly budget with our comprehensive planning template.',
-      icon: '💰'
+      icon: MoneyBoxIcon
     }
   ];
 
@@ -54,13 +65,13 @@ const MaterialsPage: React.FC = () => {
       id: 'first-time-buyer',
       title: 'First-Time Homebuyer Checklist',
       description: 'Complete guide for first-time homebuyers with essential steps and considerations.',
-      icon: '🏠'
+      icon: ToDoListIcon
     },
     {
       id: 'home-inspection',
       title: 'Home Inspection Checklist',
       description: 'Ensure you don\'t miss any important details during your home inspection.',
-      icon: '🔍'
+      icon: SearchIcon
     }
   ];
 
