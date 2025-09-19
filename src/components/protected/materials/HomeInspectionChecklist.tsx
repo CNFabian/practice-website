@@ -124,17 +124,17 @@ const HomeInspectionChecklist: React.FC = () => {
     {
       id: 'gfci-protection',
       title: 'GFCI Protection',
-      description: 'Verify GFCI outlets in bathrooms, kitchen, and exterior.',
+      description: 'Verify GFCI outlets in bathrooms, kitchen, and outdoor areas.',
       category: 'Electrical System',
       priority: 'High',
       completed: false
     },
     {
-      id: 'lighting-fixtures',
-      title: 'Lighting Fixtures',
-      description: 'Test all light fixtures and ceiling fans.',
+      id: 'electrical-wiring',
+      title: 'Visible Wiring',
+      description: 'Check for damaged, exposed, or outdated wiring.',
       category: 'Electrical System',
-      priority: 'Low',
+      priority: 'High',
       completed: false
     },
 
@@ -148,33 +148,33 @@ const HomeInspectionChecklist: React.FC = () => {
       completed: false
     },
     {
-      id: 'hot-water-heater',
-      title: 'Water Heater',
-      description: 'Check age, condition, and proper installation.',
+      id: 'leaks-drips',
+      title: 'Leaks and Drips',
+      description: 'Check for any visible leaks under sinks and around fixtures.',
       category: 'Plumbing System',
       priority: 'High',
       completed: false
     },
     {
-      id: 'pipes-leaks',
-      title: 'Visible Pipes',
-      description: 'Look for leaks, corrosion, or improper installation.',
-      category: 'Plumbing System',
-      priority: 'High',
-      completed: false
-    },
-    {
-      id: 'toilets-fixtures',
-      title: 'Toilets and Fixtures',
-      description: 'Test operation and check for leaks or damage.',
+      id: 'toilet-function',
+      title: 'Toilet Function',
+      description: 'Test all toilets for proper flushing and stability.',
       category: 'Plumbing System',
       priority: 'Medium',
       completed: false
     },
     {
+      id: 'water-heater',
+      title: 'Water Heater',
+      description: 'Check age, condition, and proper venting of water heater.',
+      category: 'Plumbing System',
+      priority: 'High',
+      completed: false
+    },
+    {
       id: 'drainage',
       title: 'Drainage',
-      description: 'Test all drains for proper drainage and no clogs.',
+      description: 'Test all drains for proper flow and no backups.',
       category: 'Plumbing System',
       priority: 'Medium',
       completed: false
@@ -184,7 +184,7 @@ const HomeInspectionChecklist: React.FC = () => {
     {
       id: 'heating-system',
       title: 'Heating System',
-      description: 'Test heating system operation and efficiency.',
+      description: 'Test heating system operation and check for proper heating.',
       category: 'HVAC System',
       priority: 'High',
       completed: false
@@ -259,6 +259,43 @@ const HomeInspectionChecklist: React.FC = () => {
 
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
 
+  // PDF Download Handler
+  const handleDownloadPDF = () => {
+    try {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = '/pdfs/home-inspection-checklist.pdf';
+      link.download = 'home-inspection-checklist.pdf';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Sorry, there was an error downloading the file. Please try again.');
+    }
+  };
+
+  // Share Progress Handler
+  const handleShareProgress = () => {
+    const completedCount = inspectionItems.filter(item => item.completed).length;
+    const totalItems = inspectionItems.length;
+    const progressText = `I've completed ${completedCount} out of ${totalItems} items on my Home Inspection Checklist! 🏠🔍`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Home Inspection Progress',
+        text: progressText,
+        url: window.location.href
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(progressText)
+        .then(() => alert('Progress copied to clipboard!'))
+        .catch(() => alert('Unable to share progress. Please try again.'));
+    }
+  };
+
   const toggleItem = (id: string) => {
     setInspectionItems(prev => 
       prev.map(item => 
@@ -267,138 +304,101 @@ const HomeInspectionChecklist: React.FC = () => {
     );
   };
 
-  const updateNotes = (id: string, note: string) => {
-    setNotes(prev => ({ ...prev, [id]: note }));
+  const updateNotes = (id: string, noteText: string) => {
+    setNotes(prev => ({ ...prev, [id]: noteText }));
   };
 
+  // Group items by category
   const categories = [...new Set(inspectionItems.map(item => item.category))];
-  const completedItems = inspectionItems.filter(item => item.completed).length;
+  const groupedItems = categories.map(category => ({
+    name: category,
+    items: inspectionItems.filter(item => item.category === category)
+  }));
+
+  // Calculate statistics
   const totalItems = inspectionItems.length;
+  const completedItems = inspectionItems.filter(item => item.completed).length;
+  const highPriorityItems = inspectionItems.filter(item => item.priority === 'High').length;
+  const completedHighPriority = inspectionItems.filter(item => item.priority === 'High' && item.completed).length;
   const progressPercentage = (completedItems / totalItems) * 100;
 
   const priorityColors = {
-    High: 'text-red-600 bg-red-50 border-red-200',
-    Medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    Low: 'text-blue-600 bg-blue-50 border-blue-200'
+    High: 'bg-red-100 text-red-700 border-red-200',
+    Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    Low: 'bg-green-100 text-green-700 border-green-200'
   };
-
-  const getPriorityStats = () => {
-    const highPriority = inspectionItems.filter(item => item.priority === 'High');
-    const highCompleted = highPriority.filter(item => item.completed).length;
-    return { total: highPriority.length, completed: highCompleted };
-  };
-
-  const priorityStats = getPriorityStats();
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Header Section */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
-            <span className="text-white text-2xl">🔍</span>
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+          Home Inspection Checklist
+        </h1>
+        <p className="text-gray-600 leading-relaxed">
+          Use this comprehensive checklist during your home inspection to ensure you don't miss any critical areas. 
+          Take notes and mark items as you inspect them.
+        </p>
+        
+        {/* Progress Bar */}
+        <div className="mt-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-700">Inspection Progress</span>
+            <span className="text-sm font-medium text-gray-700">
+              {completedItems}/{totalItems} items checked
+            </span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Home Inspection Checklist
-            </h1>
-            <p className="text-gray-600">
-              Comprehensive checklist to ensure you don't miss any important details during your home inspection
-            </p>
-          </div>
-        </div>
-
-        {/* Progress and Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Overall Progress */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Overall Progress
-              </span>
-              <span className="text-sm font-medium text-blue-600">
-                {completedItems}/{totalItems} ({Math.round(progressPercentage)}%)
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Priority Items */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                High Priority Items
-              </span>
-              <span className="text-sm font-medium text-red-600">
-                {priorityStats.completed}/{priorityStats.total}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-red-500 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${(priorityStats.completed / priorityStats.total) * 100}%` }}
-              ></div>
-            </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            />
           </div>
         </div>
       </div>
 
       {/* Inspection Items by Category */}
       <div className="space-y-8">
-        {categories.map((category) => {
-          const categoryItems = inspectionItems.filter(item => item.category === category);
-          const categoryCompleted = categoryItems.filter(item => item.completed).length;
+        {groupedItems.map((group) => {
+          const categoryCompleted = group.items.filter(item => item.completed).length;
           
           return (
-            <div key={category} className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div key={group.name} className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">{category}</h2>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">
-                    {categoryCompleted}/{categoryItems.length} completed
-                  </span>
-                  <div className="w-20 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(categoryCompleted / categoryItems.length) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {group.name}
+                </h2>
+                <span className="text-sm text-gray-500">
+                  {categoryCompleted}/{group.items.length} completed
+                </span>
               </div>
               
               <div className="space-y-4">
-                {categoryItems.map((item) => (
+                {group.items.map((item) => (
                   <div 
                     key={item.id}
-                    className={`border rounded-lg p-4 transition-all duration-200 ${
-                      item.completed 
-                        ? 'border-green-300 bg-green-50' 
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
+                    className="border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors"
                   >
-                    <div className="flex items-start gap-3">
-                      <div 
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 cursor-pointer ${
-                          item.completed 
-                            ? 'border-green-500 bg-green-500' 
-                            : 'border-gray-300'
-                        }`}
-                        onClick={() => toggleItem(item.id)}
-                      >
-                        {item.completed && (
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 mt-1">
+                        <div 
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${
+                            item.completed 
+                              ? 'bg-blue-500 border-blue-500' 
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                          onClick={() => toggleItem(item.id)}
+                        >
+                          {item.completed && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className={`font-semibold ${
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className={`font-medium ${
                             item.completed ? 'text-green-800 line-through' : 'text-gray-900'
                           }`}>
                             {item.title}
@@ -447,53 +447,48 @@ const HomeInspectionChecklist: React.FC = () => {
               <span className="font-semibold text-gray-900">{completedItems}/{totalItems}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">High Priority Completed</span>
-              <span className="font-semibold text-red-600">{priorityStats.completed}/{priorityStats.total}</span>
+              <span className="text-gray-600">High Priority Items</span>
+              <span className="font-semibold text-gray-900">{completedHighPriority}/{highPriorityItems}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Overall Completion</span>
-              <span className="font-semibold text-blue-600">{Math.round(progressPercentage)}%</span>
-            </div>
-            <div className="pt-3 border-t">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Items with Notes</span>
-                <span className="font-semibold text-gray-900">
-                  {Object.values(notes).filter(note => note.trim()).length}
-                </span>
-              </div>
+              <span className="text-gray-600">Overall Progress</span>
+              <span className="font-semibold text-gray-900">{Math.round(progressPercentage)}%</span>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Resources</h3>
           <div className="space-y-3">
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <button 
+              onClick={handleDownloadPDF}
+              className="w-full bg-blue-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Export Inspection Report
+              Download PDF Checklist
             </button>
-            <button className="w-full bg-white text-blue-600 py-3 px-6 rounded-xl font-medium border border-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+            <button 
+              onClick={handleShareProgress}
+              className="w-full bg-white text-blue-500 py-3 px-6 rounded-xl font-medium border border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
               </svg>
-              Share with Agent
-            </button>
-            <button className="w-full bg-white text-gray-600 py-3 px-6 rounded-xl font-medium border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Save Progress
+              Share Progress
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tips Section */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Inspection Tips</h3>
+      {/* Inspection Tips */}
+      <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="text-blue-500">💡</span>
+          Inspection Tips
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">

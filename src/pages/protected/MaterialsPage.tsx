@@ -47,16 +47,18 @@ const MaterialsPage: React.FC = () => {
 
   const worksheets = [
     {
-      id: 1,
+      id: 'expense-tracking',
       title: 'Expense Tracking Worksheet',
       description: 'Track your daily expenses and identify spending patterns to better manage your budget.',
-      icon: AnalyzeIcon
+      icon: AnalyzeIcon,
+      pdfFileName: 'expense-tracking-worksheet.pdf'
     },
     {
-      id: 2,
+      id: 'budget-planning',
       title: 'Budget Planning Worksheet',
       description: 'Create and manage your monthly budget with our comprehensive planning template.',
-      icon: MoneyBoxIcon
+      icon: MoneyBoxIcon,
+      pdfFileName: 'budget-planning-worksheet.pdf'
     }
   ];
 
@@ -110,6 +112,50 @@ const MaterialsPage: React.FC = () => {
     setActiveCategory(categoryId);
     setShowCalculator(null);
     setShowChecklist(null);
+  };
+
+  // PDF Download Handler
+  const handleDownloadPDF = (pdfFileName: string) => {
+    try {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = `/pdfs/${pdfFileName}`;
+      link.download = pdfFileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Sorry, there was an error downloading the file. Please try again.');
+    }
+  };
+
+  // PDF Preview Handler
+  const handlePreviewPDF = (pdfFileName: string) => {
+    try {
+      // Open PDF in new window for preview
+      window.open(`/pdfs/${pdfFileName}`, '_blank', 'width=800,height=900');
+    } catch (error) {
+      console.error('Error previewing PDF:', error);
+      alert('Sorry, there was an error opening the preview. Please try again.');
+    }
+  };
+
+  // Worksheet Handler
+  const handleWorksheetDownload = (worksheetId: string) => {
+    const worksheet = worksheets.find(w => w.id === worksheetId);
+    if (worksheet && worksheet.pdfFileName) {
+      handleDownloadPDF(worksheet.pdfFileName);
+    }
+  };
+
+  // Worksheet Preview Handler
+  const handleWorksheetPreview = (worksheetId: string) => {
+    const worksheet = worksheets.find(w => w.id === worksheetId);
+    if (worksheet && worksheet.pdfFileName) {
+      handlePreviewPDF(worksheet.pdfFileName);
+    }
   };
 
   // Reusable Header Component
@@ -261,7 +307,7 @@ const MaterialsPage: React.FC = () => {
                 key={worksheet.id}
                 item={worksheet}
                 colorClass="bg-green-600"
-                onAction={() => {}} // Download functionality
+                onAction={handleWorksheetDownload}
                 actionText="Download"
                 actionIcon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +322,7 @@ const MaterialsPage: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   ),
-                  onClick: () => {} // Preview functionality
+                  onClick: handleWorksheetPreview
                 }}
               />
             ))}
