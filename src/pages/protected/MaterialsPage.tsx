@@ -19,6 +19,10 @@ import {
   AnalyzeIcon
  } from '../../assets';
 
+import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
+import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
+
+
 const MaterialsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'Calculators' | 'Worksheets' | 'Checklists'>('Calculators');
   const [showCalculator, setShowCalculator] = useState<string | null>(null);
@@ -114,47 +118,40 @@ const MaterialsPage: React.FC = () => {
     setShowChecklist(null);
   };
 
-  // PDF Download Handler
-  const handleDownloadPDF = (pdfFileName: string) => {
-    try {
-      // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
-      link.href = `/pdfs/${pdfFileName}`;
-      link.download = pdfFileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Sorry, there was an error downloading the file. Please try again.');
-    }
-  };
-
-  // PDF Preview Handler
-  const handlePreviewPDF = (pdfFileName: string) => {
-    try {
-      // Open PDF in new window for preview
-      window.open(`/pdfs/${pdfFileName}`, '_blank', 'width=800,height=900');
-    } catch (error) {
-      console.error('Error previewing PDF:', error);
-      alert('Sorry, there was an error opening the preview. Please try again.');
-    }
-  };
-
   // Worksheet Handler
-  const handleWorksheetDownload = (worksheetId: string) => {
-    const worksheet = worksheets.find(w => w.id === worksheetId);
-    if (worksheet && worksheet.pdfFileName) {
-      handleDownloadPDF(worksheet.pdfFileName);
+   const handleWorksheetDownload = (worksheetId: string) => {
+    const worksheetPaths: Record<string, string> = {
+      'expense-tracking': ExpenseTrackingPDF,
+      'budget-planning': BudgetPlanningPDF
+    };
+    
+    const pdfPath = worksheetPaths[worksheetId];
+    if (pdfPath) {
+      try {
+        const worksheet = worksheets.find(w => w.id === worksheetId);
+        const link = document.createElement('a');
+        link.href = pdfPath;
+        link.download = `${worksheet?.title.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Download error:', error);
+        window.open(pdfPath, '_blank');
+      }
     }
   };
 
-  // Worksheet Preview Handler
+  // Function to handle worksheet preview - using imported PDFs
   const handleWorksheetPreview = (worksheetId: string) => {
-    const worksheet = worksheets.find(w => w.id === worksheetId);
-    if (worksheet && worksheet.pdfFileName) {
-      handlePreviewPDF(worksheet.pdfFileName);
+    const worksheetPaths: Record<string, string> = {
+      'expense-tracking': ExpenseTrackingPDF,
+      'budget-planning': BudgetPlanningPDF
+    };
+    
+    const pdfPath = worksheetPaths[worksheetId];
+    if (pdfPath) {
+      window.open(pdfPath, '_blank');
     }
   };
 
@@ -318,7 +315,7 @@ const MaterialsPage: React.FC = () => {
                   text: "Preview",
                   icon: (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 616 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   ),

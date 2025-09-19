@@ -11,6 +11,8 @@ interface InspectionItem {
 }
 
 const HomeInspectionChecklist: React.FC = () => {
+  const [showModal, setShowModal] = useState(false);
+
   const [inspectionItems, setInspectionItems] = useState<InspectionItem[]>([
     // Exterior
     {
@@ -261,39 +263,12 @@ const HomeInspectionChecklist: React.FC = () => {
 
   // PDF Download Handler
   const handleDownloadPDF = () => {
-    try {
-      // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
-      link.href = '/pdfs/home-inspection-checklist.pdf';
-      link.download = 'home-inspection-checklist.pdf';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Sorry, there was an error downloading the file. Please try again.');
-    }
+    setShowModal(true);
   };
 
   // Share Progress Handler
   const handleShareProgress = () => {
-    const completedCount = inspectionItems.filter(item => item.completed).length;
-    const totalItems = inspectionItems.length;
-    const progressText = `I've completed ${completedCount} out of ${totalItems} items on my Home Inspection Checklist! 🏠🔍`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'My Home Inspection Progress',
-        text: progressText,
-        url: window.location.href
-      });
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(progressText)
-        .then(() => alert('Progress copied to clipboard!'))
-        .catch(() => alert('Unable to share progress. Please try again.'));
-    }
+    setShowModal(true);
   };
 
   const toggleItem = (id: string) => {
@@ -327,6 +302,26 @@ const HomeInspectionChecklist: React.FC = () => {
     Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
     Low: 'bg-green-100 text-green-700 border-green-200'
   };
+
+  // Modal Component
+  const Modal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-6">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🚧</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Feature Under Development</h3>
+          <p className="text-gray-600 mb-6">This feature is currently being developed and will be available soon.</p>
+          <button 
+            onClick={() => setShowModal(false)}
+            className="w-full bg-blue-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-600 transition-colors"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -492,34 +487,37 @@ const HomeInspectionChecklist: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Take photos of any issues you discover for documentation</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Ask the inspector questions about anything you don't understand</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Focus on high-priority items that could be safety hazards or expensive repairs</span>
             </div>
           </div>
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Bring a flashlight to check dark areas like basements and crawl spaces</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Test all switches, outlets, and faucets yourself during the inspection</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="text-blue-500 mt-1">💡</span>
+              <span className="text-blue-500 mt-1">•</span>
               <span>Get a detailed written report with repair cost estimates for major issues</span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      {showModal && <Modal />}
     </div>
   );
 };
