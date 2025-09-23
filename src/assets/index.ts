@@ -44,5 +44,10 @@ export { default as CelebrationImage } from './images/static/celebration-image.p
 export { default as QuestionImage } from './images/static/question_image.png'
 export { default as TryAgainImage } from './images/static/tryagain-image.png'
 
+// Downloadables
+export { default as AccessibilityDoc } from './downloadables/Accessibility_Statement.pdf?url'
+export { default as PrivacyPolicyDoc } from './downloadables/Privacy_Policy.pdf?url'  
+export { default as TermsConditionsDoc } from './downloadables/Terms_Conditions.pdf?url'
+
 // Fonts
 export { default as RobotoFont } from './fonts'
