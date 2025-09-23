@@ -351,29 +351,6 @@ const CreditScoreCalculator: React.FC = () => {
               </div>
             )}
           </div>
-
-          {/* General Tips */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
-            <h4 className="text-lg font-semibold text-green-900 mb-3">💡 General Credit Tips</h4>
-            <div className="grid grid-cols-1 gap-3 text-sm text-green-800">
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
-                <span>Check your credit report regularly for errors</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
-                <span>Keep credit card balances low</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
-                <span>Don't close old credit accounts</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
-                <span>Limit new credit applications</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right Column */}
@@ -438,7 +415,7 @@ const CreditScoreCalculator: React.FC = () => {
             </div>
           </div>
 
-          {/* Timeline */}
+            {/* Timeline */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Timeline</h3>
             <div className="space-y-3 text-sm">
@@ -465,6 +442,29 @@ const CreditScoreCalculator: React.FC = () => {
                   <span className="text-indigo-600 font-semibold text-xs">12M</span>
                 </div>
                 <span>Credit age benefits and full optimization</span>
+              </div>
+            </div>
+          </div>
+
+          {/* General Tips */}
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
+            <h4 className="text-lg font-semibold text-green-900 mb-3">💡 General Credit Tips</h4>
+            <div className="grid grid-cols-1 gap-3 text-sm text-green-800">
+              <div className="flex items-start gap-2">
+                <span className="text-green-600 mt-1">✓</span>
+                <span>Check your credit report regularly for errors</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-green-600 mt-1">✓</span>
+                <span>Keep credit card balances low</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-green-600 mt-1">✓</span>
+                <span>Don't close old credit accounts</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-green-600 mt-1">✓</span>
+                <span>Limit new credit applications</span>
               </div>
             </div>
           </div>
