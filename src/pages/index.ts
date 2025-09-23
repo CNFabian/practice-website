@@ -1,4 +1,4 @@
-export { default as OverviewPage } from './protected/OverviewPage';
+export { default as OverviewPage } from './protected/overview/OverviewPage';
 export { default as ModulesPage } from './protected/modules/ModulesPage';
 export { default as MaterialsPage } from './protected/MaterialsPage';
 export { default as RewardsPage } from './protected/RewardsPage';

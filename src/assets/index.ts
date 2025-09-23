@@ -43,3 +43,6 @@ export { default as LoginImage } from './images/static/login_page.png'
 export { default as CelebrationImage } from './images/static/celebration-image.png'
 export { default as QuestionImage } from './images/static/question_image.png'
 export { default as TryAgainImage } from './images/static/tryagain-image.png'
+
+// Fonts
+export { default as RobotoFont } from './fonts'

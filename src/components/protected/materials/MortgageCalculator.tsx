@@ -3,6 +3,7 @@ import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 import { calculatorInfoData } from './InfoData';
 import { MaterialHomeIcon } from '../../../assets';
+import { validateCurrencyInput, validateInterestRateInput } from './validationHelpers';
 
 const MortgageCalculator: React.FC = () => {
   const [homePrice, setHomePrice] = useState<string>('');
@@ -102,8 +103,10 @@ const MortgageCalculator: React.FC = () => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
+                  min="0"
+                  max="50000000"
                   value={homePrice}
-                  onChange={(e) => setHomePrice(e.target.value)}
+                  onChange={(e) => setHomePrice(validateCurrencyInput(e.target.value, 50000000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="500000"
                 />
@@ -119,8 +122,10 @@ const MortgageCalculator: React.FC = () => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
+                  min="0"
+                  max="10000000"
                   value={downPayment}
-                  onChange={(e) => setDownPayment(e.target.value)}
+                  onChange={(e) => setDownPayment(validateCurrencyInput(e.target.value, 10000000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="100000"
                 />
@@ -153,8 +158,10 @@ const MortgageCalculator: React.FC = () => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
+                  max="50"
                   value={interestRate}
-                  onChange={(e) => setInterestRate(e.target.value)}
+                  onChange={(e) => setInterestRate(validateInterestRateInput(e.target.value))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="6.5"
                 />
@@ -175,8 +182,10 @@ const MortgageCalculator: React.FC = () => {
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
                     type="number"
+                    min="0"
+                    max="100000"
                     value={propertyTax}
-                    onChange={(e) => setPropertyTax(e.target.value)}
+                    onChange={(e) => setPropertyTax(validateCurrencyInput(e.target.value, 100000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="400"
                   />
@@ -192,8 +201,10 @@ const MortgageCalculator: React.FC = () => {
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
                     type="number"
+                    min="0"
+                    max="50000"
                     value={homeInsurance}
-                    onChange={(e) => setHomeInsurance(e.target.value)}
+                    onChange={(e) => setHomeInsurance(validateCurrencyInput(e.target.value, 50000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="150"
                   />
@@ -209,8 +220,10 @@ const MortgageCalculator: React.FC = () => {
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
                     type="number"
+                    min="0"
+                    max="10000"
                     value={pmi}
-                    onChange={(e) => setPmi(e.target.value)}
+                    onChange={(e) => setPmi(validateCurrencyInput(e.target.value, 10000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="200"
                   />

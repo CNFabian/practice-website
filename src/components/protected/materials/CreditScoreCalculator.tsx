@@ -3,6 +3,7 @@ import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 import { calculatorInfoData } from './InfoData';
 import { ChartIcon } from '../../../assets';
+import { validateCreditUtilizationInput, validateYearInput, validateInquiriesInput } from './validationHelpers';
 
 interface CreditFactor {
   id: string;
@@ -142,8 +143,31 @@ const CreditScoreCalculator: React.FC = () => {
   };
 
   const updateFactor = (id: string, field: string, value: any) => {
+    let validatedValue = value;
+    
+    // Apply validation based on factor type
+    if (field === 'value') {
+      switch (id) {
+        case 'utilization':
+          validatedValue = validateCreditUtilizationInput(value.toString());
+          validatedValue = parseFloat(validatedValue) || 0;
+          break;
+        case 'history':
+          validatedValue = validateYearInput(value.toString());
+          validatedValue = parseInt(validatedValue) || 0;
+          break;
+        case 'inquiries':
+          validatedValue = validateInquiriesInput(value.toString());
+          validatedValue = parseInt(validatedValue) || 0;
+          break;
+        default:
+          // For string values (payment, mix), no numeric validation needed
+          break;
+      }
+    }
+    
     setFactors(factors.map(factor => 
-      factor.id === id ? { ...factor, [field]: value } : factor
+      factor.id === id ? { ...factor, [field]: validatedValue } : factor
     ));
   };
 
@@ -296,8 +320,9 @@ const CreditScoreCalculator: React.FC = () => {
                         type="number"
                         min={factor.min}
                         max={factor.max}
+                        step={factor.id === 'history' ? '1' : '1'}
                         value={factor.value}
-                        onChange={(e) => updateFactor(factor.id, 'value', parseInt(e.target.value))}
+                        onChange={(e) => updateFactor(factor.id, 'value', e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder={factor.id === 'history' ? '5' : '1'}
                       />
