@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import RobotoFont from '../../assets/fonts';
 import { 
   MortgageCalculator, 
   DebtToIncomeCalculator, 
@@ -156,12 +157,12 @@ const MaterialsPage: React.FC = () => {
   const HeaderSection = () => (
     <div className="flex justify-between items-center mb-8 mr-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <RobotoFont as="h1" weight={700} className="text-2xl text-gray-900 mb-2">
           Materials
-        </h1>
-        <p className="text-gray-600 text-sm">
+        </RobotoFont>
+        <RobotoFont className="text-gray-600 text-sm">
           Financial tools and resources to help with your homeownership journey
-        </p>
+        </RobotoFont>
       </div>
       
       {/* Category Cards */}
@@ -186,12 +187,12 @@ const MaterialsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">
+                <RobotoFont as="h3" weight={600} className="text-sm text-gray-900">
                   {category.title}
-                </h3>
-                <p className="text-xs text-gray-600">
+                </RobotoFont>
+                <RobotoFont className="text-xs text-gray-600">
                   {category.description}
-                </p>
+                </RobotoFont>
               </div>
             </div>
           </div>
@@ -225,12 +226,12 @@ const MaterialsPage: React.FC = () => {
               style={{ filter: 'brightness(0) invert(1)' }}
             />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+        <RobotoFont as="h3" weight={600} className="text-xl text-gray-900 mb-3">
           {item.title}
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
+        </RobotoFont>
+        <RobotoFont className="text-gray-600 text-sm leading-relaxed">
           {item.description}
-        </p>
+        </RobotoFont>
       </div>
       
       {secondaryAction ? (
@@ -239,15 +240,19 @@ const MaterialsPage: React.FC = () => {
             onClick={() => onAction(item.id)}
             className={`flex-1 ${colorClass.replace('bg-', 'bg-')} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('bg-', 'bg-').replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
           >
-            {actionIcon}
-            {actionText}
+            <RobotoFont weight={500}>
+              {actionIcon}
+              {actionText}
+            </RobotoFont>
           </button>
           <button 
             onClick={() => secondaryAction.onClick(item.id)}
             className={`flex-1 bg-white text-${colorClass.replace('bg-', '').replace('600', '600')} py-3 px-6 rounded-xl font-medium border border-${colorClass.replace('bg-', '').replace('600', '600')} hover:bg-${colorClass.replace('bg-', '').replace('600', '50')} transition-colors flex items-center justify-center gap-2`}
           >
-            {secondaryAction.icon}
-            {secondaryAction.text}
+            <RobotoFont weight={500}>
+              {secondaryAction.icon}
+              {secondaryAction.text}
+            </RobotoFont>
           </button>
         </div>
       ) : (
@@ -255,8 +260,10 @@ const MaterialsPage: React.FC = () => {
           onClick={() => onAction(item.id)}
           className={`w-full ${colorClass} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
         >
-          {actionIcon}
-          {actionText}
+          <RobotoFont weight={500}>
+            {actionIcon}
+            {actionText}
+          </RobotoFont>
         </button>
       )}
     </div>
