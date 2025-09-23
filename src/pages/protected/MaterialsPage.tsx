@@ -166,37 +166,78 @@ const MaterialsPage: React.FC = () => {
       </div>
       
       {/* Category Cards */}
-      <div className="flex gap-3">
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            onClick={() => handleCategoryClick(category.id)}
-            className={`rounded-lg border-2 p-3 cursor-pointer transition-all duration-200 ${
-              activeCategory === category.id
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-25'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <img 
-                  src={category.icon} 
-                  alt={category.title}
-                  className="w-4 h-4"
-                  style={{ filter: 'brightness(0) invert(1)' }}
-                />
-              </div>
-              <div>
-                <RobotoFont as="h3" weight={600} className="text-sm text-gray-900">
-                  {category.title}
-                </RobotoFont>
-                <RobotoFont className="text-xs text-gray-600">
-                  {category.description}
-                </RobotoFont>
+      <div className="flex gap-4">
+        {categories.map((category) => {
+          const getCategoryColors = (categoryId: string) => {
+            switch (categoryId) {
+              case 'Calculators':
+                return {
+                  iconBg: 'bg-blue-600',
+                  activeBorder: 'border-blue-500',
+                  activeBg: 'bg-blue-50',
+                  hoverBorder: 'hover:border-blue-300',
+                  hoverBg: 'hover:bg-blue-25'
+                };
+              case 'Worksheets':
+                return {
+                  iconBg: 'bg-green-600',
+                  activeBorder: 'border-green-500',
+                  activeBg: 'bg-green-50',
+                  hoverBorder: 'hover:border-green-300',
+                  hoverBg: 'hover:bg-green-25'
+                };
+              case 'Checklists':
+                return {
+                  iconBg: 'bg-purple-600',
+                  activeBorder: 'border-purple-500',
+                  activeBg: 'bg-purple-50',
+                  hoverBorder: 'hover:border-purple-300',
+                  hoverBg: 'hover:bg-purple-25'
+                };
+              default:
+                return {
+                  iconBg: 'bg-gray-600',
+                  activeBorder: 'border-gray-500',
+                  activeBg: 'bg-gray-50',
+                  hoverBorder: 'hover:border-gray-300',
+                  hoverBg: 'hover:bg-gray-25'
+                };
+            }
+          };
+
+          const colors = getCategoryColors(category.id);
+
+          return (
+            <div
+              key={category.id}
+              onClick={() => handleCategoryClick(category.id)}
+              className={`rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 min-w-[140px] ${
+                activeCategory === category.id
+                  ? `${colors.activeBorder} ${colors.activeBg}` 
+                  : `border-gray-200 bg-white ${colors.hoverBorder} ${colors.hoverBg}`
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  <img 
+                    src={category.icon} 
+                    alt={category.title}
+                    className="w-5 h-5"
+                    style={{ filter: 'brightness(0) invert(1)' }}
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <RobotoFont as="h3" weight={600} className="text-sm text-gray-900 truncate">
+                    {category.title}
+                  </RobotoFont>
+                  <RobotoFont className="text-xs text-gray-600 truncate">
+                    {category.description}
+                  </RobotoFont>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
