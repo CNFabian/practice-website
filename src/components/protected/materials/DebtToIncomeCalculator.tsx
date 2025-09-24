@@ -72,7 +72,7 @@ const DebtToIncomeCalculator: React.FC = () => {
           </div>
 
           <div className="mb-6 pr-12">
-            <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <img 
                 src={ScalesIcon} 
                 alt="Scales"
@@ -102,7 +102,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                   max="1000000"
                   value={monthlyIncome}
                   onChange={(e) => setMonthlyIncome(validateCurrencyInput(e.target.value, 1000000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="5000"
                 />
               </div>
@@ -122,7 +122,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                   max="100000"
                   value={housingPayment}
                   onChange={(e) => setHousingPayment(validateCurrencyInput(e.target.value, 100000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="1200"
                 />
               </div>
@@ -146,7 +146,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     max="50000"
                     value={creditCardPayments}
                     onChange={(e) => setCreditCardPayments(validateCurrencyInput(e.target.value, 50000))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="150"
                   />
                 </div>
@@ -165,7 +165,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     max="50000"
                     value={carPayments}
                     onChange={(e) => setCarPayments(validateCurrencyInput(e.target.value, 50000))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="300"
                   />
                 </div>
@@ -184,7 +184,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     max="50000"
                     value={studentLoans}
                     onChange={(e) => setStudentLoans(validateCurrencyInput(e.target.value, 50000))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="250"
                   />
                 </div>
@@ -203,7 +203,7 @@ const DebtToIncomeCalculator: React.FC = () => {
                     max="50000"
                     value={otherDebts}
                     onChange={(e) => setOtherDebts(validateCurrencyInput(e.target.value, 50000))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="100"
                   />
                 </div>
@@ -220,7 +220,7 @@ const DebtToIncomeCalculator: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Debt-to-Income Ratio</h3>
             
             <div className="text-center mb-6">
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+              <div className="text-4xl font-bold text-blue-600 mb-2">
                 {dtiRatio.toFixed(1)}%
               </div>
               <div className={`inline-block px-4 py-2 rounded-full border-2 ${category.color} font-medium`}>
@@ -290,9 +290,9 @@ const DebtToIncomeCalculator: React.FC = () => {
           </div>
 
           {/* Tips Card */}
-          <div className="bg-purple-50 border border-purple-200 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-purple-900 mb-3">💡 Improvement Tips</h3>
-            <ul className="space-y-2 text-sm text-purple-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Improvement Tips</h3>
+            <ul className="space-y-2 text-sm text-blue-800">
               <li>• Pay down high-interest debt first</li>
               <li>• Increase your income through side work</li>
               <li>• Avoid taking on new debt</li>

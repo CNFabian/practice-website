@@ -5,8 +5,10 @@ import {
   DebtToIncomeCalculator, 
   CreditScoreCalculator,
   FirstTimeBuyerChecklist,
-  HomeInspectionChecklist
+  HomeInspectionChecklist,
 } from '../../components';
+import InfoButton from '../../components/protected/materials/InfoButton';
+import InfoModal from '../../components/protected/materials/InfoModal';
 import { 
   CalculatorIcon, 
   DocumentIcon, 
@@ -17,7 +19,9 @@ import {
   SearchIcon,
   ToDoListIcon,
   MoneyBoxIcon,
-  AnalyzeIcon
+  AnalyzeIcon,
+  ShareIcon,
+  InfoGreen
  } from '../../assets';
 
 import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
@@ -28,6 +32,8 @@ const MaterialsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'Calculators' | 'Worksheets' | 'Checklists'>('Calculators');
   const [showCalculator, setShowCalculator] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState<string | null>(null);
+  const [showWorksheet, setShowWorksheet] = useState<string | null>(null);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const calculators = [
     {
@@ -56,16 +62,101 @@ const MaterialsPage: React.FC = () => {
       title: 'Expense Tracking Worksheet',
       description: 'Track your daily expenses and identify spending patterns to better manage your budget.',
       icon: AnalyzeIcon,
-      pdfFileName: 'expense-tracking-worksheet.pdf'
+      pdfFileName: 'expense-tracking-worksheet.pdf',
+      purpose: 'Help you understand where your money goes by tracking daily expenses and identifying spending patterns.',
+      bestPractices: [
+        'Record every expense, no matter how small',
+        'Categorize expenses (housing, food, transportation, etc.)',
+        'Review weekly to identify spending patterns',
+        'Use receipts and bank statements for accuracy',
+        'Set aside time daily for entry (5-10 minutes)',
+        'Be honest about discretionary spending'
+      ]
     },
     {
       id: 'budget-planning',
       title: 'Budget Planning Worksheet',
       description: 'Create and manage your monthly budget with our comprehensive planning template.',
       icon: MoneyBoxIcon,
-      pdfFileName: 'budget-planning-worksheet.pdf'
+      pdfFileName: 'budget-planning-worksheet.pdf',
+      purpose: 'Create a comprehensive monthly budget that allocates your income effectively and helps you save for homeownership goals.',
+      bestPractices: [
+        'Start with your net (after-tax) income',
+        'List all fixed expenses first (rent, insurance, loans)',
+        'Allocate 20% for savings and debt repayment',
+        'Set realistic limits for variable expenses',
+        'Include a buffer for unexpected costs (5-10%)',
+        'Review and adjust monthly based on actual spending',
+        'Prioritize building an emergency fund'
+      ]
     }
   ];
+
+  // Worksheet info data for the InfoModal
+  const worksheetInfoData = {
+    'expense-tracking': {
+      title: 'Expense Tracking Worksheet',
+      description: 'Learn how to effectively track your daily expenses and identify spending patterns.',
+      howToUse: [
+        'Download and print the worksheet or fill it out digitally',
+        'Record every expense, no matter how small the amount',
+        'Categorize each expense (housing, food, transportation, etc.)',
+        'Review your spending weekly to identify patterns',
+        'Use receipts and bank statements to ensure accuracy',
+        'Set aside 5-10 minutes daily for consistent entry'
+      ],
+      howToUseTitle: 'How to Use This Worksheet',
+      terms: [
+        {
+          term: 'Fixed Expenses',
+          definition: 'Regular monthly costs that stay the same (rent, insurance, loan payments)'
+        },
+        {
+          term: 'Variable Expenses',
+          definition: 'Costs that change month to month (groceries, entertainment, gas)'
+        },
+        {
+          term: 'Discretionary Spending',
+          definition: 'Non-essential purchases you can control or eliminate'
+        },
+        {
+          term: 'Spending Pattern',
+          definition: 'Recurring habits in how and when you spend money'
+        }
+      ]
+    },
+    'budget-planning': {
+      title: 'Budget Planning Worksheet',
+      description: 'Create a comprehensive monthly budget that helps you save for homeownership.',
+      howToUse: [
+        'Start by calculating your net (after-tax) monthly income',
+        'List all fixed expenses first (rent, insurance, loans)',
+        'Allocate 20% of income for savings and debt repayment',
+        'Set realistic limits for variable expenses',
+        'Include a 5-10% buffer for unexpected costs',
+        'Review and adjust monthly based on actual spending'
+      ],
+      howToUseTitle: 'How to Create Your Budget',
+      terms: [
+        {
+          term: '50/30/20 Rule',
+          definition: '50% for needs, 30% for wants, 20% for savings and debt repayment'
+        },
+        {
+          term: 'Net Income',
+          definition: 'Your take-home pay after taxes and deductions'
+        },
+        {
+          term: 'Emergency Fund',
+          definition: '3-6 months of expenses saved for unexpected situations'
+        },
+        {
+          term: 'Debt-to-Income Ratio',
+          definition: 'Percentage of monthly income used to pay debts'
+        }
+      ]
+    }
+  };
 
   const checklists = [
     {
@@ -106,17 +197,25 @@ const MaterialsPage: React.FC = () => {
   const handleCalculatorClick = (calculatorId: string) => {
     setShowCalculator(calculatorId);
     setShowChecklist(null);
+    setShowWorksheet(null);
   };
 
   const handleChecklistClick = (checklistId: string) => {
     setShowChecklist(checklistId);
     setShowCalculator(null);
+    setShowWorksheet(null);
+  };
+
+  const handleWorksheetInfoClick = (worksheetId: string) => {
+    setShowWorksheet(worksheetId);
+    setIsInfoModalOpen(true);
   };
 
   const handleCategoryClick = (categoryId: 'Calculators' | 'Worksheets' | 'Checklists') => {
     setActiveCategory(categoryId);
     setShowCalculator(null);
     setShowChecklist(null);
+    setShowWorksheet(null);
   };
 
    const handleWorksheetDownload = (worksheetId: string) => {
@@ -248,7 +347,9 @@ const MaterialsPage: React.FC = () => {
     onAction, 
     actionText, 
     actionIcon,
-    secondaryAction = null 
+    secondaryAction = null,
+    showInfoButton = false,
+    onInfoClick
   }: { 
     item: any;
     colorClass: string;
@@ -256,8 +357,23 @@ const MaterialsPage: React.FC = () => {
     actionText: string;
     actionIcon?: React.ReactNode;
     secondaryAction?: { text: string; icon: React.ReactNode; onClick: (id: any) => void } | null;
+    showInfoButton?: boolean;
+    onInfoClick?: (id: any) => void;
   }) => (
-    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-200">
+    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center hover:shadow-lg transition-all duration-200 relative">
+      {/* Info Button */}
+      {showInfoButton && onInfoClick && (
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => onInfoClick(item.id)}
+            className="flex items-center justify-center w-10 h-10 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            title="More information about this worksheet"
+          >
+            <img src={InfoGreen} alt="Info" className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
         <div className={`w-20 h-20 ${colorClass} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
             <img 
@@ -350,20 +466,17 @@ const MaterialsPage: React.FC = () => {
                 onAction={handleWorksheetDownload}
                 actionText="Download"
                 actionIcon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                  <img src={ShareIcon} alt="Download" className="w-4 h-4" />
                 }
                 secondaryAction={{
                   text: "Preview",
                   icon: (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 616 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <img src={SearchIcon} alt="Preview" className="w-4 h-4" />
                   ),
                   onClick: handleWorksheetPreview
                 }}
+                showInfoButton={true}
+                onInfoClick={handleWorksheetInfoClick}
               />
             ))}
 
@@ -376,15 +489,29 @@ const MaterialsPage: React.FC = () => {
                 onAction={handleChecklistClick}
                 actionText="Use Checklist"
                 actionIcon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <img src={ChecklistIcon} alt="Checklist" className="w-4 h-4" />
                 }
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Info Modal for Worksheets */}
+      {showWorksheet && (
+        <InfoModal
+          isOpen={isInfoModalOpen}
+          onClose={() => {
+            setIsInfoModalOpen(false);
+            setShowWorksheet(null);
+          }}
+          title={worksheetInfoData[showWorksheet as keyof typeof worksheetInfoData]?.title || ''}
+          description={worksheetInfoData[showWorksheet as keyof typeof worksheetInfoData]?.description || ''}
+          howToUse={worksheetInfoData[showWorksheet as keyof typeof worksheetInfoData]?.howToUse || []}
+          howToUseTitle={worksheetInfoData[showWorksheet as keyof typeof worksheetInfoData]?.howToUseTitle || ''}
+          terms={worksheetInfoData[showWorksheet as keyof typeof worksheetInfoData]?.terms || []}
+        />
+      )}
     </div>
   );
 };
