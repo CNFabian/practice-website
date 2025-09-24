@@ -43,6 +43,10 @@ export { default as LoginImage } from './images/static/login_page.png'
 export { default as CelebrationImage } from './images/static/celebration-image.png'
 export { default as QuestionImage } from './images/static/question_image.png'
 export { default as TryAgainImage } from './images/static/tryagain-image.png'
+// Info Colors
+export  { default as InfoBlue } from './images/icons/InfoColors/QM_Blue.svg'
+export  { default as InfoGreen } from './images/icons/InfoColors/QM_Green.svg'
+export  { default as InfoPurple } from './images/icons/InfoColors/QM_Purple.svg'
 
 // Downloadables
 export { default as AccessibilityDoc } from './downloadables/Accessibility_Statement.pdf?url'
