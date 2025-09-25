@@ -14,3 +14,6 @@ export { default as RewardsModal } from './protected/modules/RewardsModal';
 export { default as QuizResults } from './protected/modules/QuizResults';
 export { default as FeedbackContainer } from './protected/modules/FeedbackContainer';
 export { default as LessonQuiz } from './protected/modules/LessonQuiz';
+
+// Protected settings components
+export { default as ProfileModal } from './protected/settings/ProfilePictureModal';

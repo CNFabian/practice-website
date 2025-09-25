@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RobotoFont } from '../../../assets';
+import { ProfileModal } from '../../../components';
 
 const AccountView: React.FC = () => {
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
   const handleSaveSettings = () => {
     console.log('Settings saved!');
   };
 
   const handleUploadPicture = () => {
-    console.log('Upload picture clicked');
+    setIsProfileModalOpen(true);
   };
 
   const handleDeletePicture = () => {
     console.log('Delete picture clicked');
+  };
+
+  const handleProfileUpload = (file: File) => {
+    console.log('Profile picture uploaded:', file);
+    // Handle the file upload logic here
   };
 
   return (
@@ -225,6 +233,13 @@ const AccountView: React.FC = () => {
           </RobotoFont>
         </button>
       </div>
+
+      {/* Profile Picture Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onUpload={handleProfileUpload}
+      />
     </div>
   );
 };
