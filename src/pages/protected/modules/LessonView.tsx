@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
-import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
+import { 
+  CoinIcon,
+  BadgeMedal
+} from '../../../assets';
 import { LessonQuiz } from '../../../components';
 
 interface LessonViewProps {
@@ -234,18 +237,16 @@ const LessonView: React.FC<LessonViewProps> = ({
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  <RobotoFont weight={500} className="text-blue-600 whitespace-nowrap">
-                    Back to Module
-                  </RobotoFont>
+                  <span className="whitespace-nowrap">Back to Module</span>
                 </button>
 
                 {/* Quiz Status from Redux */}
                {quizCompleted && (
-                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
+                <div className="flex items-center gap-2 bg-blue-200 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
                   {currentLessonProgress?.quizScore !== undefined && currentLessonProgress?.quizScore !== null && (
-                    <RobotoFont weight={500} className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+                    <span className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
                       {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
-                    </RobotoFont>
+                    </span>
                   )}
                 </div>
               )}
@@ -254,31 +255,20 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* Lesson Header */}
               <div className="space-y-3 pb-3">
                 <div>
-                  <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-1 leading-tight">
+                  <h1 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                     {lesson.title}
-                  </RobotoFont>
+                  </h1>
                   <div className="flex items-center gap-2 mb-1">
-                    <RobotoFont className="text-xs text-gray-600">
-                      {lesson.duration}
-                    </RobotoFont>
+                    <span className="text-xs text-gray-600">{lesson.duration}</span>
                     <div className="flex gap-1">
                       {module.tags.map((tag) => (
                         <span
                           key={tag}
                           className={`px-1.5 py-0.5 text-xs rounded-full ${
-                            tag === 'Beginner' ? 'bg-blue-100 text-blue-700' :
-                            tag === 'Intermediate' ? 'bg-purple-100 text-purple-700' :
-                            tag === 'Finance' ? 'bg-green-100 text-green-700' :
-                            tag === 'Process' ? 'bg-orange-100 text-orange-700' :
-                            tag === 'Maintenance' ? 'bg-red-100 text-red-700' :
-                            tag === 'Safety' ? 'bg-yellow-100 text-yellow-700' :
-                            tag === 'Technology' ? 'bg-indigo-100 text-indigo-700' :
-                            'bg-gray-100 text-gray-700'
+                            tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
                           }`}
                         >
-                          <RobotoFont weight={500}>
-                            {tag}
-                          </RobotoFont>
+                          {tag}
                         </span>
                       ))}
                     </div>
@@ -323,20 +313,18 @@ const LessonView: React.FC<LessonViewProps> = ({
                     }
                   }}
                 >
-                  <RobotoFont className="text-xs text-gray-700">
-                    {descriptionExpanded || lessonDescription.length <= 120 ? (
-                      lessonDescription
-                    ) : (
-                      <>
-                        {lessonDescription.substring(0, 120)}
-                        <span className="text-blue-600 font-medium">...</span>
-                      </>
-                    )}
-                  </RobotoFont>
+                  {descriptionExpanded || lessonDescription.length <= 120 ? (
+                    lessonDescription
+                  ) : (
+                    <>
+                      {lessonDescription.substring(0, 120)}
+                      <span className="text-blue-600 font-medium">...</span>
+                    </>
+                  )}
                 </div>
-                <RobotoFont className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600">
                   When you have finished watching the video, earn rewards by testing your knowledge through a Lesson Quiz!
-                </RobotoFont>
+                </p>
               </div>
 
               {/* Test Knowledge Button */}
@@ -349,20 +337,19 @@ const LessonView: React.FC<LessonViewProps> = ({
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                <RobotoFont weight={500} className="text-white">
-                  {quizCompleted ? 'Retake Quiz' : 'Test Your Knowledge'}
-                </RobotoFont>
+                {quizCompleted ? 'Retake Quiz' : 'Test Your Knowledge'}
               </button>
+
+              {/* Completion Status from Redux */}
+              
 
               {/* ENHANCED Rewards Section with Remaining Coins and Badge Status */}
               <div>
-                <RobotoFont as="h3" weight={600} className="text-sm mb-2">
-                  Rewards
-                </RobotoFont>
+                <h3 className="text-sm font-semibold mb-2">Rewards</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1.5 rounded-lg">
                     <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
-                    <RobotoFont weight={500} className="text-xs">
+                    <span className="text-xs font-medium">
                       {(() => {
                         // Calculate remaining coins that can be earned
                         const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
@@ -373,7 +360,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                         
                         return `+${remainingCoins} NestCoins`;
                       })()}
-                    </RobotoFont>
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 bg-orange-50 px-2 pt-1.5 rounded-lg">
                     {(() => {
@@ -391,9 +378,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                         />
                       );
                     })()}
-                    <RobotoFont weight={500} className="text-xs">
-                      Lesson Badge
-                    </RobotoFont>
+                    <span className="text-xs font-medium">Lesson Badge</span>
                   </div>
                 </div>
               </div>
@@ -401,20 +386,14 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* Next Lesson */}
               {nextLesson && (
                 <div className="bg-gray-50 rounded-lg pb-2 px-2">
-                  <RobotoFont as="h4" weight={600} className="text-sm mb-1">
-                    Next Lesson
-                  </RobotoFont>
+                  <h4 className="text-sm font-semibold mb-1">Next Lesson</h4>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <span className="text-xs">💳</span>
                     </div>
                     <div className="min-w-0">
-                      <RobotoFont as="h5" weight={500} className="text-xs truncate">
-                        {nextLesson.title}
-                      </RobotoFont>
-                      <RobotoFont className="text-xs text-gray-600">
-                        {nextLesson.duration}
-                      </RobotoFont>
+                      <h5 className="text-xs font-medium truncate">{nextLesson.title}</h5>
+                      <p className="text-xs text-gray-600">{nextLesson.duration}</p>
                     </div>
                   </div>
                 </div>
@@ -427,9 +406,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   disabled={isTransitioning || currentLessonIndex === 0}
                   className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RobotoFont weight={500} className="text-gray-700">
-                    Previous
-                  </RobotoFont>
+                  Previous
                 </button>
                 {nextLesson ? (
                   <button 
@@ -437,9 +414,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     disabled={isTransitioning}
                     className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RobotoFont weight={500} className="text-white">
-                      Next
-                    </RobotoFont>
+                    Next
                   </button>
                 ) : (
                   <button 
@@ -447,9 +422,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     disabled={isTransitioning}
                     className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RobotoFont weight={500} className="text-white">
-                      Complete
-                    </RobotoFont>
+                    Complete
                   </button>
                 )}
               </div>
@@ -487,27 +460,23 @@ const LessonView: React.FC<LessonViewProps> = ({
                         </svg>
                       </button>
                     </div>
-                    <RobotoFont className="text-right text-sm text-gray-500 mt-4">
+                    <div className="text-right text-sm text-gray-500 mt-4">
                       {lesson.duration}
-                    </RobotoFont>
+                    </div>
                   </div>
                 </div>
 
                 {/* Video Transcript */}
                 {lesson.transcript && (
                   <div>
-                    <RobotoFont as="h3" weight={600} className="text-lg mb-4">
-                      Video Transcript
-                    </RobotoFont>
+                    <h3 className="text-lg font-semibold mb-4">Video Transcript</h3>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <div className="space-y-4">
                         <div className="flex gap-3">
-                          <RobotoFont weight={500} className="text-sm text-gray-500 min-w-[3rem]">
-                            0:00
-                          </RobotoFont>
-                          <RobotoFont className="text-sm text-gray-700 leading-relaxed">
+                          <span className="text-sm text-gray-500 min-w-[3rem]">0:00</span>
+                          <p className="text-sm text-gray-700 leading-relaxed">
                             {lesson.transcript}
-                          </RobotoFont>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -521,9 +490,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     disabled={isTransitioning || currentLessonIndex === 0}
                     className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RobotoFont weight={500} className="text-gray-700">
-                      Previous Lesson
-                    </RobotoFont>
+                    Previous Lesson
                   </button>
                   {nextLesson ? (
                     <button 
@@ -531,9 +498,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                       disabled={isTransitioning}
                       className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <RobotoFont weight={500} className="text-white">
-                        Next Lesson
-                      </RobotoFont>
+                      Next Lesson
                     </button>
                   ) : (
                     <button 
@@ -541,9 +506,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                       disabled={isTransitioning}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <RobotoFont weight={500} className="text-white">
-                        Complete Module
-                      </RobotoFont>
+                      Complete Module
                     </button>
                   )}
                 </div>

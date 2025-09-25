@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module } from '../../../types/modules';
-import { CoinIcon, QuestionImage, BadgeMedal, RobotoFont } from '../../../assets';
+import { CoinIcon, QuestionImage, BadgeMedal } from '../../../assets';
 import { FeedbackContainer, QuizResults } from '../../../components';
 
 interface ModuleQuizViewProps {
@@ -91,7 +91,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   return acc + (userAnswer === correctOption?.id ? 1 : 0);
 }, 0);
 
-  // Question Component
+  // Question Component - EXACT COPY from LessonQuiz
   const QuestionCard: React.FC<{
     questionData: any;
     selectedAnswer?: string | null;
@@ -104,9 +104,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
     return (
       <>
-        {/* Question Content */}
+        {/* Question Content - Removed "Test Your Knowledge" header from here */}
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-          {/* Illustration */}
+          {/* Illustration - Improved styling */}
           <div className="mb-6 relative">
             <img 
               src={QuestionImage} 
@@ -117,9 +117,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
           {/* Question */}
           <div className="text-center mb-6 flex-shrink-0">
-            <RobotoFont as="h2" weight={600} className="text-lg text-gray-900 mb-3 leading-tight px-2">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3 leading-tight px-2">
               {questionData?.question}
-            </RobotoFont>
+            </h2>
           </div>
 
           {/* Answer Options */}
@@ -163,9 +163,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                     isSelected ? 'ring-2 ring-white ring-opacity-50 scale-105' : ''
                   } ${!isCurrentQuestion ? 'opacity-75' : ''}`}
                 >
-                  <RobotoFont weight={500} className="text-sm text-center leading-tight">
+                  <div className="text-sm text-center leading-tight">
                     {option.text}
-                  </RobotoFont>
+                  </div>
                 </button>
               );
             })}
@@ -228,18 +228,17 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  <RobotoFont weight={500} className="text-blue-600 whitespace-nowrap">
-                    Back to Module Library
-                  </RobotoFont>
+                  <span className="whitespace-nowrap">Back to Module Library</span>
                 </button>
 
-                {/* Module Quiz Status */}
+                {/* Module Quiz Status - ADDED LIKE IN LESSONVIEW */}
                 {moduleQuizCompleted && (
-                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
+                <div className="flex items-center gap-2 bg-blue-200 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
                     {moduleQuizScore && (
-                    <RobotoFont weight={500} className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+                    <span className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+                        {/* Convert number of correct answers to percentage */}
                         {Math.round((moduleQuizScore / quizState.questions.length) * 100)}%
-                      </RobotoFont>
+                      </span>
                     )}
                   </div>
                 )}
@@ -248,9 +247,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
               {/* Module Header */}
               <div className="space-y-3 pb-3">
                 <div>
-                  <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-1 leading-tight">
+                  <h1 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                     {module.title}
-                  </RobotoFont>
+                  </h1>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="flex gap-1">
                       {module.tags.map((tag) => (
@@ -260,29 +259,15 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                             tag === 'Beginner' 
                               ? 'bg-blue-100 text-blue-700' 
                               : tag === 'Finance'
-                              ? 'bg-green-100 text-green-700'
-                              : tag === 'Intermediate'
                               ? 'bg-purple-100 text-purple-700'
-                              : tag === 'Process'
-                              ? 'bg-orange-100 text-orange-700'
-                              : tag === 'Maintenance'
-                              ? 'bg-red-100 text-red-700'
-                              : tag === 'Safety'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : tag === 'Technology'
-                              ? 'bg-indigo-100 text-indigo-700'
                               : 'bg-gray-100 text-gray-700'
                           }`}
                         >
-                          <RobotoFont weight={500}>
-                            {tag}
-                          </RobotoFont>
+                          {tag}
                         </span>
                       ))}
                     </div>
-                    <RobotoFont className="text-xs text-gray-600">
-                      {module.lessonCount} lessons
-                    </RobotoFont>
+                    <span className="text-xs text-gray-600">{module.lessonCount} lessons</span>
                   </div>
                 </div>
               </div>
@@ -313,26 +298,20 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
             <div className="flex-shrink-0 py-3 border-t border-gray-100 space-y-3">
               <div className="text-xs text-gray-600">
-                <RobotoFont className="text-xs text-gray-600">
-                  In this module, you'll learn about the precursor steps to prepare for home ownership.
-                </RobotoFont>
+                <p>In this module, you'll learn about the precursor steps to prepare for home ownership.</p>
               </div>
 
               <div className="text-xs text-gray-600">
-                <RobotoFont className="text-xs text-gray-600">
-                  Complete the Module quiz to get your rewards. Test your skills against another player to win more.
-                </RobotoFont>
+                <p>Complete the Module quiz to get your rewards. Test your skills against another player to win more.</p>
               </div>
 
-              {/* ENHANCED Rewards Section with Remaining Coins and Badge Status */}
+              {/* ENHANCED Rewards Section with Remaining Coins and Badge Status - UPDATED TO MATCH LESSONVIEW LOGIC */}
               <div className="space-y-3 pb-4">
-                <RobotoFont as="h3" weight={500} className="text-sm text-gray-900">
-                  Rewards
-                </RobotoFont>
+                <h3 className="text-sm font-medium text-gray-900">Rewards</h3>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded-lg flex-1">
                     <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
-                    <RobotoFont weight={500} className="text-xs text-gray-900">
+                    <span className="text-xs font-medium text-gray-900">
                       {(() => {
                         // Calculate remaining coins that can be earned
                         const totalQuestions = quizState.questions.length; // Use actual quiz length
@@ -343,7 +322,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                         
                         return `+${remainingCoins} NestCoins`;
                       })()}
-                    </RobotoFont>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg flex-1">
                     {(() => {
@@ -361,33 +340,23 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                         />
                       );
                     })()}
-                    <RobotoFont weight={500} className="text-xs text-gray-900">
-                      Module Badge
-                    </RobotoFont>
+                    <span className="text-xs font-medium text-gray-900">Module Badge</span>
                   </div>
                 </div>
               </div>
 
               {/* Get More Rewards Section */}
               <div className="space-y-3">
-                <RobotoFont as="h3" weight={500} className="text-sm text-gray-900">
-                  Get More Rewards
-                </RobotoFont>
+                <h3 className="text-sm font-medium text-gray-900">Get More Rewards</h3>
                 <div className="text-xs text-gray-600 space-y-1">
-                  <RobotoFont className="text-xs text-gray-600">
-                    Earn Coins, Challenge players, make the leaderboard.
-                  </RobotoFont>
-                  <RobotoFont className="text-xs text-gray-600">
-                    Battle against each other for more rewards.
-                  </RobotoFont>
+                  <p>Earn Coins, Challenge players, make the leaderboard.</p>
+                  <p>Battle against each other for more rewards.</p>
                 </div>
                 <button
                   onClick={() => setIsQuizBattleModalOpen(true)}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                 >
-                  <RobotoFont weight={500} className="text-white">
-                    Quiz Battle
-                  </RobotoFont>
+                  Quiz Battle
                 </button>
               </div>
             </div>
@@ -407,12 +376,8 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
             {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="text-left flex-1 ml-4">
-                <RobotoFont as="h1" weight={600} className="text-sm text-gray-900">
-                  Test Your Knowledge
-                </RobotoFont>
-                <RobotoFont className="text-xs text-gray-600">
-                  Question {quizState.currentQuestion + 1} out of {quizState.questions.length}
-                </RobotoFont>
+                <h1 className="text-sm font-semibold text-gray-900">Test Your Knowledge</h1>
+                <p className="text-xs text-gray-600">Question {quizState.currentQuestion + 1} out of {quizState.questions.length}</p>
               </div>
               <div className="w-6"></div>
             </div>
@@ -453,9 +418,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                     disabled={quizState.currentQuestion === 0 || quizState.isTransitioning}
                     className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RobotoFont weight={500}>
-                      Previous
-                    </RobotoFont>
+                    Previous
                   </button>
                   
                   <div className="flex gap-1">
@@ -478,9 +441,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                     disabled={!quizState.selectedAnswer || quizState.isTransitioning}
                     className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RobotoFont weight={500} className="text-white">
-                      {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
-                    </RobotoFont>
+                    {quizState.currentQuestion === quizState.questions.length - 1 ? 'Finish' : 'Next'}
                   </button>
                 </div>
               </>
@@ -516,28 +477,24 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           {/* The actual dialog panel */}
           <DialogPanel className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-lg">
-            <DialogTitle>
-              <RobotoFont weight={600} className="text-lg text-gray-900 mb-4">
-                Quiz Battles
-              </RobotoFont>
+            <DialogTitle className="text-lg font-semibold text-gray-900 mb-4">
+              Quiz Battles
             </DialogTitle>
             
             <div className="mb-6">
-              <RobotoFont className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-sm">
                 Quiz Battles are currently in development! 🚀
-              </RobotoFont>
-              <RobotoFont className="text-gray-600 text-sm mt-2">
+              </p>
+              <p className="text-gray-600 text-sm mt-2">
                 We're working hard to bring you an exciting multiplayer quiz experience. Check back soon!
-              </RobotoFont>
+              </p>
             </div>
             
             <button
               onClick={() => setIsQuizBattleModalOpen(false)}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
-              <RobotoFont weight={500} className="text-white">
-                Got it!
-              </RobotoFont>
+              Got it!
             </button>
           </DialogPanel>
         </div>
