@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="h-full overflow-hidden bg-gray-50">
       <div className="h-full overflow-y-auto">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="max-w-5xl mx-auto py-6">
           {/* Header */}
           <div className="mb-6">
             <RobotoFont as="h1" weight={600} className="text-2xl text-gray-900">

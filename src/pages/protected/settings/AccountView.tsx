@@ -51,192 +51,195 @@ const AccountView: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Picture */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-lg flex items-center justify-center bg-gray-100">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-1">
-              Profile Picture/Select Avatar
-            </RobotoFont>
-            <RobotoFont className="text-sm text-gray-600">
-              PNG, JPEG under 15 MB
-            </RobotoFont>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleUploadPicture}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#6B73FF' }}
-            >
-              <RobotoFont weight={500}>
-                Upload New Picture
+      {/* Form Container */}
+      <div>
+        {/* Profile Picture */}
+        <div className="p-6">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 rounded-lg flex items-center justify-center bg-gray-100">
+              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-1">
+                Profile Picture/Select Avatar
               </RobotoFont>
-            </button>
-            <button
-              onClick={handleDeletePicture}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <RobotoFont weight={500}>
-                Delete
+              <RobotoFont className="text-sm text-gray-600">
+                PNG, JPEG under 15 MB
               </RobotoFont>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Full Name */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
-          Full Name
-        </RobotoFont>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>First Name</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                defaultValue="John"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Last Name</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                defaultValue="Doe"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+            <div className="flex gap-3">
+              <button
+                onClick={handleUploadPicture}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#6B73FF' }}
+              >
+                <RobotoFont weight={500}>
+                  Upload New Picture
+                </RobotoFont>
+              </button>
+              <button
+                onClick={handleDeletePicture}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <RobotoFont weight={500}>
+                  Delete
+                </RobotoFont>
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Password */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
-          Password
-        </RobotoFont>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Current Password</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="password"
-                defaultValue="••••••••••••••••••"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
+        {/* Full Name */}
+        <div className="border-t border-gray-200 p-6">
+          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+            Full Name
+          </RobotoFont>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>First Name</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  defaultValue="John"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>New Password</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="password"
-                defaultValue="••••••••••••••••••"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>Last Name</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  defaultValue="Doe"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Phone Number */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
-          Phone Number
-        </RobotoFont>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Current Phone Number</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="tel"
-                defaultValue="123 456 7890"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        {/* Password */}
+        <div className="border-t border-gray-200 p-6">
+          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+            Password
+          </RobotoFont>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>Current Password</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  defaultValue="••••••••••••••••••"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>New Phone Number</RobotoFont>
-            </label>
-            <div className="relative">
-              <input
-                type="tel"
-                defaultValue="987 654 3210"
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>New Password</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  defaultValue="••••••••••••••••••"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Email */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
-          Email
-        </RobotoFont>
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">
-            <RobotoFont weight={500}>Current Email</RobotoFont>
-          </label>
-          <div className="max-w-md">
-            <input
-              type="email"
-              defaultValue="jdoe123@gmail.com"
-              className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm bg-gray-50 cursor-not-allowed"
-              readOnly
-            />
+        {/* Phone Number */}
+        <div className="border-t border-gray-200 p-6">
+          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+            Phone Number
+          </RobotoFont>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>Current Phone Number</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  defaultValue="123 456 7890"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                <RobotoFont weight={500}>New Phone Number</RobotoFont>
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  defaultValue="987 654 3210"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Email */}
+        <div className="border-t border-gray-200 p-6">
+          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+            Email
+          </RobotoFont>
+          <div>
+            <label className="block text-sm text-gray-600 mb-2">
+              <RobotoFont weight={500}>Current Email</RobotoFont>
+            </label>
+            <div className="max-w-md">
+              <input
+                type="email"
+                defaultValue="jdoe123@gmail.com"
+                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm bg-gray-50 cursor-not-allowed"
+                readOnly
+              />
+            </div>
           </div>
         </div>
       </div>
