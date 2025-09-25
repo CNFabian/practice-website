@@ -39,7 +39,7 @@ const NotificationsView: React.FC = () => {
       {/* Form Container */}
       <div>
         {/* Notifications From Us */}
-        <div className="p-6">
+        <div className="pb-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
             Notifications From Us
           </RobotoFont>
@@ -90,18 +90,18 @@ const NotificationsView: React.FC = () => {
         </div>
 
         {/* Reminders */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-gray-200 pt-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
             Reminders
           </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          <RobotoFont className="text-sm text-gray-600">
             Set reminders to help you stay on track
           </RobotoFont>
           
           <div className="space-y-6">
             {/* Expert Seminars */}
             <div className="flex items-start justify-between">
-              <div className="flex-1">
+              <div className="flex-1 mt-6">
                 <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
                   Expert Seminars
                 </RobotoFont>
@@ -109,7 +109,7 @@ const NotificationsView: React.FC = () => {
                   Get reminders about seminars hosted by experts
                 </RobotoFont>
               </div>
-              <div className="relative">
+              <div className="relative mt-6">
                 <select
                   value={expertSeminars}
                   onChange={(e) => setExpertSeminars(e.target.value)}

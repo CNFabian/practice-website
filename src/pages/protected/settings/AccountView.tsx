@@ -1,62 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { RobotoFont } from '../../../assets';
 
 const AccountView: React.FC = () => {
-  const [showEmailVerification] = useState(true);
-
-  const handleSendVerificationEmail = () => {
-    console.log('Sending verification email...');
-    // Add email verification logic here
+  const handleSaveSettings = () => {
+    console.log('Settings saved!');
   };
 
   const handleUploadPicture = () => {
-    console.log('Upload new picture...');
-    // Add file upload logic here
+    console.log('Upload picture clicked');
   };
 
   const handleDeletePicture = () => {
-    console.log('Delete picture...');
-    // Add delete picture logic here
-  };
-
-  const handleSaveSettings = () => {
-    console.log('Saving settings...');
-    // Add save settings logic here
+    console.log('Delete picture clicked');
   };
 
   return (
     <div className="space-y-6">
-      {/* Email Verification */}
-      {showEmailVerification && (
-        <div className="p-4 rounded-lg" style={{ backgroundColor: '#D7DEFF' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-1">
-                Verify Your Email
-              </RobotoFont>
-              <RobotoFont className="text-sm text-gray-700">
-                This confirms your email address so we can connect you with our trusted home experts and other Nest services
-              </RobotoFont>
-            </div>
-            <button
-              onClick={handleSendVerificationEmail}
-              className="ml-4 px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#6B73FF' }}
-            >
-              <RobotoFont weight={500}>
-                Send Verification Email
-              </RobotoFont>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Form Container */}
       <div>
         {/* Profile Picture */}
-        <div className="p-6">
+        <div className="pb-6">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-lg flex items-center justify-center bg-gray-100">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center opacity-100">
               <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -93,7 +58,7 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* Full Name */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-gray-200 py-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
             Full Name
           </RobotoFont>
@@ -136,7 +101,7 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* Password */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-gray-200 py-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
             Password
           </RobotoFont>
@@ -148,7 +113,7 @@ const AccountView: React.FC = () => {
               <div className="relative">
                 <input
                   type="password"
-                  defaultValue="••••••••••••••••••"
+                  defaultValue="••••••••••••"
                   className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -166,13 +131,12 @@ const AccountView: React.FC = () => {
               <div className="relative">
                 <input
                   type="password"
-                  defaultValue="••••••••••••••••••"
+                  defaultValue="••••••••••••"
                   className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                   </svg>
                 </button>
               </div>
@@ -181,7 +145,7 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* Phone Number */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-gray-200 py-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
             Phone Number
           </RobotoFont>
@@ -224,7 +188,7 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* Email */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-gray-200 py-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
             Email
           </RobotoFont>

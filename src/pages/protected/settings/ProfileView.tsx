@@ -102,7 +102,7 @@ const ProfileView: React.FC = () => {
       {/* Form Container */}
       <div>
         {/* Desired Homeownership Timeline */}
-        <div className="py-6">
+        <div className="pb-6">
           <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
             Desired Homeownership Timeline
           </RobotoFont>
