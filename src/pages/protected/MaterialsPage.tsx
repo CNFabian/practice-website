@@ -15,7 +15,6 @@ import {
   MaterialHomeIcon, 
   ScalesIcon, 
   ChartIcon,
-  SearchIcon,
   ToDoListIcon,
   MoneyBoxIcon,
   AnalyzeIcon,
@@ -232,7 +231,7 @@ const MaterialsPage: React.FC = () => {
       id: 'home-inspection',
       title: 'Home Inspection Checklist',
       description: 'Ensure you don\'t miss any important details during your home inspection.',
-      icon: SearchIcon
+      icon: ToDoListIcon
     }
   ];
 
@@ -322,7 +321,7 @@ const MaterialsPage: React.FC = () => {
   };
 
   const HeaderSection = () => (
-    <div className="flex justify-between items-center mb-8 mr-8">
+    <div className="flex justify-between items-center mb-8">
       <div>
         <RobotoFont as="h1" weight={700} className="text-2xl text-gray-900 mb-2">
           Materials
@@ -333,7 +332,7 @@ const MaterialsPage: React.FC = () => {
       </div>
       
       {/* Category Cards */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 ml-10">
         {categories.map((category) => {
           const getCategoryColors = (categoryId: string) => {
             switch (categoryId) {
@@ -425,7 +424,7 @@ const MaterialCard = ({
     onAction: (id: any) => void;
     actionText: string;
     actionIcon?: React.ReactNode;
-    secondaryAction?: { text: string; icon: React.ReactNode; onClick: (id: any) => void } | null;
+    secondaryAction?: { text: string; icon?: React.ReactNode; onClick: (id: any) => void } | null;
     showInfoButton?: boolean;
     onInfoClick?: (id: any) => void;
     infoIconColor?: 'green' | 'purple';
@@ -547,9 +546,6 @@ const MaterialCard = ({
                 actionText="Download"
                 secondaryAction={{
                   text: "Preview",
-                  icon: (
-                    <img src={SearchIcon} alt="Preview" className="w-4 h-4" />
-                  ),
                   onClick: handleWorksheetPreview
                 }}
                 showInfoButton={true}
