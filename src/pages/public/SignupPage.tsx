@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { signupWithEmail } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
-import { SignupImage } from '../../assets'
+import { SignupImage, TermsConditionsDoc } from '../../assets'
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate()
@@ -70,16 +70,16 @@ const SignupPage: React.FC = () => {
               </div>
             )}
 
-          <input
-            type="text"
-            name="firstName"
-            placeholder="first name"
-            value={formData.firstName}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-            style={{ backgroundColor: '#EFF2FF' }}
-          />
+            <input
+              type="text"
+              name="firstName"
+              placeholder="first name"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              style={{ backgroundColor: '#EFF2FF' }}
+            />
 
             <input
               type="text"
@@ -137,6 +137,18 @@ const SignupPage: React.FC = () => {
               className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
+
+            {/* Terms and Conditions text */}
+            <div className="text-center text-sm text-gray-600 mt-4 whitespace-nowrap">
+              <p>By clicking Sign Up, you automatically agree to our{' '}
+                <a 
+                  href={TermsConditionsDoc} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >Terms and Conditions</a>
+              </p>
+            </div>
 
             <button
               type="submit"
