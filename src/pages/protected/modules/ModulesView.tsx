@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
-import { CoinIcon, RobotoFont } from '../../../assets';
+import { CoinIcon} from '../../../assets';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -84,7 +84,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const getProgressBarColor = (status: string) => {
     switch (status) {
       case 'Completed': return 'bg-green-500';
-      case 'In Progress': return 'bg-blue-600';
+      case 'In Progress': return 'bg-blue-500';
       default: return 'bg-gray-300';
     }
   };
@@ -94,19 +94,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       <span 
         key={tag}
         className={`px-3 py-1 text-xs font-medium rounded-full ${
-          tag === 'Beginner' ? 'bg-blue-100 text-blue-700' : 
-          tag === 'Intermediate' ? 'bg-purple-100 text-purple-700' :
-          tag === 'Finance' ? 'bg-green-100 text-green-700' :
-          tag === 'Process' ? 'bg-orange-100 text-orange-700' :
-          tag === 'Maintenance' ? 'bg-red-100 text-red-700' :
-          tag === 'Safety' ? 'bg-yellow-100 text-yellow-700' :
-          tag === 'Technology' ? 'bg-indigo-100 text-indigo-700' :
-          'bg-gray-100 text-gray-700'
+          tag === 'Beginner' ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
         }`}
       >
-        <RobotoFont weight={500}>
-          {tag}
-        </RobotoFont>
+        {tag}
       </span>
     ))
   );
@@ -283,9 +274,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           >
             <div className="sticky top-0 z-10 bg-gray-50 px-4 pt-6 pb-3">
               <div className="flex items-center justify-between">
-                <RobotoFont as="h1" weight={700} className="text-2xl text-gray-900">
-                  Modules
-                </RobotoFont>
+                <h1 className="text-2xl font-bold text-gray-900">Modules</h1>
                 {selectedModuleId && (
                   <button
                     onClick={toggleSidebarLocal}
@@ -300,9 +289,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <RobotoFont weight={500} className="text-gray-600">
-                      {sidebarCollapsed ? 'Show Details' : 'Hide Details'}
-                    </RobotoFont>
+                    {sidebarCollapsed ? 'Show Details' : 'Hide Details'}
                   </button>
                 )}
               </div>
@@ -318,9 +305,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                         : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    <RobotoFont weight={activeTab === tab ? 500 : 400}>
-                      {tab}
-                    </RobotoFont>
+                    {tab}
                   </button>
                 ))}
               </div>
@@ -356,17 +341,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm p-4"
                             style={{ backgroundColor: '#6B73FF' }}
                           >
-                            <RobotoFont weight={700} className="text-white">
-                              {index + 1}
-                            </RobotoFont>
+                            {index + 1}
                           </div>
                           <div>
-                            <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 leading-tight">
+                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                               {module.title}
-                            </RobotoFont>
-                            <RobotoFont className="text-sm text-gray-600">
-                              {module.lessonCount} lessons
-                            </RobotoFont>
+                            </h3>
+                            <p className="text-sm text-gray-600">{module.lessonCount} lessons</p>
                           </div>
                         </div>
                       </div>
@@ -398,15 +379,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                              
                              {/* Score badge if available */}
                              {quizStatus.score !== null && (
-                               <RobotoFont weight={500} className="text-xs text-green-700">
+                               <span className="text-xs font-medium text-green-700">
                                  {Math.round((quizStatus.score / 10) * 100)}%
-                               </RobotoFont>
+                               </span>
                              )}
                              
                              {/* "Quiz" text */}
-                             <RobotoFont weight={500} className="text-xs text-green-700">
+                             <span className="text-xs font-medium text-green-700">
                                Quiz
-                             </RobotoFont>
+                             </span>
                            </div>
                          )}
                         </div>
@@ -414,9 +395,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
                       <div className="px-6 flex-1 flex flex-col">
                         <div className="flex-1 mb-6">
-                          <RobotoFont className="text-sm text-gray-700 leading-relaxed">
+                          <p className="text-sm text-gray-700 leading-relaxed">
                             {module.description}
-                          </RobotoFont>
+                          </p>
                         </div>
                         <div className="space-y-4 pb-6">
                           <div className="flex items-center gap-2">
@@ -424,12 +405,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs">
-                              <RobotoFont className="text-gray-600">
+                              <span className="text-gray-600">
                                 {progress.lessonsCompleted}/{progress.totalLessons} lessons completed
-                              </RobotoFont>
-                              <RobotoFont className="text-gray-600">
-                                {progress.overallProgress}%
-                              </RobotoFont>
+                              </span>
+                              <span className="text-gray-600">{progress.overallProgress}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
@@ -473,26 +452,33 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 <div className="sticky top-0 z-10 bg-gray-50 mr-4 px-1 pt-6 pb-3">
                   <div className='grid grid-cols-2 gap-4 items-center'>
                     <div className="space-y-1">
-                      <RobotoFont as="h2" weight={700} className="whitespace-nowrap text-xl text-gray-900">
+                      <h2 className="whitespace-nowrap text-xl font-bold text-gray-900">
                         {selectedModuleData.title}
-                      </RobotoFont>
+                      </h2>
                       
-                      <RobotoFont className="text-gray-600 text-sm leading-normal">
+                      <p className="text-gray-600 text-sm leading-normal">
                         {selectedModuleData.description}
-                      </RobotoFont>
+                      </p>
                       <div className="flex gap-1.5 pt-2">
-                        {renderTags(selectedModuleData.tags)}
+                        {selectedModuleData.tags.map((tag) => (
+                          <span 
+                            key={tag}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                              tag === 'Beginner' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                            }`}
+                          >
+                            {tag}
+                          </span>
+                        ))}
                       </div>
                     </div>
 
                     <div className="absolute right-0 bottom-5 pr-4 pb-3 w-[calc(50%-1rem)]">
-                      {/* Module Quiz Completion Indicator */}
+                      {/* Module Quiz Completion Indicator - RIGHT ALIGNED ABOVE BUTTONS */}
                       {getModuleQuizStatus(selectedModuleData.id).isCompleted && (
                         <div className="flex justify-end mb-2">
                           <div className="flex items-center gap-2 text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200">
-                            <RobotoFont weight={500} className="text-xs">
-                              Quiz Complete
-                            </RobotoFont>
+                            <span className="text-xs font-medium">Quiz Complete</span>
                           </div>
                         </div>
                       )}
@@ -503,18 +489,14 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                           disabled={isTransitioning}
                           className="flex-1 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <RobotoFont weight={500} className="text-white">
-                            Quiz Battle
-                          </RobotoFont>
+                          Quiz Battle
                         </button>
                         <button 
                           onClick={() => handleModuleQuizStart(selectedModuleData)}
                           disabled={isTransitioning}
                           className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <RobotoFont weight={500} className="text-white">
-                            Module Quiz
-                          </RobotoFont>
+                          Module Quiz
                         </button>
                       </div>
                     </div>
@@ -546,9 +528,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       return (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
                           <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
-                            <RobotoFont weight={600} className="text-xs text-gray-900">
+                            <span className="text-xs font-semibold text-gray-900">
                               {coinsRemaining > 0 ? `+${coinsRemaining}` : '✓'}
-                            </RobotoFont>
+                            </span>
                             <img src={CoinIcon} alt="Coins" className="w-4 h-4" />
                           </div>
                           <div className="flex gap-4 items-start">
@@ -562,9 +544,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 />
                                 {watchProgress > 0 && (
                                   <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                                    <RobotoFont weight={500} className="text-white">
-                                      {watchProgress}%
-                                    </RobotoFont>
+                                    {watchProgress}%
                                   </div>
                                 )}
                                 {isCompleted && (
@@ -577,27 +557,23 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                               </div>
                             </div>
                             <div className="flex-1 pr-12">
-                              <RobotoFont as="h4" weight={600} className="text-base text-gray-900 mb-1">
+                              <h4 className="text-base font-semibold text-gray-900 mb-1">
                                 {lesson.title}
-                              </RobotoFont>
+                              </h4>
                               <div className="flex items-center gap-2 mb-2">
-                                <RobotoFont weight={500} className="text-xs text-gray-600">
-                                  Lesson {index + 1}
-                                </RobotoFont>
-                                <RobotoFont className="text-xs text-gray-600">
-                                  {lesson.duration}
-                                </RobotoFont>
+                                <span className="text-xs text-gray-600 font-medium">Lesson {index + 1}</span>
+                                <span className="text-xs text-gray-600">{lesson.duration}</span>
                                 {quizCompleted && (
                                   <div className="flex items-center gap-1">
-                                    <RobotoFont weight={500} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                                       Quiz ✓
-                                    </RobotoFont>
+                                    </span>
                                   </div>
                                 )}
                               </div>
-                              <RobotoFont className="text-xs text-gray-600 mb-4 leading-relaxed">
+                              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
                                 {lesson.description}
-                              </RobotoFont>
+                              </p>
                               <div className="flex gap-3 max-w-xs">
                                 <button 
                                   onClick={() => handleLessonStart(lesson, selectedModuleData)}
@@ -608,9 +584,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                       : 'bg-blue-600 text-white hover:bg-blue-700'
                                   }`}
                                 >
-                                  <RobotoFont weight={500} className="text-white">
-                                    {isCompleted ? 'Review' : watchProgress > 0 ? 'Continue' : 'Start Lesson'}
-                                  </RobotoFont>
+                                  {isCompleted ? 'Review' : watchProgress > 0 ? 'Continue' : 'Start Lesson'}
                                 </button>
                                <button 
                                 onClick={() => handleLessonQuizStart(lesson, selectedModuleData)}
@@ -619,9 +593,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                   quizCompleted ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
                                 }`}
                               >
-                                <RobotoFont weight={500} className="text-white">
-                                  {quizCompleted ? 'Retake' : 'Lesson Quiz'}
-                                </RobotoFont>
+                                {quizCompleted ? 'Retake' : 'Lesson Quiz'}
                               </button>
                               </div>
                             </div>
@@ -632,9 +604,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                   </div>
                 ) : (
                   <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 text-center mx-1">
-                    <RobotoFont className="text-gray-500">
-                      Select a module to view lessons and details
-                    </RobotoFont>
+                    <p className="text-gray-500">Select a module to view lessons and details</p>
                   </div>
                 )}
               </div>
@@ -656,28 +626,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           {/* The actual dialog panel */}
           <DialogPanel className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-lg">
-            <DialogTitle>
-              <RobotoFont weight={600} className="text-lg text-gray-900 mb-4">
-                Quiz Battles
-              </RobotoFont>
+            <DialogTitle className="text-lg font-semibold text-gray-900 mb-4">
+              Quiz Battles
             </DialogTitle>
             
             <div className="mb-6">
-              <RobotoFont className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-sm">
                 Quiz Battles are currently in development! 🚀
-              </RobotoFont>
-              <RobotoFont className="text-gray-600 text-sm mt-2">
+              </p>
+              <p className="text-gray-600 text-sm mt-2">
                 We're working hard to bring you an exciting multiplayer quiz experience. Check back soon!
-              </RobotoFont>
+              </p>
             </div>
             
             <button
               onClick={() => setIsQuizBattleModalOpen(false)}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
-              <RobotoFont weight={500} className="text-white">
-                Got it!
-              </RobotoFont>
+              Got it!
             </button>
           </DialogPanel>
         </div>
