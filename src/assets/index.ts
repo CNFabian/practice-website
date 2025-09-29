@@ -26,13 +26,45 @@ export { default as Coin3} from './images/icons/coins/coin3.svg'
 export { default as Coin4} from './images/icons/coins/coin4.svg'
 export { default as Coin5} from './images/icons/coins/coin5.svg'
 export { default as Confetti } from './images/icons/confetti.svg'
-export {default as BadgeMedal } from './images/icons/badge.svg'
+export { default as BadgeMedal } from './images/icons/badge.svg'
+export { default as CalculatorIcon } from './images/icons/calculator.svg'
+export { default as DocumentIcon } from './images/icons/document.svg'
+export { default as ChecklistIcon } from './images/icons/checklist.svg'
+export { default as ScalesIcon } from './images/icons/scales.svg'
+export { default as ChartIcon } from './images/icons/chart.svg'
+export { default as MaterialHomeIcon } from './images/icons/home.svg'
+export { default as MoneyBoxIcon } from './images/icons/moneybox.svg'
+export { default as SearchIcon } from './images/icons/search.svg'
+export { default as AnalyzeIcon } from './images/icons/analyze.svg'
+export { default as ToDoListIcon } from './images/icons/todolist.svg'
+
+// Badge Icons
+export { default as BadgeFinance } from './images/icons/badge-finance.svg'
+export { default as BadgeHome } from './images/icons/badge-home.svg'
+export { default as BadgeInsurance } from './images/icons/badge-insurance.svg'
+export { default as BadgeNavigation } from './images/icons/badge-navigation.svg'
+export { default as BadgePrize } from './images/icons/badge-prize.svg'
+export { default as BadgeResearch } from './images/icons/badge-research.svg'
+export { default as BadgeRocket } from './images/icons/badge-rocket.svg'
+export { default as BadgeSavings } from './images/icons/badge-savings.svg'
+export { default as BadgeStar } from './images/icons/badge-star.svg'
+export { default as BadgeTrophy } from './images/icons/badge-trophy.svg'
+
 // Static Images
 export { default as SignupImage } from './images/static/signup_page.png'
 export { default as LoginImage } from './images/static/login_page.png'
 export { default as CelebrationImage } from './images/static/celebration-image.png'
 export { default as QuestionImage } from './images/static/question_image.png'
 export { default as TryAgainImage } from './images/static/tryagain-image.png'
+// Info Colors
+export  { default as InfoBlue } from './images/icons/InfoColors/QM_Blue.svg'
+export  { default as InfoGreen } from './images/icons/InfoColors/QM_Green.svg'
+export  { default as InfoPurple } from './images/icons/InfoColors/QM_Purple.svg'
+
+// Downloadables
+export { default as AccessibilityDoc } from './downloadables/Accessibility_Statement.pdf?url'
+export { default as PrivacyPolicyDoc } from './downloadables/Privacy_Policy.pdf?url'  
+export { default as TermsConditionsDoc } from './downloadables/Terms_Conditions.pdf?url'
 
 // Fonts
 export { default as RobotoFont } from './fonts'

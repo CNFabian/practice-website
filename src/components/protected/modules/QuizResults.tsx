@@ -57,6 +57,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   
   const containerRef = useRef<HTMLDivElement>(null);
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  // Add ref to track if modal has already been shown
+  const modalShownRef = useRef(false);
 
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
@@ -105,8 +108,10 @@ useEffect(() => {
   const timer1 = setTimeout(() => setShowContent(true), 300);
   
   const timer2 = setTimeout(() => {
-    if (hasEarnedCoins || correctAnswers === totalQuestions) {
+    // Only show modal if it hasn't been shown before
+    if (!modalShownRef.current && (hasEarnedCoins || correctAnswers === totalQuestions)) {
       setShowRewardsModal(true);
+      modalShownRef.current = true;
     }
   }, 2000);
 

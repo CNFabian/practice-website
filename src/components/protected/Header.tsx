@@ -94,8 +94,12 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
-      <div className="flex items-center justify-between h-full">
+    <>
+      {/* Background overlay to prevent content showing through the gap */}
+      <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
+      
+      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
+        <div className="flex items-center justify-between h-full">
         {/* Left Section - Logo and Greeting */}
         <div className="flex items-center space-x-3">
           {/* Logo */}
@@ -278,6 +282,7 @@ const Header: React.FC = () => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 
