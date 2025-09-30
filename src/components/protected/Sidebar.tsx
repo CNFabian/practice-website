@@ -118,7 +118,7 @@ const Sidebar: React.FC = () => {
                   leaveFrom="transform scale-100 opacity-100 max-h-96"
                   leaveTo="transform scale-95 opacity-0 max-h-0"
                 >
-                  <Disclosure.Panel className="pl-8 space-y-1 mt-1 overflow-hidden">
+                  <Disclosure.Panel className="space-y-1 mt-1 overflow-hidden">
                     {materialSubItems.map((subItem) => (
                       <Link
                         key={subItem.id}

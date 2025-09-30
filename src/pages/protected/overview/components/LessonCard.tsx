@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { RobotoFont } from "../../../../assets";
 import { Lesson } from "../types/overview.types";
 
@@ -13,6 +13,14 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onAction,
   showTags = false,
 }) => {
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  useEffect(() => {
+    const handleResize = () => setScreenWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const getButtonText = () => {
     switch (lesson.status) {
       case "continue":
@@ -26,31 +34,42 @@ const LessonCard: React.FC<LessonCardProps> = ({
     }
   };
 
+  const getTruncatedDescription = (text: string) => {
+    // Very aggressive truncation on mobile, more generous on larger screens
+    if (screenWidth < 640) { // sm breakpoint
+      return text.length > 60 ? text.substring(0, 60) + "..." : text;
+    } else if (screenWidth < 1024) { // lg breakpoint  
+      return text.length > 100 ? text.substring(0, 100) + "..." : text;
+    } else {
+      return text.length > 140 ? text.substring(0, 140) + "..." : text;
+    }
+  };
+
   return (
     <div
-      className="bg-[#EFF2FF] rounded-xl flex flex-col lg:flex-row overflow-hidden h-auto"
+      className="bg-[#EFF2FF] rounded-xl flex flex-col 2xl:flex-row overflow-hidden h-auto"
       style={{ minHeight: "11.25rem" }}
     >
       {/* Left side - Image */}
       <div
-        className="w-full lg:w-[276px] h-48 lg:h-full flex-shrink-0 border-[#EFF2FF] lg:border-r-0 rounded-t-xl lg:rounded-l-xl lg:rounded-tr-none"
+        className="w-full 2xl:w-[276px] h-48 2xl:h-full flex-shrink-0 border-[#EFF2FF] 2xl:border-r-0 rounded-t-xl 2xl:rounded-l-xl 2xl:rounded-tr-none"
         style={{ borderWidth: "3px" }}
       >
         <img
           src={lesson.imageUrl}
           alt={lesson.title}
-          className="w-full h-full object-cover rounded-t-lg lg:rounded-l-lg lg:rounded-tr-none"
+          className="w-full h-full object-cover rounded-t-lg 2xl:rounded-l-lg 2xl:rounded-tr-none"
         />
       </div>
 
       {/* Content container */}
-      <div className="flex-1 p-4 lg:p-6 flex flex-col justify-between relative">
+      <div className="flex-1 p-4 2xl:p-6 flex flex-col justify-between relative min-w-0">
         <div className="-mt-2">
           <div className="flex items-start gap-3 mb-2">
-            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#D7DEFF]">
+            <div className="w-8 h-8 2xl:w-10 2xl:h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#D7DEFF]">
               <RobotoFont
                 weight={700}
-                className="text-blue-700 text-base lg:text-lg font-bold"
+                className="text-blue-700 text-base 2xl:text-lg font-bold"
               >
                 {lesson.moduleNumber}
               </RobotoFont>
@@ -61,7 +80,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
                   <RobotoFont
                     as="h3"
                     weight={500}
-                    className="text-gray-900 text-base sm:text-lg font-medium leading-none"
+                    className="text-gray-900 text-base sm:text-lg font-medium leading-tight"
                     style={{
                       wordBreak: "break-word",
                       overflowWrap: "break-word",
@@ -77,14 +96,14 @@ const LessonCard: React.FC<LessonCardProps> = ({
                 <div className="flex items-center gap-1 flex-shrink-0 md:-mt-2">
                   <RobotoFont
                     weight={500}
-                    className="text-gray-900 text-base lg:text-lg font-bold"
+                    className="text-gray-900 text-base 2xl:text-lg font-bold"
                   >
                     +{lesson.points}
                   </RobotoFont>
                   <img
                     src="src/assets/images/icons/nest-coin.svg"
                     alt="Nest Coin"
-                    className="w-5 h-5 lg:w-6 lg:h-6"
+                    className="w-5 h-5 2xl:w-6 2xl:h-6"
                   />
                 </div>
               </div>
@@ -93,18 +112,18 @@ const LessonCard: React.FC<LessonCardProps> = ({
           <RobotoFont
             as="p"
             weight={500}
-            className="text-gray-600 mb-3 text-sm sm:text-base max-w-[360px] pb-16 md:pb-12 lg:pb-0"
+            className="text-gray-600 mb-3 text-sm sm:text-base max-w-[360px] pb-16 md:pb-12 2xl:pb-0"
             style={{
               wordBreak: "break-word",
               overflowWrap: "break-word",
             }}
           >
-            {lesson.description}
+            {getTruncatedDescription(lesson.description)}
           </RobotoFont>
         </div>
 
         {/* Bottom section with absolute positioning for precise spacing */}
-        <div className="absolute bottom-4 left-4 lg:left-6 right-4 lg:right-6">
+        <div className="absolute bottom-4 left-4 2xl:left-6 right-4 2xl:right-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
             {showTags && lesson.tags ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -133,7 +152,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
 
             {/* Action Button */}
             <button
-              className={`bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity rounded-full w-fit h-11 flex items-center justify-center px-4 lg:px-6 ${
+              className={`bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity rounded-full w-fit h-11 flex items-center justify-center px-4 2xl:px-6 ${
                 lesson.status === "locked"
                   ? "opacity-50 cursor-not-allowed"
                   : ""

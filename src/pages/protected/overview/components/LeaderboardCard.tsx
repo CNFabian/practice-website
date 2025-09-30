@@ -12,7 +12,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
   onMenuClick 
 }) => {
   return (
-    <div className="bg-[#EFF2FF] rounded-xl">
+    <div className="bg-[#EFF2FF] rounded-xl overflow-hidden">
       {/* Header section */}
       <div className="flex items-center justify-between h-16 sm:h-20 px-4 py-2 gap-2">
         <RobotoFont 

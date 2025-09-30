@@ -20,7 +20,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
             className="w-8 h-8 sm:w-10 sm:h-10"
           />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <RobotoFont 
             as="h3" 
             weight={600} 

@@ -160,18 +160,19 @@ const OverviewPage: React.FC = () => {
   }, []);
 
   return (
-    <div
-      className={`p-4 lg:p-6 max-w-7xl transition-all duration-700 ease-out ${
-        isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      }`}
-    >
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div
+        className={`p-4 lg:p-6 w-full transition-all duration-700 ease-out ${
+          isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
+      >
       <RobotoFont as="h1" weight={500} className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
         Onboarding Checklist
       </RobotoFont>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 2xl:grid-cols-[1fr_500px] gap-4 lg:gap-6 w-full">
         {/* Left Column */}
-        <div className="flex flex-col gap-4 lg:gap-4 max-w-[860px]">
+        <div className="flex flex-col gap-4 lg:gap-6 min-w-0 w-full 2xl:max-w-[980px]">
           {/* Welcome Card */}
           <WelcomeCard
             tasks={tasks}
@@ -232,14 +233,14 @@ const OverviewPage: React.FC = () => {
         </div>
 
         {/* Right Column */}
-        <div className="flex flex-col gap-4 lg:gap-6 w-full xl:w-[500px]">
+        <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
           {/* Learn Earn Rewards Card */}
           <div
             className="relative overflow-hidden bg-[#D7DEFF] rounded-xl flex flex-col justify-between p-4 sm:p-6"
             style={{ height: "12.5rem" }}
           >
             {/* Content */}
-            <div className="relative z-10">
+            <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
               <RobotoFont
                 as="h2"
                 weight={500}
@@ -266,7 +267,7 @@ const OverviewPage: React.FC = () => {
             {/* Rewards Shop Button - positioned at bottom */}
             <div className="absolute bottom-3 right-4 sm:right-6 z-20">
               <button
-                className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-12 py-2 rounded-full"
+                className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
                 onClick={handleRewardsShop}
               >
                 <RobotoFont weight={500} className="text-sm">
@@ -279,12 +280,12 @@ const OverviewPage: React.FC = () => {
             <img
               src="src/assets/images/static/nest_coins.png"
               alt="Nest Coins"
-              className="absolute top-4 sm:top-7 right-[80px] sm:right-[118px] w-[80px] h-[80px] sm:w-[124px] sm:h-[124px] opacity-90"
+              className="absolute top-4 sm:top-7 right-[80px] sm:right-[118px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
             />
             <img
               src="src/assets/images/static/coin_bag.png"
               alt="Coin Bag"
-              className="absolute top-1 sm:top-1.5 right-[5px] w-[80px] h-[80px] sm:w-[121px] sm:h-[121px] opacity-90"
+              className="absolute top-1 sm:top-1.5 right-[5px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
             />
           </div>
           {/* Weekly Leaderboard Card */}
@@ -301,6 +302,7 @@ const OverviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
