@@ -13,6 +13,7 @@ import {
   CalculatorIcon, 
   DocumentIcon, 
   ChecklistIcon, 
+  ControllerIcon,
   MaterialHomeIcon, 
   ScalesIcon, 
   ChartIcon,
@@ -38,8 +39,8 @@ const MaterialsPage: React.FC = () => {
   const [showChecklist, setShowChecklist] = useState<string | null>(null);
   const [showWorksheet, setShowWorksheet] = useState<string | null>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
-  // Update active category when URL changes
   useEffect(() => {
     console.log('URL changed - categoryFromUrl:', categoryFromUrl);
     if (categoryFromUrl) {
@@ -272,7 +273,7 @@ const MaterialsPage: React.FC = () => {
       id: 'Minigames' as const,
       title: 'Minigames',
       description: 'Interactive learning games',
-      icon: CalculatorIcon
+      icon: ControllerIcon
     }
   ];
 
@@ -405,30 +406,41 @@ const MaterialsPage: React.FC = () => {
             <div
               key={category.id}
               onClick={() => handleCategoryClick(category.id)}
-              className={`rounded-lg border-2 p-2.5 cursor-pointer transition-all duration-200 ${
+              onMouseEnter={() => setHoveredCategory(category.id)}
+              onMouseLeave={() => setHoveredCategory(null)}
+              className={`rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 relative ${
                 activeCategory === category.id
                   ? `${colors.activeBorder} ${colors.activeBg}` 
                   : `border-gray-200 bg-white ${colors.hoverBorder} ${colors.hoverBg}`
               }`}
             >
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 ${colors.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
                   <img 
                     src={category.icon} 
                     alt={category.title}
-                    className="w-4 h-4"
+                    className="w-5 h-5"
                     style={{ filter: 'brightness(0) invert(1)' }}
                   />
                 </div>
                 <div className="min-w-0">
-                  <RobotoFont as="h3" weight={600} className="text-xs text-gray-900 truncate">
+                  <RobotoFont as="h3" weight={600} className="text-sm text-gray-900 truncate">
                     {category.title}
-                  </RobotoFont>
-                  <RobotoFont className="text-[12px] text-gray-600 truncate leading-tight">
-                    {category.description}
                   </RobotoFont>
                 </div>
               </div>
+
+              {/* Tooltip */}
+              {hoveredCategory === category.id && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
+                  <div className="bg-gray-100 border border-gray-200 text-gray-700 text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                    <RobotoFont className="text-gray-700">
+                      {category.description}
+                    </RobotoFont>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-100"></div>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

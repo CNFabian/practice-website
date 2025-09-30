@@ -37,6 +37,11 @@ export { default as MoneyBoxIcon } from './images/icons/moneybox.svg'
 export { default as SearchIcon } from './images/icons/search.svg'
 export { default as AnalyzeIcon } from './images/icons/analyze.svg'
 export { default as ToDoListIcon } from './images/icons/todolist.svg'
+export { default as CalculatorDarkIcon } from './images/icons/calculator_dark.svg'
+export { default as DocumentDarkIcon } from './images/icons/document_dark.svg'
+export { default as ChecklistDarkIcon } from './images/icons/checklist_dark.svg'
+export { default as ControllerIcon } from './images/icons/controller.svg'
+export { default as ControllerDarkIcon } from './images/icons/controller_dark.svg'
 
 // Badge Icons
 export { default as BadgeFinance } from './images/icons/badge-finance.svg'

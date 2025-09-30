@@ -8,7 +8,11 @@ import {
   RewardsIcon, 
   BadgesIcon, 
   GetHelpIcon, 
-  SettingsIcon 
+  SettingsIcon,
+  CalculatorDarkIcon,
+  DocumentDarkIcon,
+  ChecklistDarkIcon,
+  ControllerDarkIcon
 } from '../../assets';
 
 const Sidebar: React.FC = () => {
@@ -22,10 +26,10 @@ const Sidebar: React.FC = () => {
   ];
 
   const materialSubItems = [
-    { id: 'calculators', label: 'Calculators', path: '/app/materials?category=Calculators' },
-    { id: 'worksheets', label: 'Worksheets', path: '/app/materials?category=Worksheets' },
-    { id: 'checklists', label: 'Checklists', path: '/app/materials?category=Checklists' },
-    { id: 'minigames', label: 'Minigames', path: '/app/materials?category=Minigames' },
+    { id: 'calculators', label: 'Calculators', path: '/app/materials?category=Calculators', icon: CalculatorDarkIcon },
+    { id: 'worksheets', label: 'Worksheets', path: '/app/materials?category=Worksheets', icon: DocumentDarkIcon },
+    { id: 'checklists', label: 'Checklists', path: '/app/materials?category=Checklists', icon: ChecklistDarkIcon },
+    { id: 'minigames', label: 'Minigames', path: '/app/materials?category=Minigames', icon: ControllerDarkIcon },
   ];
 
   const bottomMenuItems = [
@@ -37,7 +41,7 @@ const Sidebar: React.FC = () => {
     if (path === '/app') {
       return location.pathname === '/app';
     }
-    // Check if path includes query parameters
+
     if (path.includes('?')) {
       const [pathname, queryString] = path.split('?');
       const currentParams = new URLSearchParams(location.search);
@@ -120,13 +124,14 @@ const Sidebar: React.FC = () => {
                         key={subItem.id}
                         to={subItem.path}
                         className={`
-                          block px-4 py-2 text-sm rounded-lg transition-all duration-200
+                          flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200
                           ${isActive(subItem.path)
                             ? 'font-medium bg-white/60'
                             : 'hover:bg-white/40'
                           } text-gray-700 hover:text-gray-900
                         `}
                       >
+                        <img src={subItem.icon} alt={subItem.label} className="w-4 h-4" />
                         {subItem.label}
                       </Link>
                     ))}
