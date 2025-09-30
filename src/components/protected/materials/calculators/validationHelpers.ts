@@ -4,22 +4,18 @@ export const validateNumberInput = (
   max: number = Infinity,
   allowDecimals: boolean = true
 ): string => {
-  // Remove any non-numeric characters except decimal point and minus sign
   let cleanValue = value.replace(/[^0-9.-]/g, '');
   
-  // Handle empty string
   if (cleanValue === '' || cleanValue === '-') {
     return cleanValue === '-' ? '' : cleanValue;
   }
   
-  // Remove extra decimal points (keep only the first one)
   const decimalIndex = cleanValue.indexOf('.');
   if (decimalIndex !== -1) {
     cleanValue = cleanValue.substring(0, decimalIndex + 1) + 
                  cleanValue.substring(decimalIndex + 1).replace(/\./g, '');
   }
   
-  // Remove extra minus signs (keep only the first one if at beginning)
   if (cleanValue.indexOf('-') > 0) {
     cleanValue = cleanValue.replace(/-/g, '');
   }
@@ -27,20 +23,16 @@ export const validateNumberInput = (
     cleanValue = '-' + cleanValue.replace(/-/g, '');
   }
   
-  // If decimals not allowed, remove decimal point and anything after
   if (!allowDecimals && cleanValue.includes('.')) {
     cleanValue = cleanValue.split('.')[0];
   }
   
-  // Convert to number for validation
   const numValue = parseFloat(cleanValue);
   
-  // Check if the number is valid
   if (isNaN(numValue)) {
     return '';
   }
   
-  // Enforce min/max constraints
   if (numValue < min) {
     return min.toString();
   }
