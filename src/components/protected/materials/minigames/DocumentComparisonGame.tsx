@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { documentContent, DocumentType, DifficultyLevel } from './documentData';
 
 interface RobotoFontProps {
@@ -30,8 +30,6 @@ interface DocumentTypeConfig {
   title: string;
   description: string;
   icon: string;
-  unlocked: boolean;
-  requiredScore: number;
 }
 
 const DocumentComparisonGame: React.FC = () => {
@@ -47,40 +45,34 @@ const DocumentComparisonGame: React.FC = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [roundTimes, setRoundTimes] = useState<number[]>([]);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [unlockedDocs, setUnlockedDocs] = useState<Set<DocumentType>>(new Set(['purchase-agreement']));
+  const [hasOverflow, setHasOverflow] = useState<{ [key: string]: boolean }>({});
+  const [scrollProgress, setScrollProgress] = useState<{ [key: string]: number }>({});
+  const docRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const documentTypes: DocumentTypeConfig[] = [
     {
       id: 'purchase-agreement',
       title: 'Purchase Agreement',
       description: 'Compare real estate purchase agreements',
-      icon: '📄',
-      unlocked: true,
-      requiredScore: 0
+      icon: '📄'
     },
     {
       id: 'home-inspection',
       title: 'Home Inspection Report',
       description: 'Evaluate home inspection documents',
-      icon: '🏠',
-      unlocked: unlockedDocs.has('home-inspection'),
-      requiredScore: 15
+      icon: '🏠'
     },
     {
       id: 'mortgage-pre-approval',
       title: 'Mortgage Pre-Approval',
       description: 'Review mortgage pre-approval letters',
-      icon: '💰',
-      unlocked: unlockedDocs.has('mortgage-pre-approval'),
-      requiredScore: 30
+      icon: '💰'
     },
     {
       id: 'closing-disclosure',
       title: 'Closing Disclosure',
       description: 'Assess closing disclosure forms',
-      icon: '📋',
-      unlocked: unlockedDocs.has('closing-disclosure'),
-      requiredScore: 50
+      icon: '📋'
     }
   ];
 
@@ -97,26 +89,25 @@ const DocumentComparisonGame: React.FC = () => {
   }, [currentDocuments, winner]);
 
   useEffect(() => {
-    const newUnlocked = new Set(unlockedDocs);
-    let updated = false;
+    // Check for overflow on document containers
+    if (currentDocuments) {
+      currentDocuments.forEach(doc => {
+        const element = docRefs.current[doc.id];
+        if (element) {
+          const hasScroll = element.scrollHeight > element.clientHeight;
+          setHasOverflow(prev => ({ ...prev, [doc.id]: hasScroll }));
+        }
+      });
+    }
+  }, [currentDocuments]);
 
-    if (totalScore >= 15 && !newUnlocked.has('home-inspection')) {
-      newUnlocked.add('home-inspection');
-      updated = true;
+  const handleDocumentScroll = (docId: string) => {
+    const element = docRefs.current[docId];
+    if (element) {
+      const scrollPercentage = (element.scrollTop / (element.scrollHeight - element.clientHeight)) * 100;
+      setScrollProgress(prev => ({ ...prev, [docId]: scrollPercentage }));
     }
-    if (totalScore >= 30 && !newUnlocked.has('mortgage-pre-approval')) {
-      newUnlocked.add('mortgage-pre-approval');
-      updated = true;
-    }
-    if (totalScore >= 50 && !newUnlocked.has('closing-disclosure')) {
-      newUnlocked.add('closing-disclosure');
-      updated = true;
-    }
-
-    if (updated) {
-      setUnlockedDocs(newUnlocked);
-    }
-  }, [totalScore, unlockedDocs]);
+  };
 
   const generateDocuments = (docType: DocumentType, diff: DifficultyLevel): [Document, Document] => {
     const availableDocs = documentContent[docType][diff];
@@ -145,6 +136,8 @@ const DocumentComparisonGame: React.FC = () => {
     setRound(1);
     setStreak(0);
     setRoundTimes([]);
+    setHasOverflow({});
+    setScrollProgress({});
   };
 
   const handleDocumentSelect = (selectedDoc: Document) => {
@@ -189,6 +182,8 @@ const DocumentComparisonGame: React.FC = () => {
       setShowExplanation(false);
       setRound(round + 1);
       setStartTime(null);
+      setHasOverflow({});
+      setScrollProgress({});
     }
   };
 
@@ -202,6 +197,8 @@ const DocumentComparisonGame: React.FC = () => {
     setRoundTimes([]);
     setShowExplanation(false);
     setStartTime(null);
+    setHasOverflow({});
+    setScrollProgress({});
   };
 
   const handlePlayAgain = () => {
@@ -215,12 +212,14 @@ const DocumentComparisonGame: React.FC = () => {
       setRoundTimes([]);
       setShowExplanation(false);
       setStartTime(null);
+      setHasOverflow({});
+      setScrollProgress({});
     }
   };
 
   if (!selectedDocType) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
             <RobotoFont className="text-4xl font-bold text-gray-900 mb-4">
@@ -279,21 +278,11 @@ const DocumentComparisonGame: React.FC = () => {
               {documentTypes.map((docType) => (
                 <button
                   key={docType.id}
-                  onClick={() => docType.unlocked && handleDocTypeSelect(docType.id)}
-                  disabled={!docType.unlocked}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
-                    docType.unlocked
-                      ? 'bg-white border-gray-300 hover:border-blue-500 hover:shadow-lg cursor-pointer'
-                      : 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'
-                  }`}
+                  onClick={() => handleDocTypeSelect(docType.id)}
+                  className="p-6 rounded-xl border-2 text-left transition-all bg-white border-gray-300 hover:border-blue-500 hover:shadow-lg cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="text-4xl">{docType.icon}</div>
-                    {!docType.unlocked && (
-                      <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                        🔒 {docType.requiredScore} pts
-                      </div>
-                    )}
                   </div>
                   <RobotoFont className="text-xl font-bold text-gray-900 mb-2">
                     {docType.title}
@@ -316,7 +305,7 @@ const DocumentComparisonGame: React.FC = () => {
       : '0';
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="min-h-screen">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
             <div className="text-6xl mb-6">
@@ -326,7 +315,7 @@ const DocumentComparisonGame: React.FC = () => {
               Round Complete!
             </RobotoFont>
             
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 mb-6 text-white">
+            <div className="bg-gradient-to-r blue-500 rounded-xl p-6 mb-6 text-white">
               <RobotoFont className="text-6xl font-bold mb-2">
                 {score} / 5
               </RobotoFont>
@@ -376,7 +365,7 @@ const DocumentComparisonGame: React.FC = () => {
   const currentDocTypeName = documentTypes.find(dt => dt.id === selectedDocType)?.title || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto">
         <button
           onClick={handleReset}
@@ -433,6 +422,7 @@ const DocumentComparisonGame: React.FC = () => {
           {currentDocuments?.map((doc) => {
             const isWinner = winner?.id === doc.id;
             const isLoser = winner && winner.id !== doc.id;
+            const showMoreIndicator = hasOverflow[doc.id] && (!scrollProgress[doc.id] || scrollProgress[doc.id] < 95);
             
             return (
               <button
@@ -466,8 +456,46 @@ const DocumentComparisonGame: React.FC = () => {
                   )}
                 </div>
                 
-                <div className="bg-gray-50 rounded-xl p-4 mb-4 max-h-[400px] overflow-y-auto font-mono text-sm whitespace-pre-wrap">
-                  {doc.content}
+                <div className="relative">
+                  <div 
+                    ref={(el) => { docRefs.current[doc.id] = el; }}
+                    onScroll={() => handleDocumentScroll(doc.id)}
+                    className="bg-gray-50 rounded-xl p-4 mb-4 max-h-[400px] overflow-y-auto font-mono text-sm whitespace-pre-wrap"
+                    style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    } as React.CSSProperties}
+                  >
+                    {doc.content}
+                  </div>
+                  
+                  {/* Fade gradient overlay at bottom */}
+                  {hasOverflow[doc.id] && (
+                    <div 
+                      className={`absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent rounded-b-xl pointer-events-none transition-opacity duration-300 ${
+                        scrollProgress[doc.id] && scrollProgress[doc.id] > 95 ? 'opacity-0' : 'opacity-100'
+                      }`}
+                    />
+                  )}
+                  
+                  {/* Scroll indicator */}
+                  {showMoreIndicator && (
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold animate-bounce pointer-events-none">
+                      <RobotoFont className="flex items-center gap-1">
+                        <span>↓</span> Scroll for more
+                      </RobotoFont>
+                    </div>
+                  )}
+                  
+                  {/* Progress indicator on the side */}
+                  {hasOverflow[doc.id] && (
+                    <div className="absolute right-2 top-4 bottom-4 w-1 bg-gray-200 rounded-full">
+                      <div 
+                        className="w-full bg-blue-500 rounded-full transition-all duration-300"
+                        style={{ height: `${scrollProgress[doc.id] || 0}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {winner && (
@@ -536,6 +564,19 @@ const DocumentComparisonGame: React.FC = () => {
           </div>
         )}
       </div>
+      
+      <style>{`
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .overflow-y-auto::-webkit-scrollbar {
+          display: none;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .overflow-y-auto {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+      `}</style>
     </div>
   );
 };
