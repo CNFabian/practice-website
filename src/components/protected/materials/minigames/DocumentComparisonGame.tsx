@@ -315,21 +315,21 @@ const DocumentComparisonGame: React.FC = () => {
       : '0';
 
     return (
-      <div className="h-screen overflow-hidden flex items-center justify-center p-4">
-        <div className="max-w-3xl w-full">
-          <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-            <div className="text-5xl mb-3">
+      <div className="max-h-screen overflow-hidden flex items-center justify-center py-4">
+        <div className="max-w-3xl w-full px-4">
+          <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 text-center">
+            <div className="text-4xl sm:text-5xl mb-2">
               {score === 5 ? '🎉' : score >= 4 ? '🌟' : score >= 3 ? '👍' : '📚'}
             </div>
-            <RobotoFont className="text-3xl font-bold text-gray-900 mb-3">
+            <RobotoFont className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Round Complete!
             </RobotoFont>
             
-            <div className="bg-blue-600 rounded-xl p-4 mb-4 text-white">
-              <RobotoFont className="text-5xl font-bold mb-1">
+            <div className="bg-blue-600 rounded-xl p-3 sm:p-4 mb-3 text-white">
+              <RobotoFont className="text-4xl sm:text-5xl font-bold mb-1">
                 {score} / 5
               </RobotoFont>
-              <RobotoFont className="text-lg opacity-90">
+              <RobotoFont className="text-sm sm:text-lg opacity-90">
                 {score === 5 && "Perfect! You're an expert at identifying quality documents!"}
                 {score === 4 && "Excellent! You have a great eye for detail!"}
                 {score === 3 && "Good job! You're learning the key differences!"}
@@ -337,31 +337,31 @@ const DocumentComparisonGame: React.FC = () => {
               </RobotoFont>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="bg-blue-50 rounded-xl p-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+              <div className="bg-blue-50 rounded-xl p-2 sm:p-3">
                 <RobotoFont className="text-xs text-gray-600 mb-1">Avg Time</RobotoFont>
-                <RobotoFont className="text-xl font-bold text-blue-600">{avgTime}s</RobotoFont>
+                <RobotoFont className="text-lg sm:text-xl font-bold text-blue-600">{avgTime}s</RobotoFont>
               </div>
-              <div className="bg-purple-50 rounded-xl p-3">
+              <div className="bg-purple-50 rounded-xl p-2 sm:p-3">
                 <RobotoFont className="text-xs text-gray-600 mb-1">Best Streak</RobotoFont>
-                <RobotoFont className="text-xl font-bold text-purple-600">{bestStreak} 🔥</RobotoFont>
+                <RobotoFont className="text-lg sm:text-xl font-bold text-purple-600">{bestStreak} 🔥</RobotoFont>
               </div>
-              <div className="bg-green-50 rounded-xl p-3">
+              <div className="bg-green-50 rounded-xl p-2 sm:p-3">
                 <RobotoFont className="text-xs text-gray-600 mb-1">Points Earned</RobotoFont>
-                <RobotoFont className="text-xl font-bold text-green-600">+{totalScore}</RobotoFont>
+                <RobotoFont className="text-lg sm:text-xl font-bold text-green-600">+{totalScore}</RobotoFont>
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
               <button
                 onClick={handlePlayAgain}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-base hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+                className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold text-sm sm:text-base hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
               >
                 <RobotoFont>▶ Play Again</RobotoFont>
               </button>
               <button
                 onClick={handleReset}
-                className="bg-white text-gray-700 px-6 py-3 rounded-xl font-bold text-base border-2 border-gray-300 hover:border-gray-400 transition-all"
+                className="bg-white text-gray-700 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold text-sm sm:text-base border-2 border-gray-300 hover:border-gray-400 transition-all"
               >
                 <RobotoFont>← Choose Different Document</RobotoFont>
               </button>
