@@ -48,6 +48,7 @@ const DocumentComparisonGame: React.FC = () => {
   const [hasOverflow, setHasOverflow] = useState<{ [key: string]: boolean }>({});
   const [scrollProgress, setScrollProgress] = useState<{ [key: string]: number }>({});
   const docRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const explanationRef = useRef<HTMLDivElement | null>(null);
 
   const documentTypes: DocumentTypeConfig[] = [
     {
@@ -172,18 +173,27 @@ const DocumentComparisonGame: React.FC = () => {
 
     setWinner(betterDoc);
     setShowExplanation(true);
+    
+    // Scroll to explanation after a short delay
+    setTimeout(() => {
+      explanationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleContinue = () => {
-    if (round < 5 && selectedDocType) {
-      const newDocs = generateDocuments(selectedDocType, difficulty);
-      setCurrentDocuments(newDocs);
-      setWinner(null);
-      setShowExplanation(false);
-      setRound(round + 1);
-      setStartTime(null);
-      setHasOverflow({});
-      setScrollProgress({});
+    if (selectedDocType) {
+      const nextRound = round + 1;
+      setRound(nextRound);
+      
+      if (nextRound <= 5) {
+        const newDocs = generateDocuments(selectedDocType, difficulty);
+        setCurrentDocuments(newDocs);
+        setWinner(null);
+        setShowExplanation(false);
+        setStartTime(null);
+        setHasOverflow({});
+        setScrollProgress({});
+      }
     }
   };
 
@@ -230,11 +240,11 @@ const DocumentComparisonGame: React.FC = () => {
             </RobotoFont>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+              <div className="bg-blue-600 rounded-xl p-4 text-white">
                 <RobotoFont className="text-sm opacity-90">Total Score</RobotoFont>
                 <RobotoFont className="text-3xl font-bold">{totalScore}</RobotoFont>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+              <div className="bg-purple-600 rounded-xl p-4 text-white">
                 <RobotoFont className="text-sm opacity-90">Best Streak</RobotoFont>
                 <RobotoFont className="text-3xl font-bold">{bestStreak} 🔥</RobotoFont>
               </div>
@@ -305,21 +315,21 @@ const DocumentComparisonGame: React.FC = () => {
       : '0';
 
     return (
-      <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-6">
+      <div className="h-screen overflow-hidden flex items-center justify-center p-4">
+        <div className="max-w-3xl w-full">
+          <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div className="text-5xl mb-3">
               {score === 5 ? '🎉' : score >= 4 ? '🌟' : score >= 3 ? '👍' : '📚'}
             </div>
-            <RobotoFont className="text-4xl font-bold text-gray-900 mb-4">
+            <RobotoFont className="text-3xl font-bold text-gray-900 mb-3">
               Round Complete!
             </RobotoFont>
             
-            <div className="bg-gradient-to-r blue-500 rounded-xl p-6 mb-6 text-white">
-              <RobotoFont className="text-6xl font-bold mb-2">
+            <div className="bg-blue-600 rounded-xl p-4 mb-4 text-white">
+              <RobotoFont className="text-5xl font-bold mb-1">
                 {score} / 5
               </RobotoFont>
-              <RobotoFont className="text-xl opacity-90">
+              <RobotoFont className="text-lg opacity-90">
                 {score === 5 && "Perfect! You're an expert at identifying quality documents!"}
                 {score === 4 && "Excellent! You have a great eye for detail!"}
                 {score === 3 && "Good job! You're learning the key differences!"}
@@ -327,31 +337,31 @@ const DocumentComparisonGame: React.FC = () => {
               </RobotoFont>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 rounded-xl p-4">
-                <RobotoFont className="text-sm text-gray-600 mb-1">Avg Time</RobotoFont>
-                <RobotoFont className="text-2xl font-bold text-blue-600">{avgTime}s</RobotoFont>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="bg-blue-50 rounded-xl p-3">
+                <RobotoFont className="text-xs text-gray-600 mb-1">Avg Time</RobotoFont>
+                <RobotoFont className="text-xl font-bold text-blue-600">{avgTime}s</RobotoFont>
               </div>
-              <div className="bg-purple-50 rounded-xl p-4">
-                <RobotoFont className="text-sm text-gray-600 mb-1">Best Streak</RobotoFont>
-                <RobotoFont className="text-2xl font-bold text-purple-600">{bestStreak} 🔥</RobotoFont>
+              <div className="bg-purple-50 rounded-xl p-3">
+                <RobotoFont className="text-xs text-gray-600 mb-1">Best Streak</RobotoFont>
+                <RobotoFont className="text-xl font-bold text-purple-600">{bestStreak} 🔥</RobotoFont>
               </div>
-              <div className="bg-green-50 rounded-xl p-4">
-                <RobotoFont className="text-sm text-gray-600 mb-1">Points Earned</RobotoFont>
-                <RobotoFont className="text-2xl font-bold text-green-600">+{totalScore}</RobotoFont>
+              <div className="bg-green-50 rounded-xl p-3">
+                <RobotoFont className="text-xs text-gray-600 mb-1">Points Earned</RobotoFont>
+                <RobotoFont className="text-xl font-bold text-green-600">+{totalScore}</RobotoFont>
               </div>
             </div>
 
-            <div className="flex gap-4 justify-center">
+            <div className="flex gap-3 justify-center">
               <button
                 onClick={handlePlayAgain}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-base hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
               >
                 <RobotoFont>▶ Play Again</RobotoFont>
               </button>
               <button
                 onClick={handleReset}
-                className="bg-white text-gray-700 px-8 py-4 rounded-xl font-bold text-lg border-2 border-gray-300 hover:border-gray-400 transition-all"
+                className="bg-white text-gray-700 px-6 py-3 rounded-xl font-bold text-base border-2 border-gray-300 hover:border-gray-400 transition-all"
               >
                 <RobotoFont>← Choose Different Document</RobotoFont>
               </button>
@@ -403,7 +413,7 @@ const DocumentComparisonGame: React.FC = () => {
               <div className={`${difficultyConfig[difficulty].color} text-white px-4 py-2 rounded-lg font-bold`}>
                 <RobotoFont>{difficultyConfig[difficulty].label}</RobotoFont>
               </div>
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg font-bold">
+              <div className="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold">
                 <RobotoFont>💎 {totalScore} pts</RobotoFont>
               </div>
             </div>
@@ -520,7 +530,7 @@ const DocumentComparisonGame: React.FC = () => {
         </div>
 
         {showExplanation && winner && currentDocuments && (
-          <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
+          <div ref={explanationRef} className="mt-6 bg-white rounded-2xl shadow-lg p-6">
             <RobotoFont className="text-2xl font-bold text-gray-900 mb-4">
               📚 What You Should Know
             </RobotoFont>
@@ -557,7 +567,7 @@ const DocumentComparisonGame: React.FC = () => {
 
             <button
               onClick={handleContinue}
-              className="mt-6 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+              className="mt-6 w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg"
             >
               <RobotoFont>Continue to Next Round →</RobotoFont>
             </button>
