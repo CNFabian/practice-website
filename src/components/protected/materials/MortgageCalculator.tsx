@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../../assets/fonts';
-import { MaterialHomeIcon } from '../../../../assets';
-import InfoButton from '../info/InfoButton';
-import InfoModal from '../info/InfoModal';
-import { calculatorInfoData } from '../info/InfoData';
+import RobotoFont from '../../../assets/fonts';
+import { MaterialHomeIcon } from '../../../assets';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
+import { calculatorInfoData } from './InfoData';
 
 const MortgageCalculator: React.FC = () => {
   const [homePrice, setHomePrice] = useState<number>(500000);

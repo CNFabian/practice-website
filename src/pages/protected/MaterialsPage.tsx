@@ -7,10 +7,8 @@ import {
   CreditScoreCalculator,
   FirstTimeBuyerChecklist,
   HomeInspectionChecklist,
-  DocumentComparisonGame,
-  InfoModal
 } from '../../components';
-
+import InfoModal from '../../components/protected/materials/InfoModal';
 import { 
   CalculatorIcon, 
   DocumentIcon, 
@@ -40,7 +38,6 @@ const MaterialsPage: React.FC = () => {
   const [showCalculator, setShowCalculator] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState<string | null>(null);
   const [showWorksheet, setShowWorksheet] = useState<string | null>(null);
-  const [showMinigame, setShowMinigame] = useState<string | null>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
@@ -253,15 +250,6 @@ const MaterialsPage: React.FC = () => {
     }
   ];
 
-  const minigames = [
-    {
-      id: 'document-comparison',
-      title: 'Document Comparison Game',
-      description: 'Learn to identify high-quality homebuying documents by comparing them side-by-side.',
-      icon: DocumentIcon
-    }
-  ];
-
   const categories = [
     {
       id: 'Calculators' as const,
@@ -293,20 +281,11 @@ const MaterialsPage: React.FC = () => {
     setShowCalculator(calculatorId);
     setShowChecklist(null);
     setShowWorksheet(null);
-    setShowMinigame(null);
   };
 
   const handleChecklistClick = (checklistId: string) => {
     setShowChecklist(checklistId);
     setShowCalculator(null);
-    setShowWorksheet(null);
-    setShowMinigame(null);
-  };
-
-  const handleMinigameClick = (minigameId: string) => {
-    setShowMinigame(minigameId);
-    setShowCalculator(null);
-    setShowChecklist(null);
     setShowWorksheet(null);
   };
 
@@ -325,7 +304,6 @@ const MaterialsPage: React.FC = () => {
     setShowCalculator(null);
     setShowChecklist(null);
     setShowWorksheet(null);
-    setShowMinigame(null);
   };
 
    const handleWorksheetDownload = (worksheetId: string) => {
@@ -573,7 +551,6 @@ const MaterialCard = ({
     if (showCalculator === 'credit-score') return <CreditScoreCalculator />;
     if (showChecklist === 'first-time-buyer') return <FirstTimeBuyerChecklist />;
     if (showChecklist === 'home-inspection') return <HomeInspectionChecklist />;
-    if (showMinigame === 'document-comparison') return <DocumentComparisonGame />;
     return null;
   };
 
@@ -583,7 +560,7 @@ const MaterialCard = ({
     if (activeCategory === 'Calculators') return calculators;
     if (activeCategory === 'Worksheets') return worksheets;
     if (activeCategory === 'Checklists') return checklists;
-    if (activeCategory === 'Minigames') return minigames;
+    if (activeCategory === 'Minigames') return [];
     return [];
   };
 
@@ -646,15 +623,13 @@ const MaterialCard = ({
             ))}
 
             {/* Minigames */}
-            {activeCategory === 'Minigames' && minigames.map((minigame) => (
-              <MaterialCard
-                key={minigame.id}
-                item={minigame}
-                colorClass="bg-orange-600"
-                onAction={handleMinigameClick}
-                actionText="Play Game"
-              />
-            ))}
+            {activeCategory === 'Minigames' && (
+              <div className="col-span-full text-center py-12">
+                <RobotoFont className="text-gray-500 text-lg">
+                  Minigames coming soon!
+                </RobotoFont>
+              </div>
+            )}
           </div>
         )}
       </div>

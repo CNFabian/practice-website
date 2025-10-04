@@ -1,0 +1,103 @@
+// src/pages/public/OnBoardingPage.tsx
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { SliderScreen, CardGridScreen, ShareScreen, CompleteScreen } from './onboarding/screens'
+
+type Question = { id: string; label: string; options: string[]; helpText?: string }
+
+const STEPS: Question[] = [
+  { id: 'avatar', label: 'Choose Your Avatar', options: ['Curious Cat','Celebrating Bird','Careful Elephant','Protective Dog'] },
+  { id: 'Home Ownership', label: 'When do you want to achieve homeownership?', options: [], helpText: 'This helps us customize your learning path and set realistic goals.' },
+  { id: 'learn', label: 'How do you prefer to learn?', options: ['Reading','Videos','Quizzes/Games','Other'], helpText: 'We'll personalize your experience based on your learning preferences.' },
+  { id: 'realtor', label: 'Are you currently working with a realtor?', options: ['Yes, I have a realtor','No, I dont have one yet'], helpText: 'A realtor can help you navigate the home buying process.' },
+  { id: 'loan_officer', label: 'Are you currently working with a loan officer?', options: ['Yes, I have a loan officer','No, I dont have one yet'], helpText: 'A loan officer can help you secure the best mortgage for your situation.' },
+  { id: 'reward', label: 'What type of rewards motivate you most?', options: ['Home Improvement','Expert Consultation','In-Game Currency'], helpText: 'We'll customize your reward experience based on your preferences.' },
+  { id: 'share', label: 'Share your homeownership journey!', options: [], helpText: 'Let your friends and family know about your exciting journey toward homeownership.' },
+  { id: 'complete', label: 'Congratulations on completing your profile!', options: [], helpText: "You've taken the first important step toward homeownership" },
+]
+
+const LEARN_SUB: Record<string,string> = {
+  Reading:'Learn through articles and guides', Videos:'Watch educational content',
+  'Quizzes/Games':'Interactive learning experiences', Other:'Mixed learning approaches',
+}
+const AVATAR_ICON: Record<string,string> = {
+  'Curious Cat':'😺','Celebrating Bird':'🐦','Careful Elephant':'🐘','Protective Dog':'🐶',
+}
+const LEARN_ICON: Record<string,string> = {
+  Reading:'📚', Videos:'🎥', 'Quizzes/Games':'🎮', Other:'💡',
+}
+const REWARD_SUB: Record<string,string> = {
+  'Home Improvement':'Tools and supplies for your future home',
+  'Expert Consultation':'Free sessions with real estate professionals',
+  'In-Game Currency':'Coins to unlock premium features',
+}
+const REWARD_ICON: Record<string,string> = { 'Home Improvement':'🏠','Expert Consultation':'🧑‍💼','In-Game Currency':'🏛️' }
+
+const SLIDER = { min:6, max:60, step:1, defaultValue:24, unit:'months', minLabel:'6 months', maxLabel:'5 years' }
+
+const cx = (...c: (string|false)[]) => c.filter(Boolean).join(' ')
+
+export default function OnBoardingPage() {
+  const nav = useNavigate()
+  const [answers, setAns] = useState<Record<string,string>>({})
+  const [step, setStep] = useState(0)
+  const cur = STEPS[step]
+  const total = STEPS.length
+
+  useEffect(() => {
+    if (cur.id === 'Home Ownership' && !answers[cur.id]) setAns(p => ({ ...p, [cur.id]: String(SLIDER.defaultValue) }))
+    if (cur.id === 'share' && !answers.share) setAns(p => ({ ...p, share:'ready' }))
+    if (cur.id === 'complete' && !answers.complete) setAns(p => ({ ...p, complete:'done' }))
+  }, [cur.id]) // eslint-disable-line
+
+  const allAnswered = useMemo(() => STEPS.every(s => !!answers[s.id]), [answers])
+  const progressPct = Math.round(((step + (answers[cur.id] ? 1 : 0)) / total) * 100)
+  const select = (id:string,v:string) => setAns(p => ({ ...p, [id]: v }))
+
+  const Progress = () => (
+    <div className="px-6 pt-6 sm:px-8 mb-2">
+      <div className="flex items-center justify-between text-sm text-gray-600"><span className="sr-only">Progress</span><span className="invisible">.</span><span>Step {step+1} of {total}</span></div>
+      <div className="mt-1 h-2 w-full rounded-full bg-gray-200 overflow-hidden"><div className="h-full bg-indigo-600 transition-all duration-300" style={{ width: `${progressPct}%` }}/></div>
+    </div>
+  )
+
+  const renderStep = () => {
+    if (cur.id === 'Home Ownership') return <SliderScreen value={answers[cur.id]} onChange={(v) => select(cur.id, v)} />
+    if (cur.id === 'reward') return <CardGridScreen name="reward" label={cur.label} opts={cur.options} value={answers.reward} onChange={(v) => select('reward', v)} subMap={REWARD_SUB} iconMap={REWARD_ICON} threeCol />
+    if (cur.id === 'learn')  return <CardGridScreen name="learn" label={cur.label} opts={cur.options} value={answers.learn} onChange={(v) => select('learn', v)} subMap={LEARN_SUB} iconMap={LEARN_ICON} />
+    if (cur.id === 'avatar') return <CardGridScreen name="avatar" label={cur.label} opts={cur.options} value={answers.avatar} onChange={(v) => select('avatar', v)} iconMap={AVATAR_ICON} />
+    if (cur.id === 'share')  return <ShareScreen />
+    if (cur.id === 'complete') return <CompleteScreen />
+    return <CardGridScreen name={cur.id} label={cur.label} opts={cur.options} value={answers[cur.id]} onChange={(v) => select(cur.id, v)} />
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 bg-black/30 backdrop-blur-sm" aria-label="Close onboarding" onClick={()=>nav('/app',{replace:true})}/>
+      <div className="relative z-10 w-full max-w-3xl mx-4 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+        <Progress />
+        <div className="p-6 sm:p-8">
+          <header className="mb-6">
+            <h2 className="text-3xl font-bold tracking-tight">{cur.label}</h2>
+            {cur.helpText && <p className="mt-2 text-gray-600">{cur.helpText}</p>}
+          </header>
+
+          {renderStep()}
+
+          <div className="mt-8 flex items-center justify-between">
+            <button onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-60 hover:bg-gray-50">Previous</button>
+            {step < total-1 ? (
+              <button onClick={()=>setStep(s=>Math.min(total-1,s+1))} disabled={!answers[cur.id]} className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700">Next</button>
+            ) : (
+              <button onClick={()=>nav('/app',{replace:true})} disabled={!allAnswered} className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700">Complete</button>
+            )}
+          </div>
+
+          <div className="mt-5 flex items-center justify-center gap-2">
+            {STEPS.map((_,i)=><span key={i} className={cx('h-2 w-2 rounded-full', i===step?'bg-indigo-600':'bg-gray-300')} aria-hidden />)}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

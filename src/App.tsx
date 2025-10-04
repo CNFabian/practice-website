@@ -17,7 +17,7 @@ import LoadingSpinner from './components/common/LoadingSpinner'
 import SplashPage from './pages/public/SplashPage'
 import LoginPage from './pages/public/LoginPage'
 import SignupPage from './pages/public/SignupPage'
-import OnBoardingPage from './pages/public/OnBoardingPage'
+import OnBoardingPage from './components/protected/onboarding/OnBoardingPage'
 
 // Protected Pages
 import {

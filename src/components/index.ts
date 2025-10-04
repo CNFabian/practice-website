@@ -16,13 +16,11 @@ export { default as FeedbackContainer } from './protected/modules/FeedbackContai
 export { default as LessonQuiz } from './protected/modules/LessonQuiz';
 
 // Protected Material components
-export { default as MortgageCalculator } from './protected/materials/calculators/MortgageCalculator';
-export { default as DebtToIncomeCalculator } from './protected/materials/calculators/DebtToIncomeCalculator';
-export { default as CreditScoreCalculator } from './protected/materials/calculators/CreditScoreCalculator';
-export { default as FirstTimeBuyerChecklist } from './protected/materials/checklists/FirstTimeBuyerChecklist';
-export { default as HomeInspectionChecklist } from './protected/materials/checklists/HomeInspectionChecklist';
-export { default as DocumentComparisonGame } from './protected/materials/minigames/DocumentComparisonGame'
-export { default as InfoModal } from './protected/materials/info/InfoModal'
+export { default as MortgageCalculator } from './protected/materials/MortgageCalculator';
+export { default as DebtToIncomeCalculator } from './protected/materials/DebtToIncomeCalculator';
+export { default as CreditScoreCalculator } from './protected/materials/CreditScoreCalculator';
+export { default as FirstTimeBuyerChecklist } from './protected/materials/FirstTimeBuyerChecklist';
+export { default as HomeInspectionChecklist } from './protected/materials/HomeInspectionChecklist';
 
 // Protected settings components
 export { default as ProfilePictureModal } from './protected/settings/ProfilePictureModal';
