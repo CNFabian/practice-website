@@ -34,6 +34,10 @@ const Header: React.FC = () => {
     }
   };
 
+  const handleShowOnboarding = () => {
+    navigate('/onboarding');
+  };
+
   const handleResetProgress = async () => {
     const confirmed = window.confirm(
       'Are you sure you want to reset your progress? This will:\n\n' +
@@ -213,6 +217,23 @@ const Header: React.FC = () => {
                         >
                           <img src={ShareIcon} alt="Share" className="w-5 h-5" />
                           <span className="text-gray-700">Share NestNavigate</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    
+                    {/* TEMPORARY RESTART ONBOARDING BUTTON */}
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={handleShowOnboarding}
+                          className={`${
+                            focus ? 'bg-blue-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <span className="text-blue-600 font-medium">🚧 Restart Onboarding (Temp)</span>
                         </button>
                       )}
                     </MenuItem>

@@ -1,4 +1,3 @@
-// src/pages/public/onboarding/screens/SliderScreen.tsx
 import { useState } from 'react'
 
 const SLIDER = { min:6, max:60, step:1, defaultValue:24, unit:'months', minLabel:'6 months', maxLabel:'5 years' }

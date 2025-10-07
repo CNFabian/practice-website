@@ -1,17 +1,16 @@
-// src/pages/public/OnBoardingPage.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SliderScreen, CardGridScreen, ShareScreen, CompleteScreen } from './onboarding/screens'
+import { SliderScreen, CardGridScreen, ShareScreen, CompleteScreen } from './screens'
 
 type Question = { id: string; label: string; options: string[]; helpText?: string }
 
 const STEPS: Question[] = [
   { id: 'avatar', label: 'Choose Your Avatar', options: ['Curious Cat','Celebrating Bird','Careful Elephant','Protective Dog'] },
   { id: 'Home Ownership', label: 'When do you want to achieve homeownership?', options: [], helpText: 'This helps us customize your learning path and set realistic goals.' },
-  { id: 'learn', label: 'How do you prefer to learn?', options: ['Reading','Videos','Quizzes/Games','Other'], helpText: 'We'll personalize your experience based on your learning preferences.' },
-  { id: 'realtor', label: 'Are you currently working with a realtor?', options: ['Yes, I have a realtor','No, I dont have one yet'], helpText: 'A realtor can help you navigate the home buying process.' },
-  { id: 'loan_officer', label: 'Are you currently working with a loan officer?', options: ['Yes, I have a loan officer','No, I dont have one yet'], helpText: 'A loan officer can help you secure the best mortgage for your situation.' },
-  { id: 'reward', label: 'What type of rewards motivate you most?', options: ['Home Improvement','Expert Consultation','In-Game Currency'], helpText: 'We'll customize your reward experience based on your preferences.' },
+  { id: 'learn', label: 'How do you prefer to learn?', options: ['Reading','Videos','Quizzes/Games','Other'], helpText: 'We\'ll personalize your experience based on your learning preferences.' },
+  { id: 'realtor', label: 'Are you currently working with a realtor?', options: ['Yes, I have a realtor','No, I don\'t have one yet'], helpText: 'A realtor can help you navigate the home buying process.' },
+  { id: 'loan_officer', label: 'Are you currently working with a loan officer?', options: ['Yes, I have a loan officer','No, I don\'t have one yet'], helpText: 'A loan officer can help you secure the best mortgage for your situation.' },
+  { id: 'reward', label: 'What type of rewards motivate you most?', options: ['Home Improvement','Expert Consultation','In-Game Currency'], helpText: 'We\'ll customize your reward experience based on your preferences.' },
   { id: 'share', label: 'Share your homeownership journey!', options: [], helpText: 'Let your friends and family know about your exciting journey toward homeownership.' },
   { id: 'complete', label: 'Congratulations on completing your profile!', options: [], helpText: "You've taken the first important step toward homeownership" },
 ]
@@ -62,13 +61,13 @@ export default function OnBoardingPage() {
   )
 
   const renderStep = () => {
-    if (cur.id === 'Home Ownership') return <SliderScreen value={answers[cur.id]} onChange={(v) => select(cur.id, v)} />
-    if (cur.id === 'reward') return <CardGridScreen name="reward" label={cur.label} opts={cur.options} value={answers.reward} onChange={(v) => select('reward', v)} subMap={REWARD_SUB} iconMap={REWARD_ICON} threeCol />
-    if (cur.id === 'learn')  return <CardGridScreen name="learn" label={cur.label} opts={cur.options} value={answers.learn} onChange={(v) => select('learn', v)} subMap={LEARN_SUB} iconMap={LEARN_ICON} />
-    if (cur.id === 'avatar') return <CardGridScreen name="avatar" label={cur.label} opts={cur.options} value={answers.avatar} onChange={(v) => select('avatar', v)} iconMap={AVATAR_ICON} />
+    if (cur.id === 'Home Ownership') return <SliderScreen value={answers[cur.id]} onChange={(v: string) => select(cur.id, v)} />
+    if (cur.id === 'reward') return <CardGridScreen name="reward" label={cur.label} opts={cur.options} value={answers.reward} onChange={(v: string) => select('reward', v)} subMap={REWARD_SUB} iconMap={REWARD_ICON} threeCol />
+    if (cur.id === 'learn')  return <CardGridScreen name="learn" label={cur.label} opts={cur.options} value={answers.learn} onChange={(v: string) => select('learn', v)} subMap={LEARN_SUB} iconMap={LEARN_ICON} />
+    if (cur.id === 'avatar') return <CardGridScreen name="avatar" label={cur.label} opts={cur.options} value={answers.avatar} onChange={(v: string) => select('avatar', v)} iconMap={AVATAR_ICON} />
     if (cur.id === 'share')  return <ShareScreen />
     if (cur.id === 'complete') return <CompleteScreen />
-    return <CardGridScreen name={cur.id} label={cur.label} opts={cur.options} value={answers[cur.id]} onChange={(v) => select(cur.id, v)} />
+    return <CardGridScreen name={cur.id} label={cur.label} opts={cur.options} value={answers[cur.id]} onChange={(v: string) => select(cur.id, v)} />
   }
 
   return (
