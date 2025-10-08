@@ -33,8 +33,6 @@ const Header: React.FC = () => {
     }
   };
 
-/*
-
   const handleResetProgress = async () => {
     const confirmed = window.confirm(
       'Are you sure you want to reset your progress? This will:\n\n' +
@@ -72,39 +70,73 @@ const Header: React.FC = () => {
         alert('Failed to reset progress. Please try again.');
       }
     }
-  };*/
+  };
+
+  const getDisplayName = () => {
+    if (user?.displayName) {
+      return user.displayName.split(' ')[0];
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Guest';
+  };
+
+  const getUserHandle = () => {
+    if (user?.displayName) {
+      return `@${user.displayName.replace(/\s+/g, '').toLowerCase()}123`;
+    }
+    if (user?.email) {
+      return `@${user.email.split('@')[0]}`;
+    }
+    return '@user';
+  };
+
   return (
     <>
-    <header className="h-20 fixed top-0 left-0 right-0 z-50 flex items-center px-4" style={{ backgroundColor: '#EFF2FF' }}>
-      <div className="w-full max-w-screen-2xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={Logo} alt="Nest Navigate Logo" className="h-10 w-10" />
-          <span className="font-bold text-xl" style={{ color: '#3F6CB9' }}>NEST NAVIGATE</span>
+      {/* Background overlay to prevent content showing through the gap */}
+      <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
+      
+      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
+        <div className="flex items-center justify-between h-full">
+        {/* Left Section - Logo and Greeting */}
+        <div className="flex items-center space-x-3">
+          {/* Logo */}
+          <img src={Logo} alt="Nest Navigate" className="w-8 h-8" />
+          
+          {/* Greeting Section */}
+          <div className="flex flex-col">
+            <h1 className="text-lg font-semibold text-gray-800">
+              Hello, {getDisplayName()}
+            </h1>
+            <p className="text-sm text-gray-600">
+              Here's {totalCoins} Nest coins to get you started.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: '#E8ECF9' }}>
+        {/* Right Section - Coins, Notifications, Profile */}
+        <div className="flex items-center space-x-4">
+          {/* Coins Counter */}
+          <div className="flex items-center space-x-2 rounded-full px-3 py-2">
+            <span className="text-lg font-bold text-gray-800">{totalCoins}</span>
             <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
-            <span className="font-semibold text-lg" style={{ color: '#3F6CB9' }}>{totalCoins}</span>
           </div>
 
-          <button className="p-2 hover:bg-blue-50 rounded-full transition-colors">
-            <img src={BellIcon} alt="Notifications" className="w-6 h-6" />
-          </button>
-
+          {/* Notification Bell with Headless UI Dropdown */}
           <Menu as="div" className="relative">
             {({ open }) => (
               <>
-                <MenuButton className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-full transition-colors">
-                  <img 
-                    src={user?.photoURL || ProfileIcon} 
-                    alt="Profile" 
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
+                {/* Overlay when menu is open */}
+                {open && (
+                  <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
+                )}
+                
+                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
+                  <img src={BellIcon} alt="Notifications" className="w-5 h-5" />
                 </MenuButton>
-
+                
                 <Transition
-                  show={open}
                   as={Fragment}
                   enter="transition ease-out duration-100"
                   enterFrom="transform opacity-0 scale-95"
@@ -113,7 +145,51 @@ const Header: React.FC = () => {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <MenuItems className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2">
+                  <MenuItems className="absolute right-0 mt-2 w-64 origin-top-right bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    <div className="p-4">
+                      <p className="text-sm text-gray-600">No new notifications</p>
+                    </div>
+                  </MenuItems>
+                </Transition>
+              </>
+            )}
+          </Menu>
+
+          {/* Profile Icon with Headless UI Dropdown */}
+          <Menu as="div" className="relative">
+            {({ open }) => (
+              <>
+                {/* Overlay when menu is open */}
+                {open && (
+                  <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
+                )}
+                
+                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
+                  <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
+                </MenuButton>
+                
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <MenuItems className="absolute right-0 mt-2 w-72 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2 z-50">
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          className={`${
+                            focus ? 'bg-blue-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
+                          <span className="text-gray-700">My Profile {getUserHandle()}</span>
+                        </button>
+                      )}
+                    </MenuItem>
                     <MenuItem>
                       {({ focus }) => (
                         <button
@@ -123,23 +199,41 @@ const Header: React.FC = () => {
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={RewardsIcon} alt="Rewards" className="w-5 h-5" />
-                          <span className="text-gray-700">Rewards</span>
+                          <span className="text-gray-700">Saved Rewards</span>
                         </button>
                       )}
                     </MenuItem>
                     <MenuItem>
                       {({ focus }) => (
                         <button
-                          onClick={() => {/* TODO: Implement share */}}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={ShareIcon} alt="Share" className="w-5 h-5" />
-                          <span className="text-gray-700">Share</span>
+                          <span className="text-gray-700">Share NestNavigate</span>
                         </button>
                       )}
                     </MenuItem>
+                    
+                    {/* TEMPORARY RESET PROGRESS BUTTON */}
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={handleResetProgress}
+                          className={`${
+                            focus ? 'bg-red-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="text-red-600 font-medium">🚧 Reset Progress (Temp)</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    
+                    <div className="h-px bg-gray-200 my-1 mx-3" />
                     <MenuItem>
                       {({ focus }) => (
                         <button

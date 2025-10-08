@@ -28,8 +28,23 @@ const LoginPage: React.FC = () => {
       // TODO: Implement AWS Cognito login here
       console.log('Login attempt with:', formData.email)
       
-      // Temporary placeholder
-      setError('AWS Cognito authentication not yet implemented')
+      // TEMPORARY FIX: Bypass authentication until Cognito is ready
+      const tempUser = {
+        uid: 'temp-' + Date.now(),
+        email: formData.email,
+        displayName: formData.email.split('@')[0],
+        photoURL: null,
+        emailVerified: true
+      }
+      
+      // Dispatch to Redux store
+      const { setUser } = await import('../../store/slices/authSlice')
+      const { store } = await import('../../store/store')
+      store.dispatch(setUser(tempUser))
+      
+      // Navigate to app
+      window.location.href = '/app'
+      
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {

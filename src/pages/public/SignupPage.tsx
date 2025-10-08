@@ -24,33 +24,48 @@ const SignupPage: React.FC = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      // TODO: Implement AWS Cognito signup here
-      console.log('Signup attempt with:', formData.email)
-      
-      // Temporary placeholder
-      setError('AWS Cognito authentication not yet implemented')
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setLoading(false)
-    }
+  e.preventDefault()
+  setError('')
+  
+  if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match')
+    return
   }
+
+  if (formData.password.length < 6) {
+    setError('Password must be at least 6 characters long')
+    return
+  }
+
+  setLoading(true)
+
+  try {
+    // TODO: Implement AWS Cognito signup here
+    console.log('Signup attempt with:', formData.email)
+    
+    // TEMPORARY FIX: Bypass authentication until Cognito is ready
+    const tempUser = {
+      uid: 'temp-' + Date.now(),
+      email: formData.email,
+      displayName: `${formData.firstName} ${formData.lastName}`,
+      photoURL: null,
+      emailVerified: true
+    }
+    
+    // Dispatch to Redux store
+    const { setUser } = await import('../../store/slices/authSlice')
+    const { store } = await import('../../store/store')
+    store.dispatch(setUser(tempUser))
+    
+    // Navigate to app
+    window.location.href = '/app'
+    
+  } catch (err) {
+    setError('An unexpected error occurred')
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="min-h-screen flex">
