@@ -2,15 +2,12 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from './store/store'
 import { setLoading } from './store/slices/authSlice'
-console.log('apiKey present?', Boolean(import.meta.env.VITE_FIREBASE_API_KEY));
-console.log('apiKey (first 6 chars):', String(import.meta.env.VITE_FIREBASE_API_KEY || '').slice(0, 6));
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
 import PublicLayout from './layouts/PublicLayout'
 import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/common/ProtectedRoute'
-import AuthProvider from './components/providers/AuthProvider'
 import LoadingSpinner from './components/common/LoadingSpinner'
 
 // Public Pages
@@ -53,7 +50,7 @@ function App() {
   console.log('App render - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated)
 
   return (
-    <AuthProvider>
+    <>
       {isLoading ? (
         <LoadingSpinner 
           minDisplayTime={2000}
@@ -128,7 +125,7 @@ function App() {
           )}
         </>
       )}
-    </AuthProvider>
+    </>
   )
 }
 

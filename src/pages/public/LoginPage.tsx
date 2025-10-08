@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { loginWithEmail } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
 import { LoginImage } from '../../assets'
 
@@ -26,16 +25,11 @@ const LoginPage: React.FC = () => {
     setLoading(true)
 
     try {
-      const { user, error } = await loginWithEmail({
-        email: formData.email,
-        password: formData.password
-      })
-
-      if (error) {
-        setError(error)
-      } else if (user) {
-        navigate('/')
-      }
+      // TODO: Implement AWS Cognito login here
+      console.log('Login attempt with:', formData.email)
+      
+      // Temporary placeholder
+      setError('AWS Cognito authentication not yet implemented')
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {

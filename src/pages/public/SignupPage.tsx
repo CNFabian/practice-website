@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { signupWithEmail } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
 import { SignupImage, TermsConditionsDoc } from '../../assets'
 
@@ -27,20 +26,25 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
     setLoading(true)
 
     try {
-      const { user, error } = await signupWithEmail({
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword
-      })
-
-      if (error) {
-        setError(error)
-      } else if (user) {
-        navigate('/')
-      }
+      // TODO: Implement AWS Cognito signup here
+      console.log('Signup attempt with:', formData.email)
+      
+      // Temporary placeholder
+      setError('AWS Cognito authentication not yet implemented')
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {
