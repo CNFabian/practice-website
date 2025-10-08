@@ -2,9 +2,6 @@
 export { default as ProtectedRoute } from './common/ProtectedRoute';
 export { default as LoadingSpinner } from './common/LoadingSpinner';
 
-// Provider components
-export { default as AuthProvider } from './providers/AuthProvider';
-
 // Protected layout components
 export { default as Header } from './protected/Header';
 export { default as Sidebar } from './protected/Sidebar';
