@@ -1,38 +1,50 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SliderScreen, CardGridScreen, ShareScreen, CompleteScreen } from './screens'
+import { SliderScreen, CardGridScreen } from './screens'
+import { CitySearchScreen } from './screens'
+import { ProfessionalHelpScreen } from './screens'
+import { ExpertContactScreen } from './screens'
 
 type Question = { id: string; label: string; options: string[]; helpText?: string }
 
 const STEPS: Question[] = [
-  { id: 'avatar', label: 'Choose Your Avatar', options: ['Curious Cat','Celebrating Bird','Careful Elephant','Protective Dog'] },
-  { id: 'Home Ownership', label: 'When do you want to achieve homeownership?', options: [], helpText: 'This helps us customize your learning path and set realistic goals.' },
-  { id: 'learn', label: 'How do you prefer to learn?', options: ['Reading','Videos','Quizzes/Games','Other'], helpText: 'We\'ll personalize your experience based on your learning preferences.' },
-  { id: 'realtor', label: 'Are you currently working with a realtor?', options: ['Yes, I have a realtor','No, I don\'t have one yet'], helpText: 'A realtor can help you navigate the home buying process.' },
-  { id: 'loan_officer', label: 'Are you currently working with a loan officer?', options: ['Yes, I have a loan officer','No, I don\'t have one yet'], helpText: 'A loan officer can help you secure the best mortgage for your situation.' },
-  { id: 'reward', label: 'What type of rewards motivate you most?', options: ['Home Improvement','Expert Consultation','In-Game Currency'], helpText: 'We\'ll customize your reward experience based on your preferences.' },
-  { id: 'share', label: 'Share your homeownership journey!', options: [], helpText: 'Let your friends and family know about your exciting journey toward homeownership.' },
-  { id: 'complete', label: 'Congratulations on completing your profile!', options: [], helpText: "You've taken the first important step toward homeownership" },
+  { 
+    id: 'avatar', 
+    label: 'Choose Your Avatar', 
+    options: ['Curious Cat','Celebrating Bird','Careful Elephant','Protective Dog'],
+    helpText: 'Select an avatar that represents you on your homeownership journey'
+  },
+  { 
+    id: 'professional_help', 
+    label: 'Buying a home is easier with the right help. Would you like us to connect you with a loan officer or real estate agent?', 
+    options: [],
+    helpText: ''
+  },
+  { 
+    id: 'expert_contact', 
+    label: 'Would you like to get in contact with an expert?', 
+    options: [],
+    helpText: 'Buying a home is easier with the right help. Would you like us to connect you with a loan officer or real estate agent?'
+  },
+  { 
+    id: 'Home Ownership', 
+    label: 'When do you want to achieve homeownership?', 
+    options: [], 
+    helpText: 'This helps us customize your learning path and set realistic goals.' 
+  },
+  { 
+    id: 'city', 
+    label: "Finally, let's find your future home base! Select cities you're interested in:", 
+    options: [],
+    helpText: ''
+  },
 ]
 
-const LEARN_SUB: Record<string,string> = {
-  Reading:'Learn through articles and guides', Videos:'Watch educational content',
-  'Quizzes/Games':'Interactive learning experiences', Other:'Mixed learning approaches',
-}
 const AVATAR_ICON: Record<string,string> = {
   'Curious Cat':'😺','Celebrating Bird':'🐦','Careful Elephant':'🐘','Protective Dog':'🐶',
 }
-const LEARN_ICON: Record<string,string> = {
-  Reading:'📚', Videos:'🎥', 'Quizzes/Games':'🎮', Other:'💡',
-}
-const REWARD_SUB: Record<string,string> = {
-  'Home Improvement':'Tools and supplies for your future home',
-  'Expert Consultation':'Free sessions with real estate professionals',
-  'In-Game Currency':'Coins to unlock premium features',
-}
-const REWARD_ICON: Record<string,string> = { 'Home Improvement':'🏠','Expert Consultation':'🧑‍💼','In-Game Currency':'🏛️' }
 
-const SLIDER = { min:6, max:60, step:1, defaultValue:24, unit:'months', minLabel:'6 months', maxLabel:'5 years' }
+const SLIDER = { min:6, max:60, step:1, defaultValue:28, unit:'months', minLabel:'6 months', maxLabel:'5 years' }
 
 const cx = (...c: (string|false)[]) => c.filter(Boolean).join(' ')
 
@@ -44,9 +56,9 @@ export default function OnBoardingPage() {
   const total = STEPS.length
 
   useEffect(() => {
-    if (cur.id === 'Home Ownership' && !answers[cur.id]) setAns(p => ({ ...p, [cur.id]: String(SLIDER.defaultValue) }))
-    if (cur.id === 'share' && !answers.share) setAns(p => ({ ...p, share:'ready' }))
-    if (cur.id === 'complete' && !answers.complete) setAns(p => ({ ...p, complete:'done' }))
+    if (cur.id === 'Home Ownership' && !answers[cur.id]) {
+      setAns(p => ({ ...p, [cur.id]: String(SLIDER.defaultValue) }))
+    }
   }, [cur.id]) // eslint-disable-line
 
   const allAnswered = useMemo(() => STEPS.every(s => !!answers[s.id]), [answers])
@@ -55,18 +67,33 @@ export default function OnBoardingPage() {
 
   const Progress = () => (
     <div className="px-6 pt-6 sm:px-8 mb-2">
-      <div className="flex items-center justify-between text-sm text-gray-600"><span className="sr-only">Progress</span><span className="invisible">.</span><span>Step {step+1} of {total}</span></div>
-      <div className="mt-1 h-2 w-full rounded-full bg-gray-200 overflow-hidden"><div className="h-full bg-indigo-600 transition-all duration-300" style={{ width: `${progressPct}%` }}/></div>
+      <div className="flex items-center justify-between text-sm text-gray-600">
+        <span className="sr-only">Progress</span>
+        <span className="invisible">.</span>
+        <span>Step {step+1} of {total}</span>
+      </div>
+      <div className="mt-1 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+        <div className="h-full bg-indigo-600 transition-all duration-300" style={{ width: `${progressPct}%` }}/>
+      </div>
     </div>
   )
 
   const renderStep = () => {
-    if (cur.id === 'Home Ownership') return <SliderScreen value={answers[cur.id]} onChange={(v: string) => select(cur.id, v)} />
-    if (cur.id === 'reward') return <CardGridScreen name="reward" label={cur.label} opts={cur.options} value={answers.reward} onChange={(v: string) => select('reward', v)} subMap={REWARD_SUB} iconMap={REWARD_ICON} threeCol />
-    if (cur.id === 'learn')  return <CardGridScreen name="learn" label={cur.label} opts={cur.options} value={answers.learn} onChange={(v: string) => select('learn', v)} subMap={LEARN_SUB} iconMap={LEARN_ICON} />
-    if (cur.id === 'avatar') return <CardGridScreen name="avatar" label={cur.label} opts={cur.options} value={answers.avatar} onChange={(v: string) => select('avatar', v)} iconMap={AVATAR_ICON} />
-    if (cur.id === 'share')  return <ShareScreen />
-    if (cur.id === 'complete') return <CompleteScreen />
+    if (cur.id === 'avatar') {
+      return <CardGridScreen name="avatar" label={cur.label} opts={cur.options} value={answers.avatar} onChange={(v: string) => select('avatar', v)} iconMap={AVATAR_ICON} />
+    }
+    if (cur.id === 'professional_help') {
+      return <ProfessionalHelpScreen value={answers.professional_help} onChange={(v: string) => select('professional_help', v)} />
+    }
+    if (cur.id === 'expert_contact') {
+      return <ExpertContactScreen value={answers.expert_contact} onChange={(v: string) => select('expert_contact', v)} />
+    }
+    if (cur.id === 'Home Ownership') {
+      return <SliderScreen value={answers[cur.id]} onChange={(v: string) => select(cur.id, v)} />
+    }
+    if (cur.id === 'city') {
+      return <CitySearchScreen value={answers.city} onChange={(v: string) => select('city', v)} />
+    }
     return <CardGridScreen name={cur.id} label={cur.label} opts={cur.options} value={answers[cur.id]} onChange={(v: string) => select(cur.id, v)} />
   }
 

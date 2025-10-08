@@ -7,6 +7,21 @@ interface SliderScreenProps {
   onChange: (value: string) => void
 }
 
+const formatTimeDisplay = (months: number): string => {
+  const years = Math.floor(months / 12)
+  const remainingMonths = months % 12
+
+  if (years === 0) {
+    return `${months} ${months === 1 ? 'month' : 'months'}`
+  } else if (remainingMonths === 0) {
+    return `${years} ${years === 1 ? 'year' : 'years'}`
+  } else {
+    const yearText = years === 1 ? 'year' : 'years'
+    const monthText = remainingMonths === 1 ? 'month' : 'months'
+    return `${years} ${yearText} ${remainingMonths} ${monthText}`
+  }
+}
+
 export const SliderScreen: React.FC<SliderScreenProps> = ({ value, onChange }) => {
   const val = Number(value || SLIDER.defaultValue)
   const [show, setShow] = useState(val)
@@ -14,7 +29,8 @@ export const SliderScreen: React.FC<SliderScreenProps> = ({ value, onChange }) =
   return (
     <div className="mt-4">
       <div className="text-center mb-6">
-        <div className="text-4xl font-bold text-indigo-600">{show} {SLIDER.unit}</div>
+        <div className="text-4xl font-bold text-indigo-600">{formatTimeDisplay(show)}</div>
+        <div className="text-sm text-gray-500 mt-2">Estimated timeline</div>
       </div>
       <input
         type="range"
