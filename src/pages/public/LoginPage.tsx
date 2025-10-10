@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-//import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { LoginImage } from '../../assets'
 
 const LoginPage: React.FC = () => {
-  //const navigate = useNavigate()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -43,7 +43,7 @@ const LoginPage: React.FC = () => {
       store.dispatch(setUser(tempUser))
       
       // Navigate to app
-      window.location.href = '/app'
+      navigate('/app')
       
     } catch (err) {
       setError('An unexpected error occurred')

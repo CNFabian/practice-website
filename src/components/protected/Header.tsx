@@ -45,7 +45,6 @@ const Header: React.FC = () => {
 
     if (confirmed) {
       try {
-        // Clear localStorage data
         localStorage.removeItem('userProgress');
         localStorage.removeItem('completedModules');
         localStorage.removeItem('savedItems');
@@ -53,7 +52,6 @@ const Header: React.FC = () => {
         localStorage.removeItem('userCoins');
         localStorage.removeItem('claimedRewards');
         
-        // You can add more specific storage keys based on your app's data structure
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
@@ -62,8 +60,6 @@ const Header: React.FC = () => {
           }
         }
         keysToRemove.forEach(key => localStorage.removeItem(key));
-
-        // Force page reload to reset app state
         window.location.reload();
       } catch (error) {
         console.error('Reset progress failed:', error);
@@ -94,7 +90,6 @@ const Header: React.FC = () => {
 
   return (
     <>
-      {/* Background overlay to prevent content showing through the gap */}
       <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
       
       <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
@@ -199,7 +194,7 @@ const Header: React.FC = () => {
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
                         >
                           <img src={RewardsIcon} alt="Rewards" className="w-5 h-5" />
-                          <span className="text-gray-700">Saved Rewards</span>
+                          <span className="text-gray-700">Rewards</span>
                         </button>
                       )}
                     </MenuItem>
