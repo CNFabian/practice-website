@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../../assets/fonts';
-import { ChartIcon } from '../../../../assets';
-import InfoButton from '../info/InfoButton';
-import InfoModal from '../info/InfoModal';
-import { calculatorInfoData } from '../info/InfoData';
+import RobotoFont from '../../../assets/fonts';
+import { ChartIcon } from '../../../assets';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
+import { calculatorInfoData } from './InfoData';
 
 interface CreditFactor {
   id: string;

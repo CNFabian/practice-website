@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import InfoButton from '../info/InfoButton';
-import InfoModal from '../info/InfoModal';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
 
 interface InspectionItem {
   id: string;

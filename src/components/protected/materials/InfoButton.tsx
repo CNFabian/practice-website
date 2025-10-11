@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { InfoBlue, InfoGreen, InfoPurple } from '../../../../assets';
+import { InfoBlue, InfoGreen, InfoPurple } from '../../../assets';
 
 interface InfoButtonProps {
   onClick: () => void;

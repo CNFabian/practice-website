@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import InfoButton from '../info/InfoButton';
-import InfoModal from '../info/InfoModal';
-import { calculatorInfoData } from '../info/InfoData';
-import { ScalesIcon } from '../../../../assets';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
+import { calculatorInfoData } from './InfoData';
+import { ScalesIcon } from '../../../assets';
 import { validateCurrencyInput } from './validationHelpers';
 
 const DebtToIncomeCalculator: React.FC = () => {

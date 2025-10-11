@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../../assets/fonts';
-import InfoButton from '../info/InfoButton';
-import InfoModal from '../info/InfoModal';
+import RobotoFont from '../../../assets/fonts';
+import InfoButton from './InfoButton';
+import InfoModal from './InfoModal';
 
 const FirstTimeBuyerChecklist: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
