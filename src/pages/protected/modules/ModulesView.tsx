@@ -3,7 +3,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
-import { getModuleLessons, checkOnboardingStatus } from '../../../services/learningAPI';
+import { checkOnboardingStatus } from '../../../services/learningAPI';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -26,23 +26,10 @@ interface BackendLessonData {
   progress_seconds: number;
 }
 
-// Helper function to convert frontend module ID to backend UUID
-const getBackendModuleId = (frontendId: number): string => {
-  // Temporary mapping - replace with actual UUIDs from your backend
-  const moduleIdMapping: { [key: number]: string } = {
-    1: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    2: "4fa85f64-5717-4562-b3fc-2c963f66afa7", 
-    3: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
-    // Add more mappings as needed based on your actual backend data
-  };
-  
-  return moduleIdMapping[frontendId] || frontendId.toString();
-};
-
 // Helper function to convert backend lesson to frontend format
 const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesson => {
   return {
-    id: parseInt(backendLesson.id.slice(-1)) || 1, // Extract number from UUID end
+    id: parseInt(backendLesson.id.slice(-1)) || 1,
     image: backendLesson.image_url || '/default-lesson-image.jpg',
     title: backendLesson.title,
     duration: `${backendLesson.estimated_duration_minutes} min`,
@@ -61,7 +48,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 }) => {
   // Quiz Battle Modal State
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
-  const [backendLessons, setBackendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
+  const [backendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
   const [loadingLessons, setLoadingLessons] = useState<{ [moduleId: number]: boolean }>({});
   
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,10 +97,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
     
     try {
-      // Since we don't have real backend module IDs yet, we'll skip this for now
       console.log(`✅ Onboarding completed, but real module UUIDs not available yet - using frontend data for module ${selectedModuleId}`);
       
-      // For now, we'll comment out the actual backend call until onboarding provides real UUIDs
+      // For now commented out the actual backend call until onboarding provides real UUIDs
       // const backendModuleId = getBackendModuleId(selectedModuleId);
       // const lessons = await getModuleLessons(backendModuleId);
       // setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
@@ -155,7 +141,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     const progress = moduleProgress[module.id];
     if (progress) return progress;
     
-    // Updated logic: A lesson is completed when quiz is completed (100%)
     const completed = module.lessons.filter(lesson => {
       const lessonProgressData = lessonProgress[lesson.id];
       return lessonProgressData?.quizCompleted || lessonProgressData?.completed;
@@ -200,7 +185,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     ))
   );
 
-  // MODIFIED: Enhanced to handle smooth transition from grid to column layout
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
 
@@ -212,13 +196,11 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         toggleSidebar(false);
     }
     
-    // Start the compact layout transition immediately to begin the visual change
     if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
     }
     layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
 
-    // Calculate scroll timing based on whether sidebar needs to expand
     const sidebarTransitionDelay = wasCollapsed ? 700 : 0;
     // Add extra time for the layout to settle after compact mode activates
     const layoutSettleDelay = 100;
