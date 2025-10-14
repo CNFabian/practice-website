@@ -1,14 +1,9 @@
-// Help & Support API Service Functions
-// Backend integration for help, FAQ, and support ticket functionality
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// Authentication helper function (reuse from existing services)
 const getAuthToken = (): string | null => {
   return localStorage.getItem('access_token');
 };
 
-// Fetch with authentication helper
 const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = getAuthToken();
   
@@ -30,7 +25,6 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Re
       headers,
     });
 
-    // Handle authentication errors
     if (response.status === 401) {
       console.error('Authentication failed - token may be expired');
       localStorage.removeItem('access_token');
@@ -39,7 +33,6 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Re
       throw new Error('Authentication failed - please log in again');
     }
 
-    // Handle other error statuses
     if (!response.ok) {
       const responseClone = response.clone();
       const errorText = await responseClone.text();
