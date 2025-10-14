@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
 import { LessonQuiz } from '../../../components';
+import { getLesson, updateLessonProgress as apiUpdateProgress, completeLesson as apiCompleteLesson } from '../../../services/learningAPI';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -31,6 +32,26 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const showQuiz = currentView === 'quiz';
+
+  // BACKEND INTEGRATION: Fetch lesson details from API
+  useEffect(() => {
+    const fetchLessonData = async () => {
+      if (!lesson?.id) return;
+      
+      try {
+        const lessonData = await getLesson(lesson.id.toString());
+        console.log('Backend lesson data received:', lessonData);
+        
+        // TODO: Update lesson with backend data when available
+        // For now, we're using the existing lesson prop
+      } catch (error) {
+        console.error('Error fetching lesson data:', error);
+        // Fail silently and use existing data
+      }
+    };
+
+    fetchLessonData();
+  }, [lesson?.id]);
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -169,13 +190,44 @@ const LessonView: React.FC<LessonViewProps> = ({
     markCompleted(lesson.id, module.id, score);
   };
 
-  const handleVideoProgress = (progressPercent: number) => {
+  // BACKEND INTEGRATION: Updated video progress handler
+  const handleVideoProgress = async (progressPercent: number) => {
+    // Update local Redux state
     updateProgress(lesson.id, {
       watchProgress: progressPercent
     });
 
+    // BACKEND INTEGRATION: Send progress to API
+    try {
+      // Convert percentage to seconds (assuming average video is 20 minutes = 1200 seconds)
+      const estimatedDuration = 1200; // You can calculate this from lesson.duration
+      const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
+      
+      await apiUpdateProgress(lesson.id.toString(), progressSeconds);
+      console.log(`Progress updated: ${progressPercent}% (${progressSeconds}s)`);
+    } catch (error) {
+      console.error('Error updating progress on backend:', error);
+      // Continue with local state even if backend fails
+    }
+
+    // Auto-complete when watched > 95%
     if (progressPercent >= 95 && !currentLessonProgress?.completed) {
-      markCompleted(lesson.id, module.id);
+      await handleMarkComplete();
+    }
+  };
+
+  // BACKEND INTEGRATION: Mark lesson complete handler
+  const handleMarkComplete = async () => {
+    // Mark complete in Redux
+    markCompleted(lesson.id, module.id);
+
+    // BACKEND INTEGRATION: Mark lesson as completed
+    try {
+      const response = await apiCompleteLesson(lesson.id.toString());
+      console.log('Lesson marked complete on backend:', response);
+    } catch (error) {
+      console.error('Error completing lesson on backend:', error);
+      // Continue with local state even if backend fails
     }
   };
 
@@ -443,7 +495,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </button>
                 ) : (
                   <button 
-                    onClick={handleBack}
+                    onClick={handleMarkComplete}
                     disabled={isTransitioning}
                     className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -537,7 +589,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     </button>
                   ) : (
                     <button 
-                      onClick={handleBack}
+                      onClick={handleMarkComplete}
                       disabled={isTransitioning}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >

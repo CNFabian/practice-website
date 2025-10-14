@@ -5,6 +5,7 @@ import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
+import { getModules } from '../../../services/learningAPI';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -319,43 +320,78 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     loadModules,
     goToLesson,
     goToModules,
-    goToModuleQuiz // NEW: Add module quiz navigation
+    goToModuleQuiz,
+    setLoading,
+    setError
   } = useModules();
 
-  // Keep your existing local state for transitions
+  // Local state for transitions
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Load modules data into Redux on component mount
+  // BACKEND INTEGRATION: Fetch modules from API on component mount
   useEffect(() => {
-    if (modules.length === 0) {
-      loadModules(modulesData);
-    }
-  }, [modules.length, loadModules]);
+    const fetchModulesFromBackend = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Call the backend API
+        const backendModules = await getModules();
+        
+        console.log('Backend modules received:', backendModules);
+        
+        // TODO: Transform backend data to match your Module interface
+        // For now, we'll use the static data as fallback
+        // Once backend data is confirmed working, map it like:
+        // const transformedModules = backendModules.map(module => ({
+        //   id: module.id,
+        //   title: module.title,
+        //   description: module.description,
+        //   image: module.thumbnail_url,
+        //   ... etc
+        // }));
+        
+        // For now, load static data
+        if (modules.length === 0) {
+          loadModules(modulesData);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching modules from backend:', error);
+        setError('Failed to load modules from backend. Using fallback data.');
+        
+        // Load fallback static data on error
+        if (modules.length === 0) {
+          loadModules(modulesData);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModulesFromBackend();
+  }, []); // Run only once on mount
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     setIsTransitioning(true);
-    // Use Redux navigation instead of local state
     goToLesson(lesson.id, module.id);
     
     requestAnimationFrame(() => {
-      // currentView will be updated by Redux, but we can still use local transition state
+      // currentView will be updated by Redux
     });
   };
 
-  // NEW: Handle module quiz navigation
   const handleModuleQuizStart = (module: Module) => {
     setIsTransitioning(true);
-    // Use Redux navigation for module quiz
     goToModuleQuiz(sampleModuleQuizQuestions, module.id);
   };
 
   const handleBackToModule = () => {
     setIsTransitioning(true);
-    // Use Redux navigation
     goToModules();
   };
 
-  // Keep your existing transition logic but sync with Redux state
+  // Handle transitions
   useEffect(() => {
     if (currentView === 'modules' && isTransitioning) {
       const timer = setTimeout(() => {
@@ -386,9 +422,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         }}
       >
         <ModulesView
-          modulesData={modules.length > 0 ? modules : modulesData} // Use Redux modules or fallback
+          modulesData={modules.length > 0 ? modules : modulesData}
           onLessonSelect={handleLessonStart}
-          onModuleQuizSelect={handleModuleQuizStart} // NEW: Pass the module quiz handler
+          onModuleQuizSelect={handleModuleQuizStart}
           isTransitioning={isTransitioning}
         />
       </div>
@@ -414,7 +450,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         )}
       </div>
 
-      {/* MODULE QUIZ VIEW - NEW */}
+      {/* MODULE QUIZ VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'moduleQuiz'

@@ -1,15 +1,14 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// NOTE: Replace this with your actual auth token from registration
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2EwZWQ2OC01MGQyLTQ1MmItYWIxYS05OTE1MjVhOGIwOTMiLCJleHAiOjE3NjAxMTgwNTEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.KY7A1sabCh7uYL53-CUcD_1OafYSsElrH5BYSO7x4Kk';
+const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2EwZWQ2OC01MGQyLTQ1MmItYWIxYS05OTE1MjVhOGIwOTMiLCJleHAiOjE3NjAxNTE2OTMsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.ltcwp5RLA-3UH19gAjKRjDZCr9xZd1Bk8zNHXdBO2eI';
 
-const getHeaders = () => ({
+const getHeaders = (): HeadersInit => ({
   'Content-Type': 'application/json',
   'Authorization': `Bearer ${AUTH_TOKEN}`
 });
 
 // GET /api/learning/modules - Get all modules
-export const getModules = async () => {
+export const getModules = async (): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/modules`, {
       method: 'GET',
@@ -28,7 +27,7 @@ export const getModules = async () => {
 };
 
 // GET /api/learning/modules/{module_id} - Get specific module
-export const getModule = async (moduleId) => {
+export const getModule = async (moduleId: string): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
       method: 'GET',
@@ -47,7 +46,7 @@ export const getModule = async (moduleId) => {
 };
 
 // GET /api/learning/modules/{module_id}/lessons - Get all lessons in a module
-export const getModuleLessons = async (moduleId) => {
+export const getModuleLessons = async (moduleId: string): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
       method: 'GET',
@@ -66,7 +65,7 @@ export const getModuleLessons = async (moduleId) => {
 };
 
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson
-export const getLesson = async (lessonId) => {
+export const getLesson = async (lessonId: string): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}`, {
       method: 'GET',
@@ -85,7 +84,7 @@ export const getLesson = async (lessonId) => {
 };
 
 // POST /api/learning/lessons/{lesson_id}/progress - Update lesson progress
-export const updateLessonProgress = async (lessonId, videoProgressSeconds) => {
+export const updateLessonProgress = async (lessonId: string, videoProgressSeconds: number): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/progress`, {
       method: 'POST',
@@ -108,7 +107,7 @@ export const updateLessonProgress = async (lessonId, videoProgressSeconds) => {
 };
 
 // POST /api/learning/lessons/{lesson_id}/complete - Mark lesson as completed
-export const completeLesson = async (lessonId) => {
+export const completeLesson = async (lessonId: string): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/complete`, {
       method: 'POST',
@@ -127,7 +126,7 @@ export const completeLesson = async (lessonId) => {
 };
 
 // GET /api/learning/lessons/{lesson_id}/quiz - Get quiz for lesson
-export const getLessonQuiz = async (lessonId) => {
+export const getLessonQuiz = async (lessonId: string): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/quiz`, {
       method: 'GET',
@@ -146,7 +145,7 @@ export const getLessonQuiz = async (lessonId) => {
 };
 
 // GET /api/learning/progress/summary - Get learning progress summary
-export const getLearningProgressSummary = async () => {
+export const getLearningProgressSummary = async (): Promise<any> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/learning/progress/summary`, {
       method: 'GET',
