@@ -3,12 +3,27 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
+import { getModuleLessons } from '../../../services/learningAPI';
 
 interface ModulesViewProps {
   modulesData: Module[];
   onLessonSelect: (lesson: Lesson, module: Module) => void;
   onModuleQuizSelect?: (module: Module) => void;
   isTransitioning?: boolean;
+}
+
+// Backend lesson data interface
+interface BackendLessonData {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  video_url: string;
+  estimated_duration_minutes: number;
+  nest_coins_reward: number;
+  is_completed: boolean;
+  progress_seconds: number;
 }
 
 const ModulesView: React.FC<ModulesViewProps> = ({ 
@@ -19,6 +34,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 }) => {
   // Quiz Battle Modal State
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
+  const [backendLessons, setBackendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
+  const [loadingLessons, setLoadingLessons] = useState<{ [moduleId: number]: boolean }>({});
   
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -33,7 +50,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     changeActiveTab,
     showCompactLayout,
     toggleCompactLayout,
-    goToQuiz // Add this to access the quiz navigation function
+    goToQuiz
   } = useModules();
 
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -41,6 +58,31 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
+
+  // BACKEND INTEGRATION: Fetch lessons when module is selected
+  useEffect(() => {
+    const fetchModuleLessons = async () => {
+      if (!selectedModuleId || backendLessons[selectedModuleId]) return;
+      
+      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
+      
+      try {
+        const lessons = await getModuleLessons(selectedModuleId.toString());
+        console.log(`Backend lessons for module ${selectedModuleId}:`, lessons);
+        
+        setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
+      } catch (error) {
+        console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
+        // Fail silently and use prop data
+      } finally {
+        setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
+      }
+    };
+
+    if (selectedModuleId) {
+      fetchModuleLessons();
+    }
+  }, [selectedModuleId, backendLessons]);
 
   // Helper function to get module quiz completion status
   const getModuleQuizStatus = (moduleId: number) => {
@@ -116,7 +158,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     if (isTransitioning) return;
 
     const wasCollapsed = sidebarCollapsed;
-    // FIXED: Removed unused variable `previouslySelected`
 
     selectModuleById(moduleId);
 
@@ -268,6 +309,24 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const scrollContainerStyle: React.CSSProperties = {
     scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'none' : 'thin',
     msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
+  };
+
+  // Get lessons to display - use backend data if available, otherwise use prop data
+  const getLessonsToDisplay = (module: Module): Lesson[] => {
+    const backend = backendLessons[module.id];
+    if (!backend || backend.length === 0) return module.lessons;
+    
+    // Transform backend lessons to match Lesson interface
+    return backend.map((backendLesson, index) => ({
+      id: parseInt(backendLesson.id) || module.lessons[index]?.id || index,
+      image: backendLesson.image_url || module.lessons[index]?.image || '',
+      title: backendLesson.title,
+      duration: `${backendLesson.estimated_duration_minutes} minutes`,
+      description: backendLesson.description,
+      coins: backendLesson.nest_coins_reward,
+      completed: backendLesson.is_completed,
+      videoUrl: backendLesson.video_url
+    }));
   };
 
   return (
@@ -486,6 +545,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     </div>
 
                     <div className="absolute right-0 bottom-5 pr-4 pb-3 w-[calc(50%-1rem)]">
+                      {/* Loading indicator for lessons */}
+                      {loadingLessons[selectedModuleData.id] && (
+                        <div className="flex justify-end mb-2">
+                          <RobotoFont className="text-xs text-gray-500">
+                            Loading lessons...
+                          </RobotoFont>
+                        </div>
+                      )}
+                      
                       {/* Module Quiz Completion Indicator */}
                       {getModuleQuizStatus(selectedModuleData.id).isCompleted && (
                         <div className="flex justify-end mb-2">
@@ -525,7 +593,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               <div className="mr-4 pb-6">
                 {selectedModuleData ? (
                   <div className="space-y-4 px-1">
-                    {selectedModuleData.lessons.map((lesson, index) => {
+                    {getLessonsToDisplay(selectedModuleData).map((lesson, index) => {
                       const progress = lessonProgress[lesson.id];
                       const isCompleted = progress?.completed || false;
                       const watchProgress = progress?.watchProgress || 0;
@@ -567,8 +635,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                     </RobotoFont>
                                   </div>
                                 )}
-                                {isCompleted && (
-                                  <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
+                                {isCompleted && (<div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                       <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                                     </svg>
