@@ -25,7 +25,6 @@ const LoginPage: React.FC = () => {
   setLoading(true)
 
   try {
-    // Call your actual backend API
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -51,14 +50,13 @@ const LoginPage: React.FC = () => {
     const { setUser } = await import('../../store/slices/authSlice')
     const { store } = await import('../../store/store')
     store.dispatch(setUser({
-      uid: 'user-id', // You'll need to get this from /api/auth/me
+      uid: 'user-id',
       email: formData.email,
       displayName: formData.email.split('@')[0],
       photoURL: null,
       emailVerified: true
     }))
     
-    // Navigate to app
     navigate('/app')
     
   } catch (err) {

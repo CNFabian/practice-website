@@ -40,7 +40,6 @@ const SignupPage: React.FC = () => {
     setLoading(true)
 
     try {
-      // Call your actual backend API
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
@@ -52,7 +51,7 @@ const SignupPage: React.FC = () => {
           first_name: formData.firstName,
           last_name: formData.lastName,
           phone: formData.phoneNumber,
-          date_of_birth: '' // Optional - add a date picker if needed
+          date_of_birth: ''
         })
       });
 
@@ -71,14 +70,13 @@ const SignupPage: React.FC = () => {
       const { setUser } = await import('../../store/slices/authSlice')
       const { store } = await import('../../store/store')
       store.dispatch(setUser({
-        uid: 'user-id', // You'll need to get this from /api/auth/me
+        uid: 'user-id', 
         email: formData.email,
         displayName: `${formData.firstName} ${formData.lastName}`,
         photoURL: null,
-        emailVerified: false // New users typically need to verify email
+        emailVerified: false
       }))
       
-      // Navigate to app
       navigate('/app')
       
     } catch (err: any) {

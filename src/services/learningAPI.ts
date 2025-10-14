@@ -1,13 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const getHeaders = (): HeadersInit => {
-  // First, try to get token from localStorage
   const token = localStorage.getItem('access_token');
   
-  // If no token in localStorage, check if we need to get a real token
   if (!token) {
-    console.warn('No authentication token found in localStorage. Please implement proper authentication.');
-    // For now, we'll throw an error that can be caught
+    console.warn('No authentication token found in localStorage.');
     throw new Error('No authentication token found');
   }
   
@@ -46,42 +43,86 @@ const refreshAccessToken = async (): Promise<boolean> => {
   }
 };
 
-// Enhanced fetch with automatic token refresh
+// Enhanced fetch with automatic token refresh and onboarding detection - FIXED
 const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   try {
-    // First attempt
+    console.log(`Making request to: ${url}`);
+    
     const response = await fetch(url, {
       ...options,
-      headers: getHeaders()
+      headers: {
+        ...getHeaders(),
+        ...options.headers
+      }
     });
     
-    // If unauthorized, try to refresh token once
+    console.log(`Response status: ${response.status} for ${url}`);
+    
+    // Handle unauthorized
     if (response.status === 401) {
       console.log('Received 401, attempting token refresh...');
       const refreshed = await refreshAccessToken();
       
       if (refreshed) {
-        // Retry request with new token
         const retryResponse = await fetch(url, {
           ...options,
-          headers: getHeaders()
+          headers: {
+            ...getHeaders(),
+            ...options.headers
+          }
         });
+        console.log(`Retry response status: ${retryResponse.status} for ${url}`);
         return retryResponse;
       } else {
-        // Token refresh failed - user needs to log in again
         console.error('Token refresh failed. User needs to re-authenticate.');
-        // Optionally: redirect to login page
-        // window.location.href = '/login';
+        throw new Error('Authentication failed - please log in again');
+      }
+    }
+    
+    // Handle onboarding requirement - FIXED: Clone response to avoid body stream read error
+    if (response.status === 400) {
+      const responseClone = response.clone(); // Create a clone to read the body
+      const errorText = await responseClone.text();
+      console.log(`400 Error response: ${errorText}`);
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.detail === "Please complete onboarding first") {
+          console.warn('🚨 ONBOARDING REQUIRED: User must complete onboarding before accessing learning content');
+          throw new Error('ONBOARDING_REQUIRED');
+        }
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message === 'ONBOARDING_REQUIRED') {
+          throw parseError; // Re-throw the onboarding error
+        }
+        // If we can't parse, continue with normal error handling
+      }
+    }
+    
+    // Handle other error statuses
+    if (!response.ok) {
+      const responseClone = response.clone(); // Create a clone to avoid body stream read error
+      const errorText = await responseClone.text();
+      console.error(`API Error - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.detail) {
+          console.error('Validation errors:', errorData.detail);
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response as JSON');
       }
     }
     
     return response;
   } catch (error) {
+    console.error(`Network error for ${url}:`, error);
     throw error;
   }
 };
 
-// GET /api/learning/modules - Get all modules
+// GET /api/learning/modules - Get all modules (with onboarding check)
 export const getModules = async (): Promise<any> => {
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
@@ -92,8 +133,14 @@ export const getModules = async (): Promise<any> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Modules data received:', data);
+    return data;
   } catch (error) {
+    if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+      console.log('👉 User needs to complete onboarding first');
+      throw new Error('ONBOARDING_REQUIRED');
+    }
     console.error('Error fetching modules:', error);
     throw error;
   }
@@ -102,6 +149,8 @@ export const getModules = async (): Promise<any> => {
 // GET /api/learning/modules/{module_id} - Get specific module
 export const getModule = async (moduleId: string): Promise<any> => {
   try {
+    console.log(`Fetching module with ID: ${moduleId}`);
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
       method: 'GET'
     });
@@ -110,16 +159,36 @@ export const getModule = async (moduleId: string): Promise<any> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Module data received:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching module:', error);
     throw error;
   }
 };
 
+// Helper function to get actual module UUIDs from backend
+export const getAvailableModules = async (): Promise<any[]> => {
+  try {
+    const modules = await getModules();
+    console.log('Available backend modules:', modules);
+    return modules || [];
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+      console.log('Cannot fetch modules - onboarding required');
+      return [];
+    }
+    console.error('Error getting available modules:', error);
+    return [];
+  }
+};
+
 // GET /api/learning/modules/{module_id}/lessons - Get all lessons in a module
 export const getModuleLessons = async (moduleId: string): Promise<any> => {
   try {
+    console.log(`Fetching lessons for module ID: ${moduleId}`);
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
       method: 'GET'
     });
@@ -128,7 +197,9 @@ export const getModuleLessons = async (moduleId: string): Promise<any> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Module lessons data received:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching module lessons:', error);
     throw error;
@@ -138,6 +209,14 @@ export const getModuleLessons = async (moduleId: string): Promise<any> => {
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson
 export const getLesson = async (lessonId: string): Promise<any> => {
   try {
+    // Check if lessonId is a number (frontend ID) and needs conversion
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      throw new Error('Frontend lesson ID provided - UUID required for backend');
+    }
+    
+    console.log(`Fetching lesson with ID: ${lessonId}`);
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}`, {
       method: 'GET'
     });
@@ -146,10 +225,37 @@ export const getLesson = async (lessonId: string): Promise<any> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Lesson data received:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching lesson:', error);
     throw error;
+  }
+};
+
+// Helper function to check if user has completed onboarding
+export const checkOnboardingStatus = async (): Promise<boolean> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/status`, {
+      method: 'GET'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Onboarding status:', data);
+    
+    // Check if onboarding is completed - adjust based on your API response structure
+    return data.completed === true || data.status === 'completed';
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+      return false; // Onboarding required
+    }
+    console.error('Error checking onboarding status:', error);
+    throw error; // Other error
   }
 };
 

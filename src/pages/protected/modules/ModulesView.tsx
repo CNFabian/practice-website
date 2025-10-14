@@ -26,6 +26,33 @@ interface BackendLessonData {
   progress_seconds: number;
 }
 
+// Helper function to convert frontend module ID to backend UUID
+const getBackendModuleId = (frontendId: number): string => {
+  // Temporary mapping - replace with actual UUIDs from your backend
+  const moduleIdMapping: { [key: number]: string } = {
+    1: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    2: "4fa85f64-5717-4562-b3fc-2c963f66afa7", 
+    3: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
+    // Add more mappings as needed based on your actual backend data
+  };
+  
+  return moduleIdMapping[frontendId] || frontendId.toString();
+};
+
+// Helper function to convert backend lesson to frontend format
+const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesson => {
+  return {
+    id: parseInt(backendLesson.id.slice(-1)) || 1, // Extract number from UUID end
+    image: backendLesson.image_url || '/default-lesson-image.jpg',
+    title: backendLesson.title,
+    duration: `${backendLesson.estimated_duration_minutes} min`,
+    description: backendLesson.description,
+    coins: backendLesson.nest_coins_reward,
+    completed: backendLesson.is_completed,
+    videoUrl: backendLesson.video_url
+  };
+};
+
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
   onLessonSelect, 
@@ -61,28 +88,48 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
   // BACKEND INTEGRATION: Fetch lessons when module is selected
   useEffect(() => {
-    const fetchModuleLessons = async () => {
-      if (!selectedModuleId || backendLessons[selectedModuleId]) return;
-      
-      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
-      
-      try {
-        const lessons = await getModuleLessons(selectedModuleId.toString());
-        console.log(`Backend lessons for module ${selectedModuleId}:`, lessons);
-        
-        setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
-      } catch (error) {
-        console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
-        // Fail silently and use prop data
-      } finally {
-        setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
+  const fetchModuleLessons = async () => {
+    if (!selectedModuleId || backendLessons[selectedModuleId]) return;
+    
+    // Check onboarding status first using the proper API
+    try {
+      const onboardingComplete = await checkOnboardingStatus();
+      if (!onboardingComplete) {
+        console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
+        return;
       }
-    };
-
-    if (selectedModuleId) {
-      fetchModuleLessons();
+    } catch (error) {
+      if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+        console.log('⚠️ Onboarding required - skipping backend lesson fetch');
+        return;
+      }
+      console.log('Cannot check onboarding status, skipping backend fetch:', error);
+      return;
     }
-  }, [selectedModuleId, backendLessons]);
+    
+    setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
+    
+    try {
+      // Since we don't have real backend module IDs yet, we'll skip this for now
+      console.log(`✅ Onboarding completed, but real module UUIDs not available yet - using frontend data for module ${selectedModuleId}`);
+      
+      // For now, we'll comment out the actual backend call until onboarding provides real UUIDs
+      // const backendModuleId = getBackendModuleId(selectedModuleId);
+      // const lessons = await getModuleLessons(backendModuleId);
+      // setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
+      
+    } catch (error) {
+      console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
+      console.log('Falling back to frontend lesson data');
+    } finally {
+      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
+    }
+  };
+
+  if (selectedModuleId) {
+    fetchModuleLessons();
+  }
+}, [selectedModuleId, backendLessons]);
 
   // Helper function to get module quiz completion status
   const getModuleQuizStatus = (moduleId: number) => {
@@ -317,16 +364,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     if (!backend || backend.length === 0) return module.lessons;
     
     // Transform backend lessons to match Lesson interface
-    return backend.map((backendLesson, index) => ({
-      id: parseInt(backendLesson.id) || module.lessons[index]?.id || index,
-      image: backendLesson.image_url || module.lessons[index]?.image || '',
-      title: backendLesson.title,
-      duration: `${backendLesson.estimated_duration_minutes} minutes`,
-      description: backendLesson.description,
-      coins: backendLesson.nest_coins_reward,
-      completed: backendLesson.is_completed,
-      videoUrl: backendLesson.video_url
-    }));
+    return backend.map(convertBackendLessonToFrontend);
   };
 
   return (

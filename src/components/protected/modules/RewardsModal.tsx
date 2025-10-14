@@ -41,7 +41,6 @@ const RewardsModal: React.FC<RewardsModalProps> = memo(({
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  // Calculate if user earned a badge (100% score)
   const earnedBadge = hasEarnedBadge || (totalQuestions > 0 && correctAnswers === totalQuestions);
 
   useEffect(() => {
@@ -92,7 +91,6 @@ const RewardsModal: React.FC<RewardsModalProps> = memo(({
   const triggerCoinAnimation = () => {
     if (!containerRef.current || !hasEarnedCoins || coinsAnimated) return;
 
-    // Get positions of static coins for animation
     const coinPositions = staticCoinRefs.current
       .filter(ref => ref !== null)
       .map(ref => {
@@ -107,7 +105,6 @@ const RewardsModal: React.FC<RewardsModalProps> = memo(({
       })
       .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-    // Create escape coins animation
     const coins = coinPositions.map((pos, i) => ({
       id: `coin-${i}`,
       startX: pos.x,
@@ -458,7 +455,6 @@ const RewardsModal: React.FC<RewardsModalProps> = memo(({
     document.body
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function - only re-render when these props change
   return (
     prevProps.isOpen === nextProps.isOpen &&
     prevProps.correctAnswers === nextProps.correctAnswers &&
