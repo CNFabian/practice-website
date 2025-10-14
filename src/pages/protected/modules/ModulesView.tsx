@@ -3,7 +3,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
-import { getModuleLessons } from '../../../services/learningAPI';
+import { getModuleLessons, checkOnboardingStatus } from '../../../services/learningAPI';
 
 interface ModulesViewProps {
   modulesData: Module[];
