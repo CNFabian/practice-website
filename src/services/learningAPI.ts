@@ -1,18 +1,91 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2EwZWQ2OC01MGQyLTQ1MmItYWIxYS05OTE1MjVhOGIwOTMiLCJleHAiOjE3NjAxNTE2OTMsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.ltcwp5RLA-3UH19gAjKRjDZCr9xZd1Bk8zNHXdBO2eI';
+const getHeaders = (): HeadersInit => {
+  // First, try to get token from localStorage
+  const token = localStorage.getItem('access_token');
+  
+  // If no token in localStorage, check if we need to get a real token
+  if (!token) {
+    console.warn('No authentication token found in localStorage. Please implement proper authentication.');
+    // For now, we'll throw an error that can be caught
+    throw new Error('No authentication token found');
+  }
+  
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+};
 
-const getHeaders = (): HeadersInit => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${AUTH_TOKEN}`
-});
+// Helper function to refresh token
+const refreshAccessToken = async (): Promise<boolean> => {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) {
+    console.error('No refresh token available');
+    return false;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh?refresh_token=${refreshToken}`, {
+      method: 'POST'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      console.log('Token refreshed successfully');
+      return true;
+    } else {
+      console.error('Token refresh failed:', response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return false;
+  }
+};
+
+// Enhanced fetch with automatic token refresh
+const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  try {
+    // First attempt
+    const response = await fetch(url, {
+      ...options,
+      headers: getHeaders()
+    });
+    
+    // If unauthorized, try to refresh token once
+    if (response.status === 401) {
+      console.log('Received 401, attempting token refresh...');
+      const refreshed = await refreshAccessToken();
+      
+      if (refreshed) {
+        // Retry request with new token
+        const retryResponse = await fetch(url, {
+          ...options,
+          headers: getHeaders()
+        });
+        return retryResponse;
+      } else {
+        // Token refresh failed - user needs to log in again
+        console.error('Token refresh failed. User needs to re-authenticate.');
+        // Optionally: redirect to login page
+        // window.location.href = '/login';
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 
 // GET /api/learning/modules - Get all modules
 export const getModules = async (): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/modules`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -29,9 +102,8 @@ export const getModules = async (): Promise<any> => {
 // GET /api/learning/modules/{module_id} - Get specific module
 export const getModule = async (moduleId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -48,9 +120,8 @@ export const getModule = async (moduleId: string): Promise<any> => {
 // GET /api/learning/modules/{module_id}/lessons - Get all lessons in a module
 export const getModuleLessons = async (moduleId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -67,9 +138,8 @@ export const getModuleLessons = async (moduleId: string): Promise<any> => {
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson
 export const getLesson = async (lessonId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -86,9 +156,8 @@ export const getLesson = async (lessonId: string): Promise<any> => {
 // POST /api/learning/lessons/{lesson_id}/progress - Update lesson progress
 export const updateLessonProgress = async (lessonId: string, videoProgressSeconds: number): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/progress`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/progress`, {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({
         lesson_id: lessonId,
         video_progress_seconds: videoProgressSeconds
@@ -109,9 +178,8 @@ export const updateLessonProgress = async (lessonId: string, videoProgressSecond
 // POST /api/learning/lessons/{lesson_id}/complete - Mark lesson as completed
 export const completeLesson = async (lessonId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/complete`, {
-      method: 'POST',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/complete`, {
+      method: 'POST'
     });
     
     if (!response.ok) {
@@ -128,9 +196,8 @@ export const completeLesson = async (lessonId: string): Promise<any> => {
 // GET /api/learning/lessons/{lesson_id}/quiz - Get quiz for lesson
 export const getLessonQuiz = async (lessonId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/lessons/${lessonId}/quiz`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/quiz`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -147,9 +214,8 @@ export const getLessonQuiz = async (lessonId: string): Promise<any> => {
 // GET /api/learning/progress/summary - Get learning progress summary
 export const getLearningProgressSummary = async (): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/learning/progress/summary`, {
-      method: 'GET',
-      headers: getHeaders()
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/progress/summary`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
