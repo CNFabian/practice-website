@@ -18,6 +18,7 @@ export { default as DebtToIncomeCalculator } from './protected/materials/DebtToI
 export { default as CreditScoreCalculator } from './protected/materials/CreditScoreCalculator';
 export { default as FirstTimeBuyerChecklist } from './protected/materials/FirstTimeBuyerChecklist';
 export { default as HomeInspectionChecklist } from './protected/materials/HomeInspectionChecklist';
+export { default as WorksheetsPage } from './protected/materials/WorksheetsPage';
 
 // Protected settings components
 export { default as ProfilePictureModal } from './protected/settings/ProfilePictureModal';

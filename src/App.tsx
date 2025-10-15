@@ -27,6 +27,8 @@ import {
   SettingsPage
 } from './pages'
 import { BadgesPage } from './pages/protected/badges'
+import WorksheetsPage from './components/protected/materials/WorksheetsPage';
+
 
 import type { Location as RouterLocation } from 'react-router-dom'
 
@@ -113,12 +115,12 @@ function App() {
               <Route index element={<OverviewPage />} />
               <Route path="modules" element={<ModulesPage />} />
               <Route path="materials" element={<MaterialsPage />} />
+              <Route path="worksheets" element={<WorksheetsPage />} />  {/* ADD THIS LINE */}
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="badges" element={<BadgesPage />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
-
             {/* Default redirect based on auth state */}
             <Route path="/" element={
               isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import RobotoFont from '../../assets/fonts';
-import InfoModal from '../../components/protected/materials/InfoModal';
+import RobotoFont from '../../../assets/fonts';
+import InfoModal from './InfoModal';
 import { 
   DocumentIcon,
   AnalyzeIcon,
   MoneyBoxIcon,
   InfoGreen
-} from '../../assets';
+} from '../../../assets';
 
-import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
-import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
+import ExpenseTrackingPDF from '../../../assets/downloadables/expense-tracking-worksheet.pdf';
+import BudgetPlanningPDF from '../../../assets/downloadables/budget-planning-worksheet.pdf';
 
 import { 
   getMaterialsByType, 
   trackMaterialDownload 
-} from '../../services/materialsAPI';
+} from '../../../services/materialsAPI';
 
 const WorksheetsPage: React.FC = () => {
   const [showWorksheet, setShowWorksheet] = useState<string | null>(null);
