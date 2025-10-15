@@ -27,7 +27,6 @@ import {
 import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
 import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
 
-// Import the materials API service
 import { 
   getMaterialsByType, 
   getAvailableCalculators, 

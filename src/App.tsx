@@ -24,8 +24,7 @@ import {
   MaterialsPage,
   RewardsPage,
   HelpPage,
-  SettingsPage,
-  NotificationsPage
+  SettingsPage
 } from './pages'
 import { BadgesPage } from './pages/protected/badges'
 
@@ -118,7 +117,6 @@ function App() {
               <Route path="badges" element={<BadgesPage />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
             {/* Default redirect based on auth state */}

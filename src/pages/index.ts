@@ -5,4 +5,3 @@ export { default as RewardsPage } from './protected/rewards/RewardsPage';
 export { default as BadgesPage } from './protected/badges/BadgesPage';
 export { default as SettingsPage } from './protected/settings/SettingsPage';
 export { default as HelpPage } from './protected/help/HelpPage';
-export { default as NotificationsPage } from './protected/notifications/NotificationsPage';
