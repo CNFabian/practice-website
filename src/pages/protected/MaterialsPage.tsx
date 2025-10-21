@@ -27,6 +27,13 @@ import {
 import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
 import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
 
+// Import the materials API service
+import { 
+  getMaterialsByType, 
+  getAvailableCalculators, 
+  getMaterialChecklists, 
+  trackMaterialDownload 
+} from '../../services/materialsAPI';
 
 const MaterialsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -41,6 +48,13 @@ const MaterialsPage: React.FC = () => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
+  // Backend integration state
+  const [isLoadingBackend, setIsLoadingBackend] = useState(false);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const [backendCalculators, setBackendCalculators] = useState<any[]>([]);
+  const [backendWorksheets, setBackendWorksheets] = useState<any[]>([]);
+  const [backendChecklists, setBackendChecklists] = useState<any[]>([]);
+
   useEffect(() => {
     console.log('URL changed - categoryFromUrl:', categoryFromUrl);
     if (categoryFromUrl) {
@@ -48,6 +62,54 @@ const MaterialsPage: React.FC = () => {
     }
   }, [categoryFromUrl]);
 
+  // Fetch backend data when component mounts
+  useEffect(() => {
+    fetchBackendMaterials();
+  }, []);
+
+  const fetchBackendMaterials = async () => {
+    setIsLoadingBackend(true);
+    setBackendError(null);
+
+    try {
+      console.log('Fetching materials from backend...');
+
+      // Fetch calculators
+      try {
+        const calculatorsData = await getAvailableCalculators();
+        console.log('Backend calculators received:', calculatorsData);
+        setBackendCalculators(Array.isArray(calculatorsData) ? calculatorsData : []);
+      } catch (error) {
+        console.error('Error fetching calculators:', error);
+      }
+
+      // Fetch worksheets
+      try {
+        const worksheetsData = await getMaterialsByType('worksheets');
+        console.log('Backend worksheets received:', worksheetsData);
+        setBackendWorksheets(Array.isArray(worksheetsData) ? worksheetsData : []);
+      } catch (error) {
+        console.error('Error fetching worksheets:', error);
+      }
+
+      // Fetch checklists
+      try {
+        const checklistsData = await getMaterialChecklists();
+        console.log('Backend checklists received:', checklistsData);
+        setBackendChecklists(Array.isArray(checklistsData) ? checklistsData : []);
+      } catch (error) {
+        console.error('Error fetching checklists:', error);
+      }
+
+    } catch (error) {
+      console.error('Error fetching backend materials:', error);
+      setBackendError('Failed to load materials from backend');
+    } finally {
+      setIsLoadingBackend(false);
+    }
+  };
+
+  // Frontend fallback data
   const calculators = [
     {
       id: 'mortgage',
@@ -277,6 +339,21 @@ const MaterialsPage: React.FC = () => {
     }
   ];
 
+  const getDisplayData = (category: string) => {
+    switch (category) {
+      case 'Calculators':
+        return backendCalculators.length > 0 ? backendCalculators : calculators;
+      case 'Worksheets':
+        return backendWorksheets.length > 0 ? backendWorksheets : worksheets;
+      case 'Checklists':
+        return backendChecklists.length > 0 ? backendChecklists : checklists;
+      case 'Minigames':
+        return [];
+      default:
+        return [];
+    }
+  };
+
   const handleCalculatorClick = (calculatorId: string) => {
     setShowCalculator(calculatorId);
     setShowChecklist(null);
@@ -306,7 +383,17 @@ const MaterialsPage: React.FC = () => {
     setShowWorksheet(null);
   };
 
-   const handleWorksheetDownload = (worksheetId: string) => {
+  const handleWorksheetDownload = async (worksheetId: string) => {
+    try {
+      const backendItem = backendWorksheets.find(item => item.id === worksheetId);
+      if (backendItem && backendItem.id) {
+        await trackMaterialDownload(backendItem.id);
+        console.log('Download tracked for resource:', backendItem.id);
+      }
+    } catch (error) {
+      console.error('Error tracking download:', error);
+    }
+
     const worksheetPaths: Record<string, string> = {
       'expense-tracking': ExpenseTrackingPDF,
       'budget-planning': BudgetPlanningPDF
@@ -350,6 +437,24 @@ const MaterialsPage: React.FC = () => {
         <RobotoFont className="text-gray-600 text-sm">
           Financial tools and resources to help with your homeownership journey
         </RobotoFont>
+        
+        {/* Backend Error Banner */}
+        {backendError && (
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="text-yellow-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-2">
+                <RobotoFont className="text-xs text-yellow-800">
+                  Backend unavailable - using offline materials
+                </RobotoFont>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Category Cards */}
@@ -495,7 +600,7 @@ const MaterialCard = ({
       <div className="mb-6">
         <div className={`w-16 h-16 xl:w-20 xl:h-20 ${colorClass} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
             <img 
-              src={item.icon} 
+              src={item.icon || item.thumbnailUrl} 
               alt={item.title}
               className="w-6 h-6 xl:w-8 xl:h-8"
               style={{ filter: 'brightness(0) invert(1)' }}
@@ -546,25 +651,99 @@ const MaterialCard = ({
 };
 
   const renderActiveComponent = () => {
-    if (showCalculator === 'mortgage') return <MortgageCalculator />;
-    if (showCalculator === 'debt-to-income') return <DebtToIncomeCalculator />;
-    if (showCalculator === 'credit-score') return <CreditScoreCalculator />;
-    if (showChecklist === 'first-time-buyer') return <FirstTimeBuyerChecklist />;
-    if (showChecklist === 'home-inspection') return <HomeInspectionChecklist />;
+    if (showCalculator === 'mortgage') return (
+      <div className="relative">
+        <button
+          onClick={() => setShowCalculator(null)}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+        >
+          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <MortgageCalculator />
+      </div>
+    );
+    if (showCalculator === 'debt-to-income') return (
+      <div className="relative">
+        <button
+          onClick={() => setShowCalculator(null)}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+        >
+          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <DebtToIncomeCalculator />
+      </div>
+    );
+    if (showCalculator === 'credit-score') return (
+      <div className="relative">
+        <button
+          onClick={() => setShowCalculator(null)}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+        >
+          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <CreditScoreCalculator />
+      </div>
+    );
+    if (showChecklist === 'first-time-buyer') return (
+      <div className="relative">
+        <button
+          onClick={() => setShowChecklist(null)}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+        >
+          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <FirstTimeBuyerChecklist />
+      </div>
+    );
+    if (showChecklist === 'home-inspection') return (
+      <div className="relative">
+        <button
+          onClick={() => setShowChecklist(null)}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+        >
+          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <HomeInspectionChecklist />
+      </div>
+    );
     return null;
   };
 
   const activeComponent = renderActiveComponent();
 
   const getCurrentItems = () => {
-    if (activeCategory === 'Calculators') return calculators;
-    if (activeCategory === 'Worksheets') return worksheets;
-    if (activeCategory === 'Checklists') return checklists;
+    if (activeCategory === 'Calculators') return getDisplayData('Calculators');
+    if (activeCategory === 'Worksheets') return getDisplayData('Worksheets');
+    if (activeCategory === 'Checklists') return getDisplayData('Checklists');
     if (activeCategory === 'Minigames') return [];
     return [];
   };
 
   const currentItems = getCurrentItems();
+
+  if (isLoadingBackend && backendCalculators.length === 0 && backendWorksheets.length === 0 && backendChecklists.length === 0) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <div className="p-6">
+          <HeaderSection />
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <span className="ml-3 text-gray-600">Loading materials...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -580,7 +759,7 @@ const MaterialCard = ({
               : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
           }`}>
             {/* Calculators */}
-            {activeCategory === 'Calculators' && calculators.map((calculator) => (
+            {activeCategory === 'Calculators' && currentItems.map((calculator) => (
               <MaterialCard
                 key={calculator.id}
                 item={calculator}
@@ -591,7 +770,7 @@ const MaterialCard = ({
             ))}
 
             {/* Worksheets */}
-            {activeCategory === 'Worksheets' && worksheets.map((worksheet) => (
+            {activeCategory === 'Worksheets' && currentItems.map((worksheet) => (
               <MaterialCard
                 key={worksheet.id}
                 item={worksheet}
@@ -609,7 +788,7 @@ const MaterialCard = ({
             ))}
 
             {/* Checklists */}
-            {activeCategory === 'Checklists' && checklists.map((checklist) => (
+            {activeCategory === 'Checklists' && currentItems.map((checklist) => (
               <MaterialCard
                 key={checklist.id}
                 item={checklist}

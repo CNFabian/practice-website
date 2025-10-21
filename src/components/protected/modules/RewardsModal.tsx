@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { BadgeMedal, Confetti, Coin1, Coin2, Coin3, Coin4, Coin5 } from '../../../assets';
 
@@ -16,7 +16,7 @@ interface RewardsModalProps {
   correctAnswers?: number;
 }
 
-const RewardsModal: React.FC<RewardsModalProps> = ({
+const RewardsModal: React.FC<RewardsModalProps> = memo(({
   isOpen,
   onClose,
   onNavigateToRewards,
@@ -41,28 +41,14 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   const staticCoinRefs = useRef<(HTMLDivElement | null)[]>([]);
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  // Calculate if user earned a badge (100% score)
   const earnedBadge = hasEarnedBadge || (totalQuestions > 0 && correctAnswers === totalQuestions);
-  
-  // Debug logging to see what's happening
-  console.log('RewardsModal Debug:', {
-    totalQuestions,
-    correctAnswers,
-    hasEarnedBadge,
-    earnedBadge,
-    hasEarnedCoins,
-    coinsEarned,
-    isOpen
-  });
 
   useEffect(() => {
     if (isOpen) {
-      console.log('RewardsModal opened - resetting animation states');
       setCoinsAnimated(false);
       setEscapeCoins([]);
       
       document.body.style.overflow = 'hidden';
-      
       document.body.classList.add('modal-open');
       
       const styleElement = document.createElement('style');
@@ -82,7 +68,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
       document.head.appendChild(styleElement);
     } else {
       document.body.style.overflow = '';
-      
       document.body.classList.remove('modal-open');
       
       const styleElement = document.getElementById('rewards-modal-styles');
@@ -106,7 +91,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
   const triggerCoinAnimation = () => {
     if (!containerRef.current || !hasEarnedCoins || coinsAnimated) return;
 
-    // Get positions of static coins for animation
     const coinPositions = staticCoinRefs.current
       .filter(ref => ref !== null)
       .map(ref => {
@@ -121,7 +105,6 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
       })
       .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-    // Create escape coins animation
     const coins = coinPositions.map((pos, i) => ({
       id: `coin-${i}`,
       startX: pos.x,
@@ -471,6 +454,17 @@ const RewardsModal: React.FC<RewardsModalProps> = ({
     </>,
     document.body
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.isOpen === nextProps.isOpen &&
+    prevProps.correctAnswers === nextProps.correctAnswers &&
+    prevProps.totalQuestions === nextProps.totalQuestions &&
+    prevProps.hasEarnedCoins === nextProps.hasEarnedCoins &&
+    prevProps.hasEarnedBadge === nextProps.hasEarnedBadge &&
+    prevProps.coinsEarned === nextProps.coinsEarned
+  );
+});
+
+RewardsModal.displayName = 'RewardsModal';
 
 export default RewardsModal;

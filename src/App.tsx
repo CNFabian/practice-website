@@ -1,7 +1,8 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
+import { useEffect } from 'react'
 import type { RootState } from './store/store'
-import { setLoading } from './store/slices/authSlice'
+import { setLoading, logout } from './store/slices/authSlice'
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
@@ -23,7 +24,8 @@ import {
   MaterialsPage,
   RewardsPage,
   HelpPage,
-  SettingsPage
+  SettingsPage,
+  NotificationsPage
 } from './pages'
 import { BadgesPage } from './pages/protected/badges'
 
@@ -32,6 +34,7 @@ import type { Location as RouterLocation } from 'react-router-dom'
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const location = useLocation()
   const state = location.state as { background?: RouterLocation } | null
@@ -41,6 +44,18 @@ function App() {
     (location.pathname === '/onboarding'
       ? ({ ...location, pathname: '/app' } as RouterLocation)
       : undefined)
+
+  // Check if user is authenticated but has no token - force logout
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    
+    // If authenticated in Redux but no token in localStorage, log out
+    if (isAuthenticated && !token) {
+      console.log('No authentication token found - forcing logout');
+      dispatch(logout());
+      navigate('/auth/login');
+    }
+  }, [isAuthenticated, dispatch, navigate]);
 
   const handleLoadingComplete = () => {
     console.log('App: Loading complete - hiding spinner')
@@ -103,6 +118,7 @@ function App() {
               <Route path="badges" element={<BadgesPage />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
             {/* Default redirect based on auth state */}

@@ -3,6 +3,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
+import { checkOnboardingStatus } from '../../../services/learningAPI';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -10,6 +11,34 @@ interface ModulesViewProps {
   onModuleQuizSelect?: (module: Module) => void;
   isTransitioning?: boolean;
 }
+
+// Backend lesson data interface
+interface BackendLessonData {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  video_url: string;
+  estimated_duration_minutes: number;
+  nest_coins_reward: number;
+  is_completed: boolean;
+  progress_seconds: number;
+}
+
+// Helper function to convert backend lesson to frontend format
+const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesson => {
+  return {
+    id: parseInt(backendLesson.id.slice(-1)) || 1,
+    image: backendLesson.image_url || '/default-lesson-image.jpg',
+    title: backendLesson.title,
+    duration: `${backendLesson.estimated_duration_minutes} min`,
+    description: backendLesson.description,
+    coins: backendLesson.nest_coins_reward,
+    completed: backendLesson.is_completed,
+    videoUrl: backendLesson.video_url
+  };
+};
 
 const ModulesView: React.FC<ModulesViewProps> = ({ 
   modulesData, 
@@ -19,6 +48,8 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 }) => {
   // Quiz Battle Modal State
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
+  const [backendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
+  const [loadingLessons, setLoadingLessons] = useState<{ [moduleId: number]: boolean }>({});
   
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -33,7 +64,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     changeActiveTab,
     showCompactLayout,
     toggleCompactLayout,
-    goToQuiz // Add this to access the quiz navigation function
+    goToQuiz
   } = useModules();
 
   const moduleRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -42,7 +73,50 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
-  // Helper function to get module quiz completion status
+  // BACKEND INTEGRATION: Fetch lessons when module is selected
+  useEffect(() => {
+  const fetchModuleLessons = async () => {
+    if (!selectedModuleId || backendLessons[selectedModuleId]) return;
+    
+    // Check onboarding status first using the proper API
+    try {
+      const onboardingComplete = await checkOnboardingStatus();
+      if (!onboardingComplete) {
+        console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
+        return;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+        console.log('⚠️ Onboarding required - skipping backend lesson fetch');
+        return;
+      }
+      console.log('Cannot check onboarding status, skipping backend fetch:', error);
+      return;
+    }
+    
+    setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
+    
+    try {
+      console.log(`✅ Onboarding completed, but real module UUIDs not available yet - using frontend data for module ${selectedModuleId}`);
+      
+      // For now commented out the actual backend call until onboarding provides real UUIDs
+      // const backendModuleId = getBackendModuleId(selectedModuleId);
+      // const lessons = await getModuleLessons(backendModuleId);
+      // setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
+      
+    } catch (error) {
+      console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
+      console.log('Falling back to frontend lesson data');
+    } finally {
+      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
+    }
+  };
+
+  if (selectedModuleId) {
+    fetchModuleLessons();
+  }
+}, [selectedModuleId, backendLessons]);
+
   const getModuleQuizStatus = (moduleId: number) => {
     const progress = moduleProgress[moduleId];
     return {
@@ -66,7 +140,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     const progress = moduleProgress[module.id];
     if (progress) return progress;
     
-    // Updated logic: A lesson is completed when quiz is completed (100%)
     const completed = module.lessons.filter(lesson => {
       const lessonProgressData = lessonProgress[lesson.id];
       return lessonProgressData?.quizCompleted || lessonProgressData?.completed;
@@ -111,12 +184,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     ))
   );
 
-  // MODIFIED: Enhanced to handle smooth transition from grid to column layout
   const handleModuleSelect = (moduleId: number) => {
     if (isTransitioning) return;
 
     const wasCollapsed = sidebarCollapsed;
-    // FIXED: Removed unused variable `previouslySelected`
 
     selectModuleById(moduleId);
 
@@ -124,15 +195,12 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         toggleSidebar(false);
     }
     
-    // Start the compact layout transition immediately to begin the visual change
     if (layoutTimeoutRef.current) {
         clearTimeout(layoutTimeoutRef.current);
     }
     layoutTimeoutRef.current = setTimeout(() => toggleCompactLayout(true), 0);
 
-    // Calculate scroll timing based on whether sidebar needs to expand
     const sidebarTransitionDelay = wasCollapsed ? 700 : 0;
-    // Add extra time for the layout to settle after compact mode activates
     const layoutSettleDelay = 100;
     const totalScrollDelay = sidebarTransitionDelay + layoutSettleDelay;
 
@@ -156,7 +224,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         }
 
         moduleElement.scrollIntoView({
-            // Use smooth scrolling for both sidebar expansion and layout change
             behavior: 'smooth',
             block: blockAlignment,
         });
@@ -216,12 +283,9 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       }
     ];
     
-    // First navigate to the lesson, then start the quiz
     onLessonSelect(lesson, module);
     
-    // Use a small delay to ensure the lesson view is rendered before starting the quiz
     setTimeout(() => {
-      // Use the goToQuiz function from useModules hook
       goToQuiz(sampleQuestions, lesson.id);
     }, 100);
   };
@@ -268,6 +332,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const scrollContainerStyle: React.CSSProperties = {
     scrollbarWidth: selectedModuleId && !sidebarCollapsed ? 'none' : 'thin',
     msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
+  };
+
+  // Get lessons to display - use backend data if available, otherwise use prop data
+  const getLessonsToDisplay = (module: Module): Lesson[] => {
+    const backend = backendLessons[module.id];
+    if (!backend || backend.length === 0) return module.lessons;
+    
+    // Transform backend lessons to match Lesson interface
+    return backend.map(convertBackendLessonToFrontend);
   };
 
   return (
@@ -486,6 +559,15 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     </div>
 
                     <div className="absolute right-0 bottom-5 pr-4 pb-3 w-[calc(50%-1rem)]">
+                      {/* Loading indicator for lessons */}
+                      {loadingLessons[selectedModuleData.id] && (
+                        <div className="flex justify-end mb-2">
+                          <RobotoFont className="text-xs text-gray-500">
+                            Loading lessons...
+                          </RobotoFont>
+                        </div>
+                      )}
+                      
                       {/* Module Quiz Completion Indicator */}
                       {getModuleQuizStatus(selectedModuleData.id).isCompleted && (
                         <div className="flex justify-end mb-2">
@@ -525,7 +607,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
               <div className="mr-4 pb-6">
                 {selectedModuleData ? (
                   <div className="space-y-4 px-1">
-                    {selectedModuleData.lessons.map((lesson, index) => {
+                    {getLessonsToDisplay(selectedModuleData).map((lesson, index) => {
                       const progress = lessonProgress[lesson.id];
                       const isCompleted = progress?.completed || false;
                       const watchProgress = progress?.watchProgress || 0;
@@ -567,8 +649,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                     </RobotoFont>
                                   </div>
                                 )}
-                                {isCompleted && (
-                                  <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
+                                {isCompleted && (<div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                       <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                                     </svg>
@@ -654,7 +735,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
         
         {/* Full-screen container to center the panel */}
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          {/* The actual dialog panel */}
           <DialogPanel className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-lg">
             <DialogTitle>
               <RobotoFont weight={600} className="text-lg text-gray-900 mb-4">

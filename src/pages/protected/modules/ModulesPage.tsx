@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
+import { getModules } from '../../../services/learningAPI';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -50,7 +51,8 @@ const sampleModuleQuizQuestions = [
   }
 ];
 
-const modulesData: Module[] = [
+// Sample frontend modules data (fallback)
+const sampleModulesData: Module[] = [
   {
     id: 1,
     image: SignupImage,
@@ -307,10 +309,24 @@ const modulesData: Module[] = [
   }
 ];
 
+const convertBackendModuleToFrontend = (backendModule: any): Module => {
+  return {
+    id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000), // Temporary conversion
+    image: backendModule.thumbnail_url || SignupImage,
+    title: backendModule.title,
+    description: backendModule.description,
+    lessonCount: backendModule.lesson_count || 0,
+    status: backendModule.progress_percentage === "100" ? 'Completed' : 
+            backendModule.progress_percentage === "0" ? 'Not Started' : 'In Progress',
+    tags: [backendModule.difficulty_level || 'Beginner'],
+    illustration: backendModule.thumbnail_url || SignupImage,
+    lessons: [] // Will be populated when module is selected
+  };
+};
+
 interface ModulesPageProps {}
 
 const ModulesPage: React.FC<ModulesPageProps> = () => {
-  // Redux state management
   const {
     currentView,
     currentModule,
@@ -319,43 +335,203 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     loadModules,
     goToLesson,
     goToModules,
-    goToModuleQuiz // NEW: Add module quiz navigation
+    goToModuleQuiz
   } = useModules();
 
-  // Keep your existing local state for transitions
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Load modules data into Redux on component mount
+  const [isLoadingBackend, setIsLoadingBackend] = useState(false);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
+  const [onboardingRequired, setOnboardingRequired] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+
+  const fetchModulesFromBackend = async () => {
+    setIsLoadingBackend(true);
+    setBackendError(null);
+    setOnboardingRequired(false);
+    
+    try {
+      console.log('Fetching modules from backend...');
+      const backendModules = await getModules();
+      console.log('Backend modules received:', backendModules);
+      
+      if (Array.isArray(backendModules) && backendModules.length > 0) {
+        const convertedModules = backendModules.map(convertBackendModuleToFrontend);
+        setBackendModulesData(convertedModules);
+        setShowOnboardingBanner(false);
+        console.log('Successfully converted backend modules:', convertedModules);
+      } else {
+        console.warn('Backend returned empty or invalid modules array:', backendModules);
+        setBackendError('No modules found in backend');
+      }
+    } catch (error) {
+      console.error('Error fetching modules from backend:', error);
+      
+      if (error instanceof Error) {
+        if (error.message === 'ONBOARDING_REQUIRED') {
+          setOnboardingRequired(true);
+          setShowOnboardingBanner(true);
+          setBackendError('Onboarding required to access learning modules');
+          console.log('User needs to complete onboarding first');
+        } else if (error.message.includes('HTTP error! status: 400')) {
+          setBackendError('Bad Request - Check your authentication or API endpoint');
+        } else if (error.message.includes('HTTP error! status: 422')) {
+          setBackendError('Validation Error - Check request format');
+        } else if (error.message.includes('No authentication token')) {
+          setBackendError('Authentication required - Please log in');
+        } else {
+          setBackendError(`Backend error: ${error.message}`);
+        }
+      } else {
+        setBackendError('Unknown error occurred while fetching modules');
+      }
+      
+      console.log('Continuing with sample frontend data due to backend error');
+    } finally {
+      setIsLoadingBackend(false);
+    }
+  };
+
+  const renderOnboardingBanner = () => {
+    if (!showOnboardingBanner) return null;
+    
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="ml-3 flex-1">
+            <h3 className="text-lg font-medium text-blue-900">Welcome! Complete Your Onboarding</h3>
+            <div className="mt-2 text-sm text-blue-700">
+              <p>To access learning modules and start your educational journey, you'll need to complete the onboarding process first.</p>
+            </div>
+            <div className="mt-4">
+              <div className="flex space-x-3">
+                <button 
+                  onClick={() => {
+                    console.log('Redirecting to onboarding...');
+                    alert('Onboarding redirect would happen here - implement based on your routing');
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Complete Onboarding
+                </button>
+                <button 
+                  onClick={() => setShowOnboardingBanner(false)}
+                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBackendStatus = () => {
+    if (isLoadingBackend) {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+            <span className="text-blue-700">Loading modules from backend...</span>
+          </div>
+        </div>
+      );
+    }
+    
+    if (onboardingRequired) {
+      return renderOnboardingBanner();
+    }
+    
+    if (backendError && !onboardingRequired) {
+      return (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-amber-800 font-medium">Backend Connection Issue</h4>
+              <p className="text-amber-700 text-sm mt-1">{backendError}</p>
+              <p className="text-amber-600 text-xs mt-1">Using sample data for now.</p>
+            </div>
+            <button 
+              onClick={fetchModulesFromBackend}
+              className="bg-amber-600 text-white px-3 py-1 rounded text-sm hover:bg-amber-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    if (backendModulesData.length > 0) {
+      return (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+            <span className="text-green-700">Successfully loaded {backendModulesData.length} modules from backend</span>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  useEffect(() => {
+    fetchModulesFromBackend();
+    
+    const retryTimer = setTimeout(() => {
+      if (backendError && !backendModulesData.length && !onboardingRequired) {
+        console.log('Retrying backend fetch after initial failure...');
+        fetchModulesFromBackend();
+      }
+    }, 5000);
+    
+    return () => clearTimeout(retryTimer);
+  }, []);
+
   useEffect(() => {
     if (modules.length === 0) {
-      loadModules(modulesData);
+      loadModules(sampleModulesData);
     }
   }, [modules.length, loadModules]);
 
+  const modulesToDisplay = useMemo(() => {
+    // Priority: Backend data > Frontend sample data
+    if (backendModulesData.length > 0) {
+      console.log('Using backend modules data');
+      return backendModulesData;
+    } else {
+      console.log('Using frontend sample data');
+      return sampleModulesData;
+    }
+  }, [backendModulesData]);
+
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     setIsTransitioning(true);
-    // Use Redux navigation instead of local state
     goToLesson(lesson.id, module.id);
     
     requestAnimationFrame(() => {
-      // currentView will be updated by Redux, but we can still use local transition state
     });
   };
 
-  // NEW: Handle module quiz navigation
   const handleModuleQuizStart = (module: Module) => {
     setIsTransitioning(true);
-    // Use Redux navigation for module quiz
     goToModuleQuiz(sampleModuleQuizQuestions, module.id);
   };
 
   const handleBackToModule = () => {
     setIsTransitioning(true);
-    // Use Redux navigation
     goToModules();
   };
 
-  // Keep your existing transition logic but sync with Redux state
   useEffect(() => {
     if (currentView === 'modules' && isTransitioning) {
       const timer = setTimeout(() => {
@@ -374,6 +550,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-50">
+      {/* Backend status indicator - only show in modules view */}
+      {currentView === 'modules' && (
+        <div className="absolute top-0 left-0 w-full z-10 p-4">
+          {renderBackendStatus()}
+        </div>
+      )}
+
       {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
@@ -385,12 +568,14 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
           pointerEvents: currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz' ? 'none' : 'auto'
         }}
       >
-        <ModulesView
-          modulesData={modules.length > 0 ? modules : modulesData} // Use Redux modules or fallback
-          onLessonSelect={handleLessonStart}
-          onModuleQuizSelect={handleModuleQuizStart} // NEW: Pass the module quiz handler
-          isTransitioning={isTransitioning}
-        />
+        <div className={`h-full ${renderBackendStatus() ? 'pt-20' : ''}`}>
+          <ModulesView
+            modulesData={modulesToDisplay}
+            onLessonSelect={handleLessonStart}
+            onModuleQuizSelect={handleModuleQuizStart}
+            isTransitioning={isTransitioning}
+          />
+        </div>
       </div>
 
       {/* LESSON VIEW */}
@@ -414,7 +599,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         )}
       </div>
 
-      {/* MODULE QUIZ VIEW - NEW */}
+      {/* MODULE QUIZ VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'moduleQuiz'

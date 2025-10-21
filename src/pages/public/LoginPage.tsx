@@ -20,37 +20,51 @@ const LoginPage: React.FC = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  e.preventDefault()
+  setError('')
+  setLoading(true)
 
-    try {
-      // TODO: Implement AWS Cognito login here
-      console.log('Login attempt with:', formData.email)
-      
-      // TEMPORARY FIX: Bypass authentication until Cognito is ready
-      const tempUser = {
-        uid: 'temp-' + Date.now(),
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         email: formData.email,
-        displayName: formData.email.split('@')[0],
-        photoURL: null,
-        emailVerified: true
-      }
-      
-      // Dispatch to Redux store
-      const { setUser } = await import('../../store/slices/authSlice')
-      const { store } = await import('../../store/store')
-      store.dispatch(setUser(tempUser))
-      
-      // Navigate to app
-      navigate('/app')
-      
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setLoading(false)
+        password: formData.password
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
     }
+
+    const data = await response.json();
+    
+    // Store tokens in localStorage
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('refresh_token', data.refresh_token);
+    
+    // Dispatch to Redux store
+    const { setUser } = await import('../../store/slices/authSlice')
+    const { store } = await import('../../store/store')
+    store.dispatch(setUser({
+      uid: 'user-id',
+      email: formData.email,
+      displayName: formData.email.split('@')[0],
+      photoURL: null,
+      emailVerified: true
+    }))
+    
+    navigate('/app')
+    
+  } catch (err) {
+    setError('Invalid email or password')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen flex">

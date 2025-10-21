@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module } from '../../../types/modules';
 import { CoinIcon, QuestionImage, BadgeMedal, RobotoFont } from '../../../assets';
 import { FeedbackContainer, QuizResults } from '../../../components';
+import { getModule, getLessonQuiz } from '../../../services/learningAPI';
 
 interface ModuleQuizViewProps {
   module: Module;
@@ -11,15 +12,41 @@ interface ModuleQuizViewProps {
   isTransitioning?: boolean;
 }
 
+interface BackendModuleData {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  lesson_count: number;
+  progress_percentage: string;
+}
+
+interface BackendQuizQuestion {
+  id: string;
+  lesson_id: string;
+  question_text: string;
+  question_type: string;
+  explanation: string;
+  order_index: number;
+  answers: {
+    id: string;
+    question_id: string;
+    answer_text: string;
+    order_index: number;
+  }[];
+}
+
 const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   module,
   onBack,
   isTransitioning = false
 }) => {
-  // Quiz Battle Modal State
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
+  const [backendModuleData, setBackendModuleData] = useState<BackendModuleData | null>(null);
+  const [isLoadingModule, setIsLoadingModule] = useState(false);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+  const [moduleError, setModuleError] = useState<string | null>(null);
 
-  // Redux state management
   const {
     quizState,
     selectAnswer,
@@ -30,8 +57,163 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
     completeModuleQuiz,
     sidebarCollapsed,
     toggleSidebar,
-    moduleProgress
+    moduleProgress,
+    startModuleQuiz
   } = useModules();
+
+  useEffect(() => {
+    const fetchModuleData = async () => {
+      if (!module?.id) return;
+      
+      setIsLoadingModule(true);
+      setModuleError(null);
+      
+      try {
+        const moduleData = await getModule(module.id.toString());
+        console.log('Backend module data received:', moduleData);
+        
+        setBackendModuleData(moduleData);
+      } catch (error) {
+        console.error('Error fetching module data:', error);
+        setModuleError('Failed to load module details');
+        // Continue with existing module prop data
+      } finally {
+        setIsLoadingModule(false);
+      }
+    };
+
+    fetchModuleData();
+  }, [module?.id]);
+
+  useEffect(() => {
+    const initializeModuleQuiz = async () => {
+      if (quizState.isActive && quizState.quizType === 'module') return;
+
+      setIsLoadingQuiz(true);
+      
+      try {
+        const allQuizQuestions: any[] = [];
+        
+        for (const lesson of module.lessons) {
+          try {
+            const lessonQuizData = await getLessonQuiz(lesson.id.toString());
+            console.log(`Quiz data for lesson ${lesson.id}:`, lessonQuizData);
+            
+            if (lessonQuizData && lessonQuizData.length > 0) {
+              allQuizQuestions.push(lessonQuizData[0]); // Take first question from each lesson
+            }
+          } catch (error) {
+            console.error(`Error fetching quiz for lesson ${lesson.id}:`, error);
+          }
+        }
+
+        console.log('Total quiz questions collected:', allQuizQuestions.length);
+
+        if (allQuizQuestions.length > 0) {
+          const transformedQuestions = allQuizQuestions.map((q: BackendQuizQuestion, index: number) => {
+            const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
+            
+            return {
+              id: index + 1,
+              question: q.question_text,
+              options: sortedAnswers.map((answer, answerIndex) => ({
+                id: String.fromCharCode(97 + answerIndex), // 'a', 'b', 'c', 'd'
+                text: answer.answer_text,
+                isCorrect: answerIndex === 0 // Backend puts correct answer first
+              })),
+              explanation: {
+                correct: q.explanation || "Correct! Well done.",
+                incorrect: sortedAnswers.reduce((acc, _answer, answerIndex) => {
+                  if (answerIndex > 0) {
+                    const optionId = String.fromCharCode(97 + answerIndex);
+                    acc[optionId] = {
+                      why_wrong: `This is not the correct answer.`,
+                      confusion_reason: `Review the lesson content for more details.`
+                    };
+                  }
+                  return acc;
+                }, {} as { [key: string]: { why_wrong: string; confusion_reason: string } })
+              }
+            };
+          });
+
+          startModuleQuiz(transformedQuestions, module.id);
+        } else {
+          throw new Error('No quiz questions available for this module');
+        }
+      } catch (error) {
+        console.error('Error initializing module quiz:', error);
+        setModuleError('Failed to load quiz. Using sample questions.');
+        
+        // Fallback to sample questions
+        const sampleModuleQuizQuestions = [
+          {
+            id: 1,
+            question: "What is the main goal of this module?",
+            options: [
+              { id: 'a', text: "To learn basic concepts", isCorrect: true },
+              { id: 'b', text: "To complete assignments", isCorrect: false },
+              { id: 'c', text: "To earn coins", isCorrect: false },
+              { id: 'd', text: "To watch videos", isCorrect: false }
+            ],
+            explanation: {
+              correct: "Great! The main goal is to understand and apply the core concepts taught in this module.",
+              incorrect: {
+                'a': { why_wrong: "This is actually correct.", confusion_reason: "Correct answer" },
+                'b': { why_wrong: "While assignments help, the main goal is conceptual understanding.", confusion_reason: "Common misconception about learning objectives" },
+                'c': { why_wrong: "Coins are rewards, not the primary learning objective.", confusion_reason: "Gamification elements vs core purpose" },
+                'd': { why_wrong: "Videos are just one delivery method for the content.", confusion_reason: "Medium vs message confusion" }
+              }
+            }
+          },
+          {
+            id: 2,
+            question: "Which of the following represents best practices covered in this module?",
+            options: [
+              { id: 'a', text: "Following step-by-step procedures", isCorrect: false },
+              { id: 'b', text: "Understanding underlying principles", isCorrect: true },
+              { id: 'c', text: "Memorizing facts", isCorrect: false },
+              { id: 'd', text: "Completing tasks quickly", isCorrect: false }
+            ],
+            explanation: {
+              correct: "Excellent! Understanding principles allows you to apply knowledge flexibly.",
+              incorrect: {
+                'a': { why_wrong: "Procedures are helpful but understanding principles is more important.", confusion_reason: "Surface vs deep learning approach" },
+                'b': { why_wrong: "This is actually correct.", confusion_reason: "Correct answer" },
+                'c': { why_wrong: "Memorization without understanding limits practical application.", confusion_reason: "Rote learning vs comprehension" },
+                'd': { why_wrong: "Speed without comprehension can lead to errors.", confusion_reason: "Quality vs quantity" }
+              }
+            }
+          },
+          {
+            id: 3,
+            question: "How should you apply the knowledge from this module?",
+            options: [
+              { id: 'a', text: "Only in specific situations", isCorrect: false },
+              { id: 'b', text: "By following exact examples", isCorrect: false },
+              { id: 'c', text: "By adapting to different contexts", isCorrect: true },
+              { id: 'd', text: "Without thinking critically", isCorrect: false }
+            ],
+            explanation: {
+              correct: "Perfect! The best learning happens when you can adapt knowledge to new situations.",
+              incorrect: {
+                'a': { why_wrong: "Knowledge should be transferable to multiple situations.", confusion_reason: "Limited thinking about application" },
+                'b': { why_wrong: "Examples are guides, not rigid templates.", confusion_reason: "Rigid vs flexible thinking" },
+                'c': { why_wrong: "This is actually correct.", confusion_reason: "Correct answer" },
+                'd': { why_wrong: "Critical thinking is essential for proper application.", confusion_reason: "Passive vs active learning" }
+              }
+            }
+          }
+        ];
+
+        startModuleQuiz(sampleModuleQuizQuestions, module.id);
+      } finally {
+        setIsLoadingQuiz(false);
+      }
+    };
+
+    initializeModuleQuiz();
+  }, [module?.id, module.lessons]);
 
   const handleAnswerSelect = (optionId: string) => {
     if (quizState.isTransitioning) return;
@@ -74,22 +256,25 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
     toggleSidebar(!sidebarCollapsed);
   };
 
-  // Use Redux state
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
 
-  // Get module progress from Redux
   const currentModuleProgress = moduleProgress[module.id];
   const isCompleted = currentModuleProgress?.overallProgress === 100 || false;
   const moduleQuizCompleted = currentModuleProgress?.moduleQuizCompleted || false;
   const moduleQuizScore = currentModuleProgress?.moduleQuizScore || 0;
 
-  // Calculate correct answers for results
   const correctAnswers = quizState.questions.reduce((acc, question, index) => {
-  const userAnswer = quizState.answers[index];
-  const correctOption = question.options.find(opt => opt.isCorrect);
-  return acc + (userAnswer === correctOption?.id ? 1 : 0);
-}, 0);
+    const userAnswer = quizState.answers[index];
+    const correctOption = question.options.find(opt => opt.isCorrect);
+    return acc + (userAnswer === correctOption?.id ? 1 : 0);
+  }, 0);
+
+  // Use backend data when available, fallback to prop data
+  const displayTitle = backendModuleData?.title || module.title;
+  const displayDescription = backendModuleData?.description || module.description;
+  const displayImage = backendModuleData?.thumbnail_url || module.image;
+  const displayLessonCount = backendModuleData?.lesson_count || module.lessonCount;
 
   // Question Component
   const QuestionCard: React.FC<{
@@ -171,7 +356,6 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
             })}
           </div>
 
-          {/* Use the separate FeedbackContainer component */}
           <FeedbackContainer
             isVisible={cardShowFeedback && !!selectedAnswer}
             isCorrect={isCorrect}
@@ -182,6 +366,18 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
       </>
     );
   };
+
+  // Show loading state while quiz is being initialized
+  if (isLoadingQuiz) {
+    return (
+      <div className="pt-6 w-full h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+          <RobotoFont className="text-gray-600">Loading module quiz...</RobotoFont>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-6 w-full h-full">
@@ -236,7 +432,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 {/* Module Quiz Status */}
                 {moduleQuizCompleted && (
                 <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
-                    {moduleQuizScore && (
+                    {moduleQuizScore > 0 && quizState.questions.length > 0 && (
                     <RobotoFont weight={500} className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
                         {Math.round((moduleQuizScore / quizState.questions.length) * 100)}%
                       </RobotoFont>
@@ -249,7 +445,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
               <div className="space-y-3 pb-3">
                 <div>
                   <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-1 leading-tight">
-                    {module.title}
+                    {displayTitle}
                   </RobotoFont>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="flex gap-1">
@@ -281,11 +477,23 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                       ))}
                     </div>
                     <RobotoFont className="text-xs text-gray-600">
-                      {module.lessonCount} lessons
+                      {displayLessonCount} lessons
                     </RobotoFont>
                   </div>
                 </div>
               </div>
+
+              {/* Loading/Error State */}
+              {isLoadingModule && (
+                <div className="text-xs text-gray-500 pb-2">
+                  <RobotoFont className="text-xs">Loading module details...</RobotoFont>
+                </div>
+              )}
+              {moduleError && (
+                <div className="text-xs text-orange-500 pb-2">
+                  <RobotoFont className="text-xs">{moduleError}</RobotoFont>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 flex items-center justify-center">
@@ -297,7 +505,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <img src={module.image} alt={module.title} className="object-contain w-full h-full" />
+                  <img src={displayImage} alt={displayTitle} className="object-contain w-full h-full" />
 
                   {/* Completion badge from Redux */}
                   {isCompleted && (
@@ -314,7 +522,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
             <div className="flex-shrink-0 py-3 border-t border-gray-100 space-y-3">
               <div className="text-xs text-gray-600">
                 <RobotoFont className="text-xs text-gray-600">
-                  In this module, you'll learn about the precursor steps to prepare for home ownership.
+                  {displayDescription || "In this module, you'll learn about the precursor steps to prepare for home ownership."}
                 </RobotoFont>
               </div>
 
@@ -324,7 +532,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 </RobotoFont>
               </div>
 
-              {/* ENHANCED Rewards Section with Remaining Coins and Badge Status */}
+              {/* Rewards Section with Remaining Coins and Badge Status */}
               <div className="space-y-3 pb-4">
                 <RobotoFont as="h3" weight={500} className="text-sm text-gray-900">
                   Rewards
@@ -399,12 +607,12 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
           sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
         }`} />
 
-        {/* Right Column - Quiz Content - FIXED HEIGHT STRUCTURE */}
+        {/* Right Column - Quiz Content */}
         <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
           sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
         }`}>
           <div className="p-4 h-full flex flex-col relative">
-            {/* Header - Updated to show Test Your Knowledge and question number, left-aligned */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="text-left flex-1 ml-4">
                 <RobotoFont as="h1" weight={600} className="text-sm text-gray-900">
@@ -419,13 +627,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
 
             {!quizState.showResults ? (
               <>
-                {/* SIMPLIFIED SINGLE QUESTION CONTAINER WITH FADE TRANSITION */}
                 <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
                   <div className="relative h-full w-full overflow-hidden">
-                    
-                    {/* Single question container with fade transition */}
-                    <div
-                      className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+                    <div className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
                         quizState.isTransitioning
                           ? 'opacity-0 transform scale-95'
                           : 'opacity-100 transform scale-100'
@@ -459,7 +663,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                   </button>
                   
                   <div className="flex gap-1">
-                    {quizState.questions.map((_, index) => (
+                    {quizState.questions.map((_q, index) => (
                       <div
                         key={index}
                         className={`w-1.5 h-1.5 rounded-full transition-colors ${
@@ -485,7 +689,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 </div>
               </>
             ) : (
-              /* UPDATED: QuizResults component with module quiz props */
+              /* QuizResults component with module quiz props */
               <QuizResults
                 score={quizState.score}
                 totalQuestions={quizState.questions.length}
@@ -493,7 +697,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
                 onContinue={handleFinish}
                 onRetake={handleRetake}
                 onClaimRewards={handleClaimRewards}
-                lessonTitle={`${module.title} - Module Quiz`}
+                lessonTitle={`${displayTitle} - Module Quiz`}
                 nextLesson={null}
                 isModuleQuiz={true}
                 moduleId={module.id}
@@ -514,7 +718,6 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
         
         {/* Full-screen container to center the panel */}
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          {/* The actual dialog panel */}
           <DialogPanel className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-lg">
             <DialogTitle>
               <RobotoFont weight={600} className="text-lg text-gray-900 mb-4">
