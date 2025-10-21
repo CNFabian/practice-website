@@ -27,7 +27,7 @@ const Sidebar: React.FC = () => {
 
   const materialSubItems = [
     { id: 'calculators', label: 'Calculators', path: '/app/materials?category=Calculators', icon: CalculatorDarkIcon },
-    { id: 'worksheets', label: 'Worksheets', path: '/app/worksheets', icon: DocumentDarkIcon }, // FIXED: Direct route
+    { id: 'worksheets', label: 'Worksheets', path: '/app/materials?category=Worksheets', icon: DocumentDarkIcon },
     { id: 'checklists', label: 'Checklists', path: '/app/materials?category=Checklists', icon: ChecklistDarkIcon },
     { id: 'minigames', label: 'Minigames', path: '/app/materials?category=Minigames', icon: ControllerDarkIcon },
   ];

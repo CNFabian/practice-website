@@ -24,67 +24,48 @@ const SignupPage: React.FC = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phoneNumber,
-          date_of_birth: ''
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Registration failed');
-      }
-
-      const data = await response.json();
-      
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      
-      // Dispatch to Redux store
-      const { setUser } = await import('../../store/slices/authSlice')
-      const { store } = await import('../../store/store')
-      store.dispatch(setUser({
-        uid: 'user-id', 
-        email: formData.email,
-        displayName: `${formData.firstName} ${formData.lastName}`,
-        photoURL: null,
-        emailVerified: false
-      }))
-      
-      navigate('/app')
-      
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred')
-    } finally {
-      setLoading(false)
-    }
+  e.preventDefault()
+  setError('')
+  
+  if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match')
+    return
   }
+
+  if (formData.password.length < 6) {
+    setError('Password must be at least 6 characters long')
+    return
+  }
+
+  setLoading(true)
+
+  try {
+    // TODO: Implement AWS Cognito signup here
+    console.log('Signup attempt with:', formData.email)
+    
+    // TEMPORARY FIX: Bypass authentication until Cognito is ready
+    const tempUser = {
+      uid: 'temp-' + Date.now(),
+      email: formData.email,
+      displayName: `${formData.firstName} ${formData.lastName}`,
+      photoURL: null,
+      emailVerified: true
+    }
+    
+    // Dispatch to Redux store
+    const { setUser } = await import('../../store/slices/authSlice')
+    const { store } = await import('../../store/store')
+    store.dispatch(setUser(tempUser))
+    
+    // Navigate to app
+    navigate('/app')
+    
+  } catch (err) {
+    setError('An unexpected error occurred')
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="min-h-screen flex">

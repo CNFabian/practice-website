@@ -1,51 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
 import { LessonQuiz } from '../../../components';
-import { 
-  getLesson, 
-  updateLessonProgress as apiUpdateProgress, 
-  completeLesson as apiCompleteLesson,
-  getLessonQuiz 
-} from '../../../services/learningAPI';
 
 interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
   isTransitioning?: boolean;
-}
-
-// Backend lesson data interface
-interface BackendLessonData {
-  id: string;
-  module_id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  video_url: string;
-  video_transcription: string;
-  estimated_duration_minutes: number;
-  nest_coins_reward: number;
-  is_completed: boolean;
-  progress_seconds: number;
-}
-
-// Backend quiz question interface
-interface BackendQuizQuestion {
-  id: string;
-  lesson_id: string;
-  question_text: string;
-  question_type: string;
-  explanation: string;
-  order_index: number;
-  answers: {
-    id: string;
-    question_id: string;
-    answer_text: string;
-    order_index: number;
-  }[];
 }
 
 const LessonView: React.FC<LessonViewProps> = ({ 
@@ -66,36 +29,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   } = useModules();
 
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [backendLessonData, setBackendLessonData] = useState<BackendLessonData | null>(null);
-  const [isLoadingLesson, setIsLoadingLesson] = useState(false);
-  const [lessonError, setLessonError] = useState<string | null>(null);
 
   const showQuiz = currentView === 'quiz';
-
-  // BACKEND INTEGRATION: Fetch lesson details from API
-  useEffect(() => {
-    const fetchLessonData = async () => {
-      if (!lesson?.id) return;
-      
-      setIsLoadingLesson(true);
-      setLessonError(null);
-      
-      try {
-        const lessonData = await getLesson(lesson.id.toString());
-        console.log('Backend lesson data received:', lessonData);
-        
-        setBackendLessonData(lessonData);
-      } catch (error) {
-        console.error('Error fetching lesson data:', error);
-        setLessonError('Failed to load lesson details');
-        // Continue with existing lesson prop data
-      } finally {
-        setIsLoadingLesson(false);
-      }
-    };
-
-    fetchLessonData();
-  }, [lesson?.id]);
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -122,153 +57,108 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   };
 
-  // BACKEND INTEGRATION: Fetch quiz from backend
-  const handleStartQuiz = async () => {
+  const handleStartQuiz = () => {
     if (isTransitioning) return;
     
-    try {
-      const quizData = await getLessonQuiz(lesson.id.toString());
-      console.log('Backend quiz data received:', quizData);
-      
-      // Transform backend quiz data to match QuizQuestion interface
-      const transformedQuestions = quizData.map((q: BackendQuizQuestion, index: number) => {
-        // Sort answers by order_index to maintain consistency
-        const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
-        
-        return {
-          id: index + 1, // Use index as numeric ID
-          question: q.question_text,
-          options: sortedAnswers.map((answer, answerIndex) => ({
-            id: String.fromCharCode(97 + answerIndex), // Convert to 'a', 'b', 'c', 'd'
-            text: answer.answer_text,
-            isCorrect: answerIndex === 0 // Backend typically puts correct answer first
-          })),
-          explanation: {
-            correct: q.explanation || "Correct! Well done.",
-            incorrect: sortedAnswers.reduce((acc, _answer, answerIndex) => {
-              if (answerIndex > 0) { // Skip first answer (correct one)
-                const optionId = String.fromCharCode(97 + answerIndex);
-                acc[optionId] = {
-                  why_wrong: `This is not the correct answer.`,
-                  confusion_reason: `Review the lesson content for more details.`
-                };
-              }
-              return acc;
-            }, {} as { [key: string]: { why_wrong: string; confusion_reason: string } })
-          }
-        };
-      });
-      
-      if (transformedQuestions.length > 0) {
-        startQuiz(transformedQuestions, lesson.id);
-      } else {
-        throw new Error('No quiz questions available');
-      }
-    } catch (error) {
-      console.error('Error fetching quiz:', error);
-      
-      // Fallback to sample questions
-      console.log('Using fallback sample questions');
-      const sampleQuestions = [
-        {
-          id: 1,
-          question: "What is the first step in preparing for homeownership?",
-          options: [
-            { id: 'a', text: 'Looking at houses online', isCorrect: false },
-            { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
-            { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
-            { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
-          ],
-          explanation: {
-            correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
-            incorrect: {
-              'a': { why_wrong: "Looking at houses online is premature without knowing your budget first.", confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "Talking to a real estate agent should come after you know your financial limits.", confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints." },
-              'd': { why_wrong: "Pre-approval comes after you've assessed what you can afford.", confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders." }
-            }
-          }
-        },
-        {
-          id: 2,
-          question: "What percentage of your monthly income should typically go toward housing costs?",
-          options: [
-            { id: 'a', text: '20%', isCorrect: false },
-            { id: 'b', text: '28%', isCorrect: true },
-            { id: 'c', text: '35%', isCorrect: false },
-            { id: 'd', text: '40%', isCorrect: false }
-          ],
-          explanation: {
-            correct: "The 28% rule is a widely accepted guideline that helps ensure you can afford your housing costs while maintaining financial stability for other expenses.",
-            incorrect: {
-              'a': { why_wrong: "20% is too conservative for most people and may limit housing options unnecessarily.", confusion_reason: "While being conservative with money is good, 20% might be too restrictive in today's housing market." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "35% puts you at risk of being house poor with little money for other expenses.", confusion_reason: "This might seem reasonable if you really want a nice home, but it leaves little room for emergencies or other goals." },
-              'd': { why_wrong: "40% is dangerously high and could lead to financial stress.", confusion_reason: "This percentage would make it very difficult to save money or handle unexpected expenses." }
-            }
-          }
-        },
-        {
-          id: 3,
-          question: "What is the minimum recommended credit score for a conventional mortgage?",
-          options: [
-            { id: 'a', text: '580', isCorrect: false },
-            { id: 'b', text: '620', isCorrect: true },
-            { id: 'c', text: '680', isCorrect: false },
-            { id: 'd', text: '720', isCorrect: false }
-          ],
-          explanation: {
-            correct: "620 is typically the minimum credit score for a conventional mortgage, though higher scores get better interest rates.",
-            incorrect: {
-              'a': { why_wrong: "580 is the minimum for FHA loans, not conventional mortgages.", confusion_reason: "You might be thinking of FHA loans, which have lower credit requirements but come with mortgage insurance." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "680 is a good score but higher than the minimum required.", confusion_reason: "While 680 will get you better rates, you can qualify with a lower score." },
-              'd': { why_wrong: "720 is an excellent score but much higher than the minimum.", confusion_reason: "This score gets you the best rates, but you don't need it to qualify for a mortgage." }
-            }
-          }
-        },
-        {
-          id: 4,
-          question: "What does PMI stand for in home buying?",
-          options: [
-            { id: 'a', text: 'Personal Mortgage Insurance', isCorrect: false },
-            { id: 'b', text: 'Private Mortgage Insurance', isCorrect: true },
-            { id: 'c', text: 'Property Management Insurance', isCorrect: false },
-            { id: 'd', text: 'Primary Mortgage Investment', isCorrect: false }
-          ],
-          explanation: {
-            correct: "Private Mortgage Insurance protects the lender if you default on your loan. It's required when you put down less than 20%.",
-            incorrect: {
-              'a': { why_wrong: "It's Private, not Personal Mortgage Insurance.", confusion_reason: "The terms sound similar, but PMI specifically refers to Private Mortgage Insurance." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "Property Management Insurance is a different type of coverage entirely.", confusion_reason: "This sounds related to real estate, but it's for property management companies, not home buyers." },
-              'd': { why_wrong: "PMI has nothing to do with investments.", confusion_reason: "While mortgages can be investments for lenders, PMI is purely about insurance protection." }
-            }
-          }
-        },
-        {
-          id: 5,
-          question: "How much should you typically have saved for a down payment on a conventional loan?",
-          options: [
-            { id: 'a', text: '3%', isCorrect: false },
-            { id: 'b', text: '5%', isCorrect: false },
-            { id: 'c', text: '10%', isCorrect: false },
-            { id: 'd', text: '20%', isCorrect: true }
-          ],
-          explanation: {
-            correct: "20% down payment helps you avoid PMI and typically gets you better loan terms and interest rates.",
-            incorrect: {
-              'a': { why_wrong: "3% is available but comes with PMI and higher long-term costs.", confusion_reason: "Some programs allow 3% down, but this isn't typical for conventional loans and costs more over time." },
-              'b': { why_wrong: "5% is possible but still requires PMI and higher costs.", confusion_reason: "While some lenders accept 5%, you'll pay PMI and higher interest rates." },
-              'c': { why_wrong: "10% is better than 5% but you'll still pay PMI.", confusion_reason: "Getting closer to 20%, but you'll still have additional costs with PMI." },
-              'd': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." }
-            }
+    const sampleQuestions = [
+      {
+        id: 1,
+        question: "What is the first step in preparing for homeownership?",
+        options: [
+          { id: 'a', text: 'Looking at houses online', isCorrect: false },
+          { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
+          { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
+          { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
+        ],
+        explanation: {
+          correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
+          incorrect: {
+            'a': { why_wrong: "Looking at houses online is premature without knowing your budget first.", confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "Talking to a real estate agent should come after you know your financial limits.", confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints." },
+            'd': { why_wrong: "Pre-approval comes after you've assessed what you can afford.", confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders." }
           }
         }
-      ];
-      
-      startQuiz(sampleQuestions, lesson.id);
-    }
+      },
+      {
+        id: 2,
+        question: "What percentage of your monthly income should typically go toward housing costs?",
+        options: [
+          { id: 'a', text: '20%', isCorrect: false },
+          { id: 'b', text: '28%', isCorrect: true },
+          { id: 'c', text: '35%', isCorrect: false },
+          { id: 'd', text: '40%', isCorrect: false }
+        ],
+        explanation: {
+          correct: "The 28% rule is a widely accepted guideline that helps ensure you can afford your housing costs while maintaining financial stability for other expenses.",
+          incorrect: {
+            'a': { why_wrong: "20% is too conservative for most people and may limit housing options unnecessarily.", confusion_reason: "While being conservative with money is good, 20% might be too restrictive in today's housing market." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "35% puts you at risk of being house poor with little money for other expenses.", confusion_reason: "This might seem reasonable if you really want a nice home, but it leaves little room for emergencies or other goals." },
+            'd': { why_wrong: "40% is dangerously high and could lead to financial stress.", confusion_reason: "This percentage would make it very difficult to save money or handle unexpected expenses." }
+          }
+        }
+      },
+      {
+        id: 3,
+        question: "What is the minimum recommended credit score for a conventional mortgage?",
+        options: [
+          { id: 'a', text: '580', isCorrect: false },
+          { id: 'b', text: '620', isCorrect: true },
+          { id: 'c', text: '680', isCorrect: false },
+          { id: 'd', text: '720', isCorrect: false }
+        ],
+        explanation: {
+          correct: "620 is typically the minimum credit score for a conventional mortgage, though higher scores get better interest rates.",
+          incorrect: {
+            'a': { why_wrong: "580 is the minimum for FHA loans, not conventional mortgages.", confusion_reason: "You might be thinking of FHA loans, which have lower credit requirements but come with mortgage insurance." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "680 is a good score but higher than the minimum required.", confusion_reason: "While 680 will get you better rates, you can qualify with a lower score." },
+            'd': { why_wrong: "720 is an excellent score but much higher than the minimum.", confusion_reason: "This score gets you the best rates, but you don't need it to qualify for a mortgage." }
+          }
+        }
+      },
+      {
+        id: 4,
+        question: "What does PMI stand for in home buying?",
+        options: [
+          { id: 'a', text: 'Personal Mortgage Insurance', isCorrect: false },
+          { id: 'b', text: 'Private Mortgage Insurance', isCorrect: true },
+          { id: 'c', text: 'Property Management Insurance', isCorrect: false },
+          { id: 'd', text: 'Primary Mortgage Investment', isCorrect: false }
+        ],
+        explanation: {
+          correct: "Private Mortgage Insurance protects the lender if you default on your loan. It's required when you put down less than 20%.",
+          incorrect: {
+            'a': { why_wrong: "It's Private, not Personal Mortgage Insurance.", confusion_reason: "The terms sound similar, but PMI specifically refers to Private Mortgage Insurance." },
+            'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
+            'c': { why_wrong: "Property Management Insurance is a different type of coverage entirely.", confusion_reason: "This sounds related to real estate, but it's for property management companies, not home buyers." },
+            'd': { why_wrong: "PMI has nothing to do with investments.", confusion_reason: "While mortgages can be investments for lenders, PMI is purely about insurance protection." }
+          }
+        }
+      },
+      {
+        id: 5,
+        question: "How much should you typically have saved for a down payment on a conventional loan?",
+        options: [
+          { id: 'a', text: '3%', isCorrect: false },
+          { id: 'b', text: '5%', isCorrect: false },
+          { id: 'c', text: '10%', isCorrect: false },
+          { id: 'd', text: '20%', isCorrect: true }
+        ],
+        explanation: {
+          correct: "20% down payment helps you avoid PMI and typically gets you better loan terms and interest rates.",
+          incorrect: {
+            'a': { why_wrong: "3% is available but comes with PMI and higher long-term costs.", confusion_reason: "Some programs allow 3% down, but this isn't typical for conventional loans and costs more over time." },
+            'b': { why_wrong: "5% is possible but still requires PMI and higher costs.", confusion_reason: "While some lenders accept 5%, you'll pay PMI and higher interest rates." },
+            'c': { why_wrong: "10% is better than 5% but you'll still pay PMI.", confusion_reason: "Getting closer to 20%, but you'll still have additional costs with PMI." },
+            'd': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." }
+          }
+        }
+      }
+    ];
+    
+    startQuiz(sampleQuestions, lesson.id);
   };
 
   const handleCloseQuiz = () => {
@@ -279,45 +169,13 @@ const LessonView: React.FC<LessonViewProps> = ({
     markCompleted(lesson.id, module.id, score);
   };
 
-  // BACKEND INTEGRATION: Updated video progress handler with actual duration
-  const handleVideoProgress = async (progressPercent: number) => {
-    // Update local Redux state
+  const handleVideoProgress = (progressPercent: number) => {
     updateProgress(lesson.id, {
       watchProgress: progressPercent
     });
 
-    // BACKEND INTEGRATION: Send progress to API
-    try {
-      // Use actual video duration from backend data, or fallback to estimated
-      const estimatedDurationMinutes = backendLessonData?.estimated_duration_minutes || 20;
-      const estimatedDuration = estimatedDurationMinutes * 60; // Convert to seconds
-      const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
-      
-      await apiUpdateProgress(lesson.id.toString(), progressSeconds);
-      console.log(`Progress updated: ${progressPercent}% (${progressSeconds}s out of ${estimatedDuration}s)`);
-    } catch (error) {
-      console.error('Error updating progress on backend:', error);
-      // Continue with local state even if backend fails
-    }
-
-    // Auto-complete when watched > 95%
     if (progressPercent >= 95 && !currentLessonProgress?.completed) {
-      await handleMarkComplete();
-    }
-  };
-
-  // BACKEND INTEGRATION: Mark lesson complete handler
-  const handleMarkComplete = async () => {
-    // Mark complete in Redux
-    markCompleted(lesson.id, module.id);
-
-    // BACKEND INTEGRATION: Mark lesson as completed
-    try {
-      const response = await apiCompleteLesson(lesson.id.toString());
-      console.log('Lesson marked complete on backend:', response);
-    } catch (error) {
-      console.error('Error completing lesson on backend:', error);
-      // Continue with local state even if backend fails
+      markCompleted(lesson.id, module.id);
     }
   };
 
@@ -326,11 +184,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     ? module.lessons[currentLessonIndex + 1] 
     : null;
 
-  // Use backend data when available, fallback to prop data
-  const displayTitle = backendLessonData?.title || lesson.title;
-  const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
-  const displayImage = backendLessonData?.image_url || lesson.image;
-  const displayTranscript = backendLessonData?.video_transcription || lesson.transcript;
+  const lessonDescription = lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
 
   const watchProgress = currentLessonProgress?.watchProgress || 0;
   const isCompleted = currentLessonProgress?.completed || false;
@@ -401,7 +255,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               <div className="space-y-3 pb-3">
                 <div>
                   <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-1 leading-tight">
-                    {displayTitle}
+                    {lesson.title}
                   </RobotoFont>
                   <div className="flex items-center gap-2 mb-1">
                     <RobotoFont className="text-xs text-gray-600">
@@ -431,18 +285,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* Loading/Error State */}
-              {isLoadingLesson && (
-                <div className="text-xs text-gray-500 pb-2">
-                  <RobotoFont className="text-xs">Loading lesson details...</RobotoFont>
-                </div>
-              )}
-              {lessonError && (
-                <div className="text-xs text-red-500 pb-2">
-                  <RobotoFont className="text-xs">{lessonError}</RobotoFont>
-                </div>
-              )}
             </div>
 
             <div className="flex-1 flex items-center justify-center">
@@ -454,7 +296,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 }}
               >
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <img src={displayImage} alt={displayTitle} className="object-contain w-full h-full" />
+                  <img src={lesson.image} alt={lesson.title} className="object-contain w-full h-full" />
                   
                   {/* Completion badge from Redux */}
                   {isCompleted && (
@@ -473,20 +315,20 @@ const LessonView: React.FC<LessonViewProps> = ({
               <div className="bg-blue-50 rounded-lg p-2">
                 <div 
                   className={`text-xs text-gray-700 mb-1 leading-tight cursor-pointer transition-all duration-300 hover:text-gray-900 ${
-                    displayDescription.length > 120 ? 'cursor-pointer' : 'cursor-default'
+                    lessonDescription.length > 120 ? 'cursor-pointer' : 'cursor-default'
                   }`}
                   onClick={() => {
-                    if (displayDescription.length > 120) {
+                    if (lessonDescription.length > 120) {
                       setDescriptionExpanded(!descriptionExpanded);
                     }
                   }}
                 >
                   <RobotoFont className="text-xs text-gray-700">
-                    {descriptionExpanded || displayDescription.length <= 120 ? (
-                      displayDescription
+                    {descriptionExpanded || lessonDescription.length <= 120 ? (
+                      lessonDescription
                     ) : (
                       <>
-                        {displayDescription.substring(0, 120)}
+                        {lessonDescription.substring(0, 120)}
                         <span className="text-blue-600 font-medium">...</span>
                       </>
                     )}
@@ -601,7 +443,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </button>
                 ) : (
                   <button 
-                    onClick={handleMarkComplete}
+                    onClick={handleBack}
                     disabled={isTransitioning}
                     className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -649,20 +491,10 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {lesson.duration}
                     </RobotoFont>
                   </div>
-                  
-                  {/* Progress indicator */}
-                  {watchProgress > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-300">
-                      <div 
-                        className="h-full bg-blue-600 transition-all duration-300"
-                        style={{ width: `${watchProgress}%` }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* Video Transcript */}
-                {displayTranscript && (
+                {lesson.transcript && (
                   <div>
                     <RobotoFont as="h3" weight={600} className="text-lg mb-4">
                       Video Transcript
@@ -674,7 +506,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                             0:00
                           </RobotoFont>
                           <RobotoFont className="text-sm text-gray-700 leading-relaxed">
-                            {displayTranscript}
+                            {lesson.transcript}
                           </RobotoFont>
                         </div>
                       </div>
@@ -705,7 +537,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     </button>
                   ) : (
                     <button 
-                      onClick={handleMarkComplete}
+                      onClick={handleBack}
                       disabled={isTransitioning}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
