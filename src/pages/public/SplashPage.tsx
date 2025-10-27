@@ -9,14 +9,14 @@ const SplashPage: React.FC = () => {
       
       <div className="space-y-4">
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/auth/login')}
           className="w-full bg-indigo-600 text-white py-3 px-6"
         >
           Login
         </button>
         
         <button
-          onClick={() => navigate('/signup')}
+          onClick={() => navigate('/auth/signup')}
           className="w-full bg-white text-indigo-600 py-3 px-6 "
         >
           Sign Up

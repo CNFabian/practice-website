@@ -7,7 +7,7 @@ import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
 import { getModules } from '../../../services/learningAPI';
-import { getOnboardingStatus } from '../../../services/onBoardingAPI'
+import { getOnboardingStatus } from '../../../services/onBoardingAPI';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -214,18 +214,18 @@ const sampleModulesData: Module[] = [
       {
         id: 12,
         image: SignupImage,
-        title: "Common Repairs and When to Call a Pro",
+        title: "Basic Home Repairs",
         duration: "30 minutes",
-        description: "Know when to DIY and when to hire a professional.",
+        description: "Learn essential repair skills every homeowner should know.",
         coins: 30,
         completed: false
       },
       {
         id: 13,
         image: SignupImage,
-        title: "Home Insurance Essentials",
+        title: "When to Call a Professional",
         duration: "20 minutes",
-        description: "Understand your home insurance options and coverage needs.",
+        description: "Know when to DIY and when to hire an expert.",
         coins: 25,
         completed: false
       }
@@ -233,6 +233,7 @@ const sampleModulesData: Module[] = [
   }
 ];
 
+// Converter function for backend modules
 const convertBackendModuleToFrontend = (backendModule: any): Module => {
   return {
     id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000),
@@ -244,7 +245,7 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
             backendModule.progress_percentage === "0" ? 'Not Started' : 'In Progress',
     tags: [backendModule.difficulty_level || 'Beginner'],
     illustration: backendModule.illustration || "default",
-    lessons: [] // Will be populated when module is selected
+    lessons: []
   };
 };
 
@@ -266,15 +267,14 @@ const ModulesPage: React.FC = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true);
   
-  // NEW: Onboarding status state
   const [onboardingStatus, setOnboardingStatus] = useState<{
     isCompleted: boolean;
     currentStep: number;
     progressPercentage: number;
   } | null>(null);
 
-  // UPDATED: Enhanced function to check onboarding and fetch modules
   const fetchModulesFromBackend = async () => {
     setIsLoadingBackend(true);
     setBackendError(null);
@@ -283,7 +283,6 @@ const ModulesPage: React.FC = () => {
     try {
       console.log('ModulesPage: Checking onboarding status first...');
       
-      // STEP 1: Check onboarding status first
       const onboardingStatusResponse = await getOnboardingStatus();
       console.log('ModulesPage: Onboarding status:', onboardingStatusResponse);
       
@@ -299,12 +298,11 @@ const ModulesPage: React.FC = () => {
         console.log('ModulesPage: Onboarding not completed, showing banner');
         setOnboardingRequired(true);
         setBackendError('Please complete onboarding to access learning modules');
-        return; // Don't fetch modules if onboarding is not complete
+        return;
       }
       
       console.log('ModulesPage: Onboarding completed, fetching modules...');
       
-      // STEP 2: Fetch modules only if onboarding is completed
       const backendModules = await getModules();
       console.log('ModulesPage: Backend modules received:', backendModules);
       
@@ -349,8 +347,9 @@ const ModulesPage: React.FC = () => {
     }
   };
 
-  // UPDATED: Enhanced onboarding banner with progress info
   const renderOnboardingBanner = () => {
+    if (!showOnboardingBanner) return null;
+    
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <div className="flex items-start">
@@ -363,15 +362,15 @@ const ModulesPage: React.FC = () => {
             <h3 className="text-lg font-medium text-blue-900">Welcome to NestNavigate!</h3>
             <div className="mt-2 text-sm text-blue-700">
               <p>Before you can access learning modules, please complete your onboarding to personalize your learning experience.</p>
-              {onboardingStatus && (onboardingStatus.progressPercentage ?? 0) > 0 && (
-                <div className="mt-3">
-                  <p className="font-medium">
-                    Progress: {onboardingStatus.progressPercentage}% complete 
-                    (Step {onboardingStatus.currentStep} of 5)
-                  </p>
-                  <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+              {onboardingStatus && onboardingStatus.progressPercentage > 0 && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Progress: {onboardingStatus.progressPercentage}%</span>
+                    <span>Step {onboardingStatus.currentStep} of 4</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${onboardingStatus.progressPercentage}%` }}
                     />
                   </div>
@@ -381,13 +380,16 @@ const ModulesPage: React.FC = () => {
             <div className="mt-4">
               <div className="flex space-x-3">
                 <button 
-                  onClick={() => {
-                    console.log('ModulesPage: Redirecting to onboarding...');
-                    navigate('/onboarding');
-                  }}
+                  onClick={() => navigate('/onboarding')}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
                 >
                   {(onboardingStatus?.progressPercentage ?? 0) > 0 ? 'Continue Onboarding' : 'Start Onboarding'}
+                </button>
+                <button 
+                  onClick={() => setShowOnboardingBanner(false)}
+                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
+                >
+                  Dismiss
                 </button>
               </div>
             </div>
@@ -397,14 +399,13 @@ const ModulesPage: React.FC = () => {
     );
   };
 
-  // UPDATED: Enhanced backend status rendering
   const renderBackendStatus = () => {
     if (isLoadingBackend) {
       return (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
-            <span className="text-blue-700">Checking onboarding status and loading modules...</span>
+            <span className="text-blue-700">Loading modules from backend...</span>
           </div>
         </div>
       );
@@ -468,7 +469,6 @@ const ModulesPage: React.FC = () => {
   }, [modules.length, loadModules]);
 
   const modulesToDisplay = useMemo(() => {
-    // Priority: Backend data > Frontend sample data
     if (backendModulesData.length > 0) {
       console.log('Using backend modules data');
       return backendModulesData;
@@ -514,14 +514,12 @@ const ModulesPage: React.FC = () => {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-50">
-      {/* Backend status indicator - only show in modules view */}
       {currentView === 'modules' && (
         <div className="absolute top-0 left-0 w-full z-10 p-4">
           {renderBackendStatus()}
         </div>
       )}
 
-      {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz'
@@ -533,19 +531,15 @@ const ModulesPage: React.FC = () => {
         }}
       >
         <div className={`h-full ${renderBackendStatus() ? 'pt-20' : ''}`}>
-          {/* UPDATED: Only show ModulesView if onboarding is not required */}
-          {!onboardingRequired && (
-            <ModulesView
-              modulesData={modulesToDisplay}
-              onLessonSelect={handleLessonStart}
-              onModuleQuizSelect={handleModuleQuizStart}
-              isTransitioning={isTransitioning}
-            />
-          )}
+          <ModulesView
+            modulesData={modulesToDisplay}
+            onLessonSelect={handleLessonStart}
+            onModuleQuizSelect={handleModuleQuizStart}
+            isTransitioning={isTransitioning}
+          />
         </div>
       </div>
 
-      {/* LESSON VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'lesson' || currentView === 'quiz'
@@ -556,7 +550,7 @@ const ModulesPage: React.FC = () => {
           pointerEvents: currentView === 'lesson' || currentView === 'quiz' ? 'auto' : 'none'
         }}
       >
-        {currentLesson && currentModule && !onboardingRequired && (
+        {currentLesson && currentModule && (
           <LessonView
             lesson={currentLesson}
             module={currentModule}
@@ -566,7 +560,6 @@ const ModulesPage: React.FC = () => {
         )}
       </div>
 
-      {/* MODULE QUIZ VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'moduleQuiz'
@@ -577,7 +570,7 @@ const ModulesPage: React.FC = () => {
           pointerEvents: currentView === 'moduleQuiz' ? 'auto' : 'none'
         }}
       >
-        {currentModule && currentView === 'moduleQuiz' && !onboardingRequired && (
+        {currentModule && currentView === 'moduleQuiz' && (
           <ModuleQuizView
             module={currentModule}
             onBack={handleBackToModule}

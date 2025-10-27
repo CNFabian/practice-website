@@ -98,7 +98,7 @@ function App() {
     if (isLoading) {
       initializeAuth();
     }
-  }, [dispatch, isAuthenticated, isLoading]);
+  }, [dispatch, isLoading]);
 
   const handleLoadingComplete = () => {
     console.log('App: Loading spinner complete - authentication should be initialized')
