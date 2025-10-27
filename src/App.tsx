@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useEffect } from 'react'
 import type { RootState } from './store/store'
@@ -35,7 +35,6 @@ import type { Location as RouterLocation } from 'react-router-dom'
 function App() {
   const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch()
-  const navigate = useNavigate()
 
   const location = useLocation()
   const state = location.state as { background?: RouterLocation } | null
@@ -100,18 +99,6 @@ function App() {
       initializeAuth();
     }
   }, [dispatch, isAuthenticated, isLoading]);
-
-  // ADDITIONAL CHECK: If authenticated in Redux but no token in localStorage, force logout
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    
-    // If authenticated in Redux but no token in localStorage, log out
-    if (isAuthenticated && !token) {
-      console.log('App: Redux shows authenticated but no token found - forcing logout');
-      dispatch(logout());
-      navigate('/auth/login');
-    }
-  }, [isAuthenticated, dispatch, navigate]);
 
   const handleLoadingComplete = () => {
     console.log('App: Loading spinner complete - authentication should be initialized')
