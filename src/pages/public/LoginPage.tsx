@@ -1,9 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { loginUser, getCurrentUser } from '../../services/authAPI'
+import { setUser } from '../../store/slices/authSlice'
 import { LoginImage } from '../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -20,51 +24,44 @@ const LoginPage: React.FC = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setError('')
-  setLoading(true)
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    try {
+      console.log('LoginPage: Starting login process...');
+      
+      // Call login API (tokens are handled automatically)
+      await loginUser({
         email: formData.email,
         password: formData.password
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Login failed');
+      });
+      console.log('LoginPage: Login successful, fetching user profile...');
+      
+      // Get current user profile from backend (already mapped by authAPI)
+      const userProfile = await getCurrentUser();
+      console.log('LoginPage: User profile fetched:', userProfile);
+      
+      // FIXED: userProfile is already in Redux format from authAPI utility
+      dispatch(setUser(userProfile));
+      
+      console.log('LoginPage: Redux updated, navigating to /app');
+      navigate('/app');
+      
+    } catch (err: any) {
+      console.error('LoginPage: Login error:', err);
+      
+      if (err.message.includes('401')) {
+        setError('Invalid email or password');
+      } else if (err.message.includes('422')) {
+        setError('Please check your email and password format');
+      } else {
+        setError('Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    const data = await response.json();
-    
-    // Store tokens in localStorage
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
-    
-    // Dispatch to Redux store
-    const { setUser } = await import('../../store/slices/authSlice')
-    const { store } = await import('../../store/store')
-    store.dispatch(setUser({
-      uid: 'user-id',
-      email: formData.email,
-      displayName: formData.email.split('@')[0],
-      photoURL: null,
-      emailVerified: true
-    }))
-    
-    navigate('/app')
-    
-  } catch (err) {
-    setError('Invalid email or password')
-  } finally {
-    setLoading(false)
   }
-}
 
   return (
     <div className="min-h-screen flex">

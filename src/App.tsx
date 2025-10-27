@@ -2,7 +2,8 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { useSelector, useDispatch } from 'react-redux'
 import { useEffect } from 'react'
 import type { RootState } from './store/store'
-import { setLoading, logout } from './store/slices/authSlice'
+import { setLoading, logout, setUser } from './store/slices/authSlice'
+import { getCurrentUser, isAuthenticated as checkAuthStatus } from './services/authAPI'
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
@@ -45,21 +46,76 @@ function App() {
       ? ({ ...location, pathname: '/app' } as RouterLocation)
       : undefined)
 
-  // Check if user is authenticated but has no token - force logout
+  // AUTHENTICATION INITIALIZATION
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('App: Starting authentication initialization...');
+      
+      try {
+        // Check if user has valid tokens
+        if (checkAuthStatus()) {
+          console.log('App: Found valid tokens, fetching user profile...');
+          
+          try {
+            // Get current user profile from backend (already mapped by authAPI)
+            const userProfile = await getCurrentUser();
+            console.log('App: Successfully fetched user profile:', userProfile);
+            
+            // FIXED: userProfile is already in Redux format from authAPI utility
+            dispatch(setUser(userProfile));
+            
+            console.log('App: User authenticated and profile loaded');
+            
+          } catch (profileError) {
+            console.error('App: Failed to fetch user profile:', profileError);
+            
+            // If profile fetch fails, tokens might be invalid
+            console.log('App: Clearing invalid authentication data');
+            dispatch(logout());
+          }
+          
+        } else {
+          console.log('App: No valid tokens found, user not authenticated');
+          
+          // Ensure Redux state reflects unauthenticated status
+          if (isAuthenticated) {
+            console.log('App: Clearing stale Redux auth state');
+            dispatch(logout());
+          }
+        }
+        
+      } catch (error) {
+        console.error('App: Authentication initialization error:', error);
+        dispatch(logout());
+        
+      } finally {
+        // Authentication check complete, hide loading spinner
+        console.log('App: Authentication initialization complete');
+        dispatch(setLoading(false));
+      }
+    };
+
+    // Only run auth initialization if we're still loading
+    if (isLoading) {
+      initializeAuth();
+    }
+  }, [dispatch, isAuthenticated, isLoading]);
+
+  // ADDITIONAL CHECK: If authenticated in Redux but no token in localStorage, force logout
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     
     // If authenticated in Redux but no token in localStorage, log out
     if (isAuthenticated && !token) {
-      console.log('No authentication token found - forcing logout');
+      console.log('App: Redux shows authenticated but no token found - forcing logout');
       dispatch(logout());
       navigate('/auth/login');
     }
   }, [isAuthenticated, dispatch, navigate]);
 
   const handleLoadingComplete = () => {
-    console.log('App: Loading complete - hiding spinner')
-    dispatch(setLoading(false))
+    console.log('App: Loading spinner complete - authentication should be initialized')
+    // Don't set loading false here anymore - let auth initialization handle it
   }
 
   console.log('App render - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated)
@@ -84,18 +140,16 @@ function App() {
               )
             } />
 
-            {/* Public Routes - Public Layout */}
-            <Route path="/auth" element={
+            {/* Public Routes - Public Layout (FIXED) */}
+            <Route path="/auth/*" element={
               isAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
             }>
               <Route path="login" element={<LoginPage />} />
               <Route path="signup" element={<SignupPage />} />
+              <Route path="*" element={<Navigate to="/auth/login" replace />} />
             </Route>
-            
-            {/* Redirect old paths to new structure */}
-            <Route path="/login" element={<Navigate to="/auth/login" replace />} />
-            <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
 
+            {/* Onboarding Routes */}
             <Route
               path="/onboarding"
               element={
@@ -105,12 +159,15 @@ function App() {
               }
             />
 
-            {/* Protected Routes - Main Layout */}
-            <Route path="/app" element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }>
+            {/* Protected Routes - Main Layout (FIXED) */}
+            <Route
+              path="/app/*"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<OverviewPage />} />
               <Route path="modules" element={<ModulesPage />} />
               <Route path="materials" element={<MaterialsPage />} />
@@ -121,13 +178,20 @@ function App() {
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
-            {/* Default redirect based on auth state */}
-            <Route path="/" element={
-              isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
-            } />
+            {/* Root redirect */}
+            <Route 
+              path="/" 
+              element={
+                isAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
+              } 
+            />
+
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
-          {background && (
+          {/* Modal routes for onboarding overlay */}
+          {background && location.pathname === '/onboarding' && (
             <Routes>
               <Route
                 path="/onboarding"

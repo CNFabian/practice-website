@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
 import { useModules } from '../../hooks/useModules';
 import { logout } from '../../store/slices/authSlice';
+import { logoutUser } from '../../services/authAPI';
 import { 
   Logo, 
   CoinIcon, 
@@ -25,11 +26,29 @@ const Header: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      // TODO: Implement AWS Cognito logout here
+      console.log('Header: Starting logout process...');
+      
+      // Call the backend logout endpoint
+      await logoutUser();
+      console.log('Header: Backend logout successful');
+      
+      // Clear Redux state
+      dispatch(logout());
+      console.log('Header: Redux state cleared');
+      
+      // Navigate to splash page
+      navigate('/splash');
+      console.log('Header: Navigated to splash page');
+      
+    } catch (error) {
+      console.error('Header: Logout failed:', error);
+      
+      // Even if backend logout fails, clear local state
       dispatch(logout());
       navigate('/splash');
-    } catch (error) {
-      console.error('Logout failed:', error);
+      
+      // Optionally show a warning that logout may not have completed on server
+      console.warn('Header: Local logout completed, but server logout may have failed');
     }
   };
 
@@ -72,57 +91,31 @@ const Header: React.FC = () => {
     }
   };
 
-  const getDisplayName = () => {
-    if (user?.displayName) {
-      return user.displayName.split(' ')[0];
-    }
-    if (user?.email) {
-      return user.email.split('@')[0];
-    }
-    return 'Guest';
-  };
-
   const getUserHandle = () => {
     if (user?.displayName) {
-      return `@${user.displayName.replace(/\s+/g, '').toLowerCase()}123`;
-    }
-    if (user?.email) {
-      return `@${user.email.split('@')[0]}`;
+      return `@${user.displayName.toLowerCase().replace(/\s+/g, '')}`;
     }
     return '@user';
   };
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
-      
-      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
-        <div className="flex items-center justify-between h-full">
-        {/* Left Section - Logo and Greeting */}
-        <div className="flex items-center space-x-3">
-          {/* Logo */}
-          <img src={Logo} alt="Nest Navigate" className="w-8 h-8" />
-          
-          {/* Greeting Section */}
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold text-gray-800">
-              Hello, {getDisplayName()}
-            </h1>
-            <p className="text-sm text-gray-600">
-              Here's {totalCoins} Nest coins to get you started.
-            </p>
-          </div>
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-16">
+        {/* Logo */}
+        <div className="flex items-center">
+          <img src={Logo} alt="Nest Navigate" className="h-8 w-auto" />
         </div>
 
-        {/* Right Section - Coins, Notifications, Profile */}
+        {/* Right side icons */}
         <div className="flex items-center space-x-4">
-          {/* Coins Counter */}
-          <div className="flex items-center space-x-2 rounded-full px-3 py-2">
-            <span className="text-lg font-bold text-gray-800">{totalCoins}</span>
-            <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
+          {/* Coins Display */}
+          <div className="flex items-center space-x-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200">
+            <img src={CoinIcon} alt="Coins" className="w-5 h-5" />
+            <span className="text-sm font-medium text-yellow-800">{totalCoins}</span>
           </div>
 
-          {/* Notification Bell with Headless UI Dropdown */}
+          {/* Notifications Icon with Headless UI Dropdown */}
           <Menu as="div" className="relative">
             {({ open }) => (
               <>

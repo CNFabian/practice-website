@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SignupImage, TermsConditionsDoc } from '../../assets'
+import { useDispatch } from 'react-redux'
+import { registerUser, getCurrentUser } from '../../services/authAPI'
+import { setUser } from '../../store/slices/authSlice'
+import { SignupImage } from '../../assets'
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    dateOfBirth: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,63 +31,59 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
+
+    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 
     setLoading(true)
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phoneNumber,
-          date_of_birth: ''
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Registration failed');
-      }
-
-      const data = await response.json();
+      console.log('SignupPage: Starting registration process...');
       
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      
-      // Dispatch to Redux store
-      const { setUser } = await import('../../store/slices/authSlice')
-      const { store } = await import('../../store/store')
-      store.dispatch(setUser({
-        uid: 'user-id', 
+      // Call registration API (tokens are handled automatically)
+      await registerUser({
         email: formData.email,
-        displayName: `${formData.firstName} ${formData.lastName}`,
-        photoURL: null,
-        emailVerified: false
-      }))
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        date_of_birth: formData.dateOfBirth
+      });
+      console.log('SignupPage: Registration successful, fetching user profile...');
       
-      navigate('/app')
+      // Get current user profile from backend (already mapped by authAPI)
+      const userProfile = await getCurrentUser();
+      console.log('SignupPage: User profile fetched:', userProfile);
+      
+      // FIXED: userProfile is already in Redux format from authAPI utility
+      dispatch(setUser(userProfile));
+      
+      console.log('SignupPage: Redux updated, navigating to /onboarding');
+      // Navigate to onboarding for new users
+      navigate('/onboarding');
       
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred')
+      console.error('SignupPage: Registration error:', err);
+      
+      if (err.message.includes('400')) {
+        setError('Invalid registration data. Please check your information.');
+      } else if (err.message.includes('422')) {
+        setError('Please check all fields are filled correctly.');
+      } else if (err.message.includes('409')) {
+        setError('An account with this email already exists.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -93,11 +94,10 @@ const SignupPage: React.FC = () => {
         <div className="w-full max-w-md space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Lets get started!
+              Join NestNavigate
             </h1>
             <p className="text-gray-600 text-lg">
-              Create an account and begin your journey of<br />
-              home ownership today!
+              Start your journey to homeownership
             </p>
           </div>
 
@@ -108,85 +108,82 @@ const SignupPage: React.FC = () => {
               </div>
             )}
 
-            <input
-              type="text"
-              name="firstName"
-              placeholder="first name"
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              style={{ backgroundColor: '#EFF2FF' }}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="firstName"
+                placeholder="First Name"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                style={{ backgroundColor: '#EFF2FF' }}
+              />
+
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                style={{ backgroundColor: '#EFF2FF' }}
+              />
+            </div>
 
             <input
-              type="text"
-              name="lastName"
-              placeholder="last name"
-              value={formData.lastName}
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <input
               type="tel"
-              name="phoneNumber"
-              placeholder="phone number"
-              value={formData.phoneNumber}
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <input
-              type="email"
-              name="email"
-              placeholder="email"
-              value={formData.email}
+              type="date"
+              name="dateOfBirth"
+              placeholder="Date of Birth"
+              value={formData.dateOfBirth}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <input
               type="password"
               name="password"
-              placeholder="password"
+              placeholder="Password"
               value={formData.password}
               onChange={handleChange}
               required
-              minLength={6}
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <input
               type="password"
               name="confirmPassword"
-              placeholder="confirm password"
+              placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              minLength={6}
-              className="w-full px-4 py-3 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
-
-            {/* Terms and Conditions text */}
-            <div className="text-center text-sm text-gray-600 mt-4 whitespace-nowrap">
-              <p>By clicking Sign Up, you automatically agree to our{' '}
-                <a 
-                  href={TermsConditionsDoc} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >Terms and Conditions</a>
-              </p>
-            </div>
 
             <button
               type="submit"
@@ -202,7 +199,7 @@ const SignupPage: React.FC = () => {
           </form>
 
           <div className="text-center text-gray-600">
-            <p>Over <span className="text-blue-600 font-semibold">300+</span> prospective homebuyers have already joined</p>
+            <p>Already have an account? <a href='/auth/login' className="text-blue-600 hover:underline">Log in</a></p>
           </div>
         </div>
       </div>
