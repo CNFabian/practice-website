@@ -8,6 +8,7 @@ export interface OnboardingStatus {
   is_completed: boolean;
   current_step?: number;
   completed_steps?: string[];
+  progress_percentage?: number;
 }
 
 export interface OnboardingData {

@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { 
   getOnboardingStatus,
   completeStep1,
-  completeStep2,
   completeStep3,
   completeStep4,
   completeStep5,
   completeOnboardingAllSteps,
   getOnboardingData
-} from '../../../services/onboardingAPI' // ADD IMPORT
+} from '../../../services/onBoardingAPI'
 import { 
   SliderScreen, 
   CardGridScreen,
@@ -82,7 +81,7 @@ export default function OnBoardingPage() {
         }
         
         // Load existing onboarding data if any steps are completed
-        if (status.current_step > 1) {
+        if (status.current_step && status.current_step > 1) {
           console.log('OnBoarding: Loading existing data...');
           const existingData = await getOnboardingData();
           console.log('OnBoarding: Existing data:', existingData);
@@ -95,7 +94,7 @@ export default function OnBoardingPage() {
           if (existingData.zipcode) existingAnswers.city = existingData.zipcode;
           
           setAns(existingAnswers);
-          setStep(Math.max(0, status.current_step - 1)); // Backend is 1-indexed, frontend is 0-indexed
+          setStep(Math.max(0, (status.current_step || 1) - 1)); // Backend is 1-indexed, frontend is 0-indexed
         }
         
       } catch (error) {
@@ -288,32 +287,33 @@ export default function OnBoardingPage() {
           {/* Render appropriate screen based on step */}
           {cur.id === 'avatar' && (
             <CardGridScreen
-              options={cur.options}
-              selected={answers[cur.id]}
-              onSelect={(val) => setAns(p => ({ ...p, [cur.id]: val }))}
-              getIcon={(opt) => AVATAR_ICON[opt] || '👤'}
+              name={cur.id}
+              label={cur.label}
+              opts={cur.options}
+              value={answers[cur.id] || ''}
+              onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
+              iconMap={AVATAR_ICON}
             />
           )}
 
           {cur.id === 'expert_contact' && (
             <ExpertContactScreen
-              selected={answers[cur.id]}
-              onSelect={(val) => setAns(p => ({ ...p, [cur.id]: val }))}
+              value={answers[cur.id] || ''}
+              onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
             />
           )}
 
           {cur.id === 'Home Ownership' && (
             <SliderScreen
-              value={parseInt(answers[cur.id]) || SLIDER.defaultValue}
-              onChange={(val) => setAns(p => ({ ...p, [cur.id]: String(val) }))}
-              {...SLIDER}
+              value={String(parseInt(answers[cur.id]) || SLIDER.defaultValue)}
+              onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
             />
           )}
 
           {cur.id === 'city' && (
             <CitySearchScreen
-              selected={answers[cur.id]}
-              onSelect={(val) => setAns(p => ({ ...p, [cur.id]: val }))}
+              value={answers[cur.id] || ''}
+              onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
             />
           )}
 

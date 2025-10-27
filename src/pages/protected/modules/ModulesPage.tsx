@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; // ADD IMPORT
+import { useNavigate } from 'react-router-dom';
 import { useModules } from '../../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
@@ -7,7 +7,7 @@ import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
 import { getModules } from '../../../services/learningAPI';
-import { getOnboardingStatus } from '../../../services/onboardingAPI'; // ADD IMPORT
+import { getOnboardingStatus } from '../../../services/onBoardingAPI'
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -214,18 +214,18 @@ const sampleModulesData: Module[] = [
       {
         id: 12,
         image: SignupImage,
-        title: "Basic Home Repairs",
+        title: "Common Repairs and When to Call a Pro",
         duration: "30 minutes",
-        description: "Learn essential repair skills every homeowner should know.",
+        description: "Know when to DIY and when to hire a professional.",
         coins: 30,
         completed: false
       },
       {
         id: 13,
         image: SignupImage,
-        title: "When to Call a Professional",
+        title: "Home Insurance Essentials",
         duration: "20 minutes",
-        description: "Know when DIY isn't the answer and it's time to call in the experts.",
+        description: "Understand your home insurance options and coverage needs.",
         coins: 25,
         completed: false
       }
@@ -249,7 +249,7 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
 };
 
 const ModulesPage: React.FC = () => {
-  const navigate = useNavigate(); // ADD NAVIGATION
+  const navigate = useNavigate();
   const {
     currentView,
     currentModule,
@@ -266,7 +266,6 @@ const ModulesPage: React.FC = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   
   // NEW: Onboarding status state
   const [onboardingStatus, setOnboardingStatus] = useState<{
@@ -299,13 +298,11 @@ const ModulesPage: React.FC = () => {
       if (!status.isCompleted) {
         console.log('ModulesPage: Onboarding not completed, showing banner');
         setOnboardingRequired(true);
-        setShowOnboardingBanner(true);
         setBackendError('Please complete onboarding to access learning modules');
         return; // Don't fetch modules if onboarding is not complete
       }
       
       console.log('ModulesPage: Onboarding completed, fetching modules...');
-      setShowOnboardingBanner(false);
       
       // STEP 2: Fetch modules only if onboarding is completed
       const backendModules = await getModules();
@@ -331,7 +328,6 @@ const ModulesPage: React.FC = () => {
             progressPercentage: 0
           });
           setOnboardingRequired(true);
-          setShowOnboardingBanner(true);
           setBackendError('Onboarding required to access learning modules');
           console.log('ModulesPage: User needs to complete onboarding first');
         } else if (error.message.includes('HTTP error! status: 400')) {
@@ -367,7 +363,7 @@ const ModulesPage: React.FC = () => {
             <h3 className="text-lg font-medium text-blue-900">Welcome to NestNavigate!</h3>
             <div className="mt-2 text-sm text-blue-700">
               <p>Before you can access learning modules, please complete your onboarding to personalize your learning experience.</p>
-              {onboardingStatus && onboardingStatus.progressPercentage > 0 && (
+              {onboardingStatus && (onboardingStatus.progressPercentage ?? 0) > 0 && (
                 <div className="mt-3">
                   <p className="font-medium">
                     Progress: {onboardingStatus.progressPercentage}% complete 
@@ -391,13 +387,7 @@ const ModulesPage: React.FC = () => {
                   }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
                 >
-                  {onboardingStatus?.progressPercentage > 0 ? 'Continue Onboarding' : 'Start Onboarding'}
-                </button>
-                <button 
-                  onClick={() => setShowOnboardingBanner(false)}
-                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
-                >
-                  Dismiss
+                  {(onboardingStatus?.progressPercentage ?? 0) > 0 ? 'Continue Onboarding' : 'Start Onboarding'}
                 </button>
               </div>
             </div>

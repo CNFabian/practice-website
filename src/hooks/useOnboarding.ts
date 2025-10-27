@@ -1,18 +1,15 @@
 // src/hooks/useOnboarding.ts
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   getOnboardingStatus,
   completeStep1,
-  completeStep2,
   completeStep3,
   completeStep4,
   completeStep5,
   completeOnboardingAllSteps,
   getOnboardingData,
-  getOnboardingProgress,
-  isStepCompleted,
-  getNextOnboardingStep
-} from '../services/onboardingAPI'
+  getOnboardingProgress
+} from '../services/onBoardingAPI'
 
 export interface OnboardingAnswers {
   avatar?: string
@@ -83,7 +80,7 @@ export const useOnboarding = (): OnboardingState => {
       setCurrentStep(frontendStep)
       
       // Load existing data if any steps are completed
-      if (status.current_step > 1) {
+      if (status.current_step && status.current_step > 1) {
         const existingData = await getOnboardingData()
         console.log('useOnboarding: Existing data:', existingData)
         
@@ -155,8 +152,13 @@ export const useOnboarding = (): OnboardingState => {
       
       console.log(`useOnboarding: Step ${currentStep} completed`)
       
-      // Update progress
-      const newProgress = getOnboardingProgress(answers)
+      // Update progress - create a proper OnboardingStatus object
+      const statusForProgress = {
+        is_completed: false,
+        completed_steps: Object.keys(answers).filter(key => answers[key as keyof OnboardingAnswers]).map((_, index) => `step${index + 1}`),
+        progress_percentage: 0
+      }
+      const newProgress = getOnboardingProgress(statusForProgress)
       setProgress(newProgress)
       
     } catch (error) {
