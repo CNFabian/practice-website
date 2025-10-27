@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useModules } from '../../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
@@ -214,18 +213,18 @@ const sampleModulesData: Module[] = [
       {
         id: 12,
         image: SignupImage,
-        title: "Basic Home Repairs",
-        duration: "30 minutes",
-        description: "Learn essential repair skills every homeowner should know.",
-        coins: 30,
+        title: "Emergency Repairs",
+        duration: "20 minutes",
+        description: "Know what to do when things go wrong.",
+        coins: 25,
         completed: false
       },
       {
         id: 13,
         image: SignupImage,
-        title: "When to Call a Professional",
-        duration: "20 minutes",
-        description: "Know when to DIY and when to hire an expert.",
+        title: "Finding Reliable Contractors",
+        duration: "25 minutes",
+        description: "Learn how to find and work with trusted professionals.",
         coins: 25,
         completed: false
       }
@@ -250,7 +249,6 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
 };
 
 const ModulesPage: React.FC = () => {
-  const navigate = useNavigate();
   const {
     currentView,
     currentModule,
@@ -267,9 +265,8 @@ const ModulesPage: React.FC = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true);
   
-  const [onboardingStatus, setOnboardingStatus] = useState<{
+  const [_onboardingStatus, setOnboardingStatus] = useState<{
     isCompleted: boolean;
     currentStep: number;
     progressPercentage: number;
@@ -347,58 +344,6 @@ const ModulesPage: React.FC = () => {
     }
   };
 
-  const renderOnboardingBanner = () => {
-    if (!showOnboardingBanner) return null;
-    
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="ml-3 flex-1">
-            <h3 className="text-lg font-medium text-blue-900">Welcome to NestNavigate!</h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>Before you can access learning modules, please complete your onboarding to personalize your learning experience.</p>
-              {onboardingStatus && onboardingStatus.progressPercentage > 0 && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Progress: {onboardingStatus.progressPercentage}%</span>
-                    <span>Step {onboardingStatus.currentStep} of 4</span>
-                  </div>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${onboardingStatus.progressPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-4">
-              <div className="flex space-x-3">
-                <button 
-                  onClick={() => navigate('/onboarding')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                >
-                  {(onboardingStatus?.progressPercentage ?? 0) > 0 ? 'Continue Onboarding' : 'Start Onboarding'}
-                </button>
-                <button 
-                  onClick={() => setShowOnboardingBanner(false)}
-                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderBackendStatus = () => {
     if (isLoadingBackend) {
       return (
@@ -412,7 +357,7 @@ const ModulesPage: React.FC = () => {
     }
     
     if (onboardingRequired) {
-      return renderOnboardingBanner();
+      return null;
     }
     
     if (backendError && !onboardingRequired) {
