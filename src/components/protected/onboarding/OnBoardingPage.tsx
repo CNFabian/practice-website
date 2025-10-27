@@ -57,14 +57,14 @@ export default function OnBoardingPage() {
   const nav = useNavigate()
   const [answers, setAns] = useState<Record<string,string>>({})
   const [step, setStep] = useState(0)
-  const [loading, setLoading] = useState(false) // NEW: Loading state
-  const [error, setError] = useState<string | null>(null) // NEW: Error state
-  const [isInitializing, setIsInitializing] = useState(true) // NEW: Initialization state
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
   
   const cur = STEPS[step]
   const total = STEPS.length
 
-  // NEW: Initialize onboarding state from backend
+  // Initialize onboarding state from backend
   useEffect(() => {
     const initializeOnboarding = async () => {
       try {
@@ -74,14 +74,20 @@ export default function OnBoardingPage() {
         const status = await getOnboardingStatus();
         console.log('OnBoarding: Status received:', status);
         
-        if (status.is_completed) {
+        // FIXED: Handle both possible response formats from backend
+        const isCompleted = status.is_completed || (status as any).completed;
+        const currentStep = status.current_step || (status as any).step;
+        
+        console.log('OnBoarding: Parsed - isCompleted:', isCompleted, 'currentStep:', currentStep);
+        
+        if (isCompleted) {
           console.log('OnBoarding: Already completed, redirecting to app...');
           nav('/app', { replace: true });
           return;
         }
         
         // Load existing onboarding data if any steps are completed
-        if (status.current_step && status.current_step > 1) {
+        if (currentStep && currentStep > 1) {
           console.log('OnBoarding: Loading existing data...');
           const existingData = await getOnboardingData();
           console.log('OnBoarding: Existing data:', existingData);
@@ -94,13 +100,16 @@ export default function OnBoardingPage() {
           if (existingData.zipcode) existingAnswers.city = existingData.zipcode;
           
           setAns(existingAnswers);
-          setStep(Math.max(0, (status.current_step || 1) - 1)); // Backend is 1-indexed, frontend is 0-indexed
+          setStep(Math.max(0, currentStep - 1)); // Backend is 1-indexed, frontend is 0-indexed
         }
+        
+        console.log('OnBoarding: Initialization complete, showing form');
         
       } catch (error) {
         console.error('OnBoarding: Initialization error:', error);
         setError('Failed to load onboarding status. Please try again.');
       } finally {
+        console.log('OnBoarding: Setting isInitializing to false');
         setIsInitializing(false);
       }
     };
@@ -118,7 +127,7 @@ export default function OnBoardingPage() {
   const allAnswered = useMemo(() => STEPS.every(s => !!answers[s.id]), [answers])
   const progressPct = Math.round(((step + (answers[cur.id] ? 1 : 0)) / total) * 100)
 
-  // NEW: Handle individual step completion with backend
+  // Handle individual step completion with backend
   const handleStepCompletion = async (stepId: string, value: string) => {
     setLoading(true);
     setError(null);
@@ -157,7 +166,7 @@ export default function OnBoardingPage() {
     }
   };
 
-  // NEW: Handle complete onboarding with backend
+  // Handle complete onboarding with backend
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     setError(null);
@@ -189,7 +198,7 @@ export default function OnBoardingPage() {
     }
   };
 
-  // UPDATED: Handle next button with backend integration
+  // Handle next button with backend integration
   const handleNext = async () => {
     if (!answers[cur.id]) return;
     
@@ -206,7 +215,7 @@ export default function OnBoardingPage() {
     }
   };
 
-  // UPDATED: Handle complete button with backend integration
+  // Handle complete button with backend integration
   const handleComplete = async () => {
     if (!allAnswered) return;
     
@@ -217,6 +226,8 @@ export default function OnBoardingPage() {
       console.error('OnBoarding: Failed to complete onboarding');
     }
   };
+
+  console.log('OnBoarding render - isInitializing:', isInitializing);
 
   // Show loading spinner during initialization
   if (isInitializing) {
