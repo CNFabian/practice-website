@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
 import { useModules } from '../../hooks/useModules';
 import { logout } from '../../store/slices/authSlice';
+import { openOnboardingModal } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../services/authAPI';
 import { 
   Logo, 
@@ -53,7 +54,11 @@ const Header: React.FC = () => {
   };
 
   const handleShowOnboarding = () => {
-    navigate('/onboarding');
+    // Set Redux state to show onboarding
+    dispatch(openOnboardingModal());
+    
+    // Navigate to Overview page where onboarding modal will appear
+    navigate('/app');
   };
 
   const handleResetProgress = async () => {
