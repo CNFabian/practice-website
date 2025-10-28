@@ -250,6 +250,69 @@ export const saveStep5ToLocalStorage = (stepData: Step5Data): void => {
   }
 };
 
+// ==================== LEGACY API FUNCTIONS (for backwards compatibility) ====================
+// These are kept to maintain compatibility with existing hooks/components
+
+// POST /api/onboarding/step1 - Complete step 1: Avatar selection
+export const completeStep1 = async (stepData: Step1Data): Promise<ApiResponse> => {
+  try {
+    console.log('completeStep1 called - now saving to localStorage instead:', stepData);
+    saveStep1ToLocalStorage(stepData);
+    return { success: true, message: 'Step 1 saved to localStorage', data: {} };
+  } catch (error) {
+    console.error('Error in completeStep1:', error);
+    throw error;
+  }
+};
+
+// POST /api/onboarding/step2 - Complete step 2: Realtor and loan officer status
+export const completeStep2 = async (stepData: Step2Data): Promise<ApiResponse> => {
+  try {
+    console.log('completeStep2 called - now saving to localStorage instead:', stepData);
+    saveStep2ToLocalStorage(stepData);
+    return { success: true, message: 'Step 2 saved to localStorage', data: {} };
+  } catch (error) {
+    console.error('Error in completeStep2:', error);
+    throw error;
+  }
+};
+
+// POST /api/onboarding/step3 - Complete step 3: Expert contact preference
+export const completeStep3 = async (stepData: Step3Data): Promise<ApiResponse> => {
+  try {
+    console.log('completeStep3 called - now saving to localStorage instead:', stepData);
+    saveStep3ToLocalStorage(stepData);
+    return { success: true, message: 'Step 3 saved to localStorage', data: {} };
+  } catch (error) {
+    console.error('Error in completeStep3:', error);
+    throw error;
+  }
+};
+
+// POST /api/onboarding/step4 - Complete step 4: Homeownership timeline
+export const completeStep4 = async (stepData: Step4Data): Promise<ApiResponse> => {
+  try {
+    console.log('completeStep4 called - now saving to localStorage instead:', stepData);
+    saveStep4ToLocalStorage(stepData);
+    return { success: true, message: 'Step 4 saved to localStorage', data: {} };
+  } catch (error) {
+    console.error('Error in completeStep4:', error);
+    throw error;
+  }
+};
+
+// POST /api/onboarding/step5 - Complete step 5: Future home location (zipcode)
+export const completeStep5 = async (stepData: Step5Data): Promise<ApiResponse> => {
+  try {
+    console.log('completeStep5 called - now saving to localStorage instead:', stepData);
+    saveStep5ToLocalStorage(stepData);
+    return { success: true, message: 'Step 5 saved to localStorage', data: {} };
+  } catch (error) {
+    console.error('Error in completeStep5:', error);
+    throw error;
+  }
+};
+
 // ==================== ORIGINAL API FUNCTIONS (for completion) ====================
 
 // POST /api/onboarding/complete - Complete all onboarding steps at once

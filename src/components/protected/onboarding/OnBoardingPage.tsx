@@ -1,12 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LoadingSpinner from '../../shared/LoadingSpinner';
+import LoadingSpinner from '../../common/LoadingSpinner';
 import { 
   getOnboardingStatus, 
   completeOnboardingAllSteps, 
   getOnboardingDataFromLocalStorage,
   saveStep1ToLocalStorage,
-  saveStep2ToLocalStorage,
   saveStep3ToLocalStorage,
   saveStep4ToLocalStorage,
   saveStep5ToLocalStorage,
@@ -49,6 +48,30 @@ const AVATAR_ICON: Record<string,string> = {
 const SLIDER = { min:6, max:60, step:1, defaultValue:28, unit:'months', minLabel:'6 months', maxLabel:'5 years' }
 
 const cx = (...c: (string|false)[]) => c.filter(Boolean).join(' ')
+
+// ADDED: Avatar conversion function to convert frontend format to backend format
+const convertAvatarToBackendFormat = (frontendAvatar: string): string => {
+  const avatarMap: Record<string, string> = {
+    'Curious Cat': 'curious-cat',
+    'Celebrating Bird': 'celebrating-bird', 
+    'Careful Elephant': 'careful-elephant',
+    'Protective Dog': 'protective-dog'
+  };
+  
+  return avatarMap[frontendAvatar] || frontendAvatar;
+};
+
+// ADDED: Reverse conversion function to convert backend format to frontend format
+const convertAvatarToFrontendFormat = (backendAvatar: string): string => {
+  const avatarMap: Record<string, string> = {
+    'curious-cat': 'Curious Cat',
+    'celebrating-bird': 'Celebrating Bird',
+    'careful-elephant': 'Careful Elephant',
+    'protective-dog': 'Protective Dog'
+  };
+  
+  return avatarMap[backendAvatar] || backendAvatar;
+};
 
 interface OnBoardingPageProps {
   isOpen: boolean;
@@ -97,7 +120,12 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         if (Object.keys(localData).length > 0) {
           // Map localStorage data to frontend answers
           const existingAnswers: Record<string, string> = {};
-          if (localData.selected_avatar) existingAnswers.avatar = localData.selected_avatar;
+          
+          // MODIFIED: Convert avatar from backend format to frontend format for display
+          if (localData.selected_avatar) {
+            existingAnswers.avatar = convertAvatarToFrontendFormat(localData.selected_avatar);
+          }
+          
           if (localData.wants_expert_contact) existingAnswers.expert_contact = localData.wants_expert_contact;
           if (localData.homeownership_timeline_months) existingAnswers['Home Ownership'] = String(localData.homeownership_timeline_months);
           if (localData.zipcode) existingAnswers.city = localData.zipcode;
@@ -134,7 +162,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
   const allAnswered = useMemo(() => STEPS.every(s => !!answers[s.id]), [answers])
   const progressPct = Math.round(((step + (answers[cur.id] ? 1 : 0)) / total) * 100)
 
-  // Handle individual step completion - now saves to localStorage
+  // MODIFIED: Handle individual step completion - now saves to localStorage with proper avatar conversion
   const handleStepCompletion = async (stepId: string, value: string) => {
     try {
       console.log(`OnBoarding: Saving step ${stepId} with value:`, value);
@@ -142,7 +170,10 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       // Save to localStorage instead of backend
       switch (stepId) {
         case 'avatar':
-          saveStep1ToLocalStorage({ selected_avatar: value });
+          // MODIFIED: Convert avatar to backend format before saving
+          const backendAvatarValue = convertAvatarToBackendFormat(value);
+          console.log('OnBoarding: Avatar step conversion:', value, '→', backendAvatarValue);
+          saveStep1ToLocalStorage({ selected_avatar: backendAvatarValue });
           break;
         case 'expert_contact':
           saveStep3ToLocalStorage({ wants_expert_contact: value });
@@ -168,7 +199,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle complete onboarding - sends all data to backend at once
+  // MODIFIED: Handle complete onboarding - sends all data to backend at once with proper avatar conversion
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     setError(null);
@@ -180,9 +211,15 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       const localData = getOnboardingDataFromLocalStorage();
       console.log('OnBoarding: Final localStorage data:', localData);
       
+      // MODIFIED: Convert avatar from frontend format to backend format
+      const frontendAvatar = localData.selected_avatar || answers.avatar;
+      const backendAvatar = convertAvatarToBackendFormat(frontendAvatar);
+      
+      console.log('OnBoarding: Avatar conversion:', frontendAvatar, '→', backendAvatar);
+      
       // Prepare data for bulk completion
       const onboardingData: CompleteOnboardingData = {
-        selected_avatar: localData.selected_avatar || answers.avatar,
+        selected_avatar: backendAvatar, // MODIFIED: Use converted avatar format
         has_realtor: localData.has_realtor ?? false, // Default to false if not set
         has_loan_officer: localData.has_loan_officer ?? false, // Default to false if not set
         wants_expert_contact: localData.wants_expert_contact || answers.expert_contact,
@@ -190,14 +227,15 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         zipcode: localData.zipcode || answers.city.match(/\d{5}/)?.[0] || answers.city
       };
       
-      console.log('OnBoarding: Sending complete data to backend:', onboardingData);
+      console.log('OnBoarding: Final payload to backend:', onboardingData);
       await completeOnboardingAllSteps(onboardingData);
       
       console.log('OnBoarding: All steps completed successfully');
       
-      // localStorage is cleared automatically in completeOnboardingAllSteps
+      // Clear localStorage after successful completion
+      clearOnboardingDataFromLocalStorage();
       
-      // Close modal if onClose is provided, otherwise redirect
+      // Navigate to app or close modal
       if (onClose) {
         onClose();
       } else {
@@ -212,87 +250,58 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle next button - saves to localStorage and moves to next step
+  // Handle next step navigation
   const handleNext = async () => {
-    if (!answers[cur.id]) return;
-    
-    setLoading(true);
-    setError(null);
-    
     try {
-      // Save current step to localStorage
+      // Save current step data
       await handleStepCompletion(cur.id, answers[cur.id]);
       
       // Move to next step
       setStep(s => Math.min(total - 1, s + 1));
       
     } catch (error) {
-      console.error('OnBoarding: Failed to proceed to next step');
-      // Error handling is done in handleStepCompletion
-    } finally {
-      setLoading(false);
+      // Error is already handled in handleStepCompletion
+      console.error('OnBoarding: Error in handleNext:', error);
     }
   };
 
-  // Handle complete button - sends all data to backend
+  // Handle completion
   const handleComplete = async () => {
-    if (!allAnswered) return;
-    
-    // Save final step to localStorage first
-    setLoading(true);
-    setError(null);
-    
     try {
+      // Save final step data
       await handleStepCompletion(cur.id, answers[cur.id]);
+      
+      // Complete all onboarding
       await handleCompleteOnboarding();
+      
     } catch (error) {
-      console.error('OnBoarding: Failed to complete onboarding');
-      // Error handling is done in respective functions
-    } finally {
-      setLoading(false);
+      // Error is already handled in the respective functions
+      console.error('OnBoarding: Error in handleComplete:', error);
     }
   };
 
-  console.log('OnBoarding render - isInitializing:', isInitializing);
-
-  // Don't render if not open
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Modal Overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" />
-      
-      {/* Modal Content */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <div className="w-full max-w-lg">
-          {/* Show loading spinner during initialization */}
+      {/* Background Overlay */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto">
           {isInitializing ? (
-            <div className="bg-white rounded-xl shadow-xl p-8">
-              <div className="flex flex-col items-center space-y-4">
-                <LoadingSpinner size="lg" />
-                <p className="text-gray-600">Loading onboarding...</p>
-              </div>
+            // Loading State
+            <div className="p-8 text-center">
+              <LoadingSpinner />
+              <p className="text-gray-600 mt-4">Loading onboarding...</p>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+            <div className="overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Welcome to Your Home Buying Journey!</h2>
-                    <p className="text-blue-100 mt-1">Step {step + 1} of {total}</p>
-                  </div>
-                  {onClose && (
-                    <button
-                      onClick={onClose}
-                      className="text-white hover:text-gray-200 transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold">Welcome to NestNavigate!</h2>
+                  <span className="text-blue-100 text-sm font-medium">
+                    Step {step + 1} of {total}
+                  </span>
                 </div>
                 
                 {/* Progress Bar */}

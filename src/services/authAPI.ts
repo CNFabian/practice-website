@@ -1,4 +1,4 @@
-// src/services/authAPI.ts - UPDATED VERSION with utility integration
+// src/services/authAPI.ts - PRODUCTION-READY UNIFIED VERSION
 import { mapBackendUserToReduxUser, mapReduxUserToBackendUpdate } from '../utils/authUtils'
 import type { BackendUserResponse } from '../utils/authUtils'
 import type { SerializableUser } from '../store/slices/authSlice'
@@ -18,6 +18,7 @@ export const getRefreshToken = (): string | null => {
 export const setTokens = (accessToken: string, refreshToken: string): void => {
   localStorage.setItem('access_token', accessToken);
   localStorage.setItem('refresh_token', refreshToken);
+  console.log('AuthAPI: Tokens stored successfully');
 };
 
 export const clearAuthData = (): void => {
@@ -33,10 +34,12 @@ export const isAuthenticated = (): boolean => {
 
 // ==================== REQUEST HELPERS ====================
 
+// Refresh access token using refresh token
 const refreshAccessToken = async (): Promise<string> => {
   const refreshToken = getRefreshToken();
   
   if (!refreshToken) {
+    console.error('AuthAPI: No refresh token available');
     throw new Error('No refresh token available');
   }
 
@@ -51,10 +54,17 @@ const refreshAccessToken = async (): Promise<string> => {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AuthAPI: Token refresh failed:', response.status, errorText);
       throw new Error(`Token refresh failed: ${response.status}`);
     }
 
     const data = await response.json();
+    
+    if (!data.access_token || !data.refresh_token) {
+      throw new Error('Invalid token refresh response');
+    }
+    
     setTokens(data.access_token, data.refresh_token);
     console.log('AuthAPI: Access token refreshed successfully');
     
@@ -63,37 +73,84 @@ const refreshAccessToken = async (): Promise<string> => {
     console.error('AuthAPI: Token refresh failed:', error);
     clearAuthData();
     
-    // Redirect to login page
-    window.location.href = '/auth/login';
+    // Only redirect if we're in the browser and not already on login page
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+      console.log('AuthAPI: Redirecting to login page');
+      window.location.href = '/auth/login';
+    }
+    
     throw error;
   }
 };
 
+// Unified fetch with authentication and automatic token refresh
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  // Get auth token from your authentication system
-  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  let token = getAccessToken();
   
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    console.error(`Request failed - Status: ${response.status}, URL: ${url}`);
-    const errorText = await response.text();
-    console.error(`Response: ${errorText}`);
-    throw new Error(`HTTP error! status: ${response.status}`);
+  if (!token) {
+    console.error('AuthAPI: No authentication token found');
+    throw new Error('No authentication token found');
   }
 
-  return response;
+  const makeRequest = async (authToken: string): Promise<Response> => {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+      ...options.headers,
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    return response;
+  };
+
+  try {
+    console.log(`AuthAPI: Making request to: ${url}`);
+    let response = await makeRequest(token);
+
+    // If we get 401/403, try to refresh the token once
+    if (response.status === 401 || response.status === 403) {
+      console.log('AuthAPI: Received 401/403, attempting token refresh...');
+      
+      try {
+        const newToken = await refreshAccessToken();
+        console.log('AuthAPI: Token refreshed, retrying request...');
+        response = await makeRequest(newToken);
+      } catch (refreshError) {
+        console.error('AuthAPI: Token refresh failed, cannot retry request');
+        throw new Error('Authentication failed - please log in again');
+      }
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`AuthAPI: Request failed - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
+      
+      // Parse error details if available
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.detail) {
+          console.error('AuthAPI: Error details:', errorData.detail);
+        }
+      } catch (parseError) {
+        // Ignore JSON parse errors
+      }
+      
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log(`AuthAPI: Request successful - Status: ${response.status}, URL: ${url}`);
+    return response;
+  } catch (error) {
+    console.error(`AuthAPI: Network error for ${url}:`, error);
+    throw error;
+  }
 };
 
+// Fetch without authentication (for login, register, etc.)
 export const fetchWithoutAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const response = await fetch(url, {
     ...options,
@@ -106,6 +163,18 @@ export const fetchWithoutAuth = async (url: string, options: RequestInit = {}): 
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`AuthAPI: Request failed - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
+    
+    // Try to parse and provide more detailed error information
+    try {
+      const errorData = JSON.parse(errorText);
+      if (errorData.detail) {
+        console.error('AuthAPI: Error details:', errorData.detail);
+        throw new Error(`Request failed: ${errorData.detail}`);
+      }
+    } catch (parseError) {
+      // If we can't parse the error, throw a generic one
+    }
+    
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
@@ -132,6 +201,11 @@ export const registerUser = async (userData: {
 
   const data = await response.json();
   
+  // Validate response structure
+  if (!data.access_token || !data.refresh_token) {
+    throw new Error('Invalid registration response - missing tokens');
+  }
+  
   // Store tokens automatically
   setTokens(data.access_token, data.refresh_token);
   console.log('AuthAPI: User registered and tokens stored successfully');
@@ -151,12 +225,17 @@ export const loginUser = async (credentials: {
 
   const data = await response.json();
   
+  // Validate response structure
+  if (!data.access_token || !data.refresh_token) {
+    throw new Error('Invalid login response - missing tokens');
+  }
+  
   // Store tokens automatically
   setTokens(data.access_token, data.refresh_token);
   console.log('AuthAPI: User logged in and tokens stored successfully');
 };
 
-// Get current user profile - UPDATED with utility mapping
+// Get current user profile
 export const getCurrentUser = async (): Promise<SerializableUser> => {
   console.log('AuthAPI: Fetching current user profile...');
   
@@ -172,7 +251,7 @@ export const getCurrentUser = async (): Promise<SerializableUser> => {
   return reduxUser;
 };
 
-// Update user profile - UPDATED with utility mapping
+// Update user profile
 export const updateUserProfile = async (updates: Partial<SerializableUser>): Promise<SerializableUser> => {
   console.log('AuthAPI: Updating user profile with:', updates);
   
@@ -226,65 +305,55 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
   console.log('AuthAPI: Password reset request sent successfully');
 };
 
-// Confirm password reset
-export const confirmPasswordReset = async (token: string, newPassword: string): Promise<void> => {
-  console.log('AuthAPI: Confirming password reset...');
-  
-  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/password-reset/confirm`, {
-    method: 'POST',
-    body: JSON.stringify({
-      token,
-      new_password: newPassword,
-    }),
-  });
-  
-  console.log('AuthAPI: Password reset confirmed successfully');
+// ==================== AUTHENTICATION STATUS CHECKS ====================
+
+// Check if user is authenticated (for route protection)
+export const checkAuthStatus = async (): Promise<boolean> => {
+  try {
+    const token = getAccessToken();
+    
+    if (!token) {
+      console.log('AuthAPI: No token found - user not authenticated');
+      return false;
+    }
+
+    // Validate token by making a request to /me endpoint
+    await getCurrentUser();
+    console.log('AuthAPI: Token validated - user is authenticated');
+    return true;
+  } catch (error) {
+    console.error('AuthAPI: Authentication check failed:', error);
+    clearAuthData(); // Clear invalid tokens
+    return false;
+  }
 };
 
-// Verify email
-export const verifyEmail = async (token: string): Promise<void> => {
-  console.log('AuthAPI: Verifying email with token...');
+// Force logout (for use when authentication fails)
+export const forceLogout = (): void => {
+  console.log('AuthAPI: Force logout initiated');
+  clearAuthData();
   
-  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/verify-email`, {
-    method: 'POST',
-    body: JSON.stringify({ token }),
-  });
-  
-  console.log('AuthAPI: Email verified successfully');
+  if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+    window.location.href = '/auth/login';
+  }
 };
 
-// Resend email verification
-export const resendEmailVerification = async (): Promise<void> => {
-  console.log('AuthAPI: Resending email verification...');
-  
-  await fetchWithAuth(`${API_BASE_URL}/api/auth/resend-verification`, {
-    method: 'POST',
-  });
-  
-  console.log('AuthAPI: Email verification resent successfully');
-};
+// ==================== EXPORTS ====================
 
 export default {
-  // Authentication
   registerUser,
   loginUser,
-  logoutUser,
   getCurrentUser,
   updateUserProfile,
-  
-  // Password management
+  logoutUser,
   requestPasswordReset,
-  confirmPasswordReset,
-  
-  // Email verification
-  verifyEmail,
-  resendEmailVerification,
-  
-  // Token management
+  checkAuthStatus,
   isAuthenticated,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
   clearAuthData,
-  
-  // Request helpers
   fetchWithAuth,
   fetchWithoutAuth,
+  forceLogout
 };
