@@ -22,7 +22,6 @@ const OverviewPage: React.FC = () => {
   const dispatch = useDispatch();
   const showOnboarding = useSelector((state: RootState) => state.ui.showOnboardingModal);
   const [isWelcomeExpanded, setIsWelcomeExpanded] = useState(true);
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
 
   // Mock data - TODO: Replace with API calls
   const [tasks] = useState<Task[]>([
@@ -103,24 +102,46 @@ const OverviewPage: React.FC = () => {
     },
   ]);
 
+  // Handle various card actions
+  const handleStartLesson = (lessonId: string) => {
+    console.log("Starting lesson:", lessonId);
+    // TODO: Navigate to lesson or implement lesson start logic
+  };
+
+  const handleContinueLesson = (lessonId: string) => {
+    console.log("Continuing lesson:", lessonId);
+    // TODO: Navigate to lesson or implement lesson continue logic
+  };
+
+  const handleLeaderboardMenu = () => {
+    console.log("Leaderboard menu clicked");
+    // TODO: Implement leaderboard menu logic
+  };
+
+  const handleSupportCardAction = (action: string) => {
+    console.log("Support card action:", action);
+    // TODO: Implement support card actions
+  };
+
+  const handleRewardsShop = () => {
+    console.log("Rewards shop clicked");
+    // TODO: Navigate to rewards shop
+  };
+
   const [supportCards] = useState<SupportCardType[]>([
     {
       id: "1",
       title: "Talk to Our Expert",
-      description:
-        "Schedule a call with our real estate expert to get personalized guidance.",
+      subtitle: "Schedule a call with our real estate expert to get personalized guidance.",
       icon: "src/assets/images/icons/chat-icon.svg",
-      buttonText: "Schedule Call",
-      action: "schedule_call",
+      action: () => handleSupportCardAction("schedule_call"),
     },
     {
       id: "2",
       title: "How to Access Your Loan",
-      description:
-        "Learn about different loan types and how to access them.",
+      subtitle: "Learn about different loan types and how to access them.",
       icon: "src/assets/images/icons/money-icon.svg",
-      buttonText: "Learn More",
-      action: "learn_loans",
+      action: () => handleSupportCardAction("learn_loans"),
     },
   ]);
 
@@ -146,46 +167,11 @@ const OverviewPage: React.FC = () => {
     if (!showOnboarding) {
       checkOnboardingAndShowModal();
     }
-    
-    // Set page as loaded after a brief delay for animations
-    const timer = setTimeout(() => setIsPageLoaded(true), 100);
-    return () => clearTimeout(timer);
   }, [dispatch, showOnboarding]);
 
   // Handle onboarding modal close
   const handleCloseOnboarding = () => {
     dispatch(closeOnboardingModal());
-  };
-
-  // Handle various card actions
-  const handleStartLesson = (lessonId: string) => {
-    console.log("Starting lesson:", lessonId);
-    // TODO: Navigate to lesson or implement lesson start logic
-  };
-
-  const handleContinueLesson = (lessonId: string) => {
-    console.log("Continuing lesson:", lessonId);
-    // TODO: Navigate to lesson or implement lesson continue logic
-  };
-
-  const handleTaskClick = (taskId: string) => {
-    console.log("Task clicked:", taskId);
-    // TODO: Implement task click logic
-  };
-
-  const handleLeaderboardMenu = () => {
-    console.log("Leaderboard menu clicked");
-    // TODO: Implement leaderboard menu logic
-  };
-
-  const handleSupportCardAction = (action: string) => {
-    console.log("Support card action:", action);
-    // TODO: Implement support card actions
-  };
-
-  const handleRewardsShop = () => {
-    console.log("Rewards shop clicked");
-    // TODO: Navigate to rewards shop
   };
 
   return (
@@ -218,8 +204,7 @@ const OverviewPage: React.FC = () => {
               <WelcomeCard
                 tasks={tasks}
                 isExpanded={isWelcomeExpanded}
-                onToggle={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
-                onTaskClick={handleTaskClick}
+                onToggleExpand={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
               />
 
               {/* Continue Learning Section */}
@@ -333,7 +318,6 @@ const OverviewPage: React.FC = () => {
                   <SupportCard
                     key={card.id}
                     supportCard={card}
-                    onAction={() => handleSupportCardAction(card.action)}
                   />
                 ))}
               </div>

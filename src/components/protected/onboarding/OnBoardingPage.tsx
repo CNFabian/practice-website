@@ -198,7 +198,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle complete onboarding
+  // Handle complete onboarding with improved backend verification
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     setError(null);
@@ -228,10 +228,51 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       // Clear localStorage after successful completion
       clearOnboardingDataFromLocalStorage();
       
+      // Wait for backend to update and verify completion status
+      console.log('OnBoarding: Waiting for backend status to update...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds for backend to process
+      
+      // Verify completion status with retry logic
+      let attempts = 0;
+      const maxAttempts = 5;
+      let isActuallyCompleted = false;
+      
+      while (attempts < maxAttempts && !isActuallyCompleted) {
+        try {
+          console.log(`OnBoarding: Verification attempt ${attempts + 1}`);
+          const status = await getOnboardingStatus();
+          console.log(`OnBoarding: Status check result:`, status);
+          
+          if (status.is_completed) {
+            isActuallyCompleted = true;
+            console.log('OnBoarding: Backend confirms completion!');
+            break;
+          } else {
+            console.log('OnBoarding: Backend still shows incomplete, waiting...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 more second
+            attempts++;
+          }
+        } catch (error) {
+          console.error('OnBoarding: Error checking status during verification:', error);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      if (!isActuallyCompleted) {
+        console.warn('OnBoarding: Backend never confirmed completion after', maxAttempts, 'attempts');
+        console.log('OnBoarding: Proceeding anyway as API confirmed successful completion');
+      }
+      
+      // Add a small delay to ensure UI state is stable before closing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Navigate to app or close modal
       if (onClose) {
+        console.log('OnBoarding: Calling onClose callback');
         onClose();
       } else {
+        console.log('OnBoarding: Navigating to /app');
         nav('/app', { replace: true });
       }
       
@@ -263,6 +304,25 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       await handleCompleteOnboarding();
     } else {
       handleNext();
+    }
+  };
+
+  // Check if current step is completed
+  const isCurrentStepCompleted = () => {
+    const step = STEPS[currentStep];
+    if (!step) return false;
+    
+    switch (step.id) {
+      case 'avatar':
+        return !!answers.avatar;
+      case 'expert_contact':
+        return !!answers.expert_contact;
+      case 'Home Ownership':
+        return !!answers['Home Ownership'];
+      case 'city':
+        return !!answers.city && answers.city.length >= 5;
+      default:
+        return false;
     }
   };
 
@@ -309,8 +369,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
                 : 'border-gray-200 hover:border-gray-300'
             )}
           >
-            <div className="font-medium text-gray-900">{option.name}</div>
-            <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+            <span className="font-medium text-gray-700">{option.name}</span>
           </button>
         ))}
       </div>
@@ -333,7 +392,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
                 : 'border-gray-200 hover:border-gray-300'
             )}
           >
-            <div className="font-medium text-gray-900">{option.label}</div>
+            <span className="font-medium text-gray-700">{option.label}</span>
           </button>
         ))}
       </div>
@@ -347,128 +406,82 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       <div className="max-w-md mx-auto">
         <input
           type="text"
-          placeholder="Enter zipcode (e.g., 12345)"
           value={answers.city || ''}
-          onChange={(e) => {
-            const value = e.target.value;
-            setAnswers(prev => ({ ...prev, city: value }));
-            handleAnswerSelect(value);
-          }}
-          className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg"
+          onChange={(e) => handleAnswerSelect(e.target.value)}
+          placeholder="Enter your zipcode"
           pattern={onboardingOptions.zipcode_validation.pattern}
+          className="w-full p-4 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-lg text-center"
+          maxLength={10}
         />
-        <p className="text-sm text-gray-600 mt-2 text-center">
-          {onboardingOptions.zipcode_validation.description}
-        </p>
+        {answers.city && answers.city.length >= 5 && (
+          <p className="mt-2 text-green-600 text-center">✓ Valid zipcode</p>
+        )}
       </div>
     );
   };
 
-  // Check if current step is completed
-  const isCurrentStepCompleted = () => {
-    const step = STEPS[currentStep];
-    if (!step) return false;
-    
-    const answer = answers[step.id];
-    
-    switch (step.id) {
-      case 'avatar':
-        return !!answer;
-      case 'expert_contact':
-        return !!answer;
-      case 'Home Ownership':
-        return typeof answer === 'number' && answer > 0;
-      case 'city':
-        if (!onboardingOptions) return false;
-        const pattern = new RegExp(onboardingOptions.zipcode_validation.pattern);
-        return !!(answer && pattern.test(answer));
-      default:
-        return false;
-    }
-  };
-
-  // Loading states
+  // Don't render if not open
   if (!isOpen) return null;
-  
-  if (isInitializing || !onboardingOptions) {
+
+  // Show loading spinner during initialization
+  if (isInitializing) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8">
+        <div className="bg-white rounded-2xl p-8">
           <LoadingSpinner />
-          <p className="text-center mt-4 text-gray-600">Loading onboarding...</p>
         </div>
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8">
-          <LoadingSpinner />
-          <p className="text-center mt-4 text-gray-600">Completing onboarding...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const step = STEPS[currentStep];
-  if (!step) return null;
+  const currentStepData = STEPS[currentStep];
+  if (!currentStepData) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Getting Started</h2>
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            )}
+            <h2 className="text-2xl font-bold text-gray-900">
+              Welcome to Nest Navigate!
+            </h2>
+            <div className="text-sm text-gray-500">
+              Step {currentStep + 1} of {STEPS.length}
+            </div>
           </div>
           
           {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Step {currentStep + 1} of {STEPS.length}</span>
-              <span>{Math.round(((currentStep + 1) / STEPS.length) * 100)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
-              />
-            </div>
+          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+            />
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+              <p className="text-red-700">{error}</p>
             </div>
           )}
 
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-2 whitespace-pre-line">
-              {step.label}
+              {currentStepData.label}
             </h3>
-            {step.helpText && (
-              <p className="text-gray-600">{step.helpText}</p>
+            {currentStepData.helpText && (
+              <p className="text-gray-600">{currentStepData.helpText}</p>
             )}
           </div>
 
           <div className="mb-8">
-            {step.id === 'avatar' && renderAvatarStep()}
-            {step.id === 'expert_contact' && renderExpertContactStep()}
-            {step.id === 'Home Ownership' && renderTimelineStep()}
-            {step.id === 'city' && renderZipcodeStep()}
+            {currentStepData.id === 'avatar' && renderAvatarStep()}
+            {currentStepData.id === 'expert_contact' && renderExpertContactStep()}
+            {currentStepData.id === 'Home Ownership' && renderTimelineStep()}
+            {currentStepData.id === 'city' && renderZipcodeStep()}
           </div>
         </div>
 
@@ -484,9 +497,10 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
           
           <button
             onClick={handleComplete}
-            disabled={!isCurrentStepCompleted()}
-            className="px-8 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={!isCurrentStepCompleted() || loading}
+            className="px-8 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
+            {loading && <LoadingSpinner />}
             {currentStep === STEPS.length - 1 ? 'Complete' : 'Next'}
           </button>
         </div>
