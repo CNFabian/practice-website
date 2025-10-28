@@ -152,7 +152,7 @@ const OverviewPage: React.FC = () => {
         const status = await getOnboardingStatus();
         
         // If onboarding is not completed, show the modal automatically
-        if (!status.is_completed) {
+        if (!status.completed) {
           console.log('OverviewPage: Onboarding not completed, showing modal');
           dispatch(openOnboardingModal());
         }

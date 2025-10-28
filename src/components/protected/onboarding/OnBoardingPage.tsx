@@ -91,7 +91,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         const status = await getOnboardingStatus();
         console.log('OnBoarding: Status received:', status);
         
-        const isCompleted = status.is_completed;
+        const isCompleted = status.completed;
         console.log('OnBoarding: Parsed - isCompleted:', isCompleted);
         
         if (isCompleted) {
@@ -243,7 +243,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
           const status = await getOnboardingStatus();
           console.log(`OnBoarding: Status check result:`, status);
           
-          if (status.is_completed) {
+          if (status.completed) {
             isActuallyCompleted = true;
             console.log('OnBoarding: Backend confirms completion!');
             break;

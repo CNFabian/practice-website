@@ -6,7 +6,7 @@ import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
 import { getModules } from '../../../services/learningAPI';
-import { getOnboardingStatus } from '../../../services/onBoardingAPI';
+import { getOnboardingStatus, getOnboardingProgress } from '../../../services/onBoardingAPI';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -284,9 +284,9 @@ const ModulesPage: React.FC = () => {
       console.log('ModulesPage: Onboarding status:', onboardingStatusResponse);
       
       const status = {
-        isCompleted: onboardingStatusResponse.is_completed,
-        currentStep: onboardingStatusResponse.current_step || 1,
-        progressPercentage: onboardingStatusResponse.progress_percentage || 0
+        isCompleted: onboardingStatusResponse.completed,
+        currentStep: onboardingStatusResponse.step || 1,
+        progressPercentage: getOnboardingProgress(onboardingStatusResponse)
       };
       
       setOnboardingStatus(status);

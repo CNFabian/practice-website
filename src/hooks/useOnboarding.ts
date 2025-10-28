@@ -66,21 +66,21 @@ export const useOnboarding = (): OnboardingState => {
       const status = await getOnboardingStatus()
       console.log('useOnboarding: Status:', status)
       
-      setIsCompleted(status.is_completed)
-      setProgress(status.progress_percentage || 0)
+      setIsCompleted(status.completed)
+      setProgress(getOnboardingProgress(status))
       
-      if (status.is_completed) {
+      if (status.completed) {
         setCurrentStep(4) // Last step
         console.log('useOnboarding: Onboarding already completed')
         return
       }
       
       // Set current step (backend is 1-indexed, frontend is 0-indexed)
-      const frontendStep = Math.max(0, (status.current_step || 1) - 1)
+      const frontendStep = Math.max(0, (status.step || 1) - 1)
       setCurrentStep(frontendStep)
       
       // Load existing data if any steps are completed
-      if (status.current_step && status.current_step > 1) {
+      if (status.step && status.step > 1) {
         const existingData = await getOnboardingData()
         console.log('useOnboarding: Existing data:', existingData)
         
@@ -152,13 +152,9 @@ export const useOnboarding = (): OnboardingState => {
       
       console.log(`useOnboarding: Step ${currentStep} completed`)
       
-      // Update progress - create a proper OnboardingStatus object
-      const statusForProgress = {
-        is_completed: false,
-        completed_steps: Object.keys(answers).filter(key => answers[key as keyof OnboardingAnswers]).map((_, index) => `step${index + 1}`),
-        progress_percentage: 0
-      }
-      const newProgress = getOnboardingProgress(statusForProgress)
+      // Update progress by fetching latest status
+      const updatedStatus = await getOnboardingStatus()
+      const newProgress = getOnboardingProgress(updatedStatus)
       setProgress(newProgress)
       
     } catch (error) {

@@ -5,10 +5,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 // ==================== TYPE DEFINITIONS ====================
 
 export interface OnboardingStatus {
-  is_completed: boolean;
-  current_step?: number;
-  completed_steps?: string[];
-  progress_percentage?: number;
+  completed: boolean;
+  step?: number;
+  total_steps?: number;
+  data?: any;
 }
 
 export interface OnboardingData {
@@ -262,7 +262,7 @@ export const completeStep5 = async (data: Step5Data): Promise<{ success: boolean
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const result = await response.json();
     console.log('Step 5 completed successfully:', result);
     return result;
@@ -418,30 +418,29 @@ export const validateCompleteOnboardingData = (data: CompleteOnboardingData): bo
 
 // Helper function to determine next step based on current onboarding status
 export const getNextOnboardingStep = (status: OnboardingStatus): number => {
-  if (status.is_completed) {
+  if (status.completed) {
     return 0; // Onboarding complete
   }
   
-  if (!status.completed_steps || status.completed_steps.length === 0) {
-    return 1; // Start with step 1
-  }
-  
-  // Return next step based on completed steps
-  return status.completed_steps.length + 1;
+  // Return current step from backend, default to 1 if not provided
+  return status.step || 1;
 };
 
 // Check if a specific step is completed
 export const isStepCompleted = (status: OnboardingStatus, step: number): boolean => {
-  if (!status.completed_steps) return false;
-  return status.completed_steps.includes(`step${step}`);
+  // If completed is true, all steps are done
+  if (status.completed) return true;
+  
+  // Check if current step is greater than requested step
+  return (status.step || 0) > step;
 };
 
 // Get completion percentage
 export const getOnboardingProgress = (status: OnboardingStatus): number => {
-  if (status.is_completed) return 100;
-  if (!status.completed_steps) return 0;
+  if (status.completed) return 100;
   
-  const totalSteps = 5;
-  const completedSteps = status.completed_steps.length;
-  return Math.round((completedSteps / totalSteps) * 100);
+  const currentStep = status.step || 0;
+  const totalSteps = status.total_steps || 5;
+  
+  return Math.round((currentStep / totalSteps) * 100);
 };
