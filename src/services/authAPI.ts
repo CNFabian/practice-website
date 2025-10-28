@@ -70,52 +70,28 @@ const refreshAccessToken = async (): Promise<string> => {
 };
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  let token = getAccessToken();
+  // Get auth token from your authentication system
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
   
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const makeRequest = async (authToken: string) => {
-    return fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-        ...options.headers,
-      },
-    });
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...options.headers,
   };
 
-  try {
-    let response = await makeRequest(token);
-    
-    // If unauthorized, try to refresh token once
-    if (response.status === 401) {
-      console.log('AuthAPI: Access token expired, attempting refresh...');
-      
-      try {
-        const newToken = await refreshAccessToken();
-        response = await makeRequest(newToken);
-      } catch (refreshError) {
-        console.error('AuthAPI: Token refresh failed, redirecting to login');
-        clearAuthData();
-        window.location.href = '/auth/login';
-        throw refreshError;
-      }
-    }
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`AuthAPI: Request failed - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response;
-  } catch (error) {
-    console.error(`AuthAPI: Network error for ${url}:`, error);
-    throw error;
+  if (!response.ok) {
+    console.error(`Request failed - Status: ${response.status}, URL: ${url}`);
+    const errorText = await response.text();
+    console.error(`Response: ${errorText}`);
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  return response;
 };
 
 export const fetchWithoutAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {

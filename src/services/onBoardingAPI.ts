@@ -66,6 +66,84 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+// ==================== LOCAL STORAGE FUNCTIONS ====================
+
+const ONBOARDING_STORAGE_KEY = 'onboarding_data';
+
+// Save onboarding data to local storage
+export const saveOnboardingDataToLocalStorage = (data: Partial<CompleteOnboardingData>): void => {
+  try {
+    const existingData = getOnboardingDataFromLocalStorage();
+    const updatedData = { ...existingData, ...data };
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updatedData));
+    console.log('Saved onboarding data to localStorage:', updatedData);
+  } catch (error) {
+    console.error('Error saving onboarding data to localStorage:', error);
+  }
+};
+
+// Get onboarding data from local storage
+export const getOnboardingDataFromLocalStorage = (): Partial<CompleteOnboardingData> => {
+  try {
+    const data = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+    return {};
+  } catch (error) {
+    console.error('Error getting onboarding data from localStorage:', error);
+    return {};
+  }
+};
+
+// Clear onboarding data from local storage
+export const clearOnboardingDataFromLocalStorage = (): void => {
+  try {
+    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    console.log('Cleared onboarding data from localStorage');
+  } catch (error) {
+    console.error('Error clearing onboarding data from localStorage:', error);
+  }
+};
+
+// Check if onboarding data exists in local storage
+export const hasOnboardingDataInLocalStorage = (): boolean => {
+  try {
+    const data = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    return !!data;
+  } catch (error) {
+    console.error('Error checking onboarding data in localStorage:', error);
+    return false;
+  }
+};
+
+// Save step data to local storage (instead of sending to backend)
+export const saveStepToLocalStorage = (stepNumber: number, stepData: any): void => {
+  try {
+    const key = `onboarding_step_${stepNumber}`;
+    localStorage.setItem(key, JSON.stringify(stepData));
+    console.log(`Saved step ${stepNumber} to localStorage:`, stepData);
+  } catch (error) {
+    console.error(`Error saving step ${stepNumber} to localStorage:`, error);
+  }
+};
+
+// Get current step progress from local storage
+export const getCurrentStepFromLocalStorage = (): number => {
+  try {
+    for (let step = 5; step >= 1; step--) {
+      const key = `onboarding_step_${step}`;
+      if (localStorage.getItem(key)) {
+        return step + 1; // Return next step
+      }
+    }
+    return 1; // Start from step 1 if no data
+  } catch (error) {
+    console.error('Error getting current step from localStorage:', error);
+    return 1;
+  }
+};
+
 // ==================== ONBOARDING STATUS API FUNCTIONS ====================
 
 // GET /api/onboarding/status - Get user's onboarding completion status
@@ -106,122 +184,73 @@ export const checkOnboardingStatus = async (): Promise<boolean> => {
   }
 };
 
-// ==================== ONBOARDING STEP API FUNCTIONS ====================
+// ==================== MODIFIED ONBOARDING STEP FUNCTIONS ====================
+// These now save to localStorage instead of sending to backend immediately
 
-// POST /api/onboarding/step1 - Complete step 1: Avatar selection
-export const completeStep1 = async (stepData: Step1Data): Promise<ApiResponse> => {
+// Save step 1: Avatar selection to localStorage
+export const saveStep1ToLocalStorage = (stepData: Step1Data): void => {
   try {
-    console.log('Completing onboarding step 1:', stepData);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step1`, {
-      method: 'POST',
-      body: JSON.stringify(stepData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    console.log('Onboarding step 1 completed:', data);
-    return data;
+    console.log('Saving step 1 to localStorage:', stepData);
+    saveStepToLocalStorage(1, stepData);
+    saveOnboardingDataToLocalStorage({ selected_avatar: stepData.selected_avatar });
   } catch (error) {
-    console.error('Error completing onboarding step 1:', error);
+    console.error('Error saving step 1 to localStorage:', error);
     throw error;
   }
 };
 
-// POST /api/onboarding/step2 - Complete step 2: Realtor and loan officer status
-export const completeStep2 = async (stepData: Step2Data): Promise<ApiResponse> => {
+// Save step 2: Realtor and loan officer status to localStorage  
+export const saveStep2ToLocalStorage = (stepData: Step2Data): void => {
   try {
-    console.log('Completing onboarding step 2:', stepData);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step2`, {
-      method: 'POST',
-      body: JSON.stringify(stepData)
+    console.log('Saving step 2 to localStorage:', stepData);
+    saveStepToLocalStorage(2, stepData);
+    saveOnboardingDataToLocalStorage({ 
+      has_realtor: stepData.has_realtor,
+      has_loan_officer: stepData.has_loan_officer 
     });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    console.log('Onboarding step 2 completed:', data);
-    return data;
   } catch (error) {
-    console.error('Error completing onboarding step 2:', error);
+    console.error('Error saving step 2 to localStorage:', error);
     throw error;
   }
 };
 
-// POST /api/onboarding/step3 - Complete step 3: Expert contact preference
-export const completeStep3 = async (stepData: Step3Data): Promise<ApiResponse> => {
+// Save step 3: Expert contact preference to localStorage
+export const saveStep3ToLocalStorage = (stepData: Step3Data): void => {
   try {
-    console.log('Completing onboarding step 3:', stepData);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step3`, {
-      method: 'POST',
-      body: JSON.stringify(stepData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    console.log('Onboarding step 3 completed:', data);
-    return data;
+    console.log('Saving step 3 to localStorage:', stepData);
+    saveStepToLocalStorage(3, stepData);
+    saveOnboardingDataToLocalStorage({ wants_expert_contact: stepData.wants_expert_contact });
   } catch (error) {
-    console.error('Error completing onboarding step 3:', error);
+    console.error('Error saving step 3 to localStorage:', error);
     throw error;
   }
 };
 
-// POST /api/onboarding/step4 - Complete step 4: Homeownership timeline
-export const completeStep4 = async (stepData: Step4Data): Promise<ApiResponse> => {
+// Save step 4: Homeownership timeline to localStorage
+export const saveStep4ToLocalStorage = (stepData: Step4Data): void => {
   try {
-    console.log('Completing onboarding step 4:', stepData);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step4`, {
-      method: 'POST',
-      body: JSON.stringify(stepData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    console.log('Onboarding step 4 completed:', data);
-    return data;
+    console.log('Saving step 4 to localStorage:', stepData);
+    saveStepToLocalStorage(4, stepData);
+    saveOnboardingDataToLocalStorage({ homeownership_timeline_months: stepData.homeownership_timeline_months });
   } catch (error) {
-    console.error('Error completing onboarding step 4:', error);
+    console.error('Error saving step 4 to localStorage:', error);
     throw error;
   }
 };
 
-// POST /api/onboarding/step5 - Complete step 5: Future home location (zipcode)
-export const completeStep5 = async (stepData: Step5Data): Promise<ApiResponse> => {
+// Save step 5: Zipcode to localStorage
+export const saveStep5ToLocalStorage = (stepData: Step5Data): void => {
   try {
-    console.log('Completing onboarding step 5:', stepData);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step5`, {
-      method: 'POST',
-      body: JSON.stringify(stepData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    console.log('Onboarding step 5 completed:', data);
-    return data;
+    console.log('Saving step 5 to localStorage:', stepData);
+    saveStepToLocalStorage(5, stepData);
+    saveOnboardingDataToLocalStorage({ zipcode: stepData.zipcode });
   } catch (error) {
-    console.error('Error completing onboarding step 5:', error);
+    console.error('Error saving step 5 to localStorage:', error);
     throw error;
   }
 };
+
+// ==================== ORIGINAL API FUNCTIONS (for completion) ====================
 
 // POST /api/onboarding/complete - Complete all onboarding steps at once
 export const completeOnboardingAllSteps = async (onboardingData: CompleteOnboardingData): Promise<ApiResponse> => {
@@ -239,6 +268,10 @@ export const completeOnboardingAllSteps = async (onboardingData: CompleteOnboard
     
     const data: ApiResponse = await response.json();
     console.log('All onboarding steps completed:', data);
+    
+    // Clear localStorage after successful completion
+    clearOnboardingDataFromLocalStorage();
+    
     return data;
   } catch (error) {
     console.error('Error completing all onboarding steps:', error);
@@ -292,7 +325,7 @@ export const getOnboardingOptions = async (): Promise<OnboardingOptions> => {
   }
 };
 
-// ==================== UTILITY FUNCTIONS ====================
+// ==================== VALIDATION FUNCTIONS ====================
 
 // Validate onboarding step data before submission
 export const validateStep1Data = (data: Step1Data): boolean => {
@@ -327,6 +360,8 @@ export const validateCompleteOnboardingData = (data: CompleteOnboardingData): bo
     validateStep5Data({ zipcode: data.zipcode })
   );
 };
+
+// ==================== UTILITY FUNCTIONS ====================
 
 // Helper function to determine next step based on current onboarding status
 export const getNextOnboardingStep = (status: OnboardingStatus): number => {

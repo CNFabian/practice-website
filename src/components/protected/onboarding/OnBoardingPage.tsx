@@ -1,41 +1,38 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import LoadingSpinner from '../../shared/LoadingSpinner';
 import { 
-  getOnboardingStatus,
-  completeStep1,
-  completeStep3,
-  completeStep4,
-  completeStep5,
-  completeOnboardingAllSteps,
-  getOnboardingData
-} from '../../../services/onBoardingAPI'
-import { 
-  SliderScreen, 
-  CardGridScreen,
-  CitySearchScreen,
-  ExpertContactScreen
-} from './screens'
+  getOnboardingStatus, 
+  completeOnboardingAllSteps, 
+  getOnboardingDataFromLocalStorage,
+  saveStep1ToLocalStorage,
+  saveStep2ToLocalStorage,
+  saveStep3ToLocalStorage,
+  saveStep4ToLocalStorage,
+  saveStep5ToLocalStorage,
+  getCurrentStepFromLocalStorage,
+  clearOnboardingDataFromLocalStorage,
+  type CompleteOnboardingData
+} from '../../../services/onBoardingAPI';
 
-type Question = { id: string; label: string; options: string[]; helpText?: string }
-
-const STEPS: Question[] = [
+const STEPS = [
   { 
     id: 'avatar', 
-    label: 'Choose Your Avatar', 
-    options: ['Curious Cat','Celebrating Bird','Careful Elephant','Protective Dog'],
-    helpText: 'Select an avatar that represents you on your homeownership journey'
+    label: "Let's get started!\nChoose your avatar:", 
+    options: ['Curious Cat', 'Celebrating Bird', 'Careful Elephant', 'Protective Dog'],
+    helpText: 'Your avatar will represent you throughout your learning journey!'
   },
   { 
     id: 'expert_contact', 
-    label: 'Would you like to get in contact with an expert?', 
-    options: [],
-    helpText: 'Buying a home is easier with the right help. Would you like us to connect you with a loan officer or real estate agent?'
+    label: "Would you like to be contacted by our real estate experts for personalized guidance?", 
+    options: ['Yes', 'No', 'Maybe later'],
+    helpText: 'Our experts can help you navigate the home buying process with confidence.'
   },
   { 
     id: 'Home Ownership', 
-    label: 'When do you want to achieve homeownership?', 
-    options: [], 
-    helpText: 'This helps us customize your learning path and set realistic goals.' 
+    label: "When are you looking to buy your home?", 
+    options: [],
+    helpText: 'This helps us tailor your learning experience to your timeline.'
   },
   { 
     id: 'city', 
@@ -69,7 +66,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
   const cur = STEPS[step]
   const total = STEPS.length
 
-  // Initialize onboarding state from backend
+  // Initialize onboarding state from localStorage and backend status
   useEffect(() => {
     if (!isOpen) return;
     
@@ -77,37 +74,40 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
       try {
         console.log('OnBoarding: Checking onboarding status...');
         
-        // Check if onboarding is already completed
+        // Check if onboarding is already completed on backend
         const status = await getOnboardingStatus();
         console.log('OnBoarding: Status received:', status);
         
-        // FIXED: Handle both possible response formats from backend
+        // Handle both possible response formats from backend
         const isCompleted = status.is_completed || (status as any).completed;
-        const currentStep = status.current_step || (status as any).step;
         
-        console.log('OnBoarding: Parsed - isCompleted:', isCompleted, 'currentStep:', currentStep);
+        console.log('OnBoarding: Parsed - isCompleted:', isCompleted);
         
         if (isCompleted && !onClose) {
           console.log('OnBoarding: Already completed, redirecting to app...');
+          clearOnboardingDataFromLocalStorage(); // Clean up any leftover localStorage data
           nav('/app', { replace: true });
           return;
         }
         
-        // Load existing onboarding data if any steps are completed
-        if (currentStep && currentStep > 1) {
-          console.log('OnBoarding: Loading existing data...');
-          const existingData = await getOnboardingData();
-          console.log('OnBoarding: Existing data:', existingData);
-          
-          // Map backend data to frontend answers
+        // Load existing data from localStorage if available
+        const localData = getOnboardingDataFromLocalStorage();
+        console.log('OnBoarding: Local storage data:', localData);
+        
+        if (Object.keys(localData).length > 0) {
+          // Map localStorage data to frontend answers
           const existingAnswers: Record<string, string> = {};
-          if (existingData.selected_avatar) existingAnswers.avatar = existingData.selected_avatar;
-          if (existingData.wants_expert_contact) existingAnswers.expert_contact = existingData.wants_expert_contact;
-          if (existingData.homeownership_timeline_months) existingAnswers['Home Ownership'] = String(existingData.homeownership_timeline_months);
-          if (existingData.zipcode) existingAnswers.city = existingData.zipcode;
+          if (localData.selected_avatar) existingAnswers.avatar = localData.selected_avatar;
+          if (localData.wants_expert_contact) existingAnswers.expert_contact = localData.wants_expert_contact;
+          if (localData.homeownership_timeline_months) existingAnswers['Home Ownership'] = String(localData.homeownership_timeline_months);
+          if (localData.zipcode) existingAnswers.city = localData.zipcode;
           
           setAns(existingAnswers);
-          setStep(Math.max(0, currentStep - 1)); // Backend is 1-indexed, frontend is 0-indexed
+          
+          // Set current step based on localStorage data
+          const currentStep = getCurrentStepFromLocalStorage() - 1; // Convert to 0-indexed
+          setStep(Math.min(currentStep, total - 1));
+          console.log('OnBoarding: Restored step:', currentStep);
         }
         
         console.log('OnBoarding: Initialization complete, showing form');
@@ -134,46 +134,41 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
   const allAnswered = useMemo(() => STEPS.every(s => !!answers[s.id]), [answers])
   const progressPct = Math.round(((step + (answers[cur.id] ? 1 : 0)) / total) * 100)
 
-  // Handle individual step completion with backend
+  // Handle individual step completion - now saves to localStorage
   const handleStepCompletion = async (stepId: string, value: string) => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      console.log(`OnBoarding: Completing step ${stepId} with value:`, value);
+      console.log(`OnBoarding: Saving step ${stepId} with value:`, value);
       
-      // Map frontend step to backend API call
+      // Save to localStorage instead of backend
       switch (stepId) {
         case 'avatar':
-          await completeStep1({ selected_avatar: value });
+          saveStep1ToLocalStorage({ selected_avatar: value });
           break;
         case 'expert_contact':
-          await completeStep3({ wants_expert_contact: value });
+          saveStep3ToLocalStorage({ wants_expert_contact: value });
           break;
         case 'Home Ownership':
-          await completeStep4({ homeownership_timeline_months: parseInt(value) });
+          saveStep4ToLocalStorage({ homeownership_timeline_months: parseInt(value) });
           break;
         case 'city':
-          // Extract zipcode from city selection (you may need to adjust this based on your city selection logic)
-          const zipcode = value.match(/\d{5}/)?.[0] || value; // Extract 5-digit zipcode or use value as-is
-          await completeStep5({ zipcode });
+          // Extract zipcode from city selection or use value as-is
+          const zipcode = value.match(/\d{5}/)?.[0] || value;
+          saveStep5ToLocalStorage({ zipcode });
           break;
         default:
           console.warn('OnBoarding: Unknown step ID:', stepId);
       }
       
-      console.log(`OnBoarding: Step ${stepId} completed successfully`);
+      console.log(`OnBoarding: Step ${stepId} saved to localStorage successfully`);
       
     } catch (error) {
-      console.error(`OnBoarding: Error completing step ${stepId}:`, error);
+      console.error(`OnBoarding: Error saving step ${stepId} to localStorage:`, error);
       setError(`Failed to save ${stepId} information. Please try again.`);
-      throw error; // Re-throw to handle in the calling function
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
-  // Handle complete onboarding with backend
+  // Handle complete onboarding - sends all data to backend at once
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     setError(null);
@@ -181,20 +176,26 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     try {
       console.log('OnBoarding: Completing all steps...');
       
+      // Get all data from localStorage
+      const localData = getOnboardingDataFromLocalStorage();
+      console.log('OnBoarding: Final localStorage data:', localData);
+      
       // Prepare data for bulk completion
-      const onboardingData = {
-        selected_avatar: answers.avatar,
-        has_realtor: false, // You may want to add this to your frontend
-        has_loan_officer: false, // You may want to add this to your frontend
-        wants_expert_contact: answers.expert_contact,
-        homeownership_timeline_months: parseInt(answers['Home Ownership']),
-        zipcode: answers.city.match(/\d{5}/)?.[0] || answers.city
+      const onboardingData: CompleteOnboardingData = {
+        selected_avatar: localData.selected_avatar || answers.avatar,
+        has_realtor: localData.has_realtor ?? false, // Default to false if not set
+        has_loan_officer: localData.has_loan_officer ?? false, // Default to false if not set
+        wants_expert_contact: localData.wants_expert_contact || answers.expert_contact,
+        homeownership_timeline_months: localData.homeownership_timeline_months || parseInt(answers['Home Ownership']),
+        zipcode: localData.zipcode || answers.city.match(/\d{5}/)?.[0] || answers.city
       };
       
-      console.log('OnBoarding: Sending complete data:', onboardingData);
+      console.log('OnBoarding: Sending complete data to backend:', onboardingData);
       await completeOnboardingAllSteps(onboardingData);
       
       console.log('OnBoarding: All steps completed successfully');
+      
+      // localStorage is cleared automatically in completeOnboardingAllSteps
       
       // Close modal if onClose is provided, otherwise redirect
       if (onClose) {
@@ -211,32 +212,44 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle next button with backend integration
+  // Handle next button - saves to localStorage and moves to next step
   const handleNext = async () => {
     if (!answers[cur.id]) return;
     
+    setLoading(true);
+    setError(null);
+    
     try {
-      // Save current step to backend
+      // Save current step to localStorage
       await handleStepCompletion(cur.id, answers[cur.id]);
       
       // Move to next step
       setStep(s => Math.min(total - 1, s + 1));
       
     } catch (error) {
-      // Error handling is done in handleStepCompletion
       console.error('OnBoarding: Failed to proceed to next step');
+      // Error handling is done in handleStepCompletion
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle complete button with backend integration
+  // Handle complete button - sends all data to backend
   const handleComplete = async () => {
     if (!allAnswered) return;
     
+    // Save final step to localStorage first
+    setLoading(true);
+    setError(null);
+    
     try {
+      await handleStepCompletion(cur.id, answers[cur.id]);
       await handleCompleteOnboarding();
     } catch (error) {
-      // Error handling is done in handleCompleteOnboarding
       console.error('OnBoarding: Failed to complete onboarding');
+      // Error handling is done in respective functions
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,159 +268,222 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         <div className="w-full max-w-lg">
           {/* Show loading spinner during initialization */}
           {isInitializing ? (
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                <p className="text-indigo-700">Loading onboarding...</p>
+            <div className="bg-white rounded-xl shadow-xl p-8">
+              <div className="flex flex-col items-center space-y-4">
+                <LoadingSpinner size="lg" />
+                <p className="text-gray-600">Loading onboarding...</p>
               </div>
             </div>
           ) : (
-            <>
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>Step {step + 1} of {total}</span>
-                  <span>{progressPct}% Complete</span>
+            <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Welcome to Your Home Buying Journey!</h2>
+                    <p className="text-blue-100 mt-1">Step {step + 1} of {total}</p>
+                  </div>
+                  {onClose && (
+                    <button
+                      onClick={onClose}
+                      className="text-white hover:text-gray-200 transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-blue-400 rounded-full h-2 mt-4">
                   <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                    className="bg-white h-2 rounded-full transition-all duration-500"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
               </div>
 
-              {/* Error Display */}
-              {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-red-700">{error}</p>
-                    </div>
-                    <div className="ml-auto pl-3">
-                      <button
-                        onClick={() => setError(null)}
-                        className="text-red-400 hover:text-red-600"
-                      >
-                        <span className="sr-only">Dismiss</span>
-                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
+              {/* Content */}
+              <div className="p-6">
+                {/* Error Message */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm">{error}</p>
                   </div>
-                </div>
-              )}
-
-              {/* Question Content */}
-              <div className="bg-white rounded-xl shadow-lg p-8">
-                {cur.helpText && (
-                  <p className="text-sm text-gray-600 mb-4">{cur.helpText}</p>
-                )}
-                
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 whitespace-pre-line">
-                  {cur.label}
-                </h2>
-
-                {/* Render appropriate screen based on step */}
-                {cur.id === 'avatar' && (
-                  <CardGridScreen
-                    name={cur.id}
-                    label={cur.label}
-                    opts={cur.options}
-                    value={answers[cur.id] || ''}
-                    onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
-                    iconMap={AVATAR_ICON}
-                  />
                 )}
 
-                {cur.id === 'expert_contact' && (
-                  <ExpertContactScreen
-                    value={answers[cur.id] || ''}
-                    onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
-                  />
-                )}
+                {/* Current Step Content */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2 whitespace-pre-line">
+                      {cur.label}
+                    </h3>
+                    {cur.helpText && (
+                      <p className="text-gray-600 text-sm">{cur.helpText}</p>
+                    )}
+                  </div>
 
-                {cur.id === 'Home Ownership' && (
-                  <SliderScreen
-                    value={String(parseInt(answers[cur.id]) || SLIDER.defaultValue)}
-                    onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
-                  />
-                )}
+                  {/* Avatar Selection */}
+                  {cur.id === 'avatar' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {cur.options.map(option => (
+                        <button
+                          key={option}
+                          onClick={() => setAns(p => ({ ...p, [cur.id]: option }))}
+                          className={cx(
+                            'p-4 rounded-lg border-2 transition-all',
+                            'flex flex-col items-center space-y-2',
+                            answers[cur.id] === option 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          )}
+                        >
+                          <span className="text-3xl">{AVATAR_ICON[option]}</span>
+                          <span className="text-sm font-medium text-gray-700">{option}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                {cur.id === 'city' && (
-                  <CitySearchScreen
-                    value={answers[cur.id] || ''}
-                    onChange={(val: string) => setAns(p => ({ ...p, [cur.id]: val }))}
-                  />
-                )}
+                  {/* Expert Contact Selection */}
+                  {cur.id === 'expert_contact' && (
+                    <div className="space-y-3">
+                      {cur.options.map(option => (
+                        <button
+                          key={option}
+                          onClick={() => setAns(p => ({ ...p, [cur.id]: option }))}
+                          className={cx(
+                            'w-full p-4 rounded-lg border-2 transition-all text-left',
+                            answers[cur.id] === option 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          )}
+                        >
+                          <span className="font-medium text-gray-700">{option}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                {/* Navigation */}
-                <div className="flex justify-between items-center mt-8">
-                  <button 
-                    onClick={() => setStep(s => Math.max(0, s - 1))} 
-                    disabled={step === 0 || loading}
-                    className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    Back
-                  </button>
-                  
-                  {step < total - 1 ? (
-                    <button 
-                      onClick={handleNext} 
-                      disabled={!answers[cur.id] || loading} 
-                      className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700 flex items-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        'Next'
-                      )}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={handleComplete} 
-                      disabled={!allAnswered || loading} 
-                      className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700 flex items-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Completing...
-                        </>
-                      ) : (
-                        'Complete'
-                      )}
-                    </button>
+                  {/* Timeline Slider */}
+                  {cur.id === 'Home Ownership' && (
+                    <div className="space-y-4">
+                      <div className="px-2">
+                        <input
+                          type="range"
+                          min={SLIDER.min}
+                          max={SLIDER.max}
+                          step={SLIDER.step}
+                          value={answers[cur.id] || SLIDER.defaultValue}
+                          onChange={(e) => setAns(p => ({ ...p, [cur.id]: e.target.value }))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-2">
+                          <span>{SLIDER.minLabel}</span>
+                          <span>{SLIDER.maxLabel}</span>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <span className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-semibold">
+                          {answers[cur.id] || SLIDER.defaultValue} {SLIDER.unit}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* City Selection (Zipcode) */}
+                  {cur.id === 'city' && (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Enter your zipcode (e.g., 12345)"
+                        value={answers[cur.id] || ''}
+                        onChange={(e) => setAns(p => ({ ...p, [cur.id]: e.target.value }))}
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                        maxLength={5}
+                        pattern="[0-9]{5}"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Enter a 5-digit zipcode for your desired home location
+                      </p>
+                    </div>
                   )}
                 </div>
 
-                {/* Step Indicators */}
-                <div className="mt-5 flex items-center justify-center gap-2">
-                  {STEPS.map((_, i) => (
-                    <span 
-                      key={i} 
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-8">
+                  <button
+                    onClick={() => setStep(s => Math.max(0, s - 1))}
+                    disabled={step === 0 || loading}
+                    className={cx(
+                      'px-6 py-3 rounded-lg font-medium transition-colors',
+                      step === 0 || loading
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    )}
+                  >
+                    Previous
+                  </button>
+
+                  {step < total - 1 ? (
+                    <button
+                      onClick={handleNext}
+                      disabled={!answers[cur.id] || loading}
                       className={cx(
-                        'h-2 w-2 rounded-full', 
-                        i === step ? 'bg-indigo-600' : 'bg-gray-300'
-                      )} 
-                      aria-hidden 
-                    />
-                  ))}
+                        'px-8 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2',
+                        !answers[cur.id] || loading
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      )}
+                    >
+                      {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                      <span>Next</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleComplete}
+                      disabled={!allAnswered || loading}
+                      className={cx(
+                        'px-8 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2',
+                        !allAnswered || loading
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      )}
+                    >
+                      {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                      <span>Complete</span>
+                    </button>
+                  )}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
+      
+      <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #3B82F6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #3B82F6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+      `}</style>
     </>
-  )
+  );
 }
