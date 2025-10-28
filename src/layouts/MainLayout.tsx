@@ -1,7 +1,6 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header, Sidebar } from '../components/index'
-import OnBoardingPage from '../components/protected/onboarding/OnBoardingPage'
 
 const MainLayout: React.FC = () => {
   return (
