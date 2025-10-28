@@ -3,7 +3,6 @@ import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import authReducer from './slices/authSlice'
 import moduleReducer from './slices/moduleSlice'
-import uiReducer from './slices/uiSlice'
 
 // Persist config for modules (to maintain progress across page navigation)
 const modulesPersistConfig = {
@@ -34,7 +33,6 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     modules: persistedModuleReducer,
-    ui: uiReducer, // UI state is NOT persisted - always starts fresh
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

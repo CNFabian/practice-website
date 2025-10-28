@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RobotoFont } from "../../../../assets";
 import { Lesson } from "../types/overview.types";
+import { Icons } from '../images';  // ✅ Import Icons
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -35,10 +36,9 @@ const LessonCard: React.FC<LessonCardProps> = ({
   };
 
   const getTruncatedDescription = (text: string) => {
-    // Very aggressive truncation on mobile, more generous on larger screens
-    if (screenWidth < 640) { // sm breakpoint
+    if (screenWidth < 640) {
       return text.length > 60 ? text.substring(0, 60) + "..." : text;
-    } else if (screenWidth < 1024) { // lg breakpoint  
+    } else if (screenWidth < 1024) {
       return text.length > 100 ? text.substring(0, 100) + "..." : text;
     } else {
       return text.length > 140 ? text.substring(0, 140) + "..." : text;
@@ -92,7 +92,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
                     {lesson.duration || `${lesson.lessonsCount} lessons`}
                   </RobotoFont>
                 </div>
-                {/* Coin display */}
+                {/* Coin display - ✅ UPDATED */}
                 <div className="flex items-center gap-1 flex-shrink-0 md:-mt-2">
                   <RobotoFont
                     weight={500}
@@ -101,7 +101,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
                     +{lesson.points}
                   </RobotoFont>
                   <img
-                    src="src/assets/images/icons/nest-coin.svg"
+                    src={Icons.NestCoin} 
                     alt="Nest Coin"
                     className="w-5 h-5 2xl:w-6 2xl:h-6"
                   />

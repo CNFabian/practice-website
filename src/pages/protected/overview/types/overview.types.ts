@@ -1,3 +1,5 @@
+// Overview page UI types - these represent the UI domain model
+
 export interface Task {
   id: string;
   title: string;
@@ -35,4 +37,17 @@ export interface SupportCard {
   subtitle: string;
   icon: string;
   action?: () => void;
+}
+
+// Main overview data structure
+export interface OverviewData {
+  totalCoins: number;
+  totalBadges: number;
+  modulesCompleted: number;
+  totalModules: number;
+  currentStreak: number;
+  tasks: Task[];
+  nextLesson: Lesson | null;
+  modules: Lesson[];
+  leaderboard: LeaderboardEntry[];
 }

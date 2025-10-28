@@ -211,7 +211,7 @@ export const getLesson = async (lessonId: string): Promise<any> => {
     // Check if lessonId is a number (frontend ID) and needs conversion
     if (/^\d+$/.test(lessonId)) {
       console.warn(`⚠️ Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return null; // Return null instead of throwing error
+      throw new Error('Frontend lesson ID provided - UUID required for backend');
     }
     
     console.log(`Fetching lesson with ID: ${lessonId}`);
