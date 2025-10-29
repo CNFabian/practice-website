@@ -1,7 +1,7 @@
 // Grid layout component - displays badges in responsive grid with empty state
 
 import { RobotoFont } from '../../../../assets';
-import type { Badge } from '../types';
+import type { Badge } from '../../../../services';
 import { BadgeCard } from './BadgeCard';
 
 interface BadgeGridProps {

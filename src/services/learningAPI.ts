@@ -208,10 +208,9 @@ export const getModuleLessons = async (moduleId: string): Promise<any> => {
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson
 export const getLesson = async (lessonId: string): Promise<any> => {
   try {
-    // Check if lessonId is a number (frontend ID) and needs conversion
     if (/^\d+$/.test(lessonId)) {
       console.warn(`⚠️ Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      throw new Error('Frontend lesson ID provided - UUID required for backend');
+      return null;
     }
     
     console.log(`Fetching lesson with ID: ${lessonId}`);
@@ -247,7 +246,6 @@ export const checkOnboardingStatus = async (): Promise<boolean> => {
     const data = await response.json();
     console.log('Onboarding status:', data);
     
-    // Check if onboarding is completed - adjust based on your API response structure
     return data.completed === true || data.status === 'completed';
   } catch (error) {
     if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {

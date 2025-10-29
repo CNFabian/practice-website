@@ -3,8 +3,8 @@ import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import authReducer from './slices/authSlice'
 import moduleReducer from './slices/moduleSlice'
+import uiReducer from './slices/uiSlice'
 
-// Persist config for modules (to maintain progress across page navigation)
 const modulesPersistConfig = {
   key: 'modules',
   storage,
@@ -15,15 +15,14 @@ const modulesPersistConfig = {
     'selectedLessonId',
     'sidebarCollapsed',
     'showCompactLayout',
-    'totalCoins' // Added coin persistence
+    'totalCoins'
   ]
 }
 
-// Persist config for auth (optional, but helpful for login persistence)
 const authPersistConfig = {
   key: 'auth',
   storage,
-  whitelist: ['user', 'isAuthenticated'] // Don't persist loading states
+  whitelist: ['user', 'isAuthenticated']
 }
 
 const persistedModuleReducer = persistReducer(modulesPersistConfig, moduleReducer)
@@ -33,6 +32,7 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     modules: persistedModuleReducer,
+    ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

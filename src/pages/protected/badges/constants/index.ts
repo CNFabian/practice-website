@@ -13,7 +13,12 @@ import {
   BadgeRocket,
   BadgeTrophy
 } from '../../../../assets';
-import type { BadgeRarity, BadgeType, FilterButton, BadgeStyleConfig } from '../types';
+import type { BadgeRarity, BadgeType, BadgeStyleConfig } from '../../../../services';
+
+export interface FilterButton {
+  key: string;
+  label: string;
+}
 
 const tempProfileIcon = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIyMCIgcj0iMTIiIGZpbGw9IiM0RjQ2RTUiLz4KPHBhdGggZD0iTTMyIDM2QzE5IDM2IDggNDcgOCA2MEg1NkM1NiA0NyA0NSAzNiAzMiAzNloiIGZpbGw9IiM0RjQ2RTUiLz4KPC9zdmc+";
 

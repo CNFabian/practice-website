@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { BadgeHeader, BadgeFilters, BadgeGrid } from './components';
-import { BadgeService } from './services/BadgeService';
-import type { Badge, BadgeProgress } from './types';
+import { getBadges } from '../../../services';
+import type { Badge, BadgeProgress } from '../../../services';
 
 const BadgesPage = () => {
   // State management for badges data and UI
@@ -18,7 +18,7 @@ const BadgesPage = () => {
   useEffect(() => {
     const loadBadges = async () => {
       try {
-        const response = await BadgeService.getAllBadges();
+        const response = await getBadges();
         setBadges(response.badges);
         setProgress(response.progress);
         setFilteredBadges(response.badges);

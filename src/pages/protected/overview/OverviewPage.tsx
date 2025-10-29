@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../../store/store';
+import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
+import { getOnboardingStatus } from '../../../services/onBoardingAPI';
+import OnBoardingPage from '../../../components/protected/onboarding/OnBoardingPage';
 import { RobotoFont } from "../../../assets";
 import {
   WelcomeCard,
@@ -141,6 +146,8 @@ const MOCK_LEARNING_MODULES: Lesson[] = [
 ];
 
 const OverviewPage: React.FC = () => {
+  const dispatch = useDispatch();
+  const showOnboarding = useSelector((state: RootState) => state.ui.showOnboardingModal);
   const [isWelcomeExpanded, setIsWelcomeExpanded] = useState(true);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   
@@ -236,7 +243,33 @@ const OverviewPage: React.FC = () => {
     console.log("Leaderboard menu clicked");
   };
 
-  // ✅ UPDATED useEffect with simplified API call
+  const handleCloseOnboarding = () => {
+    dispatch(closeOnboardingModal());
+  };
+
+  // ✅ Onboarding check useEffect
+  useEffect(() => {
+    const checkOnboardingAndShowModal = async () => {
+      try {
+        const status = await getOnboardingStatus();
+        
+        // If onboarding is not completed, show the modal automatically
+        if (!status.completed) {
+          console.log('OverviewPage: Onboarding not completed, showing modal');
+          dispatch(openOnboardingModal());
+        }
+      } catch (error) {
+        console.error('OverviewPage: Error checking onboarding status:', error);
+        dispatch(openOnboardingModal());
+      }
+    };
+
+    if (!showOnboarding) {
+      checkOnboardingAndShowModal();
+    }
+  }, [dispatch, showOnboarding]);
+
+  // ✅ Dashboard data fetch useEffect
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -361,151 +394,159 @@ const OverviewPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden">
-      <div
-        className={`p-4 lg:p-6 w-full transition-all duration-700 ease-out ${
-          isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
-      >
-        <RobotoFont as="h1" weight={500} className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
-          Onboarding Checklist
-        </RobotoFont>
+    <>
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <OnBoardingPage onClose={handleCloseOnboarding} />
+      )}
 
-        <div className="grid grid-cols-1 2xl:grid-cols-[1fr_500px] gap-4 lg:gap-6 w-full">
-          {/* Left Column */}
-          <div className="flex flex-col gap-4 lg:gap-6 min-w-0 w-full 2xl:max-w-[980px]">
-            <WelcomeCard
-              tasks={tasks}
-              isExpanded={isWelcomeExpanded}
-              onToggleExpand={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
-            />
+      {/* Main Dashboard */}
+      <div className="h-full overflow-y-auto overflow-x-hidden">
+        <div
+          className={`p-4 lg:p-6 w-full transition-all duration-700 ease-out ${
+            isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
+          <RobotoFont as="h1" weight={500} className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
+            Onboarding Checklist
+          </RobotoFont>
 
-            {/* Continue Lesson Section */}
-            {continueLesson && (
-              <div>
-                <RobotoFont
-                  as="h2"
-                  weight={500}
-                  className="text-gray-900 mb-4 text-base sm:text-lg font-medium"
-                >
-                  Continue Lesson
-                </RobotoFont>
-                <LessonCard
-                  lesson={continueLesson}
-                  onAction={handleLessonAction}
-                  showTags={false}
-                />
-              </div>
-            )}
+          <div className="grid grid-cols-1 2xl:grid-cols-[1fr_500px] gap-4 lg:gap-6 w-full">
+            {/* Left Column */}
+            <div className="flex flex-col gap-4 lg:gap-6 min-w-0 w-full 2xl:max-w-[980px]">
+              <WelcomeCard
+                tasks={tasks}
+                isExpanded={isWelcomeExpanded}
+                onToggleExpand={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
+              />
 
-            {/* Learning Modules Section */}
-            {learningModules.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-4 gap-2">
+              {/* Continue Lesson Section */}
+              {continueLesson && (
+                <div>
                   <RobotoFont
                     as="h2"
                     weight={500}
-                    className="text-gray-900 text-base sm:text-lg flex-1 min-w-0"
-                    style={{ 
-                      wordBreak: 'break-word',
-                      overflowWrap: 'break-word'
-                    }}
+                    className="text-gray-900 mb-4 text-base sm:text-lg font-medium"
                   >
-                    Learning Modules
+                    Continue Lesson
                   </RobotoFont>
-                  <button
-                    className="text-black hover:text-blue-700 flex-shrink-0"
-                    onClick={handleSeeAllModules}
+                  <LessonCard
+                    lesson={continueLesson}
+                    onAction={handleLessonAction}
+                    showTags={false}
+                  />
+                </div>
+              )}
+
+              {/* Learning Modules Section */}
+              {learningModules.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <RobotoFont
+                      as="h2"
+                      weight={500}
+                      className="text-gray-900 text-base sm:text-lg flex-1 min-w-0"
+                      style={{ 
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
+                      Learning Modules
+                    </RobotoFont>
+                    <button
+                      className="text-black hover:text-blue-700 flex-shrink-0"
+                      onClick={handleSeeAllModules}
+                    >
+                      <RobotoFont weight={500} className="text-sm whitespace-nowrap">
+                        See all
+                      </RobotoFont>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    {learningModules.map((module) => (
+                      <LessonCard
+                        key={module.id}
+                        lesson={module}
+                        onAction={handleLessonAction}
+                        showTags={true}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
+              {/* Learn Earn Rewards Card - ✅ UPDATED with imported images */}
+              <div
+                className="relative overflow-hidden bg-[#D7DEFF] rounded-xl flex flex-col justify-between p-4 sm:p-6"
+                style={{ height: "12.5rem" }}
+              >
+                <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
+                  <RobotoFont
+                    as="h2"
+                    weight={500}
+                    className="text-gray-900 text-2xl sm:text-3xl font-medium leading-tight"
                   >
-                    <RobotoFont weight={500} className="text-sm whitespace-nowrap">
-                      See all
+                    Learn. Earn.
+                  </RobotoFont>
+                  <RobotoFont
+                    as="h2"
+                    weight={500}
+                    className="text-gray-900 mb-3 text-2xl sm:text-3xl font-medium leading-tight"
+                  >
+                    Get Rewards.
+                  </RobotoFont>
+                  <RobotoFont
+                    as="p"
+                    weight={400}
+                    className="text-gray-700 max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
+                  >
+                    Redeem NestCoins for prizes to help you towards Homeownership.
+                  </RobotoFont>
+                </div>
+
+                <div className="absolute bottom-3 right-4 sm:right-6 z-20">
+                  <button
+                    className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
+                    onClick={handleRewardsShop}
+                  >
+                    <RobotoFont weight={500} className="text-sm">
+                      Rewards Shop
                     </RobotoFont>
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  {learningModules.map((module) => (
-                    <LessonCard
-                      key={module.id}
-                      lesson={module}
-                      onAction={handleLessonAction}
-                      showTags={true}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
-            {/* Learn Earn Rewards Card - ✅ UPDATED with imported images */}
-            <div
-              className="relative overflow-hidden bg-[#D7DEFF] rounded-xl flex flex-col justify-between p-4 sm:p-6"
-              style={{ height: "12.5rem" }}
-            >
-              <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
-                <RobotoFont
-                  as="h2"
-                  weight={500}
-                  className="text-gray-900 text-2xl sm:text-3xl font-medium leading-tight"
-                >
-                  Learn. Earn.
-                </RobotoFont>
-                <RobotoFont
-                  as="h2"
-                  weight={500}
-                  className="text-gray-900 mb-3 text-2xl sm:text-3xl font-medium leading-tight"
-                >
-                  Get Rewards.
-                </RobotoFont>
-                <RobotoFont
-                  as="p"
-                  weight={400}
-                  className="text-gray-700 max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
-                >
-                  Redeem NestCoins for prizes to help you towards Homeownership.
-                </RobotoFont>
+                {/* ✅ Updated background images */}
+                <img
+                  src={Images.NestCoins}
+                  alt="Nest Coins"
+                  className="absolute top-4 sm:top-7 right-[80px] sm:right-[118px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
+                />
+                <img
+                  src={Images.CoinBag}
+                  alt="Coin Bag"
+                  className="absolute top-1 sm:top-1.5 right-[5px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
+                />
               </div>
 
-              <div className="absolute bottom-3 right-4 sm:right-6 z-20">
-                <button
-                  className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
-                  onClick={handleRewardsShop}
-                >
-                  <RobotoFont weight={500} className="text-sm">
-                    Rewards Shop
-                  </RobotoFont>
-                </button>
-              </div>
-
-              {/* ✅ Updated background images */}
-              <img
-                src={Images.NestCoins}
-                alt="Nest Coins"
-                className="absolute top-4 sm:top-7 right-[80px] sm:right-[118px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
+              <LeaderboardCard
+                entries={leaderboard}
+                onMenuClick={handleLeaderboardMenu}
               />
-              <img
-                src={Images.CoinBag}
-                alt="Coin Bag"
-                className="absolute top-1 sm:top-1.5 right-[5px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
-              />
-            </div>
 
-            <LeaderboardCard
-              entries={leaderboard}
-              onMenuClick={handleLeaderboardMenu}
-            />
-
-            <div className="flex flex-col gap-4">
-              {supportCards.map((card) => (
-                <SupportCard key={card.id} supportCard={card} />
-              ))}
+              <div className="flex flex-col gap-4">
+                {supportCards.map((card) => (
+                  <SupportCard key={card.id} supportCard={card} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

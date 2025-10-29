@@ -1,14 +1,50 @@
 import React from 'react';
 import { CoinIcon, RobotoFont } from '../../../../assets/index';
-import { RewardOffer } from '../types/rewards.types';
+import { Coupon } from '../../../../services';
 
 interface RewardCardProps {
-  offer: RewardOffer;
+  coupon: Coupon;
   onClick?: () => void;
 }
 
-const RewardCard: React.FC<RewardCardProps> = ({ offer, onClick }) => {
-  const isFeatured = offer.category === 'featured';
+// Helper function to generate consistent icon and color from company name
+const getCompanyIconAndColor = (companyName: string) => {
+  const icon = companyName.charAt(0).toUpperCase();
+  const colors = ['#9333ea', '#2563eb', '#eab308', '#dc2626', '#16a34a', '#ec4899'];
+  const colorIndex = companyName.length % colors.length;
+  return { icon, color: colors[colorIndex] };
+};
+
+// Helper function to extract discount from title/description
+const extractDiscount = (title: string, description: string): string => {
+  const text = `${title} ${description}`;
+  
+  const percentMatch = text.match(/(\d+)%\s*off/i);
+  if (percentMatch) {
+    return `${percentMatch[1]}% OFF`;
+  }
+  
+  const dollarMatch = text.match(/\$(\d+)\s*off/i);
+  if (dollarMatch) {
+    return `$${dollarMatch[1]} OFF`;
+  }
+  
+  if (text.toLowerCase().includes('free shipping') || text.toLowerCase().includes('free delivery')) {
+    return 'FREE SHIPPING';
+  }
+  
+  return 'SPECIAL OFFER';
+};
+
+// Helper to determine if coupon is featured
+const isFeaturedCoupon = (coupon: Coupon): boolean => {
+  return coupon.cost_in_coins >= 150 || (coupon.max_redemptions - coupon.current_redemptions) <= 10;
+};
+
+const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
+  const isFeatured = isFeaturedCoupon(coupon);
+  const { icon, color } = getCompanyIconAndColor(coupon.partner_company);
+  const discount = extractDiscount(coupon.title, coupon.description);
 
   return (
     <div
@@ -30,9 +66,9 @@ const RewardCard: React.FC<RewardCardProps> = ({ offer, onClick }) => {
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
           <span 
             className="font-bold text-base sm:text-lg" 
-            style={{ color: offer.iconBackgroundColor }}
+            style={{ color }}
           >
-            {offer.icon}
+            {icon}
           </span>
         </div>
       </div>
@@ -46,7 +82,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ offer, onClick }) => {
             weight={600} 
             className="text-xs sm:text-sm font-semibold text-gray-900"
           >
-            {offer.cost}
+            {coupon.cost_in_coins}
           </RobotoFont>
           <img 
             src={CoinIcon} 
@@ -64,14 +100,14 @@ const RewardCard: React.FC<RewardCardProps> = ({ offer, onClick }) => {
               weight={700} 
               className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-1 sm:mb-2 line-clamp-2 break-words"
             >
-              {offer.title}
+              {coupon.title}
             </RobotoFont>
             <RobotoFont 
               as="p" 
               weight={400} 
               className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 break-words"
             >
-              {offer.description}
+              {coupon.description}
             </RobotoFont>
           </div>
 
@@ -85,14 +121,14 @@ const RewardCard: React.FC<RewardCardProps> = ({ offer, onClick }) => {
               weight={600} 
               className="text-xs sm:text-sm text-white bg-gradient-to-r from-blue-500 to-purple-600 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full truncate flex-shrink min-w-0 max-w-[60%] shadow-sm"
             >
-              {offer.vendor}
+              {coupon.partner_company}
             </RobotoFont>
             <RobotoFont 
               as="div" 
               weight={600} 
               className="text-xs sm:text-sm font-semibold text-blue-600 whitespace-nowrap flex-shrink-0"
             >
-              {offer.discount}
+              {discount}
             </RobotoFont>
           </div>
         </div>

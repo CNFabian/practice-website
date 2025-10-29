@@ -1,7 +1,7 @@
 // Header component - displays page title and progress indicator
 
 import { RobotoFont } from '../../../../assets';
-import type { BadgeProgress } from '../types';
+import type { BadgeProgress } from '../../../../services';
 
 interface BadgeHeaderProps {
   progress: BadgeProgress;

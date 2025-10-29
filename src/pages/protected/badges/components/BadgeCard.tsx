@@ -2,7 +2,7 @@
 // Handles earned/locked states and shows badge requirements
 
 import { RobotoFont } from '../../../../assets';
-import type { Badge } from '../types';
+import type { Badge } from '../../../../services';
 import { 
   BADGE_ICONS, 
   RARITY_COLORS, 

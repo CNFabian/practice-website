@@ -6,6 +6,7 @@ import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
 import { getModules } from '../../../services/learningAPI';
+import { getOnboardingStatus, getOnboardingProgress } from '../../../services/onBoardingAPI';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -212,96 +213,18 @@ const sampleModulesData: Module[] = [
       {
         id: 12,
         image: SignupImage,
-        title: "Basic Home Repairs",
-        duration: "30 minutes",
-        description: "Learn to tackle common home repairs like a pro.",
-        coins: 30,
+        title: "Emergency Repairs",
+        duration: "20 minutes",
+        description: "Know what to do when things go wrong.",
+        coins: 25,
         completed: false
       },
       {
         id: 13,
         image: SignupImage,
-        title: "When to Call a Professional",
-        duration: "20 minutes",
-        description: "Know your limits—learn when to call in the pros.",
-        coins: 25,
-        completed: false
-      }
-    ]
-  },
-  {
-    id: 5,
-    image: SignupImage,
-    title: "Home Safety and Security",
-    description: "Learn how to keep your home safe and secure.",
-    lessonCount: 3,
-    status: "Not Started",
-    tags: ["Beginner", "Safety"],
-    illustration: "home-safety",
-    lessons: [
-      {
-        id: 14,
-        image: SignupImage,
-        title: "Home Security Systems",
+        title: "Finding Reliable Contractors",
         duration: "25 minutes",
-        description: "Explore different types of home security systems.",
-        coins: 30,
-        completed: false
-      },
-      {
-        id: 15,
-        image: SignupImage,
-        title: "Fire Safety Tips",
-        duration: "30 minutes",
-        description: "Learn essential fire safety tips for your home.",
-        coins: 30,
-        completed: false
-      },
-      {
-        id: 16,
-        image: SignupImage,
-        title: "Emergency Preparedness",
-        duration: "20 minutes",
-        description: "Get prepared for emergencies with a solid plan.",
-        coins: 25,
-        completed: false
-      }
-    ]
-  },
-  {
-    id: 6,
-    image: SignupImage,
-    title: "Home Technology Integration",
-    description: "Learn how to integrate technology into your home.",
-    lessonCount: 3,
-    status: "Not Started",
-    tags: ["Beginner", "Technology"],
-    illustration: "home-technology",
-    lessons: [
-      {
-        id: 17,
-        image: SignupImage,
-        title: "Smart Home Devices",
-        duration: "25 minutes",
-        description: "Explore various smart home devices and their benefits.",
-        coins: 30,
-        completed: false
-      },
-      {
-        id: 18,
-        image: SignupImage,
-        title: "Home Automation Basics",
-        duration: "30 minutes",
-        description: "Learn the basics of home automation and control.",
-        coins: 30,
-        completed: false
-      },
-      {
-        id: 19,
-        image: SignupImage,
-        title: "Setting Up a Home Network",
-        duration: "20 minutes",
-        description: "Understand how to set up and secure a home network.",
+        description: "Learn how to find and work with trusted professionals.",
         coins: 25,
         completed: false
       }
@@ -309,9 +232,10 @@ const sampleModulesData: Module[] = [
   }
 ];
 
+// Converter function for backend modules
 const convertBackendModuleToFrontend = (backendModule: any): Module => {
   return {
-    id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000), // Temporary conversion
+    id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000),
     image: backendModule.thumbnail_url || SignupImage,
     title: backendModule.title,
     description: backendModule.description,
@@ -319,14 +243,12 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
     status: backendModule.progress_percentage === "100" ? 'Completed' : 
             backendModule.progress_percentage === "0" ? 'Not Started' : 'In Progress',
     tags: [backendModule.difficulty_level || 'Beginner'],
-    illustration: backendModule.thumbnail_url || SignupImage,
-    lessons: [] // Will be populated when module is selected
+    illustration: backendModule.illustration || "default",
+    lessons: []
   };
 };
 
-interface ModulesPageProps {}
-
-const ModulesPage: React.FC<ModulesPageProps> = () => {
+const ModulesPage: React.FC = () => {
   const {
     currentView,
     currentModule,
@@ -339,12 +261,16 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   } = useModules();
 
   const [isTransitioning, setIsTransitioning] = useState(false);
-
   const [isLoadingBackend, setIsLoadingBackend] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+  
+  const [_onboardingStatus, setOnboardingStatus] = useState<{
+    isCompleted: boolean;
+    currentStep: number;
+    progressPercentage: number;
+  } | null>(null);
 
   const fetchModulesFromBackend = async () => {
     setIsLoadingBackend(true);
@@ -352,28 +278,53 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     setOnboardingRequired(false);
     
     try {
-      console.log('Fetching modules from backend...');
+      console.log('ModulesPage: Checking onboarding status first...');
+      
+      const onboardingStatusResponse = await getOnboardingStatus();
+      console.log('ModulesPage: Onboarding status:', onboardingStatusResponse);
+      
+      const status = {
+        isCompleted: onboardingStatusResponse.completed,
+        currentStep: onboardingStatusResponse.step || 1,
+        progressPercentage: getOnboardingProgress(onboardingStatusResponse)
+      };
+      
+      setOnboardingStatus(status);
+      
+      if (!status.isCompleted) {
+        console.log('ModulesPage: Onboarding not completed, showing banner');
+        setOnboardingRequired(true);
+        setBackendError('Please complete onboarding to access learning modules');
+        return;
+      }
+      
+      console.log('ModulesPage: Onboarding completed, fetching modules...');
+      
       const backendModules = await getModules();
-      console.log('Backend modules received:', backendModules);
+      console.log('ModulesPage: Backend modules received:', backendModules);
       
       if (Array.isArray(backendModules) && backendModules.length > 0) {
         const convertedModules = backendModules.map(convertBackendModuleToFrontend);
         setBackendModulesData(convertedModules);
-        setShowOnboardingBanner(false);
-        console.log('Successfully converted backend modules:', convertedModules);
+        console.log('ModulesPage: Successfully converted backend modules:', convertedModules);
       } else {
-        console.warn('Backend returned empty or invalid modules array:', backendModules);
+        console.warn('ModulesPage: Backend returned empty or invalid modules array:', backendModules);
         setBackendError('No modules found in backend');
       }
+      
     } catch (error) {
-      console.error('Error fetching modules from backend:', error);
+      console.error('ModulesPage: Error fetching modules from backend:', error);
       
       if (error instanceof Error) {
         if (error.message === 'ONBOARDING_REQUIRED') {
+          setOnboardingStatus({
+            isCompleted: false,
+            currentStep: 1,
+            progressPercentage: 0
+          });
           setOnboardingRequired(true);
-          setShowOnboardingBanner(true);
           setBackendError('Onboarding required to access learning modules');
-          console.log('User needs to complete onboarding first');
+          console.log('ModulesPage: User needs to complete onboarding first');
         } else if (error.message.includes('HTTP error! status: 400')) {
           setBackendError('Bad Request - Check your authentication or API endpoint');
         } else if (error.message.includes('HTTP error! status: 422')) {
@@ -387,51 +338,10 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         setBackendError('Unknown error occurred while fetching modules');
       }
       
-      console.log('Continuing with sample frontend data due to backend error');
+      console.log('ModulesPage: Continuing with sample frontend data due to backend error');
     } finally {
       setIsLoadingBackend(false);
     }
-  };
-
-  const renderOnboardingBanner = () => {
-    if (!showOnboardingBanner) return null;
-    
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="ml-3 flex-1">
-            <h3 className="text-lg font-medium text-blue-900">Welcome! Complete Your Onboarding</h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>To access learning modules and start your educational journey, you'll need to complete the onboarding process first.</p>
-            </div>
-            <div className="mt-4">
-              <div className="flex space-x-3">
-                <button 
-                  onClick={() => {
-                    console.log('Redirecting to onboarding...');
-                    alert('Onboarding redirect would happen here - implement based on your routing');
-                  }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Complete Onboarding
-                </button>
-                <button 
-                  onClick={() => setShowOnboardingBanner(false)}
-                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const renderBackendStatus = () => {
@@ -447,7 +357,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     }
     
     if (onboardingRequired) {
-      return renderOnboardingBanner();
+      return null;
     }
     
     if (backendError && !onboardingRequired) {
@@ -504,7 +414,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   }, [modules.length, loadModules]);
 
   const modulesToDisplay = useMemo(() => {
-    // Priority: Backend data > Frontend sample data
     if (backendModulesData.length > 0) {
       console.log('Using backend modules data');
       return backendModulesData;
@@ -550,14 +459,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-50">
-      {/* Backend status indicator - only show in modules view */}
       {currentView === 'modules' && (
         <div className="absolute top-0 left-0 w-full z-10 p-4">
           {renderBackendStatus()}
         </div>
       )}
 
-      {/* MODULES VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz'
@@ -578,7 +485,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         </div>
       </div>
 
-      {/* LESSON VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'lesson' || currentView === 'quiz'
@@ -599,7 +505,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         )}
       </div>
 
-      {/* MODULE QUIZ VIEW */}
       <div
         className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
           currentView === 'moduleQuiz'
