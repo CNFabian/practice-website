@@ -219,6 +219,8 @@ export const getTicket = async (ticketId: string): Promise<any> => {
 // GET /api/help/resources - Get help resources and guides
 export const getHelpResources = async (): Promise<any> => {
   try {
+    console.log('Fetching help resources');
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/resources`, {
       method: 'GET'
     });
@@ -239,6 +241,8 @@ export const getHelpResources = async (): Promise<any> => {
 // GET /api/help/quick-help - Get quick help topics and solutions
 export const getQuickHelp = async (): Promise<any> => {
   try {
+    console.log('Fetching quick help topics');
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/quick-help`, {
       method: 'GET'
     });
@@ -259,6 +263,8 @@ export const getQuickHelp = async (): Promise<any> => {
 // GET /api/help/contact-info - Get contact information and support hours
 export const getContactInfo = async (): Promise<any> => {
   try {
+    console.log('Fetching contact information');
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/contact-info`, {
       method: 'GET'
     });
@@ -279,6 +285,8 @@ export const getContactInfo = async (): Promise<any> => {
 // GET /api/help/system-status - Get current system status and known issues
 export const getSystemStatus = async (): Promise<any> => {
   try {
+    console.log('Fetching system status');
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/system-status`, {
       method: 'GET'
     });
@@ -299,6 +307,8 @@ export const getSystemStatus = async (): Promise<any> => {
 // GET /api/help/feedback-form - Get feedback form structure
 export const getFeedbackForm = async (): Promise<any> => {
   try {
+    console.log('Fetching feedback form structure');
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/feedback-form`, {
       method: 'GET'
     });
@@ -312,6 +322,87 @@ export const getFeedbackForm = async (): Promise<any> => {
     return data;
   } catch (error) {
     console.error('Error fetching feedback form:', error);
+    throw error;
+  }
+};
+
+// ==================== ADDITIONAL HELP ENDPOINTS ====================
+
+// POST /api/help/feedback - Submit feedback (if endpoint exists for form submission)
+export const submitFeedback = async (feedbackData: {
+  category: string;
+  message: string;
+  rating?: number;
+  email?: string;
+  [key: string]: any; // Allow additional dynamic fields
+}): Promise<any> => {
+  try {
+    console.log('Submitting feedback:', feedbackData);
+    
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/feedback`, {
+      method: 'POST',
+      body: JSON.stringify(feedbackData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Feedback submitted successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    throw error;
+  }
+};
+
+// PUT /api/help/tickets/{ticket_id} - Update support ticket (if endpoint exists)
+export const updateTicket = async (ticketId: string, updateData: {
+  status?: string;
+  priority?: string;
+  message?: string;
+}): Promise<any> => {
+  try {
+    console.log(`Updating ticket ${ticketId}:`, updateData);
+    
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/tickets/${ticketId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Ticket updated successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error updating ticket:', error);
+    throw error;
+  }
+};
+
+// POST /api/help/faqs/{faq_id}/helpful - Mark FAQ as helpful (if endpoint exists)
+export const markFAQHelpful = async (faqId: string, isHelpful: boolean): Promise<any> => {
+  try {
+    console.log(`Marking FAQ ${faqId} as ${isHelpful ? 'helpful' : 'not helpful'}`);
+    
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/faqs/${faqId}/helpful`, {
+      method: 'POST',
+      body: JSON.stringify({ helpful: isHelpful })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('FAQ feedback submitted:', data);
+    return data;
+  } catch (error) {
+    console.error('Error submitting FAQ feedback:', error);
     throw error;
   }
 };
@@ -340,4 +431,146 @@ export const searchFAQs = async (searchTerm: string, limit?: number): Promise<an
     console.error('Error searching FAQs:', error);
     return [];
   }
+};
+
+// Helper function to get FAQs by category
+export const getFAQsByCategory = async (category: string, limit?: number): Promise<any[]> => {
+  try {
+    const faqs = await getFAQs({ category, limit });
+    console.log(`FAQs for category ${category}:`, faqs);
+    return faqs || [];
+  } catch (error) {
+    console.error(`Error getting FAQs for category ${category}:`, error);
+    return [];
+  }
+};
+
+// Helper function to get pending tickets count
+export const getPendingTicketsCount = async (): Promise<number> => {
+  try {
+    const tickets = await getUserTickets({ status_filter: 'pending' });
+    const count = Array.isArray(tickets) ? tickets.length : 0;
+    console.log(`User has ${count} pending tickets`);
+    return count;
+  } catch (error) {
+    console.error('Error getting pending tickets count:', error);
+    return 0;
+  }
+};
+
+// Helper function to format support ticket data
+export const formatSupportTicketData = (formData: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  category: string;
+  priority?: string;
+}): {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  category: string;
+} => {
+  return {
+    name: formData.name.trim(),
+    email: formData.email.trim().toLowerCase(),
+    subject: formData.subject.trim(),
+    message: formData.message.trim(),
+    category: formData.category
+  };
+};
+
+// Helper function to validate support ticket data
+export const validateSupportTicketData = (ticketData: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  category: string;
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  if (!ticketData.name || ticketData.name.trim().length < 2) {
+    errors.push('Name must be at least 2 characters long');
+  }
+  
+  if (!ticketData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ticketData.email)) {
+    errors.push('Please provide a valid email address');
+  }
+  
+  if (!ticketData.subject || ticketData.subject.trim().length < 5) {
+    errors.push('Subject must be at least 5 characters long');
+  }
+  
+  if (!ticketData.message || ticketData.message.trim().length < 10) {
+    errors.push('Message must be at least 10 characters long');
+  }
+  
+  if (!ticketData.category) {
+    errors.push('Please select a category');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+// Helper function to get system status summary
+export const getSystemStatusSummary = async (): Promise<{
+  overall: string;
+  incidents: number;
+  maintenance: number;
+}> => {
+  try {
+    const status = await getSystemStatus();
+    
+    return {
+      overall: status?.overall_status || 'unknown',
+      incidents: Array.isArray(status?.incidents) ? status.incidents.length : 0,
+      maintenance: Array.isArray(status?.maintenance) ? status.maintenance.length : 0
+    };
+  } catch (error) {
+    console.error('Error getting system status summary:', error);
+    return {
+      overall: 'unknown',
+      incidents: 0,
+      maintenance: 0
+    };
+  }
+};
+
+// ==================== EXPORT ALL FUNCTIONS ====================
+
+export default {
+  // FAQ functions
+  getFAQs,
+  getFAQ,
+  getFAQCategories,
+  searchFAQs,
+  getFAQsByCategory,
+  markFAQHelpful,
+  
+  // Support ticket functions
+  submitSupportTicket,
+  getUserTickets,
+  getTicket,
+  updateTicket,
+  getPendingTicketsCount,
+  formatSupportTicketData,
+  validateSupportTicketData,
+  
+  // Help resource functions
+  getHelpResources,
+  getQuickHelp,
+  getContactInfo,
+  getSystemStatus,
+  getSystemStatusSummary,
+  getFeedbackForm,
+  submitFeedback,
+  
+  // Helper functions
+  getAvailableHelpCategories
 };

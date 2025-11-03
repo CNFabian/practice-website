@@ -74,14 +74,13 @@ const FALLBACK_COUPONS: Coupon[] = [
 
 // Mock fallback data
 
-
 const RewardsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('browse');
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [redemptionHistory, setRedemptionHistory] = useState<Redemption[]>([]);
   const [coinBalance, setCoinBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, _setError] = useState<string | null>(null);
 
   const navigationButtons: NavigationButton[] = [
     {
@@ -101,7 +100,7 @@ const RewardsPage: React.FC = () => {
     const fetchRewardsData = async () => {
       try {
         setLoading(true);
-        setError(null);
+        _setError(null);
 
         // Fetch coin balance
         try {
@@ -144,7 +143,7 @@ const RewardsPage: React.FC = () => {
         }
       } catch (err) {
         console.error('Error fetching rewards data:', err);
-        setError('Failed to load rewards');
+        _setError('Failed to load rewards');
         // Use fallback data even on general error
         setCoupons(FALLBACK_COUPONS);
         setCoinBalance(250); // Give users some coins to try the fallback rewards

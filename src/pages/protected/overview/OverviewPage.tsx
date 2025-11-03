@@ -397,7 +397,7 @@ const OverviewPage: React.FC = () => {
     <>
       {/* Onboarding Modal */}
       {showOnboarding && (
-        <OnBoardingPage onClose={handleCloseOnboarding} />
+        <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
       )}
 
       {/* Main Dashboard */}

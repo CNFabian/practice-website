@@ -108,64 +108,127 @@ const Header: React.FC = () => {
     }
   };
 
+  const getDisplayName = () => {
+    if (user?.displayName) {
+      return user.displayName.split(' ')[0];
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Guest';
+  };
+
+  const getUserHandle = () => {
+    if (user?.displayName) {
+      return `@${user.displayName.replace(/\s+/g, '').toLowerCase()}123`;
+    }
+    if (user?.email) {
+      return `@${user.email.split('@')[0]}`;
+    }
+    return '@user';
+  };
+
   return (
     <>
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Left: Logo */}
-          <div className="flex-shrink-0">
-            <img src={Logo} alt="NestNavigate" className="h-8 w-auto" />
+      <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
+      
+      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
+        <div className="flex items-center justify-between h-full">
+        {/* Left Section - Logo and Greeting */}
+        <div className="flex items-center space-x-3">
+          {/* Logo */}
+          <img src={Logo} alt="Nest Navigate" className="w-8 h-8" />
+          
+          {/* Greeting Section */}
+          <div className="flex flex-col">
+            <h1 className="text-lg font-semibold text-gray-800">
+              Hello, {getDisplayName()}
+            </h1>
+            <p className="text-sm text-gray-600">
+              Here's {totalCoins} Nest coins to get you started.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Section - Coins, Notifications, Profile */}
+        <div className="flex items-center space-x-4">
+          {/* Coins Counter */}
+          <div className="flex items-center space-x-2 rounded-full px-3 py-2">
+            <span className="text-lg font-bold text-gray-800">{totalCoins}</span>
+            <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
           </div>
 
-          {/* Right: Coins, Notifications, Profile */}
-          <div className="flex items-center gap-4">
-            {/* Coins Display */}
-            <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-full">
-              <img src={CoinIcon} alt="Coins" className="w-5 h-5" />
-              <span className="font-medium text-yellow-700">{totalCoins}</span>
-            </div>
+          {/* Notification Bell with Headless UI Dropdown */}
+          <Menu as="div" className="relative">
+            {({ open }) => (
+              <>
+                {/* Overlay when menu is open */}
+                {open && (
+                  <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
+                )}
+                
+                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
+                  <img src={BellIcon} alt="Notifications" className="w-5 h-5" />
+                </MenuButton>
+                
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <MenuItems className="absolute right-0 mt-2 w-64 origin-top-right bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    <div className="p-4">
+                      <p className="text-sm text-gray-600">No new notifications</p>
+                    </div>
+                  </MenuItems>
+                </Transition>
+              </>
+            )}
+          </Menu>
 
-            {/* Notifications */}
-            <button className="p-2 text-gray-400 hover:text-gray-500 transition-colors relative">
-              <img src={BellIcon} alt="Notifications" className="w-6 h-6" />
-              {/* Notification badge */}
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            {/* Profile Dropdown */}
-            <Menu as="div" className="relative">
-              <MenuButton className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-50 transition-colors">
-                <img
-                  src={user?.photoURL || ProfileIcon}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              </MenuButton>
-
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <MenuItems className="absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  {/* Profile header */}
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.displayName || `${user?.firstName} ${user?.lastName}` || 'User'}
-                    </p>
-                    <p className="text-sm text-gray-500">{user?.email}</p>
-                  </div>
-
-                  {/* Menu items */}
-                  <div className="py-2">
+          {/* Profile Icon with Headless UI Dropdown */}
+          <Menu as="div" className="relative">
+            {({ open }) => (
+              <>
+                {/* Overlay when menu is open */}
+                {open && (
+                  <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
+                )}
+                
+                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
+                  <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
+                </MenuButton>
+                
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <MenuItems className="absolute right-0 mt-2 w-72 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2 z-50">
                     <MenuItem>
                       {({ focus }) => (
                         <button
+                          className={`${
+                            focus ? 'bg-blue-50' : ''
+                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
+                        >
+                          <img src={ProfileIcon} alt="Profile" className="w-5 h-5" />
+                          <span className="text-gray-700">My Profile {getUserHandle()}</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={() => navigate('/app/rewards')}
                           className={`${
                             focus ? 'bg-blue-50' : ''
                           } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
@@ -262,11 +325,11 @@ const Header: React.FC = () => {
                         </button>
                       )}
                     </MenuItem>
-                  </div>
-                </MenuItems>
-              </Transition>
-            </Menu>
-          </div>
+                  </MenuItems>
+                </Transition>
+              </>
+            )}
+          </Menu>
         </div>
       </div>
     </header>
