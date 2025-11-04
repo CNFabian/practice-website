@@ -192,7 +192,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle complete onboarding with improved backend verification
+  // Handle complete onboarding with backend verification
   const handleCompleteOnboarding = async () => {
     setLoading(true);
     setError(null);
@@ -253,10 +253,8 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         console.log('OnBoarding: Proceeding anyway as API confirmed successful completion');
       }
       
-      // Add a small delay to ensure UI state is stable before closing
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Navigate to app or close modal
       if (onClose) {
         console.log('OnBoarding: Calling onClose callback');
         onClose();
@@ -273,21 +271,18 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle next button
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
-  // Handle back button
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  // Handle completion
   const handleComplete = async () => {
     if (currentStep === STEPS.length - 1) {
       await handleCompleteOnboarding();
@@ -296,7 +291,6 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Check if current step is completed
   const isCurrentStepCompleted = () => {
     const step = STEPS[currentStep];
     if (!step) return false;
@@ -315,7 +309,6 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Render functions
   const renderAvatarStep = () => {
     if (!onboardingOptions) return null;
     

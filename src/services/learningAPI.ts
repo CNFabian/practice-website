@@ -249,10 +249,10 @@ export const checkOnboardingStatus = async (): Promise<boolean> => {
     return data.completed === true || data.status === 'completed';
   } catch (error) {
     if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
-      return false; // Onboarding required
+      return false;
     }
     console.error('Error checking onboarding status:', error);
-    throw error; // Other error
+    throw error;
   }
 };
 

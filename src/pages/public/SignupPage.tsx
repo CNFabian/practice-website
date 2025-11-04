@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { registerUser, getCurrentUser } from '../../services/authAPI'
 import { setUser } from '../../store/slices/authSlice'
-import { SignupImage } from '../../assets'
+import { SignupImage, TermsConditionsDoc } from '../../assets'
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate()
@@ -180,6 +180,18 @@ const SignupPage: React.FC = () => {
               className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
+
+              {/* Terms and Conditions text */}
+            <div className="text-center text-sm text-gray-600 mt-4 whitespace-nowrap">
+              <p>By clicking Sign Up, you automatically agree to our{' '}
+                <a 
+                  href={TermsConditionsDoc} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >Terms and Conditions</a>
+              </p>
+            </div>
 
             <button
               type="submit"

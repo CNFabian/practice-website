@@ -334,7 +334,7 @@ export const submitFeedback = async (feedbackData: {
   message: string;
   rating?: number;
   email?: string;
-  [key: string]: any; // Allow additional dynamic fields
+  [key: string]: any;
 }): Promise<any> => {
   try {
     console.log('Submitting feedback:', feedbackData);

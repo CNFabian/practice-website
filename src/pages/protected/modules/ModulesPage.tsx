@@ -309,7 +309,6 @@ const ModulesPage: React.FC = () => {
         console.log('ModulesPage: Successfully converted backend modules:', convertedModules);
       } else {
         console.warn('ModulesPage: Backend returned empty or invalid modules array:', backendModules);
-        setBackendError('No modules found in backend');
       }
       
     } catch (error) {
