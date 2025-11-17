@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useModules } from '../../../hooks/useModules';
+import { useSubmitQuiz } from '../../../hooks/mutations/useSubmitQuiz';
 
 import RewardsModal from './RewardsModal';
-import { 
+import {
   CelebrationImage, TryAgainImage,
   Coin1, Coin2, Coin3, Coin4, Coin5,
 } from '../../../assets';
@@ -32,21 +33,23 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   isModuleQuiz = false,
   moduleId,
 }) => {
-  const { 
-    incrementCoinsWithAnimation, 
-    quizState, 
-    lessonProgress, 
-    moduleProgress,
-    selectedLessonId, 
+  const {
+    quizState,
+    selectedLessonId,
     completeQuiz,
     completeModuleQuiz
   } = useModules();
-  
-  // Animation states
+
+  const { mutate: submitQuizMutation } = useSubmitQuiz(
+    selectedLessonId?.toString() || '',
+    moduleId?.toString() || ''
+  );
+
   const [showContent, setShowContent] = useState(false);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [coinVacuumActive, setCoinVacuumActive] = useState(false);
   const [coinsHaveBeenVacuumed, setCoinsHaveBeenVacuumed] = useState(false);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [escapeCoins, setEscapeCoins] = useState<Array<{
     id: string;
     startX: number;
@@ -63,52 +66,28 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  const calculateNewlyEarnedCoins = () => {
-    if (isModuleQuiz && moduleId) {
-      const existingModuleProgress = moduleProgress[moduleId];
-      const previousCorrectAnswers = existingModuleProgress?.moduleQuizScore || 0;
-      const hadPreviousPerfectScore = previousCorrectAnswers === totalQuestions;
-      
-      if (correctAnswers === totalQuestions && !hadPreviousPerfectScore) {
-        return totalQuestions * 10;
-      }
-      return 0;
-    }
-    
-    if (!selectedLessonId) return 0;
-    
-    const existingProgress = lessonProgress[selectedLessonId];
-    const previousCorrectAnswers = existingProgress?.quizScore || 0;
-    const wasQuizAlreadyCompleted = existingProgress?.quizCompleted || false;
-    
-    let coinsEarned = 0;
-    
-    if (correctAnswers < 1) {
-      return 0;
-    }
-    
-    const hasAchievedPerfectScore = previousCorrectAnswers === totalQuestions;
-    
-    const totalCoinsForCurrentScore = correctAnswers * 5;
+  const totalCoinsEarned = 0;
+  const hasEarnedCoins = false;
 
-    const coinsAlreadyEarned = previousCorrectAnswers * 5;
+useEffect(() => {
+  if (!quizSubmitted && selectedLessonId && quizState.answers) {
+    const answers = Object.entries(quizState.answers).map(([questionId, answerId]) => ({
+      [questionId]: answerId
+    }));
 
-    if (!wasQuizAlreadyCompleted) {
-      coinsEarned = correctAnswers * 5;
-    } else if (correctAnswers > previousCorrectAnswers && !hasAchievedPerfectScore) {
-      coinsEarned = totalCoinsForCurrentScore - coinsAlreadyEarned;
-    }    
-    return Math.max(0, coinsEarned);
-  };
+    submitQuizMutation({
+      lesson_id: selectedLessonId.toString(),
+      answers,
+    });
 
-  const totalCoinsEarned = calculateNewlyEarnedCoins();
-  const hasEarnedCoins = totalCoinsEarned > 0;
+    setQuizSubmitted(true);
+  }
+}, [quizSubmitted, selectedLessonId, quizState.answers, submitQuizMutation]);
 
 useEffect(() => {
   const timer1 = setTimeout(() => setShowContent(true), 300);
-  
+
   const timer2 = setTimeout(() => {
-    // Only show modal if it hasn't been shown before
     if (!modalShownRef.current && (hasEarnedCoins || correctAnswers === totalQuestions)) {
       setShowRewardsModal(true);
       modalShownRef.current = true;
@@ -118,9 +97,9 @@ useEffect(() => {
   const timer3 = setTimeout(() => {
     if (correctAnswers === 0 && !hasEarnedCoins) {
       if (isModuleQuiz && moduleId) {
-        completeModuleQuiz(moduleId, quizState.score, false);
+        completeModuleQuiz(moduleId, quizState.score);
       } else if (selectedLessonId) {
-        completeQuiz(selectedLessonId, quizState.score, false);
+        completeQuiz(selectedLessonId, quizState.score);
       }
     }
   }, 2500);
@@ -160,16 +139,6 @@ useEffect(() => {
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
-      if (coins.length > 0) {
-        const coinsPerAnimation = totalCoinsEarned / coins.length;
-        coins.forEach((coin) => {
-          const arrivalTime = 1000 + (coin.delay * 1000) + 800;
-          setTimeout(() => {
-            const identifier = isModuleQuiz && moduleId ? moduleId : selectedLessonId || 0;
-            incrementCoinsWithAnimation(identifier, coinsPerAnimation, true);
-          }, arrivalTime);
-        });
-      }
       
       // Clean up
       setTimeout(() => {
@@ -177,13 +146,13 @@ useEffect(() => {
         setCoinVacuumActive(false);
       }, 2200);
     }
-  }, [triggerCoinVacuum, incrementCoinsWithAnimation, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed, isModuleQuiz, moduleId, selectedLessonId]);
+  }, [triggerCoinVacuum, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed, isModuleQuiz, moduleId, selectedLessonId]);
 
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
     
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeModuleQuiz(moduleId, quizState.score, true);
+      completeModuleQuiz(moduleId, quizState.score);
       
       if (containerRef.current) {
         const coinPositions = staticCoinRefs.current
@@ -212,15 +181,6 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
-        if (coins.length > 0) {
-          const coinsPerAnimation = totalCoinsEarned / coins.length;
-          coins.forEach((coin) => {
-            const arrivalTime = 1000 + (coin.delay * 1000) + 800;
-            setTimeout(() => {
-              incrementCoinsWithAnimation(moduleId, coinsPerAnimation, true);
-            }, arrivalTime);
-          });
-        }
         
         setTimeout(() => {
           setEscapeCoins([]);
@@ -228,7 +188,7 @@ useEffect(() => {
         }, 2200);
       }
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeQuiz(selectedLessonId, quizState.score, true);
+      completeQuiz(selectedLessonId, quizState.score);
       
       if (containerRef.current) {
         const coinPositions = staticCoinRefs.current
@@ -257,15 +217,6 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
-        if (coins.length > 0) {
-          const coinsPerAnimation = totalCoinsEarned / coins.length;
-          coins.forEach((coin) => {
-            const arrivalTime = 1000 + (coin.delay * 1000) + 800;
-            setTimeout(() => {
-              incrementCoinsWithAnimation(selectedLessonId || 0, coinsPerAnimation, true);
-            }, arrivalTime);
-          });
-        }
         
         // Clean up
         setTimeout(() => {
@@ -278,12 +229,10 @@ useEffect(() => {
 
   const handleNavigateToRewards = () => {
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeModuleQuiz(moduleId, quizState.score, true);
-      incrementCoinsWithAnimation(moduleId, totalCoinsEarned, true);
+      completeModuleQuiz(moduleId, quizState.score);
       setCoinsHaveBeenVacuumed(true);
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeQuiz(selectedLessonId, quizState.score, true);
-      incrementCoinsWithAnimation(selectedLessonId || 0, totalCoinsEarned, true);
+      completeQuiz(selectedLessonId, quizState.score);
       setCoinsHaveBeenVacuumed(true);
     }
     
@@ -293,12 +242,10 @@ useEffect(() => {
 
   const handleNavigateToBadges = () => {
     if (isModuleQuiz && moduleId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeModuleQuiz(moduleId, quizState.score, true);
-      incrementCoinsWithAnimation(moduleId, totalCoinsEarned, true);
+      completeModuleQuiz(moduleId, quizState.score);
       setCoinsHaveBeenVacuumed(true);
     } else if (selectedLessonId && hasEarnedCoins && !coinsHaveBeenVacuumed) {
-      completeQuiz(selectedLessonId, quizState.score, true);
-      incrementCoinsWithAnimation(selectedLessonId || 0, totalCoinsEarned, true);
+      completeQuiz(selectedLessonId, quizState.score);
       setCoinsHaveBeenVacuumed(true);
     }
     

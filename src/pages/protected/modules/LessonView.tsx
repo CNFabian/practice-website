@@ -1,34 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
 import { LessonQuiz } from '../../../components';
-import { 
-  getLesson, 
-  updateLessonProgress as apiUpdateProgress, 
-  completeLesson as apiCompleteLesson,
-  getLessonQuiz 
-} from '../../../services/learningAPI';
+import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
+import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
+import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 
 interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
   isTransitioning?: boolean;
-}
-
-interface BackendLessonData {
-  id: string;
-  module_id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  video_url: string;
-  video_transcription: string;
-  estimated_duration_minutes: number;
-  nest_coins_reward: number;
-  is_completed: boolean;
-  progress_seconds: number;
 }
 
 interface BackendQuizQuestion {
@@ -55,43 +38,19 @@ const LessonView: React.FC<LessonViewProps> = ({
   const {
     sidebarCollapsed,
     toggleSidebar,
-    currentLessonProgress,
-    updateProgress,
-    markCompleted,
     startQuiz,
     currentView,
     goToLesson
   } = useModules();
 
+  const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.id || '');
+  const { data: quizData, refetch: refetchQuiz } = useLessonQuiz(lesson?.id || '');
+  const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.id || '', module?.id || '');
+  const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(lesson?.id || '', module?.id || '');
+
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [backendLessonData, setBackendLessonData] = useState<BackendLessonData | null>(null);
-  const [isLoadingLesson, setIsLoadingLesson] = useState(false);
-  const [lessonError, setLessonError] = useState<string | null>(null);
 
   const showQuiz = currentView === 'quiz';
-
-  useEffect(() => {
-    const fetchLessonData = async () => {
-      if (!lesson?.id) return;
-      
-      setIsLoadingLesson(true);
-      setLessonError(null);
-      
-      try {
-        const lessonData = await getLesson(lesson.id.toString());
-        console.log('Backend lesson data received:', lessonData);
-        
-        setBackendLessonData(lessonData);
-      } catch (error) {
-        console.error('Error fetching lesson data:', error);
-        setLessonError('Failed to load lesson details');
-      } finally {
-        setIsLoadingLesson(false);
-      }
-    };
-
-    fetchLessonData();
-  }, [lesson?.id]);
 
   const handleBack = () => {
     if (isTransitioning) return;
@@ -120,12 +79,16 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const handleStartQuiz = async () => {
     if (isTransitioning) return;
-    
+
     try {
-      const quizData = await getLessonQuiz(lesson.id.toString());
-      console.log('Backend quiz data received:', quizData);
-      
-      const transformedQuestions = quizData.map((q: BackendQuizQuestion, index: number) => {
+      const fetchedQuizData = quizData || (await refetchQuiz()).data;
+      console.log('Backend quiz data received:', fetchedQuizData);
+
+      if (!fetchedQuizData) {
+        throw new Error('Failed to fetch quiz data');
+      }
+
+      const transformedQuestions = fetchedQuizData.map((q: BackendQuizQuestion, index: number) => {
         const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
         
         return {
@@ -268,39 +231,42 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const handleQuizComplete = (score: number) => {
     console.log(`Quiz completed with score: ${score}%`);
-    markCompleted(lesson.id, module.id, score);
   };
 
-  const handleVideoProgress = async (progressPercent: number) => {
-    updateProgress(lesson.id, {
-      watchProgress: progressPercent
-    });
+  const handleVideoProgress = (progressPercent: number) => {
+    const estimatedDurationMinutes = backendLessonData?.estimated_duration_minutes || 20;
+    const estimatedDuration = estimatedDurationMinutes * 60;
+    const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
 
-    try {
-      const estimatedDurationMinutes = backendLessonData?.estimated_duration_minutes || 20;
-      const estimatedDuration = estimatedDurationMinutes * 60; // Convert to seconds
-      const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
-      
-      await apiUpdateProgress(lesson.id.toString(), progressSeconds);
-      console.log(`Progress updated: ${progressPercent}% (${progressSeconds}s out of ${estimatedDuration}s)`);
-    } catch (error) {
-      console.error('Error updating progress on backend:', error);
-    }
+    updateLessonProgressMutation(
+      { lessonId: lesson.id.toString(), videoProgressSeconds: progressSeconds },
+      {
+        onSuccess: () => {
+          console.log(`Progress updated: ${progressPercent}% (${progressSeconds}s out of ${estimatedDuration}s)`);
+        },
+        onError: (error) => {
+          console.error('Error updating progress on backend:', error);
+        },
+      }
+    );
 
-    if (progressPercent >= 95 && !currentLessonProgress?.completed) {
-      await handleMarkComplete();
+    if (progressPercent >= 95 && !lesson.completed) {
+      handleMarkComplete();
     }
   };
 
-  const handleMarkComplete = async () => {
-    markCompleted(lesson.id, module.id);
-
-    try {
-      const response = await apiCompleteLesson(lesson.id.toString());
-      console.log('Lesson marked complete on backend:', response);
-    } catch (error) {
-      console.error('Error completing lesson on backend:', error);
-    }
+  const handleMarkComplete = () => {
+    completeLessonMutation(
+      { lessonId: lesson.id.toString() },
+      {
+        onSuccess: (data) => {
+          console.log('Lesson marked complete on backend:', data);
+        },
+        onError: (error) => {
+          console.error('Error completing lesson on backend:', error);
+        },
+      }
+    );
   };
 
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
@@ -313,9 +279,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayImage = backendLessonData?.image_url || lesson.image;
   const displayTranscript = backendLessonData?.video_transcription || lesson.transcript;
 
-  const watchProgress = currentLessonProgress?.watchProgress || 0;
-  const isCompleted = currentLessonProgress?.completed || false;
-  const quizCompleted = currentLessonProgress?.quizCompleted || false;
+  const isCompleted = lesson.completed || false;
 
   return (
     <div className="pt-6 w-full h-full">
@@ -366,16 +330,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </RobotoFont>
                 </button>
 
-                {/* Quiz Status from Redux */}
-               {quizCompleted && (
-                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex-shrink-0 min-w-0">
-                  {currentLessonProgress?.quizScore !== undefined && currentLessonProgress?.quizScore !== null && (
-                    <RobotoFont weight={500} className="text-xs px-2 py-0.5 whitespace-nowrap flex-shrink-0">
-                      {Math.round((currentLessonProgress.quizScore / 5) * 100)}%
-                    </RobotoFont>
-                  )}
-                </div>
-              )}
               </div>
 
               {/* Lesson Header */}
@@ -421,7 +375,9 @@ const LessonView: React.FC<LessonViewProps> = ({
               )}
               {lessonError && (
                 <div className="text-xs text-red-500 pb-2">
-                  <RobotoFont className="text-xs">{lessonError}</RobotoFont>
+                  <RobotoFont className="text-xs">
+                    {lessonError instanceof Error ? lessonError.message : 'Failed to load lesson'}
+                  </RobotoFont>
                 </div>
               )}
             </div>
@@ -479,17 +435,13 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
 
               {/* Test Knowledge Button */}
-              <button 
+              <button
                 onClick={handleStartQuiz}
                 disabled={isTransitioning}
-                className={`w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
-                  quizCompleted
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className="w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700"
               >
                 <RobotoFont weight={500} className="text-white">
-                  {quizCompleted ? 'Retake Quiz' : 'Test Your Knowledge'}
+                  Test Your Knowledge
                 </RobotoFont>
               </button>
 
@@ -505,30 +457,16 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {(() => {
                         const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
                         const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question = 25 total
-                        const currentCorrectAnswers = currentLessonProgress?.quizScore || 0;
-                        const coinsAlreadyEarned = currentCorrectAnswers * 5;
-                        const remainingCoins = maxCoinsForLesson - coinsAlreadyEarned;
-                        
-                        return `+${remainingCoins} NestCoins`;
+                        return `+${maxCoinsForLesson} NestCoins`;
                       })()}
                     </RobotoFont>
                   </div>
                   <div className="flex items-center gap-1 bg-orange-50 px-2 pt-1.5 rounded-lg">
-                    {(() => {
-                      const totalQuestions = 5;
-                      const currentCorrectAnswers = currentLessonProgress?.quizScore || 0;
-                      const hasEarnedBadge = currentCorrectAnswers === totalQuestions;
-                      
-                      return (
-                        <img 
-                          src={BadgeMedal} 
-                          alt="Badge" 
-                          className={`w-7 h-7 transition-all duration-300 ${
-                            hasEarnedBadge ? 'opacity-100' : 'opacity-100 brightness-0'
-                          }`}
-                        />
-                      );
-                    })()}
+                    <img
+                      src={BadgeMedal}
+                      alt="Badge"
+                      className="w-7 h-7 transition-all duration-300 opacity-100 brightness-0"
+                    />
                     <RobotoFont weight={500} className="text-xs">
                       Lesson Badge
                     </RobotoFont>
@@ -616,8 +554,8 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <button 
-                        onClick={() => handleVideoProgress(Math.min(100, watchProgress + 10))}
+                      <button
+                        onClick={() => handleVideoProgress(10)}
                         className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
                       >
                         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
@@ -629,16 +567,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                       {lesson.duration}
                     </RobotoFont>
                   </div>
-                  
-                  {/* Progress indicator */}
-                  {watchProgress > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-300">
-                      <div 
-                        className="h-full bg-blue-600 transition-all duration-300"
-                        style={{ width: `${watchProgress}%` }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* Video Transcript */}

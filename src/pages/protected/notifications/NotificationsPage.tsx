@@ -1,78 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RobotoFont } from '../../../assets';
-import {
-  getNotifications,
-  updateNotification,
-  deleteNotification,
-  markAllNotificationsRead,
-  type Notification
-} from '../../../services/notificationsAPI';
+import { useNotifications } from '../../../hooks/queries/useNotifications';
+import { useUpdateNotification } from '../../../hooks/mutations/useUpdateNotification';
+import { useMarkAllNotificationsRead } from '../../../hooks/mutations/useMarkAllNotificationsRead';
+import { useDeleteNotification } from '../../../hooks/mutations/useDeleteNotification';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 
 const NotificationsPage: React.FC = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const queryClient = useQueryClient();
 
-  // Fetch notifications on mount
-  useEffect(() => {
-    fetchNotifications();
-  }, [filter]);
+  const { data: notifications = [], isLoading, error: queryError } = useNotifications({
+    unread_only: filter === 'unread',
+    limit: 50
+  });
+  const { mutate: updateNotificationMutation } = useUpdateNotification();
+  const { mutate: markAllReadMutation } = useMarkAllNotificationsRead();
+  const { mutate: deleteNotificationMutation } = useDeleteNotification();
 
-  const fetchNotifications = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await getNotifications({
-        unread_only: filter === 'unread',
-        limit: 50
-      });
-      setNotifications(data);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError('Failed to load notifications. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  const error = queryError ? 'Failed to load notifications. Please try again.' : null;
+
+  const handleMarkAsRead = (notificationId: string, currentStatus: boolean) => {
+    updateNotificationMutation(
+      { notificationId, updates: { is_read: !currentStatus } },
+      {
+        onError: (err) => {
+          console.error('Error updating notification:', err);
+        },
+      }
+    );
   };
 
-  const handleMarkAsRead = async (notificationId: string, currentStatus: boolean) => {
-    try {
-      await updateNotification(notificationId, { is_read: !currentStatus });
-      
-      // Update local state
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, is_read: !currentStatus } : n
-        )
-      );
-    } catch (err) {
-      console.error('Error updating notification:', err);
-    }
+  const handleDelete = (notificationId: string) => {
+    deleteNotificationMutation(
+      { notificationId },
+      {
+        onError: (err) => {
+          console.error('Error deleting notification:', err);
+        },
+      }
+    );
   };
 
-  const handleDelete = async (notificationId: string) => {
-    try {
-      await deleteNotification(notificationId);
-      
-      // Remove from local state
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (err) {
-      console.error('Error deleting notification:', err);
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    try {
-      await markAllNotificationsRead();
-      
-      // Update all to read in local state
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true }))
-      );
-    } catch (err) {
-      console.error('Error marking all as read:', err);
-    }
+  const handleMarkAllRead = () => {
+    markAllReadMutation(undefined, {
+      onError: (err) => {
+        console.error('Error marking all as read:', err);
+      },
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -174,7 +150,11 @@ const NotificationsPage: React.FC = () => {
           <div className="text-center py-12">
             <RobotoFont className="text-red-600 mb-4">{error}</RobotoFont>
             <button
-              onClick={fetchNotifications}
+              onClick={() => {
+                queryClient.invalidateQueries({
+                  queryKey: queryKeys.notifications.list(),
+                });
+              }}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               <RobotoFont weight={500}>Try again</RobotoFont>

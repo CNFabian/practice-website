@@ -5,8 +5,9 @@ import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
 import { Module, Lesson } from '../../../types/modules';
 import { SignupImage } from '../../../assets';
-import { getModules } from '../../../services/learningAPI';
-import { getOnboardingStatus, getOnboardingProgress } from '../../../services/onBoardingAPI';
+import { getOnboardingProgress } from '../../../services/onBoardingAPI';
+import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
+import { useModules as useModulesQuery } from '../../../hooks/queries/useLearningQueries';
 
 // Sample module quiz questions for testing
 const sampleModuleQuizQuestions = [
@@ -251,100 +252,71 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
 const ModulesPage: React.FC = () => {
   const {
     currentView,
-    currentModule,
-    currentLesson,
-    modules,
-    loadModules,
+    selectedModuleId,
+    selectedLessonId,
     goToLesson,
     goToModules,
     goToModuleQuiz
   } = useModules();
 
+  const { data: onboardingStatusData } = useOnboardingStatus();
+  const { data: backendModules, isLoading: isLoadingModules, error: modulesError } = useModulesQuery();
+
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isLoadingBackend, setIsLoadingBackend] = useState(false);
-  const [backendError, setBackendError] = useState<string | null>(null);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
-  
+
   const [_onboardingStatus, setOnboardingStatus] = useState<{
     isCompleted: boolean;
     currentStep: number;
     progressPercentage: number;
   } | null>(null);
 
-  const fetchModulesFromBackend = async () => {
-    setIsLoadingBackend(true);
-    setBackendError(null);
-    setOnboardingRequired(false);
-    
-    try {
-      console.log('ModulesPage: Checking onboarding status first...');
-      
-      const onboardingStatusResponse = await getOnboardingStatus();
-      console.log('ModulesPage: Onboarding status:', onboardingStatusResponse);
-      
-      const status = {
-        isCompleted: onboardingStatusResponse.completed,
-        currentStep: onboardingStatusResponse.step || 1,
-        progressPercentage: getOnboardingProgress(onboardingStatusResponse)
-      };
-      
-      setOnboardingStatus(status);
-      
-      if (!status.isCompleted) {
-        console.log('ModulesPage: Onboarding not completed, showing banner');
-        setOnboardingRequired(true);
-        setBackendError('Please complete onboarding to access learning modules');
-        return;
-      }
-      
-      console.log('ModulesPage: Onboarding completed, fetching modules...');
-      
-      const backendModules = await getModules();
-      console.log('ModulesPage: Backend modules received:', backendModules);
-      
-      if (Array.isArray(backendModules) && backendModules.length > 0) {
-        const convertedModules = backendModules.map(convertBackendModuleToFrontend);
-        setBackendModulesData(convertedModules);
-        console.log('ModulesPage: Successfully converted backend modules:', convertedModules);
-      } else {
-        console.warn('ModulesPage: Backend returned empty or invalid modules array:', backendModules);
-      }
-      
-    } catch (error) {
-      console.error('ModulesPage: Error fetching modules from backend:', error);
-      
-      if (error instanceof Error) {
-        if (error.message === 'ONBOARDING_REQUIRED') {
-          setOnboardingStatus({
-            isCompleted: false,
-            currentStep: 1,
-            progressPercentage: 0
-          });
-          setOnboardingRequired(true);
-          setBackendError('Onboarding required to access learning modules');
-          console.log('ModulesPage: User needs to complete onboarding first');
-        } else if (error.message.includes('HTTP error! status: 400')) {
-          setBackendError('Bad Request - Check your authentication or API endpoint');
-        } else if (error.message.includes('HTTP error! status: 422')) {
-          setBackendError('Validation Error - Check request format');
-        } else if (error.message.includes('No authentication token')) {
-          setBackendError('Authentication required - Please log in');
-        } else {
-          setBackendError(`Backend error: ${error.message}`);
-        }
-      } else {
-        setBackendError('Unknown error occurred while fetching modules');
-      }
-      
-      console.log('ModulesPage: Continuing with sample frontend data due to backend error');
-    } finally {
-      setIsLoadingBackend(false);
+  useEffect(() => {
+    if (!onboardingStatusData) {
+      return;
     }
-  };
+
+    console.log('ModulesPage: Checking onboarding status first...');
+    console.log('ModulesPage: Onboarding status:', onboardingStatusData);
+
+    const status = {
+      isCompleted: onboardingStatusData.completed,
+      currentStep: onboardingStatusData.step || 1,
+      progressPercentage: getOnboardingProgress(onboardingStatusData)
+    };
+
+    setOnboardingStatus(status);
+
+    if (!status.isCompleted) {
+      console.log('ModulesPage: Onboarding not completed, showing banner');
+      setOnboardingRequired(true);
+      return;
+    }
+
+    if (backendModules && Array.isArray(backendModules) && backendModules.length > 0) {
+      console.log('ModulesPage: Backend modules received:', backendModules);
+      const convertedModules = backendModules.map(convertBackendModuleToFrontend);
+      setBackendModulesData(convertedModules);
+      console.log('ModulesPage: Successfully converted backend modules:', convertedModules);
+    }
+
+    if (modulesError) {
+      console.error('ModulesPage: Error fetching modules from backend:', modulesError);
+      if (modulesError instanceof Error && modulesError.message === 'ONBOARDING_REQUIRED') {
+        setOnboardingStatus({
+          isCompleted: false,
+          currentStep: 1,
+          progressPercentage: 0
+        });
+        setOnboardingRequired(true);
+        console.log('ModulesPage: User needs to complete onboarding first');
+      }
+    }
+  }, [onboardingStatusData, backendModules, modulesError]);
 
   const renderBackendStatus = () => {
-    if (isLoadingBackend) {
+    if (isLoadingModules) {
       return (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center">
@@ -354,22 +326,24 @@ const ModulesPage: React.FC = () => {
         </div>
       );
     }
-    
+
     if (onboardingRequired) {
       return null;
     }
-    
-    if (backendError && !onboardingRequired) {
+
+    if (modulesError && !onboardingRequired) {
       return (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-amber-800 font-medium">Backend Connection Issue</h4>
-              <p className="text-amber-700 text-sm mt-1">{backendError}</p>
+              <p className="text-amber-700 text-sm mt-1">
+                {modulesError instanceof Error ? modulesError.message : 'Failed to load modules'}
+              </p>
               <p className="text-amber-600 text-xs mt-1">Using sample data for now.</p>
             </div>
-            <button 
-              onClick={fetchModulesFromBackend}
+            <button
+              onClick={() => window.location.reload()}
               className="bg-amber-600 text-white px-3 py-1 rounded text-sm hover:bg-amber-700"
             >
               Retry
@@ -378,7 +352,7 @@ const ModulesPage: React.FC = () => {
         </div>
       );
     }
-    
+
     if (backendModulesData.length > 0) {
       return (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -389,29 +363,9 @@ const ModulesPage: React.FC = () => {
         </div>
       );
     }
-    
+
     return null;
   };
-
-  useEffect(() => {
-    fetchModulesFromBackend();
-    
-    const retryTimer = setTimeout(() => {
-      if (backendError && !backendModulesData.length && !onboardingRequired) {
-        console.log('Retrying backend fetch after initial failure...');
-        fetchModulesFromBackend();
-      }
-    }, 5000);
-    
-    return () => clearTimeout(retryTimer);
-  }, []);
-
-  useEffect(() => {
-    if (modules.length === 0) {
-      loadModules(sampleModulesData);
-    }
-  }, [modules.length, loadModules]);
-
   const modulesToDisplay = useMemo(() => {
     if (backendModulesData.length > 0) {
       console.log('Using backend modules data');
@@ -421,6 +375,16 @@ const ModulesPage: React.FC = () => {
       return sampleModulesData;
     }
   }, [backendModulesData]);
+
+  const currentModule = useMemo(() => {
+    if (!selectedModuleId) return null;
+    return modulesToDisplay.find(m => m.id === selectedModuleId) || null;
+  }, [selectedModuleId, modulesToDisplay]);
+
+  const currentLesson = useMemo(() => {
+    if (!selectedLessonId || !currentModule) return null;
+    return currentModule.lessons.find(l => l.id === selectedLessonId) || null;
+  }, [selectedLessonId, currentModule]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
     setIsTransitioning(true);

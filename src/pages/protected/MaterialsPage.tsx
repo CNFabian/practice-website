@@ -27,13 +27,8 @@ import {
 import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
 import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
 
-// Import the materials API service
-import { 
-  getMaterialsByType, 
-  getAvailableCalculators, 
-  getMaterialChecklists, 
-  trackMaterialDownload 
-} from '../../services/materialsAPI';
+import { useAvailableCalculators, useMaterialChecklists, useMaterialsByType } from '../../hooks/queries/useMaterialsQueries';
+import { useTrackMaterialDownload } from '../../hooks/mutations/useTrackMaterialDownload';
 
 const MaterialsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -48,12 +43,13 @@ const MaterialsPage: React.FC = () => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
-  // Backend integration state
-  const [isLoadingBackend, setIsLoadingBackend] = useState(false);
-  const [backendError, setBackendError] = useState<string | null>(null);
-  const [backendCalculators, setBackendCalculators] = useState<any[]>([]);
-  const [backendWorksheets, setBackendWorksheets] = useState<any[]>([]);
-  const [backendChecklists, setBackendChecklists] = useState<any[]>([]);
+  const { data: backendCalculators, isLoading: isLoadingCalculators, error: calculatorsError } = useAvailableCalculators();
+  const { data: backendWorksheets, isLoading: isLoadingWorksheets, error: worksheetsError } = useMaterialsByType('worksheets');
+  const { data: backendChecklists, isLoading: isLoadingChecklists, error: checklistsError } = useMaterialChecklists();
+  const { mutate: trackDownloadMutation } = useTrackMaterialDownload();
+
+  const isLoadingBackend = isLoadingCalculators || isLoadingWorksheets || isLoadingChecklists;
+  const backendError = calculatorsError || worksheetsError || checklistsError ? 'Failed to load materials from backend' : null;
 
   useEffect(() => {
     console.log('URL changed - categoryFromUrl:', categoryFromUrl);
@@ -61,53 +57,6 @@ const MaterialsPage: React.FC = () => {
       setActiveCategory(categoryFromUrl);
     }
   }, [categoryFromUrl]);
-
-  // Fetch backend data when component mounts
-  useEffect(() => {
-    fetchBackendMaterials();
-  }, []);
-
-  const fetchBackendMaterials = async () => {
-    setIsLoadingBackend(true);
-    setBackendError(null);
-
-    try {
-      console.log('Fetching materials from backend...');
-
-      // Fetch calculators
-      try {
-        const calculatorsData = await getAvailableCalculators();
-        console.log('Backend calculators received:', calculatorsData);
-        setBackendCalculators(Array.isArray(calculatorsData) ? calculatorsData : []);
-      } catch (error) {
-        console.error('Error fetching calculators:', error);
-      }
-
-      // Fetch worksheets
-      try {
-        const worksheetsData = await getMaterialsByType('worksheets');
-        console.log('Backend worksheets received:', worksheetsData);
-        setBackendWorksheets(Array.isArray(worksheetsData) ? worksheetsData : []);
-      } catch (error) {
-        console.error('Error fetching worksheets:', error);
-      }
-
-      // Fetch checklists
-      try {
-        const checklistsData = await getMaterialChecklists();
-        console.log('Backend checklists received:', checklistsData);
-        setBackendChecklists(Array.isArray(checklistsData) ? checklistsData : []);
-      } catch (error) {
-        console.error('Error fetching checklists:', error);
-      }
-
-    } catch (error) {
-      console.error('Error fetching backend materials:', error);
-      setBackendError('Failed to load materials from backend');
-    } finally {
-      setIsLoadingBackend(false);
-    }
-  };
 
   // Frontend fallback data
   const calculators = [
@@ -342,11 +291,11 @@ const MaterialsPage: React.FC = () => {
   const getDisplayData = (category: string) => {
     switch (category) {
       case 'Calculators':
-        return backendCalculators.length > 0 ? backendCalculators : calculators;
+        return backendCalculators && backendCalculators.length > 0 ? backendCalculators : calculators;
       case 'Worksheets':
-        return backendWorksheets.length > 0 ? backendWorksheets : worksheets;
+        return backendWorksheets && backendWorksheets.length > 0 ? backendWorksheets : worksheets;
       case 'Checklists':
-        return backendChecklists.length > 0 ? backendChecklists : checklists;
+        return backendChecklists && backendChecklists.length > 0 ? backendChecklists : checklists;
       case 'Minigames':
         return [];
       default:
@@ -383,22 +332,27 @@ const MaterialsPage: React.FC = () => {
     setShowWorksheet(null);
   };
 
-  const handleWorksheetDownload = async (worksheetId: string) => {
-    try {
-      const backendItem = backendWorksheets.find(item => item.id === worksheetId);
-      if (backendItem && backendItem.id) {
-        await trackMaterialDownload(backendItem.id);
-        console.log('Download tracked for resource:', backendItem.id);
-      }
-    } catch (error) {
-      console.error('Error tracking download:', error);
+  const handleWorksheetDownload = (worksheetId: string) => {
+    const backendItem = backendWorksheets?.find(item => item.id === worksheetId);
+    if (backendItem && backendItem.id) {
+      trackDownloadMutation(
+        { resourceId: backendItem.id },
+        {
+          onSuccess: () => {
+            console.log('Download tracked for resource:', backendItem.id);
+          },
+          onError: (error) => {
+            console.error('Error tracking download:', error);
+          },
+        }
+      );
     }
 
     const worksheetPaths: Record<string, string> = {
       'expense-tracking': ExpenseTrackingPDF,
       'budget-planning': BudgetPlanningPDF
     };
-    
+
     const pdfPath = worksheetPaths[worksheetId];
     if (pdfPath) {
       try {
@@ -731,7 +685,7 @@ const MaterialCard = ({
 
   const currentItems = getCurrentItems();
 
-  if (isLoadingBackend && backendCalculators.length === 0 && backendWorksheets.length === 0 && backendChecklists.length === 0) {
+  if (isLoadingBackend && !backendCalculators && !backendWorksheets && !backendChecklists) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="p-6">
@@ -759,7 +713,7 @@ const MaterialCard = ({
               : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
           }`}>
             {/* Calculators */}
-            {activeCategory === 'Calculators' && currentItems.map((calculator) => (
+            {activeCategory === 'Calculators' && currentItems.map((calculator: any) => (
               <MaterialCard
                 key={calculator.id}
                 item={calculator}
@@ -770,7 +724,7 @@ const MaterialCard = ({
             ))}
 
             {/* Worksheets */}
-            {activeCategory === 'Worksheets' && currentItems.map((worksheet) => (
+            {activeCategory === 'Worksheets' && currentItems.map((worksheet: any) => (
               <MaterialCard
                 key={worksheet.id}
                 item={worksheet}
@@ -788,7 +742,7 @@ const MaterialCard = ({
             ))}
 
             {/* Checklists */}
-            {activeCategory === 'Checklists' && currentItems.map((checklist) => (
+            {activeCategory === 'Checklists' && currentItems.map((checklist: any) => (
               <MaterialCard
                 key={checklist.id}
                 item={checklist}

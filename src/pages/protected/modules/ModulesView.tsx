@@ -3,7 +3,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
-import { checkOnboardingStatus } from '../../../services/learningAPI';
+import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -40,26 +40,25 @@ const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesso
   };
 };
 
-const ModulesView: React.FC<ModulesViewProps> = ({ 
-  modulesData, 
-  onLessonSelect, 
+const ModulesView: React.FC<ModulesViewProps> = ({
+  modulesData,
+  onLessonSelect,
   onModuleQuizSelect,
-  isTransitioning = false 
+  isTransitioning = false
 }) => {
-  // Quiz Battle Modal State
+  const { data: onboardingStatus } = useOnboardingStatus();
+
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
   const [backendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
   const [loadingLessons, setLoadingLessons] = useState<{ [moduleId: number]: boolean }>({});
-  
+
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { 
+  const {
     selectModuleById,
     selectedModuleId,
     sidebarCollapsed,
     toggleSidebar,
-    lessonProgress,
-    moduleProgress,
     activeTab,
     changeActiveTab,
     showCompactLayout,
@@ -73,37 +72,20 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
-  // BACKEND INTEGRATION: Fetch lessons when module is selected
   useEffect(() => {
   const fetchModuleLessons = async () => {
     if (!selectedModuleId || backendLessons[selectedModuleId]) return;
-    
-    // Check onboarding status first using the proper API
-    try {
-      const onboardingComplete = await checkOnboardingStatus();
-      if (!onboardingComplete) {
-        console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
-        return;
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
-        console.log('⚠️ Onboarding required - skipping backend lesson fetch');
-        return;
-      }
-      console.log('Cannot check onboarding status, skipping backend fetch:', error);
+
+    if (!onboardingStatus?.completed) {
+      console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
       return;
     }
-    
+
     setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
-    
+
     try {
       console.log(`✅ Onboarding completed, but real module UUIDs not available yet - using frontend data for module ${selectedModuleId}`);
-      
-      // For now commented out the actual backend call until onboarding provides real UUIDs
-      // const backendModuleId = getBackendModuleId(selectedModuleId);
-      // const lessons = await getModuleLessons(backendModuleId);
-      // setBackendLessons(prev => ({ ...prev, [selectedModuleId]: lessons }));
-      
+
     } catch (error) {
       console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
       console.log('Falling back to frontend lesson data');
@@ -115,13 +97,13 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   if (selectedModuleId) {
     fetchModuleLessons();
   }
-}, [selectedModuleId, backendLessons]);
+}, [selectedModuleId, backendLessons, onboardingStatus]);
 
   const getModuleQuizStatus = (moduleId: number) => {
-    const progress = moduleProgress[moduleId];
+    const module = modulesData.find(m => m.id === moduleId);
     return {
-      isCompleted: progress?.moduleQuizCompleted || false,
-      score: progress?.moduleQuizScore || null
+      isCompleted: module?.quizCompleted || false,
+      score: module?.quizScore || null
     };
   };
 
@@ -137,13 +119,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   const getModuleProgress = (module: Module) => {
-    const progress = moduleProgress[module.id];
-    if (progress) return progress;
-    
-    const completed = module.lessons.filter(lesson => {
-      const lessonProgressData = lessonProgress[lesson.id];
-      return lessonProgressData?.quizCompleted || lessonProgressData?.completed;
-    }).length;
+    const completed = module.lessons.filter(lesson => lesson.completed).length;
     
     const total = module.lessons.length;
     return {
@@ -608,10 +584,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                 {selectedModuleData ? (
                   <div className="space-y-4 px-1">
                     {getLessonsToDisplay(selectedModuleData).map((lesson, index) => {
-                      const progress = lessonProgress[lesson.id];
-                      const isCompleted = progress?.completed || false;
-                      const watchProgress = progress?.watchProgress || 0;
-                      const quizCompleted = progress?.quizCompleted || false;
+                      const isCompleted = lesson.completed || false;
 
                       // UPDATED: Calculate coins dynamically based on quiz questions
                       const getMaxCoinsForLesson = () => {
@@ -621,9 +594,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                       };
 
                       const maxCoinsForLesson = getMaxCoinsForLesson();
-                      const quizScore = progress?.quizScore || 0; // Number of correct answers
-                      const coinsEarned = quizScore * 5; // 5 coins per correct answer
-                      const coinsRemaining = Math.max(0, maxCoinsForLesson - coinsEarned);
+                      const coinsRemaining = lesson.coins || maxCoinsForLesson;
 
                       return (
                         <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative">
@@ -642,13 +613,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                   className="object-contain w-full h-full" 
                                   style={{ imageRendering: 'crisp-edges' }}
                                 />
-                                {watchProgress > 0 && (
-                                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                                    <RobotoFont weight={500} className="text-white">
-                                      {watchProgress}%
-                                    </RobotoFont>
-                                  </div>
-                                )}
                                 {isCompleted && (<div className="absolute top-2 left-2 bg-green-500 text-white rounded-full p-1">
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                       <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
@@ -668,13 +632,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                 <RobotoFont className="text-xs text-gray-600">
                                   {lesson.duration}
                                 </RobotoFont>
-                                {quizCompleted && (
-                                  <div className="flex items-center gap-1">
-                                    <RobotoFont weight={500} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                      Quiz ✓
-                                    </RobotoFont>
-                                  </div>
-                                )}
                               </div>
                               <RobotoFont className="text-xs text-gray-600 mb-4 leading-relaxed">
                                 {lesson.description}
@@ -690,18 +647,16 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                                   }`}
                                 >
                                   <RobotoFont weight={500} className="text-white">
-                                    {isCompleted ? 'Review' : watchProgress > 0 ? 'Continue' : 'Start Lesson'}
+                                    {isCompleted ? 'Review' : 'Start Lesson'}
                                   </RobotoFont>
                                 </button>
-                               <button 
+                               <button
                                 onClick={() => handleLessonQuizStart(lesson, selectedModuleData)}
                                 disabled={isTransitioning}
-                                className={`flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
-                                  quizCompleted ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-                                }`}
+                                className="flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-gray-500 text-white"
                               >
                                 <RobotoFont weight={500} className="text-white">
-                                  {quizCompleted ? 'Retake' : 'Lesson Quiz'}
+                                  Lesson Quiz
                                 </RobotoFont>
                               </button>
                               </div>

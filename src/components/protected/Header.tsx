@@ -3,11 +3,12 @@ import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/r
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
-import { useModules } from '../../hooks/useModules';
 import { logout } from '../../store/slices/authSlice';
 import { openOnboardingModal } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../services/authAPI';
 import { clearOnboardingDataFromLocalStorage } from '../../services/onBoardingAPI';
+import { useCoinBalance } from '../../hooks/queries/useCoinBalance';
+import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { 
   Logo, 
   CoinIcon, 
@@ -24,7 +25,11 @@ const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { totalCoins } = useModules();
+
+  const { data: coinBalanceData } = useCoinBalance();
+  const { data: unreadCountData } = useUnreadCount();
+  const totalCoins = coinBalanceData?.current_balance || 0;
+  const unreadCount = unreadCountData?.unread_count || 0;
 
   const handleLogout = async () => {
     try {
@@ -169,6 +174,11 @@ const Header: React.FC = () => {
                 
                 <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
                   <img src={BellIcon} alt="Notifications" className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </MenuButton>
                 
                 <Transition

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
-import { getOnboardingStatus } from '../../../services/onBoardingAPI';
 import OnBoardingPage from '../../../components/protected/onboarding/OnBoardingPage';
+import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 import { RobotoFont } from "../../../assets";
 import {
   WelcomeCard,
@@ -17,8 +17,10 @@ import {
   LeaderboardEntry,
   SupportCard as SupportCardType,
 } from "./types/overview.types";
-import { Icons, Images } from './images';  // ✅ Import images
-import { getDashboardOverview, getDashboardModules, getCoinBalance, getDashboardBadges } from "../../../services/dashboardAPI";
+import { Icons, Images } from './images';
+import { useCoinBalance } from "../../../hooks/queries/useCoinBalance";
+import { useDashboardOverview } from "../../../hooks/queries/useDashboardOverview";
+import { useDashboardModules } from "../../../hooks/queries/useDashboardModules";
 
 // Helper functions to transform API data to UI types
 const transformAchievementsToTasks = (achievements: string[]): Task[] => {
@@ -150,57 +152,30 @@ const OverviewPage: React.FC = () => {
   const showOnboarding = useSelector((state: RootState) => state.ui.showOnboardingModal);
   const [isWelcomeExpanded, setIsWelcomeExpanded] = useState(true);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
-  
-  // Loading and error states
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Data from API
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [continueLesson, setContinueLesson] = useState<Lesson | null>(null);
-  const [learningModules, setLearningModules] = useState<Lesson[]>([]);
-  // TODO: Display these in the UI when designs are ready
-  // const [totalCoins, setTotalCoins] = useState(0);
-  // const [currentStreak, setCurrentStreak] = useState(0);
+  useCoinBalance();
+  const { data: onboardingStatus } = useOnboardingStatus();
+  const { data: overviewData, isLoading: isOverviewLoading, error: overviewError } = useDashboardOverview();
+  const { data: modulesData, isLoading: isModulesLoading, error: modulesError } = useDashboardModules();
 
-  // Leaderboard data from API
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([
-    {
-      id: "1",
-      name: "Brandon B.",
-      avatar: Icons.GenericAvatar,
-      coins: 302,
-      rank: 1,
-    },
-    {
-      id: "2",
-      name: "Brandon B.",
-      avatar: Icons.GenericAvatar,
-      coins: 302,
-      rank: 2,
-    },
-    {
-      id: "3",
-      name: "Brandon B.",
-      avatar: Icons.GenericAvatar,
-      coins: 302,
-      rank: 3,
-    },
-    {
-      id: "4",
-      name: "Brandon B.",
-      avatar: Icons.GenericAvatar,
-      coins: 302,
-      rank: 4,
-    },
-    {
-      id: "5",
-      name: "Brandon B.",
-      avatar: Icons.GenericAvatar,
-      coins: 302,
-      rank: 5,
-    },
-  ]);
+  const isLoading = isOverviewLoading || isModulesLoading;
+  const error = overviewError || modulesError;
+
+  const tasks = overviewData
+    ? (transformAchievementsToTasks(overviewData.recent_achievements || []).length > 0
+        ? transformAchievementsToTasks(overviewData.recent_achievements || [])
+        : MOCK_TASKS)
+    : MOCK_TASKS;
+
+  const continueLesson = overviewData
+    ? (transformNextLessonToLesson(overviewData.next_lesson) || MOCK_CONTINUE_LESSON)
+    : MOCK_CONTINUE_LESSON;
+
+  const learningModules = modulesData && modulesData.length > 0
+    ? modulesData.map(transformModuleToLesson).slice(0, 3)
+    : MOCK_LEARNING_MODULES;
+
+  const leaderboard = generateMockLeaderboard();
 
   const [supportCards] = useState<SupportCardType[]>([
     {
@@ -247,113 +222,20 @@ const OverviewPage: React.FC = () => {
     dispatch(closeOnboardingModal());
   };
 
-  // ✅ Onboarding check useEffect
   useEffect(() => {
-    const checkOnboardingAndShowModal = async () => {
-      try {
-        const status = await getOnboardingStatus();
-        
-        // If onboarding is not completed, show the modal automatically
-        if (!status.completed) {
-          console.log('OverviewPage: Onboarding not completed, showing modal');
-          dispatch(openOnboardingModal());
-        }
-      } catch (error) {
-        console.error('OverviewPage: Error checking onboarding status:', error);
+    if (!showOnboarding && onboardingStatus) {
+      if (!onboardingStatus.completed) {
+        console.log('OverviewPage: Onboarding not completed, showing modal');
         dispatch(openOnboardingModal());
       }
-    };
-
-    if (!showOnboarding) {
-      checkOnboardingAndShowModal();
     }
-  }, [dispatch, showOnboarding]);
+  }, [dispatch, showOnboarding, onboardingStatus]);
 
-  // ✅ Dashboard data fetch useEffect
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Fetch each API individually with error handling  
-        let overviewData: any = null;
-        let modulesData: any[] = [];
-        // let coinsData: any = null; // TODO: Use when coin display is implemented
-
-        // Try to fetch overview data
-        try {
-          overviewData = await getDashboardOverview();
-          console.log('✅ Overview data received');
-        } catch (error) {
-          console.warn('⚠️ Overview API failed:', error);
-        }
-
-        // Try to fetch modules data
-        try {
-          modulesData = await getDashboardModules();
-          console.log('✅ Modules data received');
-        } catch (error) {
-          console.warn('⚠️ Modules API failed:', error);
-        }
-
-        // Try to fetch coins data
-        try {
-          await getCoinBalance();
-          console.log('✅ Coins data received');
-        } catch (error) {
-          console.warn('⚠️ Coins API failed:', error);
-        }
-
-        // Try to fetch badges data (optional)
-        try {
-          await getDashboardBadges();
-          console.log('✅ Badges data received');
-        } catch (error) {
-          console.warn('⚠️ Badges API failed:', error);
-        }
-
-        // Transform and set data with fallbacks
-        if (overviewData) {
-          const transformedTasks = transformAchievementsToTasks(overviewData.recent_achievements || []);
-          setTasks(transformedTasks.length > 0 ? transformedTasks : MOCK_TASKS);
-
-          const transformedLesson = transformNextLessonToLesson(overviewData.next_lesson);
-          setContinueLesson(transformedLesson || MOCK_CONTINUE_LESSON);
-        } else {
-          setTasks(MOCK_TASKS);
-          setContinueLesson(MOCK_CONTINUE_LESSON);
-        }
-
-        if (modulesData && modulesData.length > 0) {
-          const transformedModules = modulesData.map(transformModuleToLesson).slice(0, 3);
-          setLearningModules(transformedModules);
-        } else {
-          setLearningModules(MOCK_LEARNING_MODULES);
-        }
-
-        // Set leaderboard (currently mock)
-        setLeaderboard(generateMockLeaderboard());
-
-        setIsPageLoaded(true);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-        
-        // ✅ Use mock data on error
-        console.log('📝 Error loading from API, using mock data');
-        setTasks(MOCK_TASKS);
-        setContinueLesson(MOCK_CONTINUE_LESSON);
-        setLearningModules(MOCK_LEARNING_MODULES);
-        setLeaderboard(generateMockLeaderboard());
-        setIsPageLoaded(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
+    if (!isLoading) {
+      setIsPageLoaded(true);
+    }
+  }, [isLoading]);
 
   // Loading state
   if (isLoading) {
@@ -369,7 +251,6 @@ const OverviewPage: React.FC = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -378,7 +259,7 @@ const OverviewPage: React.FC = () => {
             Oops! Something went wrong
           </RobotoFont>
           <RobotoFont weight={400} className="text-gray-600 mb-4">
-            {error}
+            {error instanceof Error ? error.message : 'Failed to load dashboard data'}
           </RobotoFont>
           <button
             onClick={() => window.location.reload()}
@@ -464,7 +345,7 @@ const OverviewPage: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    {learningModules.map((module) => (
+                    {learningModules.map((module: Lesson) => (
                       <LessonCard
                         key={module.id}
                         lesson={module}

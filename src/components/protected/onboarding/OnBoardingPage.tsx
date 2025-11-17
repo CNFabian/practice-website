@@ -1,10 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { 
-  getOnboardingStatus, 
+import {
   getOnboardingOptions,
-  completeOnboardingAllSteps, 
   getOnboardingDataFromLocalStorage,
   saveStep1ToLocalStorage,
   saveStep3ToLocalStorage,
@@ -14,6 +12,8 @@ import {
   type CompleteOnboardingData,
   type OnboardingOptions
 } from '../../../services/onBoardingAPI';
+import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
+import { useCompleteOnboardingStep } from '../../../hooks/mutations/useCompleteOnboardingStep';
 
 const AVATAR_ICON: Record<string, string> = {
   'Professional': '👔',
@@ -32,13 +32,16 @@ interface OnBoardingPageProps {
 
 export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps) {
   const nav = useNavigate();
-  
+  const { data: onboardingStatus, refetch: refetchOnboardingStatus } = useOnboardingStatus();
+  const { mutate: completeOnboardingMutation, isPending: isCompletingOnboarding } = useCompleteOnboardingStep();
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [onboardingOptions, setOnboardingOptions] = useState<OnboardingOptions | null>(null);
+
+  const loading = isCompletingOnboarding;
 
   const STEPS = useMemo(() => {
     if (!onboardingOptions) return [];
@@ -73,23 +76,21 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
 
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const initializeOnboarding = async () => {
       try {
         console.log('OnBoarding: Checking onboarding status...');
-        
-        // Fetch onboarding options first
+
         const options = await getOnboardingOptions();
         setOnboardingOptions(options);
         console.log('OnBoarding: Options loaded:', options);
-        
-        // Check onboarding status
-        const status = await getOnboardingStatus();
+
+        const status = onboardingStatus;
         console.log('OnBoarding: Status received:', status);
-        
-        const isCompleted = status.completed;
+
+        const isCompleted = status?.completed;
         console.log('OnBoarding: Parsed - isCompleted:', isCompleted);
-        
+
         if (isCompleted) {
           console.log('OnBoarding: User has already completed onboarding');
           if (onClose) {
@@ -99,45 +100,42 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
           }
           return;
         }
-        
-        // Load existing data from localStorage
+
         const localData = getOnboardingDataFromLocalStorage();
         console.log('OnBoarding: Local storage data:', localData);
-        
-        // Map backend data to frontend answers format
+
         const mappedAnswers: Record<string, any> = {};
-        
+
         if (localData.selected_avatar) {
-          // Find avatar name by ID
           const avatar = options.avatars.find(a => a.id === localData.selected_avatar);
           if (avatar) {
             mappedAnswers.avatar = avatar.name;
           }
         }
-        
+
         if (localData.wants_expert_contact) {
           mappedAnswers.expert_contact = localData.wants_expert_contact;
         }
-        
+
         if (localData.homeownership_timeline_months) {
           mappedAnswers['Home Ownership'] = localData.homeownership_timeline_months;
         }
-        
+
         if (localData.zipcode) {
           mappedAnswers.city = localData.zipcode;
         }
-        
+
         setAnswers(mappedAnswers);
-        
+
         let step = 0;
         if (mappedAnswers.avatar) step = Math.max(step, 1);
         if (mappedAnswers.expert_contact) step = Math.max(step, 2);
         if (mappedAnswers['Home Ownership']) step = Math.max(step, 3);
         if (mappedAnswers.city) step = Math.max(step, 4);
-        
+
         setCurrentStep(step);
         console.log('OnBoarding: Restored step:', step);
-        
+
       } catch (error) {
         console.error('OnBoarding: Initialization error:', error);
         setError('Failed to load onboarding. Please try again.');
@@ -147,9 +145,9 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         console.log('OnBoarding: Setting isInitializing to false');
       }
     };
-    
+
     initializeOnboarding();
-  }, [isOpen, nav, onClose]);
+  }, [isOpen, nav, onClose, onboardingStatus]);
 
   // Handle answer selection
   const handleAnswerSelect = async (value: string | number) => {
@@ -192,83 +190,79 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  // Handle complete onboarding with backend verification
-  const handleCompleteOnboarding = async () => {
-    setLoading(true);
+  const handleCompleteOnboarding = () => {
     setError(null);
-    
-    try {
-      console.log('OnBoarding: Completing all steps...');
-      
-      const localData = getOnboardingDataFromLocalStorage();
-      console.log('OnBoarding: Final localStorage data:', localData);
-      
-      const onboardingData: CompleteOnboardingData = {
-        selected_avatar: localData.selected_avatar || '',
-        has_realtor: localData.has_realtor ?? false,
-        has_loan_officer: localData.has_loan_officer ?? false,
-        wants_expert_contact: localData.wants_expert_contact || answers.expert_contact,
-        homeownership_timeline_months: localData.homeownership_timeline_months || answers['Home Ownership'],
-        zipcode: localData.zipcode || answers.city
-      };
-      
-      console.log('OnBoarding: Final payload to backend:', onboardingData);
-      await completeOnboardingAllSteps(onboardingData);
-      
-      console.log('OnBoarding: All steps completed successfully');
-      
-      clearOnboardingDataFromLocalStorage();
-      
-      console.log('OnBoarding: Waiting for backend status to update...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      let attempts = 0;
-      const maxAttempts = 5;
-      let isActuallyCompleted = false;
-      
-      while (attempts < maxAttempts && !isActuallyCompleted) {
-        try {
-          console.log(`OnBoarding: Verification attempt ${attempts + 1}`);
-          const status = await getOnboardingStatus();
-          console.log(`OnBoarding: Status check result:`, status);
-          
-          if (status.completed) {
-            isActuallyCompleted = true;
-            console.log('OnBoarding: Backend confirms completion!');
-            break;
-          } else {
-            console.log('OnBoarding: Backend still shows incomplete, waiting...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+
+    console.log('OnBoarding: Completing all steps...');
+
+    const localData = getOnboardingDataFromLocalStorage();
+    console.log('OnBoarding: Final localStorage data:', localData);
+
+    const onboardingData: CompleteOnboardingData = {
+      selected_avatar: localData.selected_avatar || '',
+      has_realtor: localData.has_realtor ?? false,
+      has_loan_officer: localData.has_loan_officer ?? false,
+      wants_expert_contact: localData.wants_expert_contact || answers.expert_contact,
+      homeownership_timeline_months: localData.homeownership_timeline_months || answers['Home Ownership'],
+      zipcode: localData.zipcode || answers.city
+    };
+
+    console.log('OnBoarding: Final payload to backend:', onboardingData);
+
+    completeOnboardingMutation(onboardingData, {
+      onSuccess: async () => {
+        console.log('OnBoarding: All steps completed successfully');
+        clearOnboardingDataFromLocalStorage();
+
+        console.log('OnBoarding: Waiting for backend status to update...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        let attempts = 0;
+        const maxAttempts = 5;
+        let isActuallyCompleted = false;
+
+        while (attempts < maxAttempts && !isActuallyCompleted) {
+          try {
+            console.log(`OnBoarding: Verification attempt ${attempts + 1}`);
+            const { data: status } = await refetchOnboardingStatus();
+            console.log(`OnBoarding: Status check result:`, status);
+
+            if (status?.completed) {
+              isActuallyCompleted = true;
+              console.log('OnBoarding: Backend confirms completion!');
+              break;
+            } else {
+              console.log('OnBoarding: Backend still shows incomplete, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              attempts++;
+            }
+          } catch (error) {
+            console.error('OnBoarding: Error checking status during verification:', error);
             attempts++;
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
-        } catch (error) {
-          console.error('OnBoarding: Error checking status during verification:', error);
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      }
-      
-      if (!isActuallyCompleted) {
-        console.warn('OnBoarding: Backend never confirmed completion after', maxAttempts, 'attempts');
-        console.log('OnBoarding: Proceeding anyway as API confirmed successful completion');
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (onClose) {
-        console.log('OnBoarding: Calling onClose callback');
-        onClose();
-      } else {
-        console.log('OnBoarding: Navigating to /app');
-        nav('/app', { replace: true });
-      }
-      
-    } catch (error) {
-      console.error('OnBoarding: Error completing onboarding:', error);
-      setError('Failed to complete onboarding. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+
+        if (!isActuallyCompleted) {
+          console.warn('OnBoarding: Backend never confirmed completion after', maxAttempts, 'attempts');
+          console.log('OnBoarding: Proceeding anyway as API confirmed successful completion');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        if (onClose) {
+          console.log('OnBoarding: Calling onClose callback');
+          onClose();
+        } else {
+          console.log('OnBoarding: Navigating to /app');
+          nav('/app', { replace: true });
+        }
+      },
+      onError: (error) => {
+        console.error('OnBoarding: Error completing onboarding:', error);
+        setError('Failed to complete onboarding. Please try again.');
+      },
+    });
   };
 
   const handleNext = () => {
@@ -283,9 +277,9 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     if (currentStep === STEPS.length - 1) {
-      await handleCompleteOnboarding();
+      handleCompleteOnboarding();
     } else {
       handleNext();
     }

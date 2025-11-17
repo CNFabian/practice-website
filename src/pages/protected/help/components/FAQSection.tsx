@@ -1,177 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { RobotoFont } from '../../../../assets';
-import { getFAQs, getFAQCategories, searchFAQs } from '../../../../services/helpAPI';
+import { useFAQs, useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
 import type { FAQ } from '../../../../types/help.types';
 
+const FALLBACK_FAQS: FAQ[] = [
+  {
+    id: '1',
+    question: 'How do I get started with the platform?',
+    answer: 'Getting started is easy! Simply complete your profile, browse our learning modules, and begin your homebuying journey.',
+    category: 'General',
+    order_index: 1,
+    view_count: 0
+  },
+  {
+    id: '2',
+    question: 'How do I reset my password?',
+    answer: 'You can reset your password by clicking the "Forgot Password" link on the login page and following the instructions sent to your email.',
+    category: 'Account',
+    order_index: 2,
+    view_count: 0
+  },
+  {
+    id: '3',
+    question: 'What if I encounter technical issues?',
+    answer: 'If you experience technical difficulties, please contact our support team through the contact form or check our system status page.',
+    category: 'Technical',
+    order_index: 3,
+    view_count: 0
+  }
+];
+
 const FAQSection: React.FC = () => {
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [isLoadingFAQs, setIsLoadingFAQs] = useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [faqError, setFaqError] = useState<string | null>(null);
-  
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  useEffect(() => {
-    fetchCategories();
-    fetchFAQs();
-  }, []);
+  const { data: categoriesData, isLoading: isLoadingCategories } = useFAQCategories();
+  const { data: faqsData, isLoading: isLoadingFAQs, error: faqError } = useFAQs({
+    category: selectedCategory !== 'All' ? selectedCategory : undefined,
+    search: debouncedSearch || undefined,
+    limit: 50,
+  });
+
+  const categories = categoriesData ? ['All', ...(Array.isArray(categoriesData) ? categoriesData : [])] : ['All', 'General', 'Account', 'Technical', 'Billing'];
+  const faqs = Array.isArray(faqsData) ? faqsData : FALLBACK_FAQS;
+  const isSearching = !!debouncedSearch && isLoadingFAQs;
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm.trim()) {
-        handleSearch();
-      } else {
-        fetchFAQs();
-      }
+      setDebouncedSearch(searchTerm.trim());
     }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
-
-  useEffect(() => {
-    if (selectedCategory && selectedCategory !== 'All') {
-      fetchFAQsByCategory(selectedCategory);
-    } else {
-      fetchFAQs();
-    }
-  }, [selectedCategory]);
-
-  const fetchCategories = async () => {
-    setIsLoadingCategories(true);
-    try {
-      console.log('Fetching FAQ categories...');
-      const categoriesData = await getFAQCategories();
-      console.log('FAQ categories received:', categoriesData);
-      
-      if (Array.isArray(categoriesData)) {
-        setCategories(['All', ...categoriesData]);
-      } else if (typeof categoriesData === 'string') {
-        try {
-          const parsed = JSON.parse(categoriesData);
-          setCategories(['All', ...(Array.isArray(parsed) ? parsed : [])]);
-        } catch {
-          // Fallback categories
-          setCategories(['All', 'General', 'Account', 'Technical', 'Billing']);
-        }
-      } else {
-        // Fallback categories
-        setCategories(['All', 'General', 'Account', 'Technical', 'Billing']);
-      }
-    } catch (error) {
-      console.error('Error fetching FAQ categories:', error);
-      setCategories(['All', 'General', 'Account', 'Technical', 'Billing']);
-    } finally {
-      setIsLoadingCategories(false);
-    }
-  };
-
-  const fetchFAQs = async () => {
-    setIsLoadingFAQs(true);
-    setFaqError(null);
-    
-    try {
-      console.log('Fetching FAQs...');
-      const faqsData = await getFAQs({ limit: 50 });
-      console.log('FAQs received:', faqsData);
-      
-      if (Array.isArray(faqsData)) {
-        setFaqs(faqsData);
-      } else {
-        console.warn('Invalid FAQ data format:', faqsData);
-        setFaqs([]);
-        setFaqError('Invalid FAQ data format received from server');
-      }
-    } catch (error) {
-      console.error('Error fetching FAQs:', error);
-      setFaqError('Failed to load FAQs. Please try again later.');
-      
-      // Fallback to sample FAQs
-      setFaqs([
-        {
-          id: '1',
-          question: 'How do I get started with the platform?',
-          answer: 'Getting started is easy! Simply complete your profile, browse our learning modules, and begin your homebuying journey.',
-          category: 'General',
-          order_index: 1,
-          view_count: 0
-        },
-        {
-          id: '2',
-          question: 'How do I reset my password?',
-          answer: 'You can reset your password by clicking the "Forgot Password" link on the login page and following the instructions sent to your email.',
-          category: 'Account',
-          order_index: 2,
-          view_count: 0
-        },
-        {
-          id: '3',
-          question: 'What if I encounter technical issues?',
-          answer: 'If you experience technical difficulties, please contact our support team through the contact form or check our system status page.',
-          category: 'Technical',
-          order_index: 3,
-          view_count: 0
-        }
-      ]);
-    } finally {
-      setIsLoadingFAQs(false);
-    }
-  };
-
-  const fetchFAQsByCategory = async (category: string) => {
-    setIsLoadingFAQs(true);
-    setFaqError(null);
-    
-    try {
-      console.log(`Fetching FAQs for category: ${category}`);
-      const faqsData = await getFAQs({ category, limit: 50 });
-      console.log('Category FAQs received:', faqsData);
-      
-      if (Array.isArray(faqsData)) {
-        setFaqs(faqsData);
-      } else {
-        setFaqs([]);
-      }
-    } catch (error) {
-      console.error('Error fetching FAQs by category:', error);
-      setFaqError('Failed to load FAQs for this category.');
-      setFaqs([]);
-    } finally {
-      setIsLoadingFAQs(false);
-    }
-  };
-
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
-    
-    setIsSearching(true);
-    setFaqError(null);
-    
-    try {
-      console.log(`Searching FAQs for: ${searchTerm}`);
-      const searchResults = await searchFAQs(searchTerm.trim(), 50);
-      console.log('Search results:', searchResults);
-      
-      if (Array.isArray(searchResults)) {
-        setFaqs(searchResults);
-        if (searchResults.length === 0) {
-          setFaqError('No FAQs found matching your search.');
-        }
-      } else {
-        setFaqs([]);
-        setFaqError('Search failed. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error searching FAQs:', error);
-      setFaqError('Search failed. Please try again.');
-      setFaqs([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -191,7 +73,6 @@ const FAQSection: React.FC = () => {
   const clearSearch = () => {
     setSearchTerm('');
     setSelectedCategory('All');
-    fetchFAQs();
   };
 
   return (
@@ -284,18 +165,9 @@ const FAQSection: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <RobotoFont as="p" weight={500} className="text-red-800">
-              {faqError}
+              Failed to load FAQs. Using fallback data.
             </RobotoFont>
           </div>
-          <button
-            onClick={() => {
-              setFaqError(null);
-              fetchFAQs();
-            }}
-            className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
-          >
-            Try again
-          </button>
         </div>
       )}
 

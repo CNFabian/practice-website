@@ -9,13 +9,10 @@ const modulesPersistConfig = {
   key: 'modules',
   storage,
   whitelist: [
-    'lessonProgress', 
-    'moduleProgress', 
-    'selectedModuleId', 
+    'selectedModuleId',
     'selectedLessonId',
     'sidebarCollapsed',
-    'showCompactLayout',
-    'totalCoins'
+    'showCompactLayout'
   ]
 }
 

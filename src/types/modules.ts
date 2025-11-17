@@ -20,4 +20,6 @@ export interface Module {
   tags: string[];
   illustration: string;
   lessons: Lesson[];
+  quizCompleted?: boolean;
+  quizScore?: number;
 }

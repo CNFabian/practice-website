@@ -3,34 +3,17 @@
 
 import { useState, useEffect } from 'react';
 import { BadgeHeader, BadgeFilters, BadgeGrid } from './components';
-import { getBadges } from '../../../services';
-import type { Badge, BadgeProgress } from '../../../services';
+import type { Badge } from '../../../services';
+import { useBadges } from '../../../hooks/queries/useBadges';
 
 const BadgesPage = () => {
-  // State management for badges data and UI
+  const { data: badgesData, isLoading: loading } = useBadges();
+
   const [activeFilter, setActiveFilter] = useState('all');
-  const [badges, setBadges] = useState<Badge[]>([]);
   const [filteredBadges, setFilteredBadges] = useState<Badge[]>([]);
-  const [progress, setProgress] = useState<BadgeProgress>({ earned: 0, total: 0 });
-  const [loading, setLoading] = useState(true);
 
-  // Load badges on component mount
-  useEffect(() => {
-    const loadBadges = async () => {
-      try {
-        const response = await getBadges();
-        setBadges(response.badges);
-        setProgress(response.progress);
-        setFilteredBadges(response.badges);
-      } catch (error) {
-        console.error('Failed to load badges:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBadges();
-  }, []);
+  const badges = badgesData?.badges || [];
+  const progress = badgesData?.progress || { earned: 0, total: 0 };
 
   // Filter badges when filter changes
   useEffect(() => {

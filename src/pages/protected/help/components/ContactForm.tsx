@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RobotoFont } from '../../../../assets';
-import { submitSupportTicket, getFAQCategories } from '../../../../services/helpAPI';
+import { useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
+import { useSubmitSupportTicket } from '../../../../hooks/mutations/useSubmitSupportTicket';
 import type { SupportTicketRequest } from '../../../../types/help.types';
 
 interface FormData {
@@ -22,42 +23,12 @@ const ContactForm: React.FC = () => {
     category: ''
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setIsLoadingCategories(true);
-    try {
-      console.log('Fetching support categories...');
-      const categoriesData = await getFAQCategories();
-      console.log('Categories received:', categoriesData);
-      
-      if (Array.isArray(categoriesData)) {
-        setCategories(categoriesData);
-      } else if (typeof categoriesData === 'string') {
-        try {
-          const parsed = JSON.parse(categoriesData);
-          setCategories(Array.isArray(parsed) ? parsed : []);
-        } catch {
-          setCategories(['General', 'Technical', 'Account', 'Billing']);
-        }
-      } else {
-        setCategories(['General', 'Technical', 'Account', 'Billing']);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      setCategories(['General', 'Technical', 'Account', 'Billing']);
-    } finally {
-      setIsLoadingCategories(false);
-    }
-  };
+  const { data: categoriesData, isLoading: isLoadingCategories } = useFAQCategories();
+  const { mutate: submitTicketMutation, isPending: isSubmitting } = useSubmitSupportTicket();
+  const categories = Array.isArray(categoriesData) ? categoriesData : ['General', 'Technical', 'Account', 'Billing'];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -74,61 +45,57 @@ const ContactForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return;
 
-    setIsSubmitting(true);
     setSubmitError(null);
     setSubmitSuccess(false);
 
-    try {
-      const ticketData: SupportTicketRequest = {
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        subject: `Support Request - ${formData.category || 'General'}`,
-        message: formData.message,
-        category: formData.category || 'General'
-      };
+    const ticketData: SupportTicketRequest = {
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      email: formData.email,
+      subject: `Support Request - ${formData.category || 'General'}`,
+      message: formData.message,
+      category: formData.category || 'General'
+    };
 
-      console.log('Submitting support ticket:', ticketData);
-      
-      const response = await submitSupportTicket(ticketData);
-      console.log('Support ticket submitted successfully:', response);
-      
-      setSubmitSuccess(true);
-      
-      setFormData({
-        firstName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-        message: '',
-        category: ''
-      });
+    console.log('Submitting support ticket:', ticketData);
 
-    } catch (error) {
-      console.error('Error submitting support ticket:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('HTTP error! status: 400')) {
-          setSubmitError('Please check your input and try again.');
-        } else if (error.message.includes('HTTP error! status: 422')) {
-          setSubmitError('Please fill in all required fields correctly.');
-        } else if (error.message.includes('Authentication failed')) {
-          setSubmitError('Please log in again to submit a support ticket.');
-        } else if (error.message.includes('Network error')) {
-          setSubmitError('Network error. Please check your connection and try again.');
+    submitTicketMutation(ticketData, {
+      onSuccess: (response) => {
+        console.log('Support ticket submitted successfully:', response);
+        setSubmitSuccess(true);
+        setFormData({
+          firstName: '',
+          lastName: '',
+          phone: '',
+          email: '',
+          message: '',
+          category: ''
+        });
+      },
+      onError: (error) => {
+        console.error('Error submitting support ticket:', error);
+
+        if (error instanceof Error) {
+          if (error.message.includes('HTTP error! status: 400')) {
+            setSubmitError('Please check your input and try again.');
+          } else if (error.message.includes('HTTP error! status: 422')) {
+            setSubmitError('Please fill in all required fields correctly.');
+          } else if (error.message.includes('Authentication failed')) {
+            setSubmitError('Please log in again to submit a support ticket.');
+          } else if (error.message.includes('Network error')) {
+            setSubmitError('Network error. Please check your connection and try again.');
+          } else {
+            setSubmitError(`Failed to submit ticket: ${error.message}`);
+          }
         } else {
-          setSubmitError(`Failed to submit ticket: ${error.message}`);
+          setSubmitError('An unexpected error occurred. Please try again.');
         }
-      } else {
-        setSubmitError('An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+    });
   };
 
   return (

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-  getOnboardingStatus,
   completeStep1,
   completeStep3,
   completeStep4,
@@ -9,6 +8,7 @@ import {
   getOnboardingData,
   getOnboardingProgress
 } from '../services/onBoardingAPI'
+import { useOnboardingStatus } from './queries/useOnboardingStatus'
 
 export interface OnboardingAnswers {
   avatar?: string
@@ -45,6 +45,7 @@ export interface OnboardingState {
 }
 
 export const useOnboarding = (): OnboardingState => {
+  const { data: onboardingStatusData, refetch: refetchOnboardingStatus } = useOnboardingStatus()
   const [answers, setAnswers] = useState<OnboardingAnswers>({})
   const [currentStep, setCurrentStep] = useState(0)
   const [isCompleted, setIsCompleted] = useState(false)
@@ -53,37 +54,37 @@ export const useOnboarding = (): OnboardingState => {
   const [error, setError] = useState<string | null>(null)
   const [initializing, setInitializing] = useState(true)
 
-  // Initialize onboarding state from backend
   const initializeOnboarding = useCallback(async () => {
     setInitializing(true)
     setError(null)
-    
+
     try {
       console.log('useOnboarding: Initializing...')
-      
-      // Get current status
-      const status = await getOnboardingStatus()
+
+      const status = onboardingStatusData
       console.log('useOnboarding: Status:', status)
-      
+
+      if (!status) {
+        console.log('useOnboarding: No status data available yet')
+        return
+      }
+
       setIsCompleted(status.completed)
       setProgress(getOnboardingProgress(status))
-      
+
       if (status.completed) {
         setCurrentStep(4)
         console.log('useOnboarding: Onboarding already completed')
         return
       }
-      
-      // Set current step (backend is 1-indexed, frontend is 0-indexed)
+
       const frontendStep = Math.max(0, (status.step || 1) - 1)
       setCurrentStep(frontendStep)
-      
-      // Load existing data if any steps are completed
+
       if (status.step && status.step > 1) {
         const existingData = await getOnboardingData()
         console.log('useOnboarding: Existing data:', existingData)
-        
-        // Map backend data to frontend answers
+
         const mappedAnswers: OnboardingAnswers = {}
         if (existingData.selected_avatar) mappedAnswers.avatar = existingData.selected_avatar
         if (existingData.wants_expert_contact) mappedAnswers.expert_contact = existingData.wants_expert_contact
@@ -91,17 +92,17 @@ export const useOnboarding = (): OnboardingState => {
         if (existingData.zipcode) mappedAnswers.city = existingData.zipcode
         if (existingData.has_realtor !== undefined) mappedAnswers.has_realtor = existingData.has_realtor
         if (existingData.has_loan_officer !== undefined) mappedAnswers.has_loan_officer = existingData.has_loan_officer
-        
+
         setAnswers(mappedAnswers)
       }
-      
+
     } catch (error) {
       console.error('useOnboarding: Initialization error:', error)
       setError('Failed to load onboarding status')
     } finally {
       setInitializing(false)
     }
-  }, [])
+  }, [onboardingStatusData])
 
   // Set answer for a step
   const setAnswer = useCallback((key: string, value: string | boolean) => {
@@ -150,11 +151,12 @@ export const useOnboarding = (): OnboardingState => {
       }
       
       console.log(`useOnboarding: Step ${currentStep} completed`)
-      
-      // Update progress by fetching latest status
-      const updatedStatus = await getOnboardingStatus()
-      const newProgress = getOnboardingProgress(updatedStatus)
-      setProgress(newProgress)
+
+      const { data: updatedStatus } = await refetchOnboardingStatus()
+      if (updatedStatus) {
+        const newProgress = getOnboardingProgress(updatedStatus)
+        setProgress(newProgress)
+      }
       
     } catch (error) {
       console.error(`useOnboarding: Error completing step ${currentStep}:`, error)

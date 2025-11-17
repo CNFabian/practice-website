@@ -63,7 +63,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       goToLesson(nextLesson.id, module.id);
       
       // Complete the quiz and close it
-      completeQuiz(lesson.id, quizState.score, true);
+      completeQuiz(lesson.id, quizState.score);
       onComplete(quizState.score);
       closeQuiz();
     } else {
@@ -73,7 +73,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleFinish = () => {
-    completeQuiz(lesson.id, quizState.score, true);
+    completeQuiz(lesson.id, quizState.score);
     onComplete(quizState.score);
     closeQuiz();
   };

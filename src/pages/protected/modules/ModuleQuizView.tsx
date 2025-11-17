@@ -4,21 +4,13 @@ import { useModules } from '../../../hooks/useModules';
 import { Module } from '../../../types/modules';
 import { CoinIcon, QuestionImage, BadgeMedal, RobotoFont } from '../../../assets';
 import { FeedbackContainer, QuizResults } from '../../../components';
-import { getModule, getLessonQuiz } from '../../../services/learningAPI';
+import { getLessonQuiz } from '../../../services/learningAPI';
+import { useModule } from '../../../hooks/queries/useLearningQueries';
 
 interface ModuleQuizViewProps {
   module: Module;
   onBack: () => void;
   isTransitioning?: boolean;
-}
-
-interface BackendModuleData {
-  id: string;
-  title: string;
-  description: string;
-  thumbnail_url: string;
-  lesson_count: number;
-  progress_percentage: string;
 }
 
 interface BackendQuizQuestion {
@@ -42,10 +34,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   isTransitioning = false
 }) => {
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
-  const [backendModuleData, setBackendModuleData] = useState<BackendModuleData | null>(null);
-  const [isLoadingModule, setIsLoadingModule] = useState(false);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
-  const [moduleError, setModuleError] = useState<string | null>(null);
+
+  const { data: backendModuleData, isLoading: isLoadingModule, error: moduleError } = useModule(module?.id || '');
 
   const {
     quizState,
@@ -57,33 +48,8 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
     completeModuleQuiz,
     sidebarCollapsed,
     toggleSidebar,
-    moduleProgress,
     startModuleQuiz
   } = useModules();
-
-  useEffect(() => {
-    const fetchModuleData = async () => {
-      if (!module?.id) return;
-      
-      setIsLoadingModule(true);
-      setModuleError(null);
-      
-      try {
-        const moduleData = await getModule(module.id.toString());
-        console.log('Backend module data received:', moduleData);
-        
-        setBackendModuleData(moduleData);
-      } catch (error) {
-        console.error('Error fetching module data:', error);
-        setModuleError('Failed to load module details');
-        // Continue with existing module prop data
-      } finally {
-        setIsLoadingModule(false);
-      }
-    };
-
-    fetchModuleData();
-  }, [module?.id]);
 
   useEffect(() => {
     const initializeModuleQuiz = async () => {
@@ -143,8 +109,8 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
         }
       } catch (error) {
         console.error('Error initializing module quiz:', error);
-        setModuleError('Failed to load quiz. Using sample questions.');
-        
+        console.log('Failed to load quiz. Using sample questions.');
+
         // Fallback to sample questions
         const sampleModuleQuizQuestions = [
           {
@@ -231,7 +197,7 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   };
 
   const handleFinish = () => {
-    completeModuleQuiz(module.id, quizState.score, true);
+    completeModuleQuiz(module.id, quizState.score);
     closeQuiz();
     onBack();
   };
@@ -259,10 +225,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
 
-  const currentModuleProgress = moduleProgress[module.id];
-  const isCompleted = currentModuleProgress?.overallProgress === 100 || false;
-  const moduleQuizCompleted = currentModuleProgress?.moduleQuizCompleted || false;
-  const moduleQuizScore = currentModuleProgress?.moduleQuizScore || 0;
+  const isCompleted = module.status === 'Completed';
+  const moduleQuizCompleted = module.quizCompleted || false;
+  const moduleQuizScore = module.quizScore || 0;
 
   const correctAnswers = quizState.questions.reduce((acc, question, index) => {
     const userAnswer = quizState.answers[index];
@@ -491,7 +456,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
               )}
               {moduleError && (
                 <div className="text-xs text-orange-500 pb-2">
-                  <RobotoFont className="text-xs">{moduleError}</RobotoFont>
+                  <RobotoFont className="text-xs">
+                    {moduleError instanceof Error ? moduleError.message : 'Failed to load module'}
+                  </RobotoFont>
                 </div>
               )}
             </div>

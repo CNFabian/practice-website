@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RewardsHeader, RewardsNavigation, RewardCard } from './components';
 import { NavigationButton } from './types/rewards.types';
-import { rewardsAPI, type Coupon, type Redemption } from '../../../services';
+import { type Coupon } from '../../../services';
+import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
+import { useRedeemCoupon } from '../../../hooks/mutations/useRedeemCoupon';
+import { useCoupons, useMyRedemptions } from '../../../hooks/queries/useRewardsQueries';
 
 // Fallback mock data for when API is empty or fails
 const FALLBACK_COUPONS: Coupon[] = [
@@ -76,11 +79,15 @@ const FALLBACK_COUPONS: Coupon[] = [
 
 const RewardsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('browse');
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [redemptionHistory, setRedemptionHistory] = useState<Redemption[]>([]);
-  const [coinBalance, setCoinBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [_error, _setError] = useState<string | null>(null);
+
+  const { data: coinBalanceData, isLoading: coinsLoading } = useCoinBalance();
+  const { data: couponsData, isLoading: couponsLoading } = useCoupons();
+  const { data: redemptionHistory = [], isLoading: redemptionsLoading, refetch: refetchRedemptions } = useMyRedemptions();
+  const { mutate: redeemCoupon, isPending: isRedeeming } = useRedeemCoupon();
+
+  const coinBalance = coinBalanceData?.current_balance || 50;
+  const coupons = couponsData && couponsData.length > 0 ? couponsData : FALLBACK_COUPONS;
+  const loading = (activeTab === 'browse' && couponsLoading) || (activeTab === 'history' && redemptionsLoading) || coinsLoading;
 
   const navigationButtons: NavigationButton[] = [
     {
@@ -95,67 +102,7 @@ const RewardsPage: React.FC = () => {
     }
   ];
 
-  // Fetch data on mount
-  useEffect(() => {
-    const fetchRewardsData = async () => {
-      try {
-        setLoading(true);
-        _setError(null);
-
-        // Fetch coin balance
-        try {
-          const coinData = await rewardsAPI.getCoinBalance();
-          setCoinBalance(coinData.current_balance);
-        } catch (err) {
-          console.log('📝 Could not fetch coin balance, using default');
-          setCoinBalance(50); // Fallback
-        }
-
-        // Fetch available coupons
-        try {
-          const apiCoupons = await rewardsAPI.getCoupons();
-          
-          if (apiCoupons && apiCoupons.length > 0) {
-            console.log('🎁 Raw coupons from API:', apiCoupons);
-            setCoupons(apiCoupons);
-            console.log('✅ Loaded coupons from API:', apiCoupons.length);
-          } else {
-            console.log('📝 No coupons from API, using fallback data');
-            console.log('🔄 Fallback coupons:', FALLBACK_COUPONS);
-            setCoupons(FALLBACK_COUPONS);
-          }
-        } catch (err) {
-          console.log('📝 Error fetching coupons, using fallback data:', err);
-          console.log('🔄 Error fallback coupons:', FALLBACK_COUPONS);
-          setCoupons(FALLBACK_COUPONS);
-        }
-
-        // Fetch redemption history
-        if (activeTab === 'history') {
-          try {
-            const redemptions = await rewardsAPI.getMyRedemptions();
-            console.log('📋 Raw redemptions from API:', redemptions);
-            setRedemptionHistory(redemptions);
-          } catch (err) {
-            console.log('📝 Could not fetch redemption history');
-            setRedemptionHistory([]);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching rewards data:', err);
-        _setError('Failed to load rewards');
-        // Use fallback data even on general error
-        setCoupons(FALLBACK_COUPONS);
-        setCoinBalance(250); // Give users some coins to try the fallback rewards
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRewardsData();
-  }, [activeTab]);
-
-  const handleRewardClick = async (coupon: Coupon) => {
+  const handleRewardClick = (coupon: Coupon) => {
     if (coupon.cost_in_coins > coinBalance) {
       alert(`Not enough coins! You need ${coupon.cost_in_coins} coins but only have ${coinBalance}.`);
       return;
@@ -167,23 +114,27 @@ const RewardsPage: React.FC = () => {
 
     if (!confirmRedeem) return;
 
-    try {
-      const redemption = await rewardsAPI.redeemCoupon(coupon.id);
-      
-      alert(`✅ Redeemed successfully!\nRedemption Code: ${redemption.redemption_code}`);
-      
-      // Update coin balance
-      setCoinBalance(prev => prev - coupon.cost_in_coins);
-      
-      // Refresh data
-      window.location.reload();
-    } catch (err) {
-      console.error('Redemption error:', err);
-      alert('Failed to redeem coupon. Please try again.');
-    }
+    redeemCoupon(
+      {
+        couponId: coupon.id,
+        costInCoins: coupon.cost_in_coins,
+      },
+      {
+        onSuccess: (redemption) => {
+          alert(`✅ Redeemed successfully!\nRedemption Code: ${redemption.redemption_code}`);
+          if (activeTab === 'history') {
+            refetchRedemptions();
+          }
+        },
+        onError: (err) => {
+          console.error('Redemption error:', err);
+          alert('Failed to redeem coupon. Please try again.');
+        },
+      }
+    );
   };
 
-  if (loading) {
+  if (loading || coinsLoading) {
     return (
       <div className="bg-gray-50 p-6 min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -195,7 +146,15 @@ const RewardsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-50 p-6 min-h-screen overflow-y-auto h-screen pt-20 -mt-8 pb-8">
+    <div className="bg-gray-50 p-6 min-h-screen overflow-y-auto h-screen pt-20 -mt-8 pb-8 relative">
+      {isRedeeming && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 shadow-xl">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 text-center">Redeeming coupon...</p>
+          </div>
+        </div>
+      )}
       <RewardsHeader coinBalance={coinBalance} />
       <RewardsNavigation buttons={navigationButtons} />
 
