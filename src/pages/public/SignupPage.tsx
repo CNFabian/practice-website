@@ -32,10 +32,16 @@ const SignupPage: React.FC = () => {
     e.preventDefault()
     setError('')
 
-    // REMOVED: Frontend validation checks
-    // - Password confirmation matching
-    // - Password length validation
-    // Let backend handle ALL validation
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long')
+      return
+    }
 
     setLoading(true)
 
@@ -105,6 +111,7 @@ const SignupPage: React.FC = () => {
                 placeholder="First Name"
                 value={formData.firstName}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                 style={{ backgroundColor: '#EFF2FF' }}
               />
@@ -115,23 +122,25 @@ const SignupPage: React.FC = () => {
                 placeholder="Last Name"
                 value={formData.lastName}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                 style={{ backgroundColor: '#EFF2FF' }}
               />
             </div>
 
             <input
-              type="text"
+              type="email"
               name="email"
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
+              required
               className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
             <input
-              type="text"
+              type="tel"
               name="phone"
               placeholder="Phone Number"
               value={formData.phone}
@@ -141,9 +150,9 @@ const SignupPage: React.FC = () => {
             />
 
             <input
-              type="text"
+              type="date"
               name="dateOfBirth"
-              placeholder="Date of Birth (YYYY-MM-DD)"
+              placeholder="Date of Birth"
               value={formData.dateOfBirth}
               onChange={handleChange}
               className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
@@ -156,6 +165,7 @@ const SignupPage: React.FC = () => {
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
+              required
               className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />
@@ -166,6 +176,7 @@ const SignupPage: React.FC = () => {
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
+              required
               className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               style={{ backgroundColor: '#EFF2FF' }}
             />

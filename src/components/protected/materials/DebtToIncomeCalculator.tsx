@@ -3,6 +3,7 @@ import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 import { calculatorInfoData } from './InfoData';
 import { ScalesIcon } from '../../../assets';
+import { validateCurrencyInput } from './validationHelpers';
 
 const DebtToIncomeCalculator: React.FC = () => {
   const [monthlyIncome, setMonthlyIncome] = useState<string>('');
@@ -96,9 +97,11 @@ const DebtToIncomeCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="1000000"
                   value={monthlyIncome}
-                  onChange={(e) => setMonthlyIncome(e.target.value)}
+                  onChange={(e) => setMonthlyIncome(validateCurrencyInput(e.target.value, 1000000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="5000"
                 />
@@ -114,9 +117,11 @@ const DebtToIncomeCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="100000"
                   value={housingPayment}
-                  onChange={(e) => setHousingPayment(e.target.value)}
+                  onChange={(e) => setHousingPayment(validateCurrencyInput(e.target.value, 100000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="1200"
                 />
@@ -136,9 +141,11 @@ const DebtToIncomeCalculator: React.FC = () => {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    max="50000"
                     value={creditCardPayments}
-                    onChange={(e) => setCreditCardPayments(e.target.value)}
+                    onChange={(e) => setCreditCardPayments(validateCurrencyInput(e.target.value, 50000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="150"
                   />
@@ -153,9 +160,11 @@ const DebtToIncomeCalculator: React.FC = () => {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    max="50000"
                     value={carPayments}
-                    onChange={(e) => setCarPayments(e.target.value)}
+                    onChange={(e) => setCarPayments(validateCurrencyInput(e.target.value, 50000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="300"
                   />
@@ -170,9 +179,11 @@ const DebtToIncomeCalculator: React.FC = () => {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    max="50000"
                     value={studentLoans}
-                    onChange={(e) => setStudentLoans(e.target.value)}
+                    onChange={(e) => setStudentLoans(validateCurrencyInput(e.target.value, 50000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="250"
                   />
@@ -187,9 +198,11 @@ const DebtToIncomeCalculator: React.FC = () => {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    max="50000"
                     value={otherDebts}
-                    onChange={(e) => setOtherDebts(e.target.value)}
+                    onChange={(e) => setOtherDebts(validateCurrencyInput(e.target.value, 50000))}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="100"
                   />

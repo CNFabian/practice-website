@@ -15,6 +15,16 @@ const MortgageCalculator: React.FC = () => {
   const [pmi, setPmi] = useState<number>(0);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
+  const validateCurrencyInput = (value: string, max: number): number => {
+    const numValue = parseFloat(value) || 0;
+    return Math.min(Math.max(numValue, 0), max);
+  };
+
+  const validatePercentageInput = (value: string, max: number): number => {
+    const numValue = parseFloat(value) || 0;
+    return Math.min(Math.max(numValue, 0), max);
+  };
+
   const calculateMortgage = () => {
     const principal = homePrice - downPayment;
     const monthlyRate = interestRate / 100 / 12;
@@ -89,9 +99,11 @@ const MortgageCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="50000000"
                   value={homePrice}
-                  onChange={(e) => setHomePrice(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setHomePrice(validateCurrencyInput(e.target.value, 50000000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="500000"
                 />
@@ -106,15 +118,17 @@ const MortgageCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max={homePrice}
                   value={downPayment}
-                  onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setDownPayment(validateCurrencyInput(e.target.value, homePrice))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="100000"
                 />
               </div>
               <RobotoFont className="text-xs text-gray-500 mt-1">
-                {homePrice > 0 ? ((downPayment / homePrice) * 100).toFixed(1) : '0'}% of home price
+                {((downPayment / homePrice) * 100).toFixed(1)}% of home price
               </RobotoFont>
             </div>
 
@@ -142,9 +156,12 @@ const MortgageCalculator: React.FC = () => {
               </RobotoFont>
               <div className="relative">
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="0.1"
                   value={interestRate}
-                  onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setInterestRate(validatePercentageInput(e.target.value, 30))}
                   className="w-full pr-8 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="6.5"
                 />
@@ -160,9 +177,11 @@ const MortgageCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="10000"
                   value={propertyTax}
-                  onChange={(e) => setPropertyTax(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setPropertyTax(validateCurrencyInput(e.target.value, 10000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="500"
                 />
@@ -177,9 +196,11 @@ const MortgageCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="2000"
                   value={homeInsurance}
-                  onChange={(e) => setHomeInsurance(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setHomeInsurance(validateCurrencyInput(e.target.value, 2000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="150"
                 />
@@ -194,9 +215,11 @@ const MortgageCalculator: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="text"
+                  type="number"
+                  min="0"
+                  max="1000"
                   value={pmi}
-                  onChange={(e) => setPmi(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setPmi(validateCurrencyInput(e.target.value, 1000))}
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="0"
                 />
