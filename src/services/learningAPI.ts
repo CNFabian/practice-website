@@ -259,6 +259,11 @@ export const checkOnboardingStatus = async (): Promise<boolean> => {
 // POST /api/learning/lessons/{lesson_id}/progress - Update lesson progress
 export const updateLessonProgress = async (lessonId: string, videoProgressSeconds: number): Promise<any> => {
   try {
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ Lesson Progress ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      return { success: false, message: 'Frontend ID used instead of UUID' };
+    }
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/progress`, {
       method: 'POST',
       body: JSON.stringify({
@@ -281,6 +286,11 @@ export const updateLessonProgress = async (lessonId: string, videoProgressSecond
 // POST /api/learning/lessons/{lesson_id}/complete - Mark lesson as completed
 export const completeLesson = async (lessonId: string): Promise<any> => {
   try {
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ Complete Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      return { success: false, message: 'Frontend ID used instead of UUID' };
+    }
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/complete`, {
       method: 'POST'
     });
@@ -299,6 +309,11 @@ export const completeLesson = async (lessonId: string): Promise<any> => {
 // GET /api/learning/lessons/{lesson_id}/quiz - Get quiz for lesson
 export const getLessonQuiz = async (lessonId: string): Promise<any> => {
   try {
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ Lesson Quiz ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      return null;
+    }
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/quiz`, {
       method: 'GET'
     });

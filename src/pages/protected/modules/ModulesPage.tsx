@@ -276,7 +276,6 @@ const ModulesPage: React.FC = () => {
     progressPercentage: number;
   } | null>(null);
 
-  // NEW: Callback to update lessons for a specific module
   const updateModuleLessons = (moduleId: number, lessons: Lesson[]) => {
     console.log(`📝 ModulesPage: Updating lessons for module ${moduleId}:`, lessons);
     setModuleLessons(prev => ({
@@ -366,21 +365,14 @@ const ModulesPage: React.FC = () => {
       );
     }
 
-    if (backendModulesData.length > 0) {
-      return (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-            <span className="text-green-700">Successfully loaded {backendModulesData.length} modules from backend</span>
-          </div>
-        </div>
-      );
-    }
+   if (backendModulesData.length > 0) {
+    console.log(`Successfully loaded ${backendModulesData.length} modules from backend`);
+    return null;
+}
 
     return null;
   };
 
-  // UPDATED: Integrate lessons from moduleLessons state
   const modulesToDisplay = useMemo(() => {
     console.log('🟡 STEP 4 - Computing modulesToDisplay...');
     
@@ -422,7 +414,6 @@ const ModulesPage: React.FC = () => {
     return module;
   }, [selectedModuleId, modulesToDisplay]);
 
-  // UPDATED: Better lesson lookup with fallback logic
   const currentLesson = useMemo(() => {
     console.log('🟡 STEP 5B - Computing currentLesson...');
     console.log('🟡 selectedLessonId:', selectedLessonId);
@@ -457,7 +448,6 @@ const ModulesPage: React.FC = () => {
       console.log('🟡 parseInt comparison result:', lesson ? 'FOUND' : 'NOT FOUND');
     }
 
-    // NEW: Fallback to first lesson if ID mismatch (common after backend lesson loading)
     if (!lesson && currentModule.lessons.length > 0) {
       console.log('🔄 Lesson ID mismatch - using first lesson as fallback');
       lesson = currentModule.lessons[0];

@@ -78,7 +78,7 @@ export const useLessonQuiz = (lessonId: string | number) => {
 
     gcTime: 10 * 60 * 1000,
 
-    enabled: !!lessonId,
+    enabled: !!lessonId && !/^\d+$/.test(String(lessonId)),
 
     retry: 1,
   });

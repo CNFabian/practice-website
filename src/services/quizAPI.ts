@@ -12,6 +12,12 @@ export const submitQuiz = async (quizData: {
   time_taken_seconds?: number;
 }): Promise<any> => {
   try {
+    // Add UUID validation
+    if (/^\d+$/.test(quizData.lesson_id)) {
+      console.error(`❌ Quiz submission failed: lesson_id "${quizData.lesson_id}" appears to be a frontend ID, not a UUID`);
+      throw new Error('Invalid lesson_id: expected UUID, got frontend ID');
+    }
+    
     console.log('Submitting quiz:', quizData);
     
     const response = await fetchWithAuth(`${API_BASE_URL}/api/quiz/submit`, {
@@ -37,6 +43,11 @@ export const submitQuiz = async (quizData: {
 // GET /api/quiz/attempts/{lesson_id} - Get user's quiz attempts for a specific lesson
 export const getQuizAttempts = async (lessonId: string): Promise<any> => {
   try {
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ Quiz Attempts ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      return [];
+    }
+    
     console.log(`Fetching quiz attempts for lesson ID: ${lessonId}`);
     
     const response = await fetchWithAuth(`${API_BASE_URL}/api/quiz/attempts/${lessonId}`, {

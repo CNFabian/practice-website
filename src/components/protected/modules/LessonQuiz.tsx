@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useModules } from '../../../hooks/useModules';
+import { useSubmitQuiz } from '../../../hooks/mutations/useSubmitQuiz';
 import { Lesson, Module } from '../../../types/modules';
 import { QuestionImage } from '../../../assets';
 import FeedbackContainer from './FeedbackContainer';
@@ -33,6 +34,17 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     sidebarCollapsed
   } = useModules();
 
+  // Add submission tracking
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<any>(null);
+  const [startTime] = useState(Date.now());
+
+  // Use backend UUIDs for the mutation - Fix: use isPending instead of isLoading
+  const { mutate: submitQuizMutation, isPending: isSubmitting } = useSubmitQuiz(
+    lesson.backendId || '', // Use backend UUID
+    module.backendId || ''  // Use backend UUID
+  );
+
   const handleAnswerSelect = (optionId: string) => {
     if (quizState.isTransitioning) return;
     selectAnswer(quizState.currentQuestion, optionId);
@@ -47,6 +59,51 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     if (quizState.isTransitioning || quizState.currentQuestion === 0) return;
     previousQuestion();
   };
+
+  // Add function to handle quiz completion and submission
+  const handleQuizCompletion = async () => {
+    if (!quizSubmitted && quizState.showResults && lesson.backendId) {
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Format answers for backend API
+      const formattedAnswers = quizState.questions.map((question, index) => {
+        const userAnswer = quizState.answers[index];
+        return {
+          [question.id.toString()]: userAnswer || ''
+        };
+      });
+
+      console.log('🚀 Submitting quiz with backend UUID:', lesson.backendId);
+      console.log('📝 Formatted answers:', formattedAnswers);
+
+      // Submit to backend
+      submitQuizMutation({
+        lesson_id: lesson.backendId, // Use backend UUID
+        answers: formattedAnswers,
+        time_taken_seconds: timeTaken
+      }, {
+        onSuccess: (data) => {
+          console.log('✅ Quiz submission successful:', data);
+          setSubmissionResult(data);
+          setQuizSubmitted(true);
+        },
+        onError: (error) => {
+          console.error('❌ Quiz submission failed:', error);
+          // Still mark as submitted to prevent retry loops
+          setQuizSubmitted(true);
+        }
+      });
+    } else if (!lesson.backendId) {
+      console.warn('⚠️ Cannot submit quiz: lesson.backendId is missing');
+    }
+  };
+
+  // Trigger submission when quiz shows results
+  useEffect(() => {
+    if (quizState.showResults && !quizSubmitted) {
+      handleQuizCompletion();
+    }
+  }, [quizState.showResults, quizSubmitted]);
 
   const handleNextLesson = () => {
     const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
@@ -79,11 +136,19 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   };
 
   const handleRetake = () => {
+    setQuizSubmitted(false);
+    setSubmissionResult(null);
     resetQuiz();
   };
 
   const handleClaimRewards = () => {
     console.log('Claiming rewards for score:', quizState.score);
+    if (submissionResult?.coins_earned) {
+      console.log('Coins earned:', submissionResult.coins_earned);
+    }
+    if (submissionResult?.badges_earned?.length > 0) {
+      console.log('Badges earned:', submissionResult.badges_earned);
+    }
     handleFinish();
   };
 
@@ -100,11 +165,11 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
 
- const correctAnswers = quizState.questions.reduce((acc, question, index) => {
-  const userAnswer = quizState.answers[index];
-  const correctOption = question.options.find(opt => opt.isCorrect);
-  return acc + (userAnswer === correctOption?.id ? 1 : 0);
-}, 0);
+  const correctAnswers = quizState.questions.reduce((acc, question, index) => {
+    const userAnswer = quizState.answers[index];
+    const correctOption = question.options.find(opt => opt.isCorrect);
+    return acc + (userAnswer === correctOption?.id ? 1 : 0);
+  }, 0);
 
   const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
   const nextLesson = currentLessonIndex < module.lessons.length - 1 
@@ -124,7 +189,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     return (
       <>
         {/* Question Content */}
-     <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+        <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
           {/* Illustration - Improved styling */}
           <div className="mb-6 relative">
             <img 
@@ -296,6 +361,15 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
             lessonTitle={lesson.title}
             nextLesson={nextLesson}
           />
+        )}
+
+        {/* Show submission status if needed */}
+        {isSubmitting && (
+          <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-10">
+            <div className="bg-white p-4 rounded-lg">
+              <p className="text-center">Submitting quiz...</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -55,10 +55,10 @@ const LessonView: React.FC<LessonViewProps> = ({
     goToLesson
   } = useModules();
 
-  const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.id || '');
-  const { data: quizData, refetch: refetchQuiz } = useLessonQuiz(lesson?.id || '');
-  const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.id || '', module?.id || '');
-  const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(lesson?.id || '', module?.id || '');
+  const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
+  const { data: quizData, refetch: refetchQuiz } = useLessonQuiz(lesson?.backendId || '');
+  const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.backendId || '', module?.backendId || '');
+  const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(lesson?.backendId || '', module?.backendId || '');
 
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 

@@ -1,15 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Import shared fetchWithAuth from learningAPI
 import { fetchWithAuth } from './learningAPI';
 
-// Simple API functions matching modules pattern
+// GET /api/dashboard/overview
 export const getDashboardOverview = async (): Promise<any> => {
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/overview`, {
       method: 'GET'
     });
     
+    // Check for the 500 error specifically to give better feedback
+    if (response.status === 500) {
+      console.error('SERVER ERROR: The backend crashed. Check UUID validation logic.');
+      throw new Error('Internal Server Error');
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -29,12 +35,9 @@ export const getDashboardModules = async (): Promise<any> => {
       method: 'GET'
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
-    console.log('Dashboard modules data received:', data);
     return data;
   } catch (error) {
     console.error('Error fetching dashboard modules:', error);
@@ -48,12 +51,9 @@ export const getCoinBalance = async (): Promise<any> => {
       method: 'GET'
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
-    console.log('Coin balance data received:', data);
     return data;
   } catch (error) {
     console.error('Error fetching coin balance:', error);
@@ -67,12 +67,9 @@ export const getDashboardBadges = async (): Promise<any> => {
       method: 'GET'
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
-    console.log('Dashboard badges data received:', data);
     return data;
   } catch (error) {
     console.error('Error fetching dashboard badges:', error);

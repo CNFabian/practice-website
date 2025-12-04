@@ -3,17 +3,20 @@ import { queryKeys } from '../../lib/queryKeys';
 import { submitQuiz } from '../../services/quizAPI';
 
 interface SubmitQuizParams {
-  lesson_id: string;
+  lesson_id: string; // This should be the backend UUID
   answers: Record<string, string>[];
   time_taken_seconds?: number;
 }
 
 interface SubmitQuizResponse {
-  score: number;
+  attempt_id: string;
+  score: string;
+  total_questions: number;
+  correct_answers: number;
   passed: boolean;
-  coins_earned?: number;
-  badges_earned?: any[];
-  results: any[];
+  coins_earned: number;
+  badges_earned: string[];
+  time_taken_seconds: number;
 }
 
 interface MutationContext {
@@ -21,8 +24,8 @@ interface MutationContext {
 }
 
 export const useSubmitQuiz = (
-  lessonId: string | number,
-  moduleId: string | number
+  lessonBackendId: string,
+  moduleBackendId: string
 ) => {
   const queryClient = useQueryClient();
 
@@ -31,15 +34,15 @@ export const useSubmitQuiz = (
 
     onMutate: async () => {
       await queryClient.cancelQueries({
-        queryKey: queryKeys.learning.lesson(lessonId),
+        queryKey: queryKeys.learning.lesson(lessonBackendId),
       });
 
       const previousLesson = queryClient.getQueryData(
-        queryKeys.learning.lesson(lessonId)
+        queryKeys.learning.lesson(lessonBackendId)
       );
 
       queryClient.setQueryData(
-        queryKeys.learning.lesson(lessonId),
+        queryKeys.learning.lesson(lessonBackendId),
         (old: any) => ({
           ...old,
           completed: true,
@@ -52,18 +55,23 @@ export const useSubmitQuiz = (
     onError: (_error, _variables, context) => {
       if (context?.previousLesson) {
         queryClient.setQueryData(
-          queryKeys.learning.lesson(lessonId),
+          queryKeys.learning.lesson(lessonBackendId),
           context.previousLesson
         );
       }
     },
 
+    onSuccess: (data) => {
+      console.log('✅ Quiz submitted successfully:', data);
+      // You can handle the response here if needed
+    },
+
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.lesson(lessonId),
+        queryKey: queryKeys.learning.lesson(lessonBackendId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.module(moduleId),
+        queryKey: queryKeys.learning.module(moduleBackendId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.learning.progress.all(),
@@ -78,7 +86,7 @@ export const useSubmitQuiz = (
         queryKey: queryKeys.badges.list(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.quiz.attempts(lessonId),
+        queryKey: queryKeys.quiz.attempts(lessonBackendId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.quiz.statistics(),
