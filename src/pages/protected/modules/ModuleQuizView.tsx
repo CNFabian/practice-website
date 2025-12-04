@@ -273,60 +273,64 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
           </div>
 
           {/* Answer Options */}
-          <div className="grid grid-cols-2 gap-3 w-full mb-4 flex-shrink-0">
-            {questionData?.options.map((option: any) => {
-              const isSelected = isCurrentQuestion && selectedAnswer === option.id;
-              const isOptionCorrect = option.isCorrect;
-              const showResult = cardShowFeedback && isSelected;
-              
-              let buttonStyle = {
-                backgroundColor: '#D7DEFF',
-                color: '#3F6CB9'
-              };
-              
-              if (showResult) {
-                if (isOptionCorrect) {
-                  buttonStyle = {
-                    backgroundColor: '#4BD48B',
-                    color: '#FFFFFF'
-                  };
-                } else {
-                  buttonStyle = {
-                    backgroundColor: '#F1746D',
-                    color: '#FFFFFF'
-                  };
-                }
-              } else if (isSelected) {
-                buttonStyle = {
-                  backgroundColor: '#ECFFF5',
+         {/* Answer Options with Feedback Overlay */}
+          <div className="relative w-full mb-4 flex-shrink-0">
+            <div className="grid grid-cols-2 gap-3 w-full">
+              {questionData?.options.map((option: any) => {
+                const isSelected = isCurrentQuestion && selectedAnswer === option.id;
+                const isOptionCorrect = option.isCorrect;
+                const showResult = cardShowFeedback && isSelected;
+                
+                let buttonStyle = {
+                  backgroundColor: '#D7DEFF',
                   color: '#3F6CB9'
                 };
-              }
-              
-              return (
-                <button
-                  key={option.id}
-                  onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
-                  disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning}
-                  style={buttonStyle}
-                  className={`p-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed shadow-sm ${
-                    isSelected ? 'ring-2 ring-white ring-opacity-50 scale-105' : ''
-                  } ${!isCurrentQuestion ? 'opacity-75' : ''}`}
-                >
-                  <RobotoFont weight={500} className="text-sm text-center leading-tight">
-                    {option.text}
-                  </RobotoFont>
-                </button>
-              );
-            })}
-          </div>
+                
+                if (showResult) {
+                  if (isOptionCorrect) {
+                    buttonStyle = {
+                      backgroundColor: '#4BD48B',
+                      color: '#FFFFFF'
+                    };
+                  } else {
+                    buttonStyle = {
+                      backgroundColor: '#F1746D',
+                      color: '#FFFFFF'
+                    };
+                  }
+                } else if (isSelected) {
+                  buttonStyle = {
+                    backgroundColor: '#ECFFF5',
+                    color: '#3F6CB9'
+                  };
+                }
+                
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => isCurrentQuestion && handleAnswerSelect(option.id)}
+                    disabled={!isCurrentQuestion || cardShowFeedback || quizState.isTransitioning}
+                    style={buttonStyle}
+                    className={`p-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 disabled:cursor-not-allowed shadow-sm ${
+                      isSelected ? 'ring-2 ring-white ring-opacity-50 scale-105' : ''
+                    } ${!isCurrentQuestion ? 'opacity-75' : ''}`}
+                  >
+                    <RobotoFont weight={500} className="text-sm text-center leading-tight">
+                      {option.text}
+                    </RobotoFont>
+                  </button>
+                );
+              })}
+            </div>
 
-          <FeedbackContainer
-            isVisible={cardShowFeedback && !!selectedAnswer}
-            isCorrect={isCorrect}
-            correctMessage={questionData?.explanation?.correct || ''}
-            incorrectMessage={(selectedAnswer && questionData?.explanation?.incorrect?.[selectedAnswer]?.why_wrong) || 'Please try again!'}
-          />
+            {/* Feedback Overlay */}
+            <FeedbackContainer
+              isVisible={cardShowFeedback && !!selectedAnswer}
+              isCorrect={isCorrect}
+              correctMessage={questionData?.explanation?.correct || ''}
+              incorrectMessage={(selectedAnswer && questionData?.explanation?.incorrect?.[selectedAnswer]?.why_wrong) || 'Please try again!'}
+            />
+          </div>
         </div>
       </>
     );

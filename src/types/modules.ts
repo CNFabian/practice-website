@@ -1,5 +1,6 @@
 export interface Lesson {
   id: number;
+  backendId?: string;
   image: string;
   title: string;
   duration: string;
@@ -12,6 +13,7 @@ export interface Lesson {
 
 export interface Module {
   id: number;
+  backendId?: string;
   image: string;
   title: string;
   description: string;

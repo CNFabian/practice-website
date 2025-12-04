@@ -4,6 +4,7 @@ import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, RobotoFont } from '../../../assets';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
+import { getModuleLessons } from '../../../services/learningAPI';
 
 interface ModulesViewProps {
   modulesData: Module[];
@@ -27,9 +28,26 @@ interface BackendLessonData {
 }
 
 // Helper function to convert backend lesson to frontend format
-const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesson => {
+const convertBackendLessonToFrontend = (backendLesson: BackendLessonData, index: number): Lesson => {
+  // Generate a unique ID using a hash of the UUID or use index as fallback
+  const generateUniqueId = (uuid: string, fallbackIndex: number): number => {
+    if (!uuid) return fallbackIndex + 1000; // Ensure no collision with existing IDs
+    
+    // Simple hash function to convert UUID to number
+    let hash = 0;
+    for (let i = 0; i < uuid.length; i++) {
+      const char = uuid.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Ensure positive number and add offset to avoid collisions
+    return Math.abs(hash) + 10000;
+  };
+
   return {
-    id: parseInt(backendLesson.id.slice(-1)) || 1,
+    id: generateUniqueId(backendLesson.id, index), // ✅ Generates unique IDs
+    backendId: backendLesson.id, // Store the original backend ID
     image: backendLesson.image_url || '/default-lesson-image.jpg',
     title: backendLesson.title,
     duration: `${backendLesson.estimated_duration_minutes} min`,
@@ -40,6 +58,7 @@ const convertBackendLessonToFrontend = (backendLesson: BackendLessonData): Lesso
   };
 };
 
+
 const ModulesView: React.FC<ModulesViewProps> = ({
   modulesData,
   onLessonSelect,
@@ -49,7 +68,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const { data: onboardingStatus } = useOnboardingStatus();
 
   const [isQuizBattleModalOpen, setIsQuizBattleModalOpen] = useState(false);
-  const [backendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
+  const [backendLessons, setBackendLessons] = useState<{ [moduleId: number]: BackendLessonData[] }>({});
   const [loadingLessons, setLoadingLessons] = useState<{ [moduleId: number]: boolean }>({});
 
   const layoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,31 +92,49 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
   useEffect(() => {
-  const fetchModuleLessons = async () => {
-    if (!selectedModuleId || backendLessons[selectedModuleId]) return;
+    const fetchModuleLessons = async () => {
+      if (!selectedModuleId || backendLessons[selectedModuleId]) return;
 
-    if (!onboardingStatus?.completed) {
-      console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
-      return;
+      if (!onboardingStatus?.completed) {
+        console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
+        return;
+      }
+
+      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
+
+      try {
+        // Find the selected module data to get the original backend UUID
+        const selectedModule = modulesData.find(m => m.id === selectedModuleId);
+        const backendModuleId = selectedModule?.backendId;
+        
+        if (backendModuleId) {
+          console.log(`✅ Fetching lessons from backend for module UUID: ${backendModuleId}`);
+          
+          // Call the actual backend API
+          const lessonsData = await getModuleLessons(backendModuleId);
+          
+          if (lessonsData && Array.isArray(lessonsData)) {
+            console.log(`✅ Successfully fetched ${lessonsData.length} lessons for module ${selectedModuleId}`);
+            
+            // Store the backend lessons data
+          setBackendLessons((prev: { [moduleId: number]: BackendLessonData[] }) => ({
+              ...prev,
+              [selectedModuleId]: lessonsData
+            }));
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
+        console.log('Falling back to frontend lesson data');
+      } finally {
+        setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
+      }
+    };
+
+    if (selectedModuleId) {
+      fetchModuleLessons();
     }
-
-    setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
-
-    try {
-      console.log(`✅ Onboarding completed, but real module UUIDs not available yet - using frontend data for module ${selectedModuleId}`);
-
-    } catch (error) {
-      console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
-      console.log('Falling back to frontend lesson data');
-    } finally {
-      setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
-    }
-  };
-
-  if (selectedModuleId) {
-    fetchModuleLessons();
-  }
-}, [selectedModuleId, backendLessons, onboardingStatus]);
+}, [selectedModuleId, backendLessons, onboardingStatus, modulesData]);
 
   const getModuleQuizStatus = (moduleId: number) => {
     const module = modulesData.find(m => m.id === moduleId);
@@ -314,9 +351,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const getLessonsToDisplay = (module: Module): Lesson[] => {
     const backend = backendLessons[module.id];
     if (!backend || backend.length === 0) return module.lessons;
-    
-    // Transform backend lessons to match Lesson interface
-    return backend.map(convertBackendLessonToFrontend);
+    return backend.map((lesson, index) => convertBackendLessonToFrontend(lesson, index));
   };
 
   return (
@@ -586,7 +621,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
                     {getLessonsToDisplay(selectedModuleData).map((lesson, index) => {
                       const isCompleted = lesson.completed || false;
 
-                      // UPDATED: Calculate coins dynamically based on quiz questions
                       const getMaxCoinsForLesson = () => {
                         // Use standardized quiz length since we can't access quiz questions until they're loaded
                         const standardQuizQuestions = 5; // Default quiz length - matches current system

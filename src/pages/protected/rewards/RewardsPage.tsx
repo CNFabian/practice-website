@@ -75,8 +75,6 @@ const FALLBACK_COUPONS: Coupon[] = [
   }
 ];
 
-// Mock fallback data
-
 const RewardsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('browse');
 

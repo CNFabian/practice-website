@@ -237,6 +237,7 @@ const sampleModulesData: Module[] = [
 const convertBackendModuleToFrontend = (backendModule: any): Module => {
   return {
     id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000),
+    backendId: backendModule.id,
     image: backendModule.thumbnail_url || SignupImage,
     title: backendModule.title,
     description: backendModule.description,

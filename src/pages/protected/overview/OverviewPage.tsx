@@ -154,7 +154,7 @@ const OverviewPage: React.FC = () => {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
   useCoinBalance();
-  const { data: onboardingStatus } = useOnboardingStatus();
+  const { data: onboardingStatus, isLoading: isOnboardingLoading } = useOnboardingStatus();
   const { data: overviewData, isLoading: isOverviewLoading, error: overviewError } = useDashboardOverview();
   const { data: modulesData, isLoading: isModulesLoading, error: modulesError } = useDashboardModules();
 
@@ -219,17 +219,28 @@ const OverviewPage: React.FC = () => {
   };
 
   const handleCloseOnboarding = () => {
+    console.log('OverviewPage: Closing onboarding modal');
     dispatch(closeOnboardingModal());
   };
 
   useEffect(() => {
-    if (!showOnboarding && onboardingStatus) {
-      if (!onboardingStatus.completed) {
-        console.log('OverviewPage: Onboarding not completed, showing modal');
-        dispatch(openOnboardingModal());
-      }
+    console.log('OverviewPage: useEffect triggered');
+    console.log('OverviewPage: showOnboarding:', showOnboarding);
+    console.log('OverviewPage: onboardingStatus:', onboardingStatus);
+    console.log('OverviewPage: isOnboardingLoading:', isOnboardingLoading);
+
+    // Wait for onboarding status to load
+    if (isOnboardingLoading) {
+      console.log('OverviewPage: Still loading onboarding status, skipping check');
+      return;
     }
-  }, [dispatch, showOnboarding, onboardingStatus]);
+
+    // Check if we need to show onboarding
+    if (onboardingStatus && !onboardingStatus.completed && !showOnboarding) {
+      console.log('OverviewPage: Onboarding not completed, opening modal');
+      dispatch(openOnboardingModal());
+    }
+  }, [dispatch, showOnboarding, onboardingStatus, isOnboardingLoading]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -237,49 +248,67 @@ const OverviewPage: React.FC = () => {
     }
   }, [isLoading]);
 
+  console.log('OverviewPage: Rendering, showOnboarding:', showOnboarding);
+
+  // Check if error is ONBOARDING_REQUIRED (expected state, not a real error)
+  const isOnboardingRequiredError = error instanceof Error && error.message === 'ONBOARDING_REQUIRED';
+
+  // Render onboarding modal FIRST, before any error/loading checks
+  const onboardingModal = showOnboarding ? (
+    <>
+      {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
+      <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
+    </>
+  ) : null;
+
   // Loading state
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <RobotoFont weight={500} className="text-gray-600 text-lg mb-2">
-            Loading your dashboard...
-          </RobotoFont>
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <>
+        {onboardingModal}
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <RobotoFont weight={500} className="text-gray-600 text-lg mb-2">
+              Loading your dashboard...
+            </RobotoFont>
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  if (error) {
+  // Show error ONLY if it's not the expected onboarding error
+  if (error && !isOnboardingRequiredError) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center max-w-md p-6">
-          <RobotoFont weight={500} className="text-red-600 text-lg mb-2">
-            Oops! Something went wrong
-          </RobotoFont>
-          <RobotoFont weight={400} className="text-gray-600 mb-4">
-            {error instanceof Error ? error.message : 'Failed to load dashboard data'}
-          </RobotoFont>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
-          >
-            <RobotoFont weight={500} className="text-sm">
-              Retry
+      <>
+        {onboardingModal}
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center max-w-md p-6">
+            <RobotoFont weight={500} className="text-red-600 text-lg mb-2">
+              Oops! Something went wrong
             </RobotoFont>
-          </button>
+            <RobotoFont weight={400} className="text-gray-600 mb-4">
+              {error instanceof Error ? error.message : 'Failed to load dashboard data'}
+            </RobotoFont>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
+            >
+              <RobotoFont weight={500} className="text-sm">
+                Retry
+              </RobotoFont>
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <>
-      {/* Onboarding Modal */}
-      {showOnboarding && (
-        <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
-      )}
+      {/* Onboarding Modal - Render at root level for proper z-index */}
+      {onboardingModal}
 
       {/* Main Dashboard */}
       <div className="h-full overflow-y-auto overflow-x-hidden">
