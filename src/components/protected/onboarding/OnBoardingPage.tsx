@@ -31,6 +31,8 @@ interface OnBoardingPageProps {
 }
 
 export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps) {
+  console.log('OnBoardingPage: Component rendering, isOpen:', isOpen);
+  
   const nav = useNavigate();
   const { data: onboardingStatus, refetch: refetchOnboardingStatus } = useOnboardingStatus();
   const { mutate: completeOnboardingMutation, isPending: isCompletingOnboarding } = useCompleteOnboardingStep();
@@ -75,11 +77,19 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
   }, [onboardingOptions]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    console.log('OnBoarding: useEffect triggered, isOpen:', isOpen);
+    
+    if (!isOpen) {
+      console.log('OnBoarding: Modal is not open, skipping initialization');
+      return;
+    }
+
+    console.log('OnBoarding: Modal opened, starting initialization...');
 
     const initializeOnboarding = async () => {
       try {
         console.log('OnBoarding: Checking onboarding status...');
+        setIsInitializing(true);
 
         const options = await getOnboardingOptions();
         setOnboardingOptions(options);
@@ -88,7 +98,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
         const status = onboardingStatus;
         console.log('OnBoarding: Status received:', status);
 
-        const isCompleted = status?.completed;
+        const isCompleted = status?.completed === true;
         console.log('OnBoarding: Parsed - isCompleted:', isCompleted);
 
         if (isCompleted) {
@@ -147,7 +157,7 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     };
 
     initializeOnboarding();
-  }, [isOpen, nav, onClose, onboardingStatus]);
+  }, [isOpen]);
 
   // Handle answer selection
   const handleAnswerSelect = async (value: string | number) => {
@@ -396,9 +406,13 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('OnBoardingPage: isOpen is false, returning null');
+    return null;
+  }
 
   if (isInitializing) {
+    console.log('OnBoardingPage: Still initializing, showing spinner');
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-2xl p-8">
@@ -409,7 +423,12 @@ export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps)
   }
 
   const currentStepData = STEPS[currentStep];
-  if (!currentStepData) return null;
+  if (!currentStepData) {
+    console.log('OnBoardingPage: No current step data, returning null');
+    return null;
+  }
+
+  console.log('OnBoardingPage: Rendering modal form');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
