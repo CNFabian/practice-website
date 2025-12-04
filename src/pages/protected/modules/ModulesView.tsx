@@ -366,9 +366,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
   };
 
-  // UPDATED: Use module data from props (which now includes integrated lessons)
   const getLessonsToDisplay = (module: Module): Lesson[] => {
-    // The module data from props now includes the updated lessons from the parent
     return module.lessons;
   };
 
@@ -641,7 +639,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
 
                       const getMaxCoinsForLesson = () => {
                         // Use standardized quiz length since we can't access quiz questions until they're loaded
-                        const standardQuizQuestions = 5; // Default quiz length - matches current system
+                        const standardQuizQuestions = 5; // Default quiz length
                         return standardQuizQuestions * 5; // 5 coins per question = 25 total
                       };
 

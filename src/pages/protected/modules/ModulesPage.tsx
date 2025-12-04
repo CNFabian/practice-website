@@ -277,7 +277,6 @@ const ModulesPage: React.FC = () => {
   } | null>(null);
 
   const updateModuleLessons = (moduleId: number, lessons: Lesson[]) => {
-    console.log(`📝 ModulesPage: Updating lessons for module ${moduleId}:`, lessons);
     setModuleLessons(prev => ({
       ...prev,
       [moduleId]: lessons
@@ -373,9 +372,7 @@ const ModulesPage: React.FC = () => {
     return null;
   };
 
-  const modulesToDisplay = useMemo(() => {
-    console.log('🟡 STEP 4 - Computing modulesToDisplay...');
-    
+  const modulesToDisplay = useMemo(() => {    
     const baseModules = backendModulesData.length > 0 
       ? (() => {
           console.log('Using backend modules data');
@@ -395,76 +392,56 @@ const ModulesPage: React.FC = () => {
       };
     });
 
-    console.log('🟡 Final modules with lessons:', modulesWithLessons);
     return modulesWithLessons;
   }, [backendModulesData, moduleLessons]);
 
   const currentModule = useMemo(() => {
-    console.log('🟡 STEP 5A - Computing currentModule...');
-    console.log('🟡 selectedModuleId from Redux:', selectedModuleId);
-    console.log('🟡 modulesToDisplay array:', modulesToDisplay);
-    
+   
     if (!selectedModuleId) {
       console.log('❌ No selectedModuleId');
       return null;
     }
     
     const module = modulesToDisplay.find(m => m.id === selectedModuleId) || null;
-    console.log('🟡 Found currentModule:', module);
     return module;
   }, [selectedModuleId, modulesToDisplay]);
 
   const currentLesson = useMemo(() => {
-    console.log('🟡 STEP 5B - Computing currentLesson...');
-    console.log('🟡 selectedLessonId:', selectedLessonId);
-    console.log('🟡 selectedModuleId:', selectedModuleId);
-    console.log('🟡 currentModule:', currentModule);
     
     if (!selectedLessonId || !currentModule) {
-      console.log('❌ Missing selectedLessonId or currentModule');
       return null;
     }
     
     // Check if lessons are loaded yet
     if (!currentModule.lessons || currentModule.lessons.length === 0) {
-      console.log('⏳ Module lessons not loaded yet, will retry when lessons are available...');
       return null;
     }
-    
-    console.log('🟡 Searching for lesson ID:', selectedLessonId, 'in', currentModule.lessons.length, 'lessons:');
-    console.log('🟡 Available lesson IDs:', currentModule.lessons.map(l => ({ id: l.id, type: typeof l.id, title: l.title })));
+  
     
     // Try multiple lookup strategies for type safety
     let lesson = currentModule.lessons.find(l => l.id === selectedLessonId);
-    console.log('🟡 Direct ID match result:', lesson ? 'FOUND' : 'NOT FOUND');
     
     if (!lesson) {
       lesson = currentModule.lessons.find(l => l.id.toString() === selectedLessonId.toString());
-      console.log('🟡 String comparison result:', lesson ? 'FOUND' : 'NOT FOUND');
     }
     
     if (!lesson && typeof selectedLessonId === 'string') {
       lesson = currentModule.lessons.find(l => l.id === parseInt(selectedLessonId));
-      console.log('🟡 parseInt comparison result:', lesson ? 'FOUND' : 'NOT FOUND');
     }
 
     if (!lesson && currentModule.lessons.length > 0) {
-      console.log('🔄 Lesson ID mismatch - using first lesson as fallback');
       lesson = currentModule.lessons[0];
     }
     
-    console.log('🟡 Final lesson lookup result:', lesson ? lesson.title : 'null');
     return lesson || null;
   }, [selectedLessonId, currentModule]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
-    console.log('🟢 STEP 2 - ModulesPage handleLessonStart:', { lesson, module });
     
     setIsTransitioning(true);
     goToLesson(lesson.id, module.id);
     
     requestAnimationFrame(() => {
-      console.log('🟢 Animation frame executed');
     });
   };
 
@@ -496,14 +473,6 @@ const ModulesPage: React.FC = () => {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-50">
-      {(() => {
-        console.log('🎯 STEP 6 - ModulesPage Render:');
-        console.log('🎯 currentView:', currentView);
-        console.log('🎯 currentModule:', currentModule);
-        console.log('🎯 currentLesson:', currentLesson);
-        return null; // This renders nothing but allows the console.log to run
-      })()}
-      
       {currentView === 'modules' && (
         <div className="absolute top-0 left-0 w-full z-10 p-4">
           {renderBackendStatus()}

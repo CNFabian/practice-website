@@ -35,13 +35,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   onBack, 
   isTransitioning = false 
 }) => {
-  console.log('🔴 STEP 5 - LessonView rendered:', { 
-    hasLesson: !!lesson, 
-    hasModule: !!module, 
-    isTransitioning,
-    lesson: lesson,
-    module: module 
-  });
 
   if (!lesson || !module) {
     console.error('❌ LessonView: Missing required props!');
