@@ -11,6 +11,7 @@ interface ModulesViewProps {
   onLessonSelect: (lesson: Lesson, module: Module) => void;
   onModuleQuizSelect?: (module: Module) => void;
   isTransitioning?: boolean;
+  onLessonsUpdate?: (moduleId: number, lessons: Lesson[]) => void; // NEW PROP
 }
 
 // Backend lesson data interface
@@ -58,12 +59,12 @@ const convertBackendLessonToFrontend = (backendLesson: BackendLessonData, index:
   };
 };
 
-
 const ModulesView: React.FC<ModulesViewProps> = ({
   modulesData,
   onLessonSelect,
   onModuleQuizSelect,
-  isTransitioning = false
+  isTransitioning = false,
+  onLessonsUpdate // NEW PROP
 }) => {
   const { data: onboardingStatus } = useOnboardingStatus();
 
@@ -91,6 +92,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
+  // UPDATED: Enhanced lesson fetching with callback integration
   useEffect(() => {
     const fetchModuleLessons = async () => {
       if (!selectedModuleId || backendLessons[selectedModuleId]) return;
@@ -116,11 +118,22 @@ const ModulesView: React.FC<ModulesViewProps> = ({
           if (lessonsData && Array.isArray(lessonsData)) {
             console.log(`✅ Successfully fetched ${lessonsData.length} lessons for module ${selectedModuleId}`);
             
-            // Store the backend lessons data
-          setBackendLessons((prev: { [moduleId: number]: BackendLessonData[] }) => ({
+            // Convert backend lessons to frontend format
+            const convertedLessons = lessonsData.map((backendLesson, index) => 
+              convertBackendLessonToFrontend(backendLesson, index)
+            );
+            
+            // Store the backend lessons data locally
+            setBackendLessons((prev: { [moduleId: number]: BackendLessonData[] }) => ({
               ...prev,
               [selectedModuleId]: lessonsData
             }));
+
+            // NEW: Call the parent callback to update lessons in ModulesPage
+            if (onLessonsUpdate) {
+              console.log(`📤 Calling onLessonsUpdate for module ${selectedModuleId} with ${convertedLessons.length} lessons`);
+              onLessonsUpdate(selectedModuleId, convertedLessons);
+            }
           }
         }
       } catch (error) {
@@ -134,7 +147,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     if (selectedModuleId) {
       fetchModuleLessons();
     }
-}, [selectedModuleId, backendLessons, onboardingStatus, modulesData]);
+  }, [selectedModuleId, backendLessons, onboardingStatus, modulesData, onLessonsUpdate]);
 
   const getModuleQuizStatus = (moduleId: number) => {
     const module = modulesData.find(m => m.id === moduleId);
@@ -165,7 +178,6 @@ const ModulesView: React.FC<ModulesViewProps> = ({
       overallProgress: total > 0 ? Math.round((completed / total) * 100) : 0,
     };
   };
-  
 
   const getProgressBarColor = (status: string) => {
     switch (status) {
@@ -249,7 +261,14 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   };
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
-    if (isTransitioning) return;
+    console.log('🔵 STEP 1 - ModulesView handleLessonStart:', { lesson, module, isTransitioning });
+    
+    if (isTransitioning) {
+      console.log('❌ BLOCKED - isTransitioning is true');
+      return;
+    }
+    
+    console.log('✅ Calling onLessonSelect...');
     onLessonSelect(lesson, module);
   };
 
@@ -347,11 +366,10 @@ const ModulesView: React.FC<ModulesViewProps> = ({
     msOverflowStyle: selectedModuleId && !sidebarCollapsed ? 'none' : 'auto',
   };
 
-  // Get lessons to display - use backend data if available, otherwise use prop data
+  // UPDATED: Use module data from props (which now includes integrated lessons)
   const getLessonsToDisplay = (module: Module): Lesson[] => {
-    const backend = backendLessons[module.id];
-    if (!backend || backend.length === 0) return module.lessons;
-    return backend.map((lesson, index) => convertBackendLessonToFrontend(lesson, index));
+    // The module data from props now includes the updated lessons from the parent
+    return module.lessons;
   };
 
   return (

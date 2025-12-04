@@ -32,10 +32,18 @@ export const useModules = () => {
     dispatch(setCurrentView('modules'))
   }, [dispatch])
 
-  const goToLesson = useCallback((lessonId: number, moduleId: number) => {
-    dispatch(setSelectedLesson(lessonId))
-    dispatch(setSelectedModule(moduleId))
-    dispatch(setCurrentView('lesson'))
+  const goToLesson = useCallback((lessonId: string | number, moduleId: number) => {
+    console.log('🟣 STEP 4 - useModules goToLesson:', { lessonId, moduleId });
+    
+    // Convert lessonId to number if it's a string (for Redux state)
+    const lessonIdNumber = typeof lessonId === 'string' ? parseInt(lessonId, 10) : lessonId;
+    
+    // Use Redux dispatch with number type as expected
+    dispatch(setSelectedLesson(lessonIdNumber));
+    dispatch(setSelectedModule(moduleId));
+    dispatch(setCurrentView('lesson'));
+    
+    console.log('🟣 State updated to lesson view');
   }, [dispatch])
 
   const goToQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {

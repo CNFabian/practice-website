@@ -267,11 +267,23 @@ const ModulesPage: React.FC = () => {
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
 
+  // NEW: Store lessons for modules
+  const [moduleLessons, setModuleLessons] = useState<{ [moduleId: number]: Lesson[] }>({});
+
   const [_onboardingStatus, setOnboardingStatus] = useState<{
     isCompleted: boolean;
     currentStep: number;
     progressPercentage: number;
   } | null>(null);
+
+  // NEW: Callback to update lessons for a specific module
+  const updateModuleLessons = (moduleId: number, lessons: Lesson[]) => {
+    console.log(`📝 ModulesPage: Updating lessons for module ${moduleId}:`, lessons);
+    setModuleLessons(prev => ({
+      ...prev,
+      [moduleId]: lessons
+    }));
+  };
 
   useEffect(() => {
     if (!onboardingStatusData) {
@@ -367,31 +379,102 @@ const ModulesPage: React.FC = () => {
 
     return null;
   };
+
+  // UPDATED: Integrate lessons from moduleLessons state
   const modulesToDisplay = useMemo(() => {
-    if (backendModulesData.length > 0) {
-      console.log('Using backend modules data');
-      return backendModulesData;
-    } else {
-      console.log('Using frontend sample data');
-      return sampleModulesData;
-    }
-  }, [backendModulesData]);
+    console.log('🟡 STEP 4 - Computing modulesToDisplay...');
+    
+    const baseModules = backendModulesData.length > 0 
+      ? (() => {
+          console.log('Using backend modules data');
+          return backendModulesData;
+        })()
+      : (() => {
+          console.log('Using frontend sample data');
+          return sampleModulesData;
+        })();
+
+    // Integrate lessons from moduleLessons state
+    const modulesWithLessons = baseModules.map(module => {
+      const lessons = moduleLessons[module.id] || module.lessons;
+      return {
+        ...module,
+        lessons
+      };
+    });
+
+    console.log('🟡 Final modules with lessons:', modulesWithLessons);
+    return modulesWithLessons;
+  }, [backendModulesData, moduleLessons]);
 
   const currentModule = useMemo(() => {
-    if (!selectedModuleId) return null;
-    return modulesToDisplay.find(m => m.id === selectedModuleId) || null;
+    console.log('🟡 STEP 5A - Computing currentModule...');
+    console.log('🟡 selectedModuleId from Redux:', selectedModuleId);
+    console.log('🟡 modulesToDisplay array:', modulesToDisplay);
+    
+    if (!selectedModuleId) {
+      console.log('❌ No selectedModuleId');
+      return null;
+    }
+    
+    const module = modulesToDisplay.find(m => m.id === selectedModuleId) || null;
+    console.log('🟡 Found currentModule:', module);
+    return module;
   }, [selectedModuleId, modulesToDisplay]);
 
+  // UPDATED: Better lesson lookup with fallback logic
   const currentLesson = useMemo(() => {
-    if (!selectedLessonId || !currentModule) return null;
-    return currentModule.lessons.find(l => l.id === selectedLessonId) || null;
+    console.log('🟡 STEP 5B - Computing currentLesson...');
+    console.log('🟡 selectedLessonId:', selectedLessonId);
+    console.log('🟡 selectedModuleId:', selectedModuleId);
+    console.log('🟡 currentModule:', currentModule);
+    
+    if (!selectedLessonId || !currentModule) {
+      console.log('❌ Missing selectedLessonId or currentModule');
+      return null;
+    }
+    
+    // Check if lessons are loaded yet
+    if (!currentModule.lessons || currentModule.lessons.length === 0) {
+      console.log('⏳ Module lessons not loaded yet, will retry when lessons are available...');
+      return null;
+    }
+    
+    console.log('🟡 Searching for lesson ID:', selectedLessonId, 'in', currentModule.lessons.length, 'lessons:');
+    console.log('🟡 Available lesson IDs:', currentModule.lessons.map(l => ({ id: l.id, type: typeof l.id, title: l.title })));
+    
+    // Try multiple lookup strategies for type safety
+    let lesson = currentModule.lessons.find(l => l.id === selectedLessonId);
+    console.log('🟡 Direct ID match result:', lesson ? 'FOUND' : 'NOT FOUND');
+    
+    if (!lesson) {
+      lesson = currentModule.lessons.find(l => l.id.toString() === selectedLessonId.toString());
+      console.log('🟡 String comparison result:', lesson ? 'FOUND' : 'NOT FOUND');
+    }
+    
+    if (!lesson && typeof selectedLessonId === 'string') {
+      lesson = currentModule.lessons.find(l => l.id === parseInt(selectedLessonId));
+      console.log('🟡 parseInt comparison result:', lesson ? 'FOUND' : 'NOT FOUND');
+    }
+
+    // NEW: Fallback to first lesson if ID mismatch (common after backend lesson loading)
+    if (!lesson && currentModule.lessons.length > 0) {
+      console.log('🔄 Lesson ID mismatch - using first lesson as fallback');
+      lesson = currentModule.lessons[0];
+    }
+    
+    console.log('🟡 Final lesson lookup result:', lesson ? lesson.title : 'null');
+    return lesson || null;
   }, [selectedLessonId, currentModule]);
 
   const handleLessonStart = (lesson: Lesson, module: Module) => {
+    console.log('🟢 STEP 2 - ModulesPage handleLessonStart:', { lesson, module });
+    
     setIsTransitioning(true);
     goToLesson(lesson.id, module.id);
     
     requestAnimationFrame(() => {
+      console.log('🟢 Animation frame executed');
     });
   };
 
@@ -423,6 +506,14 @@ const ModulesPage: React.FC = () => {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-50">
+      {(() => {
+        console.log('🎯 STEP 6 - ModulesPage Render:');
+        console.log('🎯 currentView:', currentView);
+        console.log('🎯 currentModule:', currentModule);
+        console.log('🎯 currentLesson:', currentLesson);
+        return null; // This renders nothing but allows the console.log to run
+      })()}
+      
       {currentView === 'modules' && (
         <div className="absolute top-0 left-0 w-full z-10 p-4">
           {renderBackendStatus()}
@@ -445,28 +536,33 @@ const ModulesPage: React.FC = () => {
             onLessonSelect={handleLessonStart}
             onModuleQuizSelect={handleModuleQuizStart}
             isTransitioning={isTransitioning}
+            onLessonsUpdate={updateModuleLessons}
           />
         </div>
       </div>
 
-      <div
-        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'lesson' || currentView === 'quiz'
-            ? 'translate-x-0 opacity-100'
-            : 'translate-x-full opacity-0'
-        }`}
-        style={{ 
-          pointerEvents: currentView === 'lesson' || currentView === 'quiz' ? 'auto' : 'none'
-        }}
-      >
-        {currentLesson && currentModule && (
+      <div className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
+        currentView === 'lesson' || currentView === 'quiz'
+          ? 'translate-x-0 opacity-100'
+          : 'translate-x-full opacity-0'
+      }`}>
+        {currentLesson && currentModule ? (
           <LessonView
             lesson={currentLesson}
             module={currentModule}
             onBack={handleBackToModule}
             isTransitioning={isTransitioning}
           />
-        )}
+        ) : currentView === 'lesson' ? (
+          <div className="p-8 text-center bg-red-100">
+            <p className="text-red-600 text-lg font-bold">DEBUG: Missing Data</p>
+            <p>currentView: {currentView}</p>
+            <p>currentLesson: {currentLesson ? 'EXISTS' : 'NULL'}</p>
+            <p>currentModule: {currentModule ? 'EXISTS' : 'NULL'}</p>
+            <p>selectedLessonId: {selectedLessonId}</p>
+            <p>selectedModuleId: {selectedModuleId}</p>
+          </div>
+        ) : null}
       </div>
 
       <div
