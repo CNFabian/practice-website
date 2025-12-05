@@ -1,6 +1,4 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Import the shared fetchWithAuth from learningAPI
 import { fetchWithAuth } from './learningAPI';
 
 // ==================== QUIZ SUBMISSION ====================
@@ -12,7 +10,6 @@ export const submitQuiz = async (quizData: {
   time_taken_seconds?: number;
 }): Promise<any> => {
   try {
-    // Add UUID validation
     if (/^\d+$/.test(quizData.lesson_id)) {
       console.error(`❌ Quiz submission failed: lesson_id "${quizData.lesson_id}" appears to be a frontend ID, not a UUID`);
       throw new Error('Invalid lesson_id: expected UUID, got frontend ID');

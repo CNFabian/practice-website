@@ -32,29 +32,20 @@ const Header: React.FC = () => {
   const unreadCount = unreadCountData?.unread_count || 0;
 
   const handleLogout = async () => {
-    try {
-      console.log('Header: Starting logout process...');
-      
+    try {      
       // Call the backend logout endpoint
       await logoutUser();
-      console.log('Header: Backend logout successful');
       
-      // Clear Redux state
       dispatch(logout());
-      console.log('Header: Redux state cleared');
       
-      // Navigate to splash page
-      navigate('/splash');
-      console.log('Header: Navigated to splash page');
+      navigate('/login');
       
     } catch (error) {
       console.error('Header: Logout failed:', error);
       
-      // Even if backend logout fails, clear local state
       dispatch(logout());
-      navigate('/splash');
+      navigate('/login');
       
-      // Optionally show a warning that logout may not have completed on server
       console.warn('Header: Local logout completed, but server logout may have failed');
     }
   };
@@ -70,7 +61,6 @@ const Header: React.FC = () => {
       }
       localStorage.removeItem('onboarding_current_step');
       
-      console.log('Header: Cleared all onboarding localStorage for restart');
     } catch (error) {
       console.warn('Header: Error clearing onboarding data:', error);
       // Fallback - manually clear the localStorage keys

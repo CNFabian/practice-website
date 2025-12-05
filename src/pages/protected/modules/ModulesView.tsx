@@ -11,7 +11,7 @@ interface ModulesViewProps {
   onLessonSelect: (lesson: Lesson, module: Module) => void;
   onModuleQuizSelect?: (module: Module) => void;
   isTransitioning?: boolean;
-  onLessonsUpdate?: (moduleId: number, lessons: Lesson[]) => void; // NEW PROP
+  onLessonsUpdate?: (moduleId: number, lessons: Lesson[]) => void;
 }
 
 // Backend lesson data interface
@@ -64,7 +64,7 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   onLessonSelect,
   onModuleQuizSelect,
   isTransitioning = false,
-  onLessonsUpdate // NEW PROP
+  onLessonsUpdate
 }) => {
   const { data: onboardingStatus } = useOnboardingStatus();
 
@@ -92,53 +92,47 @@ const ModulesView: React.FC<ModulesViewProps> = ({
   const selectedModuleData = modulesData.find(m => m.id === selectedModuleId);
   const isCompactLayout = selectedModuleId && !sidebarCollapsed && showCompactLayout;
 
-  // UPDATED: Enhanced lesson fetching with callback integration
   useEffect(() => {
     const fetchModuleLessons = async () => {
       if (!selectedModuleId || backendLessons[selectedModuleId]) return;
 
+      // Wait for onboarding status to be loaded
+      if (onboardingStatus === null || onboardingStatus === undefined) {
+        // Status not loaded yet, don't fetch
+        return;
+      }
+
       if (!onboardingStatus?.completed) {
-        console.log('⚠️ Onboarding not complete - skipping backend lesson fetch');
+        // Onboarding not complete, don't fetch
         return;
       }
 
       setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: true }));
 
       try {
-        // Find the selected module data to get the original backend UUID
         const selectedModule = modulesData.find(m => m.id === selectedModuleId);
         const backendModuleId = selectedModule?.backendId;
         
         if (backendModuleId) {
-          console.log(`✅ Fetching lessons from backend for module UUID: ${backendModuleId}`);
-          
-          // Call the actual backend API
           const lessonsData = await getModuleLessons(backendModuleId);
           
           if (lessonsData && Array.isArray(lessonsData)) {
-            console.log(`✅ Successfully fetched ${lessonsData.length} lessons for module ${selectedModuleId}`);
-            
-            // Convert backend lessons to frontend format
             const convertedLessons = lessonsData.map((backendLesson, index) => 
               convertBackendLessonToFrontend(backendLesson, index)
             );
             
-            // Store the backend lessons data locally
             setBackendLessons((prev: { [moduleId: number]: BackendLessonData[] }) => ({
               ...prev,
               [selectedModuleId]: lessonsData
             }));
 
-            // NEW: Call the parent callback to update lessons in ModulesPage
             if (onLessonsUpdate) {
-              console.log(`📤 Calling onLessonsUpdate for module ${selectedModuleId} with ${convertedLessons.length} lessons`);
               onLessonsUpdate(selectedModuleId, convertedLessons);
             }
           }
         }
       } catch (error) {
         console.error(`Error fetching lessons for module ${selectedModuleId}:`, error);
-        console.log('Falling back to frontend lesson data');
       } finally {
         setLoadingLessons(prev => ({ ...prev, [selectedModuleId]: false }));
       }

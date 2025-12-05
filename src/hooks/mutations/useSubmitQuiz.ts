@@ -3,7 +3,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { submitQuiz } from '../../services/quizAPI';
 
 interface SubmitQuizParams {
-  lesson_id: string; // This should be the backend UUID
+  lesson_id: string;
   answers: Record<string, string>[];
   time_taken_seconds?: number;
 }
@@ -63,7 +63,6 @@ export const useSubmitQuiz = (
 
     onSuccess: (data) => {
       console.log('✅ Quiz submitted successfully:', data);
-      // You can handle the response here if needed
     },
 
     onSettled: () => {

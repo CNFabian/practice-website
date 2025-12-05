@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { RootState } from './store/store'
 import { setLoading, logout, setUser } from './store/slices/authSlice'
 import { getCurrentUser, checkAuthStatus, clearAuthData, isAuthenticated } from './services/authAPI'
@@ -34,36 +34,37 @@ function App() {
   const dispatch = useDispatch()
   const [isMinLoadingComplete, setIsMinLoadingComplete] = useState(false)
   const [authInitialized, setAuthInitialized] = useState(false)
+  
+  // Add initialization guard to prevent multiple runs
+  const initializationAttempted = useRef(false)
 
   // Initialize auth state on app load
   useEffect(() => {
+    // Prevent multiple initialization attempts (especially in StrictMode)
+    if (initializationAttempted.current) {
+      return
+    }
+    initializationAttempted.current = true
+
     const initAuth = async () => {
       try {
-        console.log('App: Starting authentication initialization...')
         dispatch(setLoading(true))
         
         // Check if we have tokens in localStorage
         if (!isAuthenticated()) {
-          console.log('App: No authentication tokens found')
           dispatch(logout())
           setAuthInitialized(true)
           return
         }
-
-        console.log('App: Tokens found, validating with backend...')
         
         // Validate tokens with backend
         const isAuth = await checkAuthStatus()
         
         if (isAuth) {
-          console.log('App: Authentication valid, fetching user data...')
-          
           // Fetch current user data
           const userData = await getCurrentUser()
           dispatch(setUser(userData))
-          console.log('App: User data loaded successfully')
         } else {
-          console.log('App: Authentication invalid, clearing data...')
           dispatch(logout())
         }
       } catch (error) {
@@ -72,12 +73,9 @@ function App() {
         // Clear any potentially corrupted auth data
         clearAuthData()
         dispatch(logout())
-        
-        console.log('App: Auth data cleared due to initialization error')
       } finally {
         setAuthInitialized(true)
         dispatch(setLoading(false))
-        console.log('App: Authentication initialization complete')
       }
     }
 

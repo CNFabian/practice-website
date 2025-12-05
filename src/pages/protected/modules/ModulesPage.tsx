@@ -267,7 +267,6 @@ const ModulesPage: React.FC = () => {
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
 
-  // NEW: Store lessons for modules
   const [moduleLessons, setModuleLessons] = useState<{ [moduleId: number]: Lesson[] }>({});
 
   const [_onboardingStatus, setOnboardingStatus] = useState<{
