@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RobotoFont } from '../../../assets';
+import { useSettings } from '../../../hooks/useSettings';
 
 const ProfileView: React.FC = () => {
   const [timelineValue, setTimelineValue] = useState(24); // 2 years = 24 months
@@ -8,6 +9,9 @@ const ProfileView: React.FC = () => {
   const [workingWithLoanOfficer, setWorkingWithLoanOfficer] = useState('Yes');
   const [selectedRewardPreferences, setSelectedRewardPreferences] = useState<string[]>([]);
   const [creditScore, setCreditScore] = useState('810');
+
+  // Mock data toggle
+  const { useMockData, toggleMockDataEnabled } = useSettings();
 
   const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTimelineValue(Number(e.target.value));
@@ -298,6 +302,58 @@ const ProfileView: React.FC = () => {
                 </svg>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Developer Settings - Mock Data Toggle */}
+        <div className="border-t border-gray-200 py-6">
+          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+            Developer Settings
+          </RobotoFont>
+          <RobotoFont className="text-sm text-gray-600 mb-6">
+            Temporarily use mock data for testing and development
+          </RobotoFont>
+          
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <RobotoFont weight={600} className="text-sm text-gray-900">
+                    Use Mock Data
+                  </RobotoFont>
+                  <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-semibold rounded">
+                    DEV
+                  </span>
+                </div>
+                <RobotoFont className="text-xs text-gray-600">
+                  Toggle between mock data and database. This is temporary and useful for testing without affecting real data.
+                </RobotoFont>
+              </div>
+              <button
+                onClick={toggleMockDataEnabled}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ml-4 flex-shrink-0 ${
+                  useMockData ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useMockData ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            {useMockData && (
+              <div className="mt-3 pt-3 border-t border-amber-200">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <RobotoFont className="text-xs font-medium">
+                    Mock data is currently enabled. Data shown may not reflect actual database values.
+                  </RobotoFont>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
