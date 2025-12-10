@@ -123,86 +123,94 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Re
 
 // GET /api/learning/modules - Get all modules (with onboarding check)
 export const getModules = async (): Promise<any> => {
-  try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
-      method: 'GET'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Modules data received:', data);
-    return data;
-  } catch (error) {
-    if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
-      console.log('👉 User needs to complete onboarding first');
-      throw new Error('ONBOARDING_REQUIRED');
-    }
-    console.error('Error fetching modules:', error);
-    throw error;
-  }
+  return [];
+  
+  // try {
+  //   const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
+  //     method: 'GET'
+  //   });
+  //   
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP error! status: ${response.status}`);
+  //   }
+  //   
+  //   const data = await response.json();
+  //   console.log('Modules data received:', data);
+  //   return data;
+  // } catch (error) {
+  //   if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+  //     console.log('👉 User needs to complete onboarding first');
+  //     throw new Error('ONBOARDING_REQUIRED');
+  //   }
+  //   console.error('Error fetching modules:', error);
+  //   throw error;
+  // }
 };
 
 // GET /api/learning/modules/{module_id} - Get specific module
-export const getModule = async (moduleId: string): Promise<any> => {
-  try {
-    console.log(`Fetching module with ID: ${moduleId}`);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
-      method: 'GET'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Module data received:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching module:', error);
-    throw error;
-  }
+export const getModule = async (_moduleId: string): Promise<any> => {
+  return null;
+  
+  // try {
+  //   console.log(`Fetching module with ID: ${moduleId}`);
+  //   
+  //   const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}`, {
+  //     method: 'GET'
+  //   });
+  //   
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP error! status: ${response.status}`);
+  //   }
+  //   
+  //   const data = await response.json();
+  //   console.log('Module data received:', data);
+  //   return data;
+  // } catch (error) {
+  //   console.error('Error fetching module:', error);
+  //   throw error;
+  // }
 };
 
 // Helper function to get actual module UUIDs from backend
 export const getAvailableModules = async (): Promise<any[]> => {
-  try {
-    const modules = await getModules();
-    console.log('Available backend modules:', modules);
-    return modules || [];
-  } catch (error) {
-    if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
-      console.log('Cannot fetch modules - onboarding required');
-      return [];
-    }
-    console.error('Error getting available modules:', error);
-    return [];
-  }
+  return [];
+  
+  // try {
+  //   const modules = await getModules();
+  //   console.log('Available backend modules:', modules);
+  //   return modules || [];
+  // } catch (error) {
+  //   if (error instanceof Error && error.message === 'ONBOARDING_REQUIRED') {
+  //     console.log('Cannot fetch modules - onboarding required');
+  //     return [];
+  //   }
+  //   console.error('Error getting available modules:', error);
+  //   return [];
+  // }
 };
 
 // GET /api/learning/modules/{module_id}/lessons - Get all lessons in a module
-export const getModuleLessons = async (moduleId: string): Promise<any> => {
-  try {
-    console.log(`Fetching lessons for module ID: ${moduleId}`);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
-      method: 'GET'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Module lessons data received:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching module lessons:', error);
-    throw error;
-  }
+export const getModuleLessons = async (_moduleId: string): Promise<any> => {
+  return [];
+  
+  // try {
+  //   console.log(`Fetching lessons for module ID: ${moduleId}`);
+  //   
+  //   const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules/${moduleId}/lessons`, {
+  //     method: 'GET'
+  //   });
+  //   
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP error! status: ${response.status}`);
+  //   }
+  //   
+  //   const data = await response.json();
+  //   console.log('Module lessons data received:', data);
+  //   return data;
+  // } catch (error) {
+  //   console.error('Error fetching module lessons:', error);
+  //   throw error;
+  // }
 };
 
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson

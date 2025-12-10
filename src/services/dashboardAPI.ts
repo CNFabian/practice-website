@@ -5,44 +5,48 @@ import { fetchWithAuth } from './learningAPI';
 
 // GET /api/dashboard/overview
 export const getDashboardOverview = async (): Promise<any> => {
-  try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/overview`, {
-      method: 'GET'
-    });
-    
-    // Check for the 500 error specifically to give better feedback
-    if (response.status === 500) {
-      console.error('SERVER ERROR: The backend crashed. Check UUID validation logic.');
-      throw new Error('Internal Server Error');
-    }
+  return null;
+  
+  // try {
+  //   const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/overview`, {
+  //     method: 'GET'
+  //   });
+  //   
+  //   // Check for the 500 error specifically to give better feedback
+  //   if (response.status === 500) {
+  //     console.error('SERVER ERROR: The backend crashed. Check UUID validation logic.');
+  //     throw new Error('Internal Server Error');
+  //   }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Dashboard overview data received:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching dashboard overview:', error);
-    throw error;
-  }
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP error! status: ${response.status}`);
+  //   }
+  //   
+  //   const data = await response.json();
+  //   console.log('Dashboard overview data received:', data);
+  //   return data;
+  // } catch (error) {
+  //   console.error('Error fetching dashboard overview:', error);
+  //   throw error;
+  // }
 };
 
 export const getDashboardModules = async (): Promise<any> => {
-  try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/modules`, {
-      method: 'GET'
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching dashboard modules:', error);
-    throw error;
-  }
+  return [];
+  
+  // try {
+  //   const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/modules`, {
+  //     method: 'GET'
+  //   });
+  //   
+  //   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  //   
+  //   const data = await response.json();
+  //   return data;
+  // } catch (error) {
+  //   console.error('Error fetching dashboard modules:', error);
+  //   throw error;
+  // }
 };
 
 export const getCoinBalance = async (): Promise<any> => {

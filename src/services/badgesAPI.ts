@@ -1,5 +1,4 @@
 import { fetchWithAuth } from './learningAPI';
-import { shouldUseMockData } from '../utils/mockDataUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -232,12 +231,6 @@ const getMockBadgeData = (): BadgeApiResponse => {
 
 // GET /api/dashboard/badges - Get User Badges
 export const getBadges = async (): Promise<BadgeApiResponse> => {
-  // Check if mock data should be used
-  if (shouldUseMockData()) {
-    console.log('🎭 Using mock badge data (toggle enabled)');
-    return getMockBadgeData();
-  }
-
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/badges`, {
       method: 'GET'
