@@ -4,9 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
-import { openOnboardingModal } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../services/authAPI';
-import { clearOnboardingDataFromLocalStorage } from '../../services/onBoardingAPI';
 import { useCoinBalance } from '../../hooks/queries/useCoinBalance';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { 
@@ -47,59 +45,6 @@ const Header: React.FC = () => {
       navigate('/login');
       
       console.warn('Header: Local logout completed, but server logout may have failed');
-    }
-  };
-
-  const handleShowOnboarding = () => {
-    // Clear any existing onboarding data to ensure fresh start
-    try {
-      clearOnboardingDataFromLocalStorage();
-      
-      // Clear individual step data
-      for (let i = 1; i <= 5; i++) {
-        localStorage.removeItem(`onboarding_step_${i}`);
-      }
-      localStorage.removeItem('onboarding_current_step');
-      
-    } catch (error) {
-      console.warn('Header: Error clearing onboarding data:', error);
-      // Fallback - manually clear the localStorage keys
-      localStorage.removeItem('onboarding_data');
-      for (let i = 1; i <= 5; i++) {
-        localStorage.removeItem(`onboarding_step_${i}`);
-      }
-      localStorage.removeItem('onboarding_current_step');
-    }
-    
-    // Set Redux state to show onboarding
-    dispatch(openOnboardingModal());
-    
-    // Navigate to Overview page where onboarding modal will appear
-    navigate('/app');
-  };
-
-  const handleResetProgress = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to reset your progress? This will:\n\n' +
-      '• Reset your coins to 25\n' +
-      '• Clear all completed modules\n' +
-      '• Remove saved items\n' +
-      '• Reset badges and rewards\n\n' +
-      'This action cannot be undone.'
-    );
-
-    if (confirmed) {
-      try {
-        // Clear localStorage
-        localStorage.clear();
-        
-        // Reload the page to reset all state
-        window.location.reload();
-        
-      } catch (error) {
-        console.error('Header: Error resetting progress:', error);
-        alert('Failed to reset progress. Please try again.');
-      }
     }
   };
 
@@ -250,41 +195,6 @@ const Header: React.FC = () => {
                         </button>
                       )}
                     </MenuItem>
-                    
-                    {/* TEMPORARY RESTART ONBOARDING BUTTON */}
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          onClick={handleShowOnboarding}
-                          className={`${
-                            focus ? 'bg-blue-50' : ''
-                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                        >
-                          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                          </svg>
-                          <span className="text-blue-600 font-medium">🚧 Restart Onboarding (Temp)</span>
-                        </button>
-                      )}
-                    </MenuItem>
-                    
-                    {/* TEMPORARY RESET PROGRESS BUTTON */}
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          onClick={handleResetProgress}
-                          className={`${
-                            focus ? 'bg-red-50' : ''
-                          } group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors`}
-                        >
-                          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          <span className="text-red-600 font-medium">🚧 Reset Progress (Temp)</span>
-                        </button>
-                      )}
-                    </MenuItem>
-                    
                     <div className="h-px bg-gray-200 my-1 mx-3" />
                     <MenuItem>
                       {({ focus }) => (
