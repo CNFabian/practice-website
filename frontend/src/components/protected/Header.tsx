@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import { logoutUser } from '../../services/authAPI';
-import { useCoinBalance } from '../../hooks/queries/useCoinBalance';
 import { useCoinSystem } from '../../hooks/useCoinSystem';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { 

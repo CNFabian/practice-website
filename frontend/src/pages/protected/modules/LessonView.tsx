@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
@@ -221,13 +221,10 @@ const LessonView: React.FC<LessonViewProps> = ({
     goToLesson
   } = useModules();
 
-  // Enhanced hooks with loading states
   const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
   const { 
-    data: quizData, 
-    isLoading: isLoadingQuiz, 
-    isFetching: isRefetchingQuiz,
-    error: quizError 
+    data: quizData 
+    // Removed loading states - quiz is always ready via fallback
   } = useLessonQuiz(lesson?.backendId || '');
   
   const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.backendId || '', module?.backendId || '');
@@ -235,37 +232,17 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   // State variables
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [isQuizReady, setIsQuizReady] = useState(false);
 
-  // Memoize transformed quiz questions to prevent recalculation
   const transformedQuizQuestions = useMemo(() => {
-    // Use backend data if available, otherwise fallback to mock data
+    // Use backend data if available, otherwise fallback to mock data instantly
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
-      console.log('🔄 Transforming backend quiz questions (memoized):', quizData.length);
+      console.log('🔄 Using backend quiz questions:', quizData.length);
       return transformQuizQuestions(quizData);
     } else {
-      console.log('🔄 Using mock quiz questions as fallback:', MOCK_QUIZ_QUESTIONS.length);
+      console.log('🔄 Using mock quiz questions for instant access:', MOCK_QUIZ_QUESTIONS.length);
       return MOCK_QUIZ_QUESTIONS;
     }
   }, [quizData]);
-
-  // Check if quiz is ready when data changes
-  useEffect(() => {
-    // Quiz is ready if we have either backend data or can fallback to mock data
-    const hasBackendData = !isLoadingQuiz && !isRefetchingQuiz && !quizError && quizData && Array.isArray(quizData) && quizData.length > 0;
-    const canUseMockData = !isLoadingQuiz && !isRefetchingQuiz && (!quizData || quizData.length === 0);
-    
-    const isReady = hasBackendData || canUseMockData;
-    setIsQuizReady(isReady);
-    
-    if (isReady) {
-      if (hasBackendData) {
-        console.log('✅ Quiz data ready with backend data');
-      } else {
-        console.log('✅ Quiz data ready with mock data fallback');
-      }
-    }
-  }, [isLoadingQuiz, isRefetchingQuiz, quizData, quizError]);
 
   // Derived data with memoization
   const currentLessonIndex = useMemo(() => 
@@ -310,35 +287,20 @@ const LessonView: React.FC<LessonViewProps> = ({
   const handleStartQuiz = useCallback(() => {
     if (isTransitioning) return;
 
-    console.log('🚀 Starting quiz - Quiz Ready:', isQuizReady);
-
-    if (!isQuizReady || !transformedQuizQuestions) {
-      console.warn('⚠️ Quiz not ready yet. Loading state:', {
-        isLoadingQuiz,
-        isRefetchingQuiz,
-        hasQuizData: !!quizData,
-        hasTransformedData: !!transformedQuizQuestions,
-        error: quizError?.message
-      });
-      return;
-    }
-
-    console.log('✅ Starting quiz instantly with pre-transformed data');
+    console.log('🚀 Starting quiz instantly - no loading required!');
+    console.log('✅ Using quiz data:', transformedQuizQuestions.length, 'questions');
+    
+    // Always works instantly because we always have data available
     startQuiz(transformedQuizQuestions, lesson.id);
   }, [
     isTransitioning, 
-    isQuizReady, 
     transformedQuizQuestions, 
     startQuiz, 
-    lesson.id,
-    isLoadingQuiz,
-    isRefetchingQuiz,
-    quizData,
-    quizError
+    lesson.id
   ]);
 
   const handleCloseQuiz = useCallback(() => {
-    // Add quiz close logic here
+    // Add functionality if needed
   }, []);
 
   const handleQuizComplete = useCallback((score: number) => {
@@ -381,48 +343,19 @@ const LessonView: React.FC<LessonViewProps> = ({
     );
   }, [completeLessonMutation, lesson.id]);
 
-  // Display values with fallbacks
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
   const displayImage = backendLessonData?.image_url || lesson.image;
-  const displayTranscript = backendLessonData?.video_transcription || lesson.transcript;
-
   const isCompleted = lesson.completed || false;
 
-  // Quiz button state logic
   const getQuizButtonState = () => {
-    if (isLoadingQuiz || isRefetchingQuiz) {
-      return {
-        disabled: true,
-        text: 'Loading Quiz...',
-        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-gray-400 text-white cursor-not-allowed'
-      };
-    }
-
-    if (quizError) {
-      return {
-        disabled: false,
-        text: 'Start Quiz (Demo)',
-        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700'
-      };
-    }
-
-    if (!isQuizReady) {
-      return {
-        disabled: true,
-        text: 'Preparing Quiz...',
-        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-yellow-400 text-white cursor-not-allowed'
-      };
-    }
-
-    // Show different text based on data source
     const isUsingBackendData = quizData && Array.isArray(quizData) && quizData.length > 0;
     const buttonText = isUsingBackendData ? 'Test Your Knowledge' : 'Test Your Knowledge (Demo)';
 
     return {
       disabled: false,
       text: buttonText,
-      className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700'
+      className: 'w-full py-2 rounded-lg font-medium transition-colors text-sm bg-blue-600 text-white hover:bg-blue-700'
     };
   };
 
@@ -513,7 +446,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 </div>
               </div>
 
-              {/* Loading/Error State */}
+              {/* Loading/Error State for lesson data only (not quiz) */}
               {isLoadingLesson && (
                 <div className="text-xs text-gray-500 pb-2">
                   <RobotoFont className="text-xs">Loading lesson details...</RobotoFont>
@@ -580,7 +513,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                 </RobotoFont>
               </div>
 
-              {/* Enhanced Test Knowledge Button with Loading States */}
               <button
                 onClick={handleStartQuiz}
                 disabled={quizButtonState.disabled}
@@ -590,12 +522,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   <RobotoFont weight={500} className="text-white">
                     {quizButtonState.text}
                   </RobotoFont>
-                  {(isLoadingQuiz || isRefetchingQuiz) && (
-                    <svg className="animate-spin -mr-1 ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  )}
                 </div>
               </button>
 
