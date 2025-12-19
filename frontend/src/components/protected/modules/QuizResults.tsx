@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useModules } from '../../../hooks/useModules';
+import { useCoinSystem } from '../../../hooks/useCoinSystem';
 import { useSubmitQuiz } from '../../../hooks/mutations/useSubmitQuiz';
 
 import RewardsModal from './RewardsModal';
@@ -40,6 +41,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     completeModuleQuiz
   } = useModules();
 
+  // Use the new frontend coin system
+  const { incrementCoins } = useCoinSystem();
+
   const { mutate: submitQuizMutation } = useSubmitQuiz(
     selectedLessonId?.toString() || '',
     moduleId?.toString() || ''
@@ -66,50 +70,55 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   const coinIcons = [Coin1, Coin2, Coin3, Coin4, Coin5];
 
-  const totalCoinsEarned = 0;
-  const hasEarnedCoins = false;
-
-useEffect(() => {
-  if (!quizSubmitted && selectedLessonId && quizState.answers) {
-    const answers = Object.entries(quizState.answers).map(([questionId, answerId]) => ({
-      [questionId]: answerId
-    }));
-
-    submitQuizMutation({
-      lesson_id: selectedLessonId.toString(),
-      answers,
-    });
-
-    setQuizSubmitted(true);
-  }
-}, [quizSubmitted, selectedLessonId, quizState.answers, submitQuizMutation]);
-
-useEffect(() => {
-  const timer1 = setTimeout(() => setShowContent(true), 300);
-
-  const timer2 = setTimeout(() => {
-    if (!modalShownRef.current && (hasEarnedCoins || correctAnswers === totalQuestions)) {
-      setShowRewardsModal(true);
-      modalShownRef.current = true;
-    }
-  }, 2000);
-
-  const timer3 = setTimeout(() => {
-    if (correctAnswers === 0 && !hasEarnedCoins) {
-      if (isModuleQuiz && moduleId) {
-        completeModuleQuiz(moduleId, quizState.score);
-      } else if (selectedLessonId) {
-        completeQuiz(selectedLessonId, quizState.score);
-      }
-    }
-  }, 2500);
-
-  return () => {
-    clearTimeout(timer1);
-    clearTimeout(timer2);
-    clearTimeout(timer3);
+  const calculateNewlyEarnedCoins = () => {
+    // Simple calculation: 5 coins per correct answer
+    return correctAnswers * 5;
   };
-}, [correctAnswers, totalQuestions, hasEarnedCoins, isModuleQuiz, moduleId, selectedLessonId, completeModuleQuiz, completeQuiz, quizState.score]);
+
+  const totalCoinsEarned = calculateNewlyEarnedCoins();
+  const hasEarnedCoins = totalCoinsEarned > 0;
+
+  useEffect(() => {
+    if (!quizSubmitted && selectedLessonId && quizState.answers) {
+      const answers = Object.entries(quizState.answers).map(([questionId, answerId]) => ({
+        [questionId]: answerId
+      }));
+
+      submitQuizMutation({
+        lesson_id: selectedLessonId.toString(),
+        answers,
+      });
+
+      setQuizSubmitted(true);
+    }
+  }, [quizSubmitted, selectedLessonId, quizState.answers, submitQuizMutation]);
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setShowContent(true), 300);
+
+    const timer2 = setTimeout(() => {
+      if (!modalShownRef.current && (hasEarnedCoins || correctAnswers === totalQuestions)) {
+        setShowRewardsModal(true);
+        modalShownRef.current = true;
+      }
+    }, 2000);
+
+    const timer3 = setTimeout(() => {
+      if (correctAnswers === 0 && !hasEarnedCoins) {
+        if (isModuleQuiz && moduleId) {
+          completeModuleQuiz(moduleId, quizState.score);
+        } else if (selectedLessonId) {
+          completeQuiz(selectedLessonId, quizState.score);
+        }
+      }
+    }, 2500);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [correctAnswers, totalQuestions, hasEarnedCoins, isModuleQuiz, moduleId, selectedLessonId, completeModuleQuiz, completeQuiz, quizState.score]);
 
   useEffect(() => {
     if (triggerCoinVacuum && containerRef.current && !coinsHaveBeenVacuumed && hasEarnedCoins) {
@@ -139,6 +148,14 @@ useEffect(() => {
       setCoinVacuumActive(true);
       setCoinsHaveBeenVacuumed(true);
       
+      const coinsPerAnimation = totalCoinsEarned / coins.length;
+      coins.forEach((coin) => {
+        const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+        setTimeout(() => {
+          // Increment the header coin count
+          incrementCoins(coinsPerAnimation);
+        }, arrivalTime);
+      });
       
       // Clean up
       setTimeout(() => {
@@ -146,7 +163,7 @@ useEffect(() => {
         setCoinVacuumActive(false);
       }, 2200);
     }
-  }, [triggerCoinVacuum, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed, isModuleQuiz, moduleId, selectedLessonId]);
+  }, [triggerCoinVacuum, coinIcons, totalCoinsEarned, hasEarnedCoins, coinsHaveBeenVacuumed, isModuleQuiz, moduleId, selectedLessonId, incrementCoins]);
 
   const handleRewardsModalClose = () => {
     setShowRewardsModal(false);
@@ -181,6 +198,14 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
+        // Increment coins in header when animation completes
+        const coinsPerAnimation = totalCoinsEarned / coins.length;
+        coins.forEach((coin) => {
+          const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+          setTimeout(() => {
+            incrementCoins(coinsPerAnimation);
+          }, arrivalTime);
+        });
         
         setTimeout(() => {
           setEscapeCoins([]);
@@ -217,8 +242,15 @@ useEffect(() => {
         setCoinVacuumActive(true);
         setCoinsHaveBeenVacuumed(true);
         
+        // Increment coins in header when animation completes
+        const coinsPerAnimation = totalCoinsEarned / coins.length;
+        coins.forEach((coin) => {
+          const arrivalTime = 1000 + (coin.delay * 1000) + 800;
+          setTimeout(() => {
+            incrementCoins(coinsPerAnimation);
+          }, arrivalTime);
+        });
         
-        // Clean up
         setTimeout(() => {
           setEscapeCoins([]);
           setCoinVacuumActive(false);

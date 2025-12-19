@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
@@ -29,6 +29,178 @@ interface BackendQuizQuestion {
   }[];
 }
 
+// Mock quiz data for fallback when backend data is not available
+const MOCK_QUIZ_QUESTIONS = [
+  {
+    id: 1,
+    question: "What is the minimum down payment required for a conventional loan?",
+    options: [
+      { id: "a", text: "3%", isCorrect: true },
+      { id: "b", text: "5%", isCorrect: false },
+      { id: "c", text: "10%", isCorrect: false },
+      { id: "d", text: "20%", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Correct! Conventional loans can require as little as 3% down payment.",
+      incorrect: {
+        "b": { 
+          why_wrong: "While 5% is a common down payment amount, conventional loans can go as low as 3%.",
+          confusion_reason: "Many people think 5% is the minimum because it's often quoted by lenders."
+        },
+        "c": { 
+          why_wrong: "10% is higher than the minimum required for conventional loans.",
+          confusion_reason: "This might be confused with other loan types that require higher down payments."
+        },
+        "d": { 
+          why_wrong: "20% is the amount needed to avoid PMI, but not the minimum down payment.",
+          confusion_reason: "This is often mentioned because it eliminates private mortgage insurance."
+        }
+      }
+    }
+  },
+  {
+    id: 2,
+    question: "What does PMI stand for?",
+    options: [
+      { id: "a", text: "Private Mortgage Insurance", isCorrect: true },
+      { id: "b", text: "Public Mortgage Investment", isCorrect: false },
+      { id: "c", text: "Primary Monthly Interest", isCorrect: false },
+      { id: "d", text: "Property Management Insurance", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Correct! PMI stands for Private Mortgage Insurance, which protects lenders when you put down less than 20%.",
+      incorrect: {
+        "b": { 
+          why_wrong: "PMI is not related to public investments.",
+          confusion_reason: "The 'Public' and 'Investment' terms might seem related to mortgages but are incorrect."
+        },
+        "c": { 
+          why_wrong: "PMI is not about monthly interest calculations.",
+          confusion_reason: "While PMI does affect monthly payments, it's insurance, not interest."
+        },
+        "d": { 
+          why_wrong: "PMI is not property management insurance.",
+          confusion_reason: "Both involve property and insurance, but PMI specifically protects the mortgage lender."
+        }
+      }
+    }
+  },
+  {
+    id: 3,
+    question: "Which credit score range is considered excellent for mortgage applications?",
+    options: [
+      { id: "a", text: "800-850", isCorrect: true },
+      { id: "b", text: "700-750", isCorrect: false },
+      { id: "c", text: "650-700", isCorrect: false },
+      { id: "d", text: "600-650", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Excellent! A credit score of 800-850 is considered excellent and will get you the best mortgage rates.",
+      incorrect: {
+        "b": { 
+          why_wrong: "700-750 is considered good, but not excellent.",
+          confusion_reason: "While this range qualifies for good rates, excellent rates require higher scores."
+        },
+        "c": { 
+          why_wrong: "650-700 is considered fair to good, but not excellent.",
+          confusion_reason: "This range can still qualify for mortgages but won't get the best rates."
+        },
+        "d": { 
+          why_wrong: "600-650 is considered fair and may require higher interest rates.",
+          confusion_reason: "This range may qualify for some loans but with less favorable terms."
+        }
+      }
+    }
+  },
+  {
+    id: 4,
+    question: "What is the debt-to-income ratio that most lenders prefer?",
+    options: [
+      { id: "a", text: "Below 28%", isCorrect: true },
+      { id: "b", text: "Below 40%", isCorrect: false },
+      { id: "c", text: "Below 50%", isCorrect: false },
+      { id: "d", text: "Below 60%", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Perfect! Most lenders prefer a debt-to-income ratio below 28% for the housing payment alone.",
+      incorrect: {
+        "b": { 
+          why_wrong: "40% is often the maximum total debt-to-income ratio, not the preferred amount.",
+          confusion_reason: "This might be the total DTI limit, but lenders prefer lower housing ratios."
+        },
+        "c": { 
+          why_wrong: "50% is too high for most conventional mortgage approvals.",
+          confusion_reason: "This high ratio would be risky for both lender and borrower."
+        },
+        "d": { 
+          why_wrong: "60% debt-to-income ratio would be considered very high risk.",
+          confusion_reason: "Such a high ratio would likely result in loan denial."
+        }
+      }
+    }
+  },
+  {
+    id: 5,
+    question: "How long should you typically save bank statements before applying for a mortgage?",
+    options: [
+      { id: "a", text: "2-3 months", isCorrect: true },
+      { id: "b", text: "1 month", isCorrect: false },
+      { id: "c", text: "6 months", isCorrect: false },
+      { id: "d", text: "1 year", isCorrect: false }
+    ],
+    explanation: {
+      correct: "Correct! Lenders typically require 2-3 months of bank statements to verify your financial stability.",
+      incorrect: {
+        "b": { 
+          why_wrong: "1 month is usually insufficient for lenders to assess financial patterns.",
+          confusion_reason: "While recent, this doesn't show enough financial history for lenders."
+        },
+        "c": { 
+          why_wrong: "6 months is more than typically required, though having them doesn't hurt.",
+          confusion_reason: "While helpful to have, lenders usually only require 2-3 months."
+        },
+        "d": { 
+          why_wrong: "1 year of bank statements is excessive for most mortgage applications.",
+          confusion_reason: "This might be confused with other financial documents that require longer history."
+        }
+      }
+    }
+  }
+];
+
+// Memoized transformation function to prevent recalculation
+const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
+  return backendQuestions.map((q: BackendQuizQuestion, index: number) => {
+    // Sort answers once and cache the result
+    const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
+    
+    return {
+      id: index + 1, 
+      question: q.question_text,
+      options: sortedAnswers.map((answer, answerIndex) => ({
+        id: String.fromCharCode(97 + answerIndex),
+        text: answer.answer_text,
+        isCorrect: answerIndex === 0
+      })),
+      explanation: {
+        correct: q.explanation || "Correct! Well done.",
+        incorrect: {
+          // Generate explanations with both required properties
+          ...Object.fromEntries(
+            sortedAnswers.slice(1).map((_, idx) => [
+              String.fromCharCode(98 + idx), // 'b', 'c', 'd', etc.
+              { 
+                why_wrong: "This is not the correct answer. Please review the lesson content.",
+                confusion_reason: "This option may seem correct but lacks the key elements of the right answer."
+              }
+            ])
+          )
+        }
+      }
+    };
+  });
+};
+
 const LessonView: React.FC<LessonViewProps> = ({ 
   lesson, 
   module, 
@@ -40,6 +212,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     console.error('❌ LessonView: Missing required props!');
     return <div className="p-8 text-center text-red-500">Missing lesson or module data</div>;
   }
+
   const {
     sidebarCollapsed,
     toggleSidebar,
@@ -48,197 +221,131 @@ const LessonView: React.FC<LessonViewProps> = ({
     goToLesson
   } = useModules();
 
+  // Enhanced hooks with loading states
   const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
-  const { data: quizData, refetch: refetchQuiz } = useLessonQuiz(lesson?.backendId || '');
+  const { 
+    data: quizData, 
+    isLoading: isLoadingQuiz, 
+    isFetching: isRefetchingQuiz,
+    error: quizError 
+  } = useLessonQuiz(lesson?.backendId || '');
+  
   const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.backendId || '', module?.backendId || '');
   const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(lesson?.backendId || '', module?.backendId || '');
 
+  // State variables
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [isQuizReady, setIsQuizReady] = useState(false);
+
+  // Memoize transformed quiz questions to prevent recalculation
+  const transformedQuizQuestions = useMemo(() => {
+    // Use backend data if available, otherwise fallback to mock data
+    if (quizData && Array.isArray(quizData) && quizData.length > 0) {
+      console.log('🔄 Transforming backend quiz questions (memoized):', quizData.length);
+      return transformQuizQuestions(quizData);
+    } else {
+      console.log('🔄 Using mock quiz questions as fallback:', MOCK_QUIZ_QUESTIONS.length);
+      return MOCK_QUIZ_QUESTIONS;
+    }
+  }, [quizData]);
+
+  // Check if quiz is ready when data changes
+  useEffect(() => {
+    // Quiz is ready if we have either backend data or can fallback to mock data
+    const hasBackendData = !isLoadingQuiz && !isRefetchingQuiz && !quizError && quizData && Array.isArray(quizData) && quizData.length > 0;
+    const canUseMockData = !isLoadingQuiz && !isRefetchingQuiz && (!quizData || quizData.length === 0);
+    
+    const isReady = hasBackendData || canUseMockData;
+    setIsQuizReady(isReady);
+    
+    if (isReady) {
+      if (hasBackendData) {
+        console.log('✅ Quiz data ready with backend data');
+      } else {
+        console.log('✅ Quiz data ready with mock data fallback');
+      }
+    }
+  }, [isLoadingQuiz, isRefetchingQuiz, quizData, quizError]);
+
+  // Derived data with memoization
+  const currentLessonIndex = useMemo(() => 
+    module.lessons.findIndex(l => l.id === lesson.id), 
+    [module.lessons, lesson.id]
+  );
+
+  const nextLesson = useMemo(() => 
+    currentLessonIndex < module.lessons.length - 1 
+      ? module.lessons[currentLessonIndex + 1] 
+      : null,
+    [module.lessons, currentLessonIndex]
+  );
 
   const showQuiz = currentView === 'quiz';
 
-  const handleBack = () => {
+  // Event Handlers with useCallback for optimization
+  const handleBack = useCallback(() => {
     if (isTransitioning) return;
     onBack();
-  };
+  }, [isTransitioning, onBack]);
 
-  const toggleLessonInfo = () => {
+  const toggleLessonInfo = useCallback(() => {
     if (isTransitioning) return;
     toggleSidebar(!sidebarCollapsed);
-  };
+  }, [isTransitioning, toggleSidebar, sidebarCollapsed]);
 
-  const handleNextLesson = () => {
+  const handleNextLesson = useCallback(() => {
     if (!nextLesson || isTransitioning) return;
-    
     goToLesson(nextLesson.id, module.id);
-  };
+  }, [nextLesson, isTransitioning, goToLesson, module.id]);
 
-  const handlePreviousLesson = () => {
+  const handlePreviousLesson = useCallback(() => {
     if (currentLessonIndex === 0 || isTransitioning) return;
     
     const previousLesson = module.lessons[currentLessonIndex - 1];
     if (previousLesson) {
       goToLesson(previousLesson.id, module.id);
     }
-  };
+  }, [currentLessonIndex, isTransitioning, module.lessons, goToLesson, module.id]);
 
-  const handleStartQuiz = async () => {
+  const handleStartQuiz = useCallback(() => {
     if (isTransitioning) return;
 
-    try {
-      const fetchedQuizData = quizData || (await refetchQuiz()).data;
-      console.log('Backend quiz data received:', fetchedQuizData);
+    console.log('🚀 Starting quiz - Quiz Ready:', isQuizReady);
 
-      if (!fetchedQuizData) {
-        throw new Error('Failed to fetch quiz data');
-      }
-
-      const transformedQuestions = fetchedQuizData.map((q: BackendQuizQuestion, index: number) => {
-        const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
-        
-        return {
-          id: index + 1, 
-          question: q.question_text,
-          options: sortedAnswers.map((answer, answerIndex) => ({
-            id: String.fromCharCode(97 + answerIndex),
-            text: answer.answer_text,
-            isCorrect: answerIndex === 0
-          })),
-          explanation: {
-            correct: q.explanation || "Correct! Well done.",
-            incorrect: sortedAnswers.reduce((acc, _answer, answerIndex) => {
-              if (answerIndex > 0) {
-                const optionId = String.fromCharCode(97 + answerIndex);
-                acc[optionId] = {
-                  why_wrong: `This is not the correct answer.`,
-                  confusion_reason: `Review the lesson content for more details.`
-                };
-              }
-              return acc;
-            }, {} as { [key: string]: { why_wrong: string; confusion_reason: string } })
-          }
-        };
+    if (!isQuizReady || !transformedQuizQuestions) {
+      console.warn('⚠️ Quiz not ready yet. Loading state:', {
+        isLoadingQuiz,
+        isRefetchingQuiz,
+        hasQuizData: !!quizData,
+        hasTransformedData: !!transformedQuizQuestions,
+        error: quizError?.message
       });
-      
-      if (transformedQuestions.length > 0) {
-        startQuiz(transformedQuestions, lesson.id);
-      } else {
-        throw new Error('No quiz questions available');
-      }
-    } catch (error) {
-      console.error('Error fetching quiz:', error);
-      
-      console.log('Using fallback sample questions');
-      const sampleQuestions = [
-        {
-          id: 1,
-          question: "What is the first step in preparing for homeownership?",
-          options: [
-            { id: 'a', text: 'Looking at houses online', isCorrect: false },
-            { id: 'b', text: 'Assessing your financial readiness', isCorrect: true },
-            { id: 'c', text: 'Talking to a real estate agent', isCorrect: false },
-            { id: 'd', text: 'Getting pre-approved for a mortgage', isCorrect: false }
-          ],
-          explanation: {
-            correct: "Assessing your financial readiness is crucial because it helps you understand what you can afford and prevents you from looking at homes outside your budget.",
-            incorrect: {
-              'a': { why_wrong: "Looking at houses online is premature without knowing your budget first.", confusion_reason: "Many people get excited about house hunting, but this can lead to disappointment if you're looking at unaffordable homes." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "Talking to a real estate agent should come after you know your financial limits.", confusion_reason: "While agents are helpful, they can't help you effectively without knowing your budget constraints." },
-              'd': { why_wrong: "Pre-approval comes after you've assessed what you can afford.", confusion_reason: "Pre-approval is important, but you need to know your own financial situation first before involving lenders." }
-            }
-          }
-        },
-        {
-          id: 2,
-          question: "What percentage of your monthly income should typically go toward housing costs?",
-          options: [
-            { id: 'a', text: '20%', isCorrect: false },
-            { id: 'b', text: '28%', isCorrect: true },
-            { id: 'c', text: '35%', isCorrect: false },
-            { id: 'd', text: '40%', isCorrect: false }
-          ],
-          explanation: {
-            correct: "The 28% rule is a widely accepted guideline that helps ensure you can afford your housing costs while maintaining financial stability for other expenses.",
-            incorrect: {
-              'a': { why_wrong: "20% is too conservative for most people and may limit housing options unnecessarily.", confusion_reason: "While being conservative with money is good, 20% might be too restrictive in today's housing market." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "35% puts you at risk of being house poor with little money for other expenses.", confusion_reason: "This might seem reasonable if you really want a nice home, but it leaves little room for emergencies or other goals." },
-              'd': { why_wrong: "40% is dangerously high and could lead to financial stress.", confusion_reason: "This percentage would make it very difficult to save money or handle unexpected expenses." }
-            }
-          }
-        },
-        {
-          id: 3,
-          question: "What is the minimum recommended credit score for a conventional mortgage?",
-          options: [
-            { id: 'a', text: '580', isCorrect: false },
-            { id: 'b', text: '620', isCorrect: true },
-            { id: 'c', text: '680', isCorrect: false },
-            { id: 'd', text: '720', isCorrect: false }
-          ],
-          explanation: {
-            correct: "620 is typically the minimum credit score for a conventional mortgage, though higher scores get better interest rates.",
-            incorrect: {
-              'a': { why_wrong: "580 is the minimum for FHA loans, not conventional mortgages.", confusion_reason: "You might be thinking of FHA loans, which have lower credit requirements but come with mortgage insurance." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "680 is a good score but higher than the minimum required.", confusion_reason: "While 680 will get you better rates, you can qualify with a lower score." },
-              'd': { why_wrong: "720 is an excellent score but much higher than the minimum.", confusion_reason: "This score gets you the best rates, but you don't need it to qualify for a mortgage." }
-            }
-          }
-        },
-        {
-          id: 4,
-          question: "What does PMI stand for in home buying?",
-          options: [
-            { id: 'a', text: 'Personal Mortgage Insurance', isCorrect: false },
-            { id: 'b', text: 'Private Mortgage Insurance', isCorrect: true },
-            { id: 'c', text: 'Property Management Insurance', isCorrect: false },
-            { id: 'd', text: 'Primary Mortgage Investment', isCorrect: false }
-          ],
-          explanation: {
-            correct: "Private Mortgage Insurance protects the lender if you default on your loan. It's required when you put down less than 20%.",
-            incorrect: {
-              'a': { why_wrong: "It's Private, not Personal Mortgage Insurance.", confusion_reason: "The terms sound similar, but PMI specifically refers to Private Mortgage Insurance." },
-              'b': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." },
-              'c': { why_wrong: "Property Management Insurance is a different type of coverage entirely.", confusion_reason: "This sounds related to real estate, but it's for property management companies, not home buyers." },
-              'd': { why_wrong: "PMI has nothing to do with investments.", confusion_reason: "While mortgages can be investments for lenders, PMI is purely about insurance protection." }
-            }
-          }
-        },
-        {
-          id: 5,
-          question: "How much should you typically have saved for a down payment on a conventional loan?",
-          options: [
-            { id: 'a', text: '3%', isCorrect: false },
-            { id: 'b', text: '5%', isCorrect: false },
-            { id: 'c', text: '10%', isCorrect: false },
-            { id: 'd', text: '20%', isCorrect: true }
-          ],
-          explanation: {
-            correct: "20% down payment helps you avoid PMI and typically gets you better loan terms and interest rates.",
-            incorrect: {
-              'a': { why_wrong: "3% is available but comes with PMI and higher long-term costs.", confusion_reason: "Some programs allow 3% down, but this isn't typical for conventional loans and costs more over time." },
-              'b': { why_wrong: "5% is possible but still requires PMI and higher costs.", confusion_reason: "While some lenders accept 5%, you'll pay PMI and higher interest rates." },
-              'c': { why_wrong: "10% is better than 5% but you'll still pay PMI.", confusion_reason: "Getting closer to 20%, but you'll still have additional costs with PMI." },
-              'd': { why_wrong: "This is actually the correct answer.", confusion_reason: "Correct choice." }
-            }
-          }
-        }
-      ];
-      
-      startQuiz(sampleQuestions, lesson.id);
+      return;
     }
-  };
 
-  const handleCloseQuiz = () => {
-  };
+    console.log('✅ Starting quiz instantly with pre-transformed data');
+    startQuiz(transformedQuizQuestions, lesson.id);
+  }, [
+    isTransitioning, 
+    isQuizReady, 
+    transformedQuizQuestions, 
+    startQuiz, 
+    lesson.id,
+    isLoadingQuiz,
+    isRefetchingQuiz,
+    quizData,
+    quizError
+  ]);
 
-  const handleQuizComplete = (score: number) => {
+  const handleCloseQuiz = useCallback(() => {
+    // Add quiz close logic here
+  }, []);
+
+  const handleQuizComplete = useCallback((score: number) => {
     console.log(`Quiz completed with score: ${score}%`);
-  };
+  }, []);
 
-  const handleVideoProgress = (progressPercent: number) => {
+  const handleVideoProgress = useCallback((progressPercent: number) => {
     const estimatedDurationMinutes = backendLessonData?.estimated_duration_minutes || 20;
     const estimatedDuration = estimatedDurationMinutes * 60;
     const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
@@ -258,9 +365,9 @@ const LessonView: React.FC<LessonViewProps> = ({
     if (progressPercent >= 95 && !lesson.completed) {
       handleMarkComplete();
     }
-  };
+  }, [backendLessonData, lesson, updateLessonProgressMutation]);
 
-  const handleMarkComplete = () => {
+  const handleMarkComplete = useCallback(() => {
     completeLessonMutation(
       { lessonId: lesson.id.toString() },
       {
@@ -272,19 +379,54 @@ const LessonView: React.FC<LessonViewProps> = ({
         },
       }
     );
-  };
+  }, [completeLessonMutation, lesson.id]);
 
-  const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
-  const nextLesson = currentLessonIndex < module.lessons.length - 1 
-    ? module.lessons[currentLessonIndex + 1] 
-    : null;
-
+  // Display values with fallbacks
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
   const displayImage = backendLessonData?.image_url || lesson.image;
   const displayTranscript = backendLessonData?.video_transcription || lesson.transcript;
 
   const isCompleted = lesson.completed || false;
+
+  // Quiz button state logic
+  const getQuizButtonState = () => {
+    if (isLoadingQuiz || isRefetchingQuiz) {
+      return {
+        disabled: true,
+        text: 'Loading Quiz...',
+        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-gray-400 text-white cursor-not-allowed'
+      };
+    }
+
+    if (quizError) {
+      return {
+        disabled: false,
+        text: 'Start Quiz (Demo)',
+        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700'
+      };
+    }
+
+    if (!isQuizReady) {
+      return {
+        disabled: true,
+        text: 'Preparing Quiz...',
+        className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-yellow-400 text-white cursor-not-allowed'
+      };
+    }
+
+    // Show different text based on data source
+    const isUsingBackendData = quizData && Array.isArray(quizData) && quizData.length > 0;
+    const buttonText = isUsingBackendData ? 'Test Your Knowledge' : 'Test Your Knowledge (Demo)';
+
+    return {
+      disabled: false,
+      text: buttonText,
+      className: 'w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700'
+    };
+  };
+
+  const quizButtonState = getQuizButtonState();
 
   return (
     <div className="pt-6 w-full h-full">
@@ -334,7 +476,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                     Back to Module
                   </RobotoFont>
                 </button>
-
               </div>
 
               {/* Lesson Header */}
@@ -439,15 +580,23 @@ const LessonView: React.FC<LessonViewProps> = ({
                 </RobotoFont>
               </div>
 
-              {/* Test Knowledge Button */}
+              {/* Enhanced Test Knowledge Button with Loading States */}
               <button
                 onClick={handleStartQuiz}
-                disabled={isTransitioning}
-                className="w-full py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-blue-600 text-white hover:bg-blue-700"
+                disabled={quizButtonState.disabled}
+                className={quizButtonState.className}
               >
-                <RobotoFont weight={500} className="text-white">
-                  Test Your Knowledge
-                </RobotoFont>
+                <div className="flex items-center justify-center">
+                  <RobotoFont weight={500} className="text-white">
+                    {quizButtonState.text}
+                  </RobotoFont>
+                  {(isLoadingQuiz || isRefetchingQuiz) && (
+                    <svg className="animate-spin -mr-1 ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
               </button>
 
               {/* Rewards Section with Remaining Coins and Badge Status */}
@@ -460,7 +609,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                     <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
                     <RobotoFont weight={500} className="text-xs">
                       {(() => {
-                        const totalQuestions = 5; // Hard-coded as 5 questions in the sample quiz
+                        const totalQuestions = 5;
                         const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question = 25 total
                         return `+${maxCoinsForLesson} NestCoins`;
                       })()}
@@ -544,7 +693,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         }`} />
 
         {/* Right Column - Video Player */}
-           <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
+        <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
           sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
         }`}>
           {/* Main Video Content */}
@@ -556,45 +705,54 @@ const LessonView: React.FC<LessonViewProps> = ({
             }`}>
               <div className="space-y-6 pb-6">
                 {/* Video Player */}
-                <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <button
-                        onClick={() => handleVideoProgress(10)}
-                        className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
-                      >
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      </button>
-                    </div>
-                    <RobotoFont className="text-right text-sm text-gray-500 mt-4">
-                      {lesson.duration}
-                    </RobotoFont>
-                  </div>
-                </div>
-
-                {/* Video Transcript */}
-                {displayTranscript && (
-                  <div>
-                    <RobotoFont as="h3" weight={600} className="text-lg mb-4">
-                      Video Transcript
-                    </RobotoFont>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <RobotoFont weight={500} className="text-sm text-gray-500 min-w-[3rem]">
-                            0:00
-                          </RobotoFont>
-                          <RobotoFont className="text-sm text-gray-700 leading-relaxed">
-                            {displayTranscript}
-                          </RobotoFont>
+                  <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
+                    {lesson.videoUrl ? (
+                      <iframe
+                        src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
+                        title={lesson.title}
+                        className="w-full h-full rounded-lg"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <button
+                            onClick={() => handleVideoProgress(10)}
+                            className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
+                          >
+                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </button>
                         </div>
+                        <RobotoFont className="text-right text-sm text-gray-500 mt-4">
+                          {lesson.duration}
+                        </RobotoFont>
                       </div>
-                    </div>
+                    )}
                   </div>
-                )}
-
+              {/* Video Transcript */}
+              <div>
+                <RobotoFont as="h3" weight={600} className="text-lg mb-4">
+                  Video Transcript
+                </RobotoFont>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {backendLessonData?.video_transcription ? (
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      <RobotoFont className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                        {backendLessonData.video_transcription}
+                      </RobotoFont>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <RobotoFont className="text-sm text-gray-500">
+                        Transcription not available for this video
+                      </RobotoFont>
+                    </div>
+                  )}
+                </div>
+              </div>
                 {/* Lesson Navigation */}
                 <div className="flex gap-3">
                   <button 
