@@ -11,6 +11,13 @@ const NeighborhoodView: React.FC<NeighborhoodViewProps> = ({
   onHouseSelect, 
   onBackToMap 
 }) => {
+  // TODO: Implement house selection functionality
+  const handleHouseClick = (houseId: string) => {
+    if (onHouseSelect) {
+      onHouseSelect(houseId);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-purple-100">
       <div className="max-w-2xl mx-auto text-center p-8">
@@ -50,6 +57,29 @@ const NeighborhoodView: React.FC<NeighborhoodViewProps> = ({
             </div>
           </div>
           
+          {/* Placeholder house buttons */}
+          <div className="mb-6">
+            <button
+              onClick={() => handleHouseClick('finance-fundamentals-house')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
+            >
+              Finance Fundamentals
+            </button>
+            <button
+              onClick={() => handleHouseClick('mortgage-basics-house')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
+            >
+              Mortgage Basics
+            </button>
+            <button
+              onClick={() => handleHouseClick('advanced-concepts-house')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled
+            >
+              Advanced (Locked)
+            </button>
+          </div>
+
           {onBackToMap && (
             <button 
               onClick={onBackToMap}

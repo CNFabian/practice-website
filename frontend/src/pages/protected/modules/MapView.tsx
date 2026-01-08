@@ -6,6 +6,13 @@ interface MapViewProps {
 }
 
 const MapView: React.FC<MapViewProps> = ({ onNeighborhoodSelect }) => {
+  // TODO: Implement neighborhood selection functionality
+  const handleNeighborhoodClick = (neighborhoodId: string) => {
+    if (onNeighborhoodSelect) {
+      onNeighborhoodSelect(neighborhoodId);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 to-blue-100">
       <div className="max-w-2xl mx-auto text-center p-8">
@@ -41,6 +48,23 @@ const MapView: React.FC<MapViewProps> = ({ onNeighborhoodSelect }) => {
                 <span className="text-gray-700">Achievement landmarks</span>
               </div>
             </div>
+          </div>
+
+          {/* Placeholder neighborhood buttons */}
+          <div className="mb-6">
+            <button
+              onClick={() => handleNeighborhoodClick('starter-neighborhood')}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors mr-4"
+            >
+              Starter Neighborhood
+            </button>
+            <button
+              onClick={() => handleNeighborhoodClick('advanced-neighborhood')}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+              disabled
+            >
+              Advanced (Locked)
+            </button>
           </div>
           
           <div className="text-sm text-gray-500">

@@ -11,6 +11,13 @@ const HouseView: React.FC<HouseViewProps> = ({
   onLessonSelect, 
   onBackToNeighborhood 
 }) => {
+  // TODO: Implement lesson selection functionality
+  const handleLessonClick = (lessonId: string) => {
+    if (onLessonSelect) {
+      onLessonSelect(lessonId);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-pink-100">
       <div className="max-w-2xl mx-auto text-center p-8">
@@ -50,6 +57,29 @@ const HouseView: React.FC<HouseViewProps> = ({
             </div>
           </div>
           
+          {/* Placeholder lesson buttons */}
+          <div className="mb-6">
+            <button
+              onClick={() => handleLessonClick('lesson-1')}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors mr-4"
+            >
+              Introduction Lesson
+            </button>
+            <button
+              onClick={() => handleLessonClick('lesson-2')}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors mr-4"
+            >
+              Practice Activities
+            </button>
+            <button
+              onClick={() => handleLessonClick('lesson-3')}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              disabled
+            >
+              Assessment (Locked)
+            </button>
+          </div>
+
           {onBackToNeighborhood && (
             <button 
               onClick={onBackToNeighborhood}

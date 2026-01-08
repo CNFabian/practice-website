@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { RouteObject } from 'react-router-dom';
-import { lazy } from 'react';
+import { lazy, createElement } from 'react';
 
 // Lazy load components for better performance
 const MapView = lazy(() => import('../pages/protected/modules/MapView'));
@@ -22,36 +22,36 @@ export const gamifiedRoutes: RouteObject[] = [
   // Main map view (replaces current module grid)
   {
     path: '/modules',
-    element: MapView,
+    element: createElement(MapView),
     children: [
       // Default route shows map
       {
         index: true,
-        element: MapView,
+        element: createElement(MapView),
       },
       
       // Neighborhood-specific routes
       {
         path: 'neighborhood/:neighborhoodId',
-        element: NeighborhoodView,
+        element: createElement(NeighborhoodView),
         children: [
           // House-specific routes within neighborhood
           {
             path: 'house/:houseId',
-            element: HouseView,
+            element: createElement(HouseView),
             children: [
               // Module/lesson routes within house
               {
                 path: 'module/:moduleId',
-                element: HouseView, // Shows module selection within house
+                element: createElement(HouseView), // Shows module selection within house
               },
               {
                 path: 'module/:moduleId/lesson/:lessonId',
-                element: LessonView,
+                element: createElement(LessonView),
               },
               {
                 path: 'module/:moduleId/quiz',
-                element: ModuleQuizView,
+                element: createElement(ModuleQuizView),
               },
             ],
           },
