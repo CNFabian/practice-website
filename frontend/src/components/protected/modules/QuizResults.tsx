@@ -41,7 +41,6 @@ const QuizResults: React.FC<QuizResultsProps> = ({
     completeModuleQuiz
   } = useModules();
 
-  // Use the new frontend coin system
   const { incrementCoins } = useCoinSystem();
 
   const { mutate: submitQuizMutation } = useSubmitQuiz(

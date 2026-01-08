@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { loginUser, getCurrentUser } from '../../services/authAPI'
 import { setUser } from '../../store/slices/authSlice'
-import { LoginImage } from '../../assets'
+import { LoginImage, Eye, Blind } from '../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
@@ -14,6 +14,7 @@ const LoginPage: React.FC = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -92,16 +93,29 @@ const LoginPage: React.FC = () => {
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              style={{ backgroundColor: '#EFF2FF' }}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 pr-12 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                style={{ backgroundColor: '#EFF2FF' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <img 
+                  src={showPassword ? Blind : Eye} 
+                  alt={showPassword ? "Hide password" : "Show password"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
 
             <div className="flex items-center">
               <input
@@ -136,11 +150,11 @@ const LoginPage: React.FC = () => {
 
       {/* Right Side - Image */}
       <div className="hidden lg:flex flex-1 items-center justify-center m-10">
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
           <img 
             src={LoginImage} 
             alt="Home ownership journey image" 
-            className="w-full h-full object-cover rounded-2xl"
+            className="max-w-full max-h-full object-cover rounded-2xl"
           />
         </div>
       </div>

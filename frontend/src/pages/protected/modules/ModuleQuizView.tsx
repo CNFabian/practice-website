@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useModules } from '../../../hooks/useModules';
-import { Module } from '../../../types/modules';
+import { Module } from '../../../types/modules.backup';
 import { CoinIcon, QuestionImage, BadgeMedal, RobotoFont } from '../../../assets';
 import { FeedbackContainer, QuizResults } from '../../../components';
 import { getLessonQuiz } from '../../../services/learningAPI';

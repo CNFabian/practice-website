@@ -3,7 +3,7 @@ import { useModules } from '../../../hooks/useModules';
 import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
-import { Module, Lesson } from '../../../types/modules';
+import { Module, Lesson } from '../../../types/modules.backup';
 import { SignupImage } from '../../../assets';
 import { getOnboardingProgress } from '../../../services/onBoardingAPI';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
@@ -471,78 +471,30 @@ const ModulesPage: React.FC = () => {
   }, [currentView, isTransitioning]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-gray-50">
-      {currentView === 'modules' && (
-        <div className="absolute top-0 left-0 w-full z-10 p-4">
-          {renderBackendStatus()}
-        </div>
-      )}
-
-      <div
-        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz'
-            ? '-translate-x-full opacity-0'
-            : 'translate-x-0 opacity-100'
-        }`}
-        style={{ 
-          pointerEvents: currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz' ? 'none' : 'auto'
-        }}
-      >
-        <div className={`h-full ${renderBackendStatus() ? 'pt-20' : ''}`}>
-          <ModulesView
-            modulesData={modulesToDisplay}
-            onLessonSelect={handleLessonStart}
-            onModuleQuizSelect={handleModuleQuizStart}
-            isTransitioning={isTransitioning}
-            onLessonsUpdate={updateModuleLessons}
-          />
-        </div>
-      </div>
-
-      <div className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-        currentView === 'lesson' || currentView === 'quiz'
-          ? 'translate-x-0 opacity-100'
-          : 'translate-x-full opacity-0'
-      }`}>
-        {currentLesson && currentModule ? (
-          <LessonView
-            lesson={currentLesson}
-            module={currentModule}
-            onBack={handleBackToModule}
-            isTransitioning={isTransitioning}
-          />
-        ) : currentView === 'lesson' ? (
-          <div className="p-8 text-center bg-red-100">
-            <p className="text-red-600 text-lg font-bold">DEBUG: Missing Data</p>
-            <p>currentView: {currentView}</p>
-            <p>currentLesson: {currentLesson ? 'EXISTS' : 'NULL'}</p>
-            <p>currentModule: {currentModule ? 'EXISTS' : 'NULL'}</p>
-            <p>selectedLessonId: {selectedLessonId}</p>
-            <p>selectedModuleId: {selectedModuleId}</p>
-          </div>
-        ) : null}
-      </div>
-
-      <div
-        className={`absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out ${
-          currentView === 'moduleQuiz'
-            ? 'translate-x-0 opacity-100'
-            : 'translate-x-full opacity-0'
-        }`}
-        style={{ 
-          pointerEvents: currentView === 'moduleQuiz' ? 'auto' : 'none'
-        }}
-      >
-        {currentModule && currentView === 'moduleQuiz' && (
-          <ModuleQuizView
-            module={currentModule}
-            onBack={handleBackToModule}
-            isTransitioning={isTransitioning}
-          />
-        )}
-      </div>
-    </div>
-  );
+     <>
+       {renderError()}
+       {currentView === 'modules' && (
+         <ModulesView 
+           modulesData={modulesToDisplay}
+           onLessonSelect={handleLessonStart}
+           onModuleQuizSelect={handleModuleQuizStart}
+           isTransitioning={isTransitioning}
+           onLessonsUpdate={updateModuleLessons}
+         />
+       )}
+       {currentView === 'lesson' && currentLesson && currentModule && (
+         <LessonView 
+           lesson={currentLesson}
+           module={currentModule}
+           onBack={handleBackToModules}
+           isTransitioning={isTransitioning}
+         />
+       )}
+       {/* Keep existing quiz views */}
+       {currentView === 'quiz' && <QuizView />}
+       {currentView === 'moduleQuiz' && <ModuleQuizView />}
+     </>
+   );
 };
 
 export default ModulesPage;

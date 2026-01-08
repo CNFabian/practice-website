@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
-import { Module, Lesson } from '../../../types/modules';
+import { Module, Lesson } from '../../../types/modules.backup';
 import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
 import { LessonQuiz } from '../../../components';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
@@ -224,7 +224,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
   const { 
     data: quizData 
-    // Removed loading states - quiz is always ready via fallback
   } = useLessonQuiz(lesson?.backendId || '');
   
   const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.backendId || '', module?.backendId || '');
@@ -290,7 +289,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     console.log('🚀 Starting quiz instantly - no loading required!');
     console.log('✅ Using quiz data:', transformedQuizQuestions.length, 'questions');
     
-    // Always works instantly because we always have data available
     startQuiz(transformedQuizQuestions, lesson.id);
   }, [
     isTransitioning, 

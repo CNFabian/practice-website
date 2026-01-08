@@ -54,6 +54,9 @@ export { default as BadgeRocket } from './images/icons/badge-rocket.svg'
 export { default as BadgeSavings } from './images/icons/badge-savings.svg'
 export { default as BadgeStar } from './images/icons/badge-star.svg'
 export { default as BadgeTrophy } from './images/icons/badge-trophy.svg'
+export { default as Eye } from './images/icons/Eye.svg'
+export { default as Blind } from './images/icons/Blind.svg'
+
 
 // Static Images
 export { default as SignupImage } from './images/static/signup_page.png'

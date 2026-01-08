@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { registerUser, getCurrentUser } from '../../services/authAPI'
 import { setUser } from '../../store/slices/authSlice'
-import { SignupImage, TermsConditionsDoc } from '../../assets'
+import { SignupImage, TermsConditionsDoc, Eye, Blind } from '../../assets'
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate()
@@ -19,6 +19,8 @@ const SignupPage: React.FC = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -159,27 +161,53 @@ const SignupPage: React.FC = () => {
               style={{ backgroundColor: '#EFF2FF' }}
             />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              style={{ backgroundColor: '#EFF2FF' }}
-            />
+           <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 pr-12 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                style={{ backgroundColor: '#EFF2FF' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <img 
+                  src={showPassword ? Blind : Eye} 
+                  alt={showPassword ? "Hide password" : "Show password"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
 
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              style={{ backgroundColor: '#EFF2FF' }}
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 pr-12 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                style={{ backgroundColor: '#EFF2FF' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <img 
+                  src={showConfirmPassword ? Blind : Eye} 
+                  alt={showConfirmPassword ? "Hide password" : "Show password"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
 
               {/* Terms and Conditions text */}
             <div className="text-center text-sm text-gray-600 mt-4 whitespace-nowrap">
@@ -213,15 +241,15 @@ const SignupPage: React.FC = () => {
       </div>
 
       {/* Right Side - Image */}
-      <div className="hidden lg:flex flex-1 items-center justify-center m-10">
-        <div className="w-full h-full flex items-center justify-center">
-          <img 
-            src={SignupImage} 
-            alt="Home ownership journey image" 
-            className="w-full h-full object-cover rounded-2xl"
-          />
+     <div className="hidden lg:flex flex-1 items-center justify-center m-10">
+          <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
+            <img 
+              src={SignupImage} 
+              alt="Home ownership journey image" 
+              className="max-w-full max-h-full object-cover rounded-2xl"
+            />
+          </div>
         </div>
-      </div>
     </div>
   )
 }
