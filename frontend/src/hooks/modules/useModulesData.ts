@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-   import { useModulesQuery } from '../queries/useModulesQuery';
+   import { useModules as useModulesQuery } from '../queries/useLearningQueries';
    import { useOnboardingStatus } from '../queries/useOnboardingStatus';
    import { convertBackendModuleToFrontend } from '../../services/modules/dataAdapters';
    import { Module } from '../../types/modules.backup';

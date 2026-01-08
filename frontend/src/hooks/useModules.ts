@@ -1,13 +1,18 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useCallback } from 'react'
 import type { RootState, AppDispatch } from '../store/store'
-import type { QuizQuestion } from '../store/slices/moduleSlice'
+import type { QuizQuestion } from '../store/slices/quizSlice'
 import {
   setCurrentView,
   setSelectedModule,
   setSelectedLesson,
+  setLoading,
+  setError
+} from '../store/slices/moduleSlice'
+import {
   startQuiz,
   startModuleQuiz,
+  startMinigame,
   selectQuizAnswer,
   startQuizTransition,
   nextQuizQuestion,
@@ -15,18 +20,15 @@ import {
   previousQuizQuestion,
   completeQuiz,
   completeModuleQuiz,
+  completeMinigame,
   resetQuiz,
-  closeQuiz,
-  toggleSidebar,
-  setShowCompactLayout,
-  setActiveTab,
-  setLoading,
-  setError
-} from '../store/slices/moduleSlice'
+  closeQuiz
+} from '../store/slices/quizSlice'
 
 export const useModules = () => {
   const dispatch = useDispatch<AppDispatch>()
   const moduleState = useSelector((state: RootState) => state.modules)
+  const quizState = useSelector((state: RootState) => state.quiz)
 
   const goToModules = useCallback(() => {
     dispatch(setCurrentView('modules'))
@@ -35,20 +37,25 @@ export const useModules = () => {
   const goToLesson = useCallback((lessonId: string | number, moduleId: number) => {    
     const lessonIdNumber = typeof lessonId === 'string' ? parseInt(lessonId, 10) : lessonId;
     
-    // Use Redux dispatch with number type as expected
     dispatch(setSelectedLesson(lessonIdNumber));
     dispatch(setSelectedModule(moduleId));
     dispatch(setCurrentView('lesson'));
-    
   }, [dispatch])
 
   const goToQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {
     dispatch(startQuiz({ questions, lessonId }))
+    dispatch(setCurrentView('quiz'))
   }, [dispatch])
 
   const goToModuleQuiz = useCallback((questions: QuizQuestion[], moduleId: number) => {
     dispatch(setSelectedModule(moduleId))
     dispatch(startModuleQuiz({ questions, moduleId }))
+    dispatch(setCurrentView('moduleQuiz'))
+  }, [dispatch])
+
+  const goToMinigame = useCallback((questions: QuizQuestion[], lessonId: number) => {
+    dispatch(startMinigame({ questions, lessonId }))
+    dispatch(setCurrentView('quiz'))
   }, [dispatch])
 
   const selectModuleById = useCallback((moduleId: number) => {
@@ -57,10 +64,17 @@ export const useModules = () => {
 
   const startLessonQuiz = useCallback((questions: QuizQuestion[], lessonId: number) => {
     dispatch(startQuiz({ questions, lessonId }))
+    dispatch(setCurrentView('quiz'))
   }, [dispatch])
 
   const startModuleQuizAction = useCallback((questions: QuizQuestion[], moduleId: number) => {
     dispatch(startModuleQuiz({ questions, moduleId }))
+    dispatch(setCurrentView('moduleQuiz'))
+  }, [dispatch])
+
+  const startMinigameAction = useCallback((questions: QuizQuestion[], lessonId: number) => {
+    dispatch(startMinigame({ questions, lessonId }))
+    dispatch(setCurrentView('quiz'))
   }, [dispatch])
 
   const selectAnswer = useCallback((questionIndex: number, answer: string) => {
@@ -89,24 +103,16 @@ export const useModules = () => {
     dispatch(completeModuleQuiz({ moduleId, score }))
   }, [dispatch])
 
+  const completeMinigameWithScore = useCallback((lessonId: number, score: number) => {
+    dispatch(completeMinigame({ lessonId, score }))
+  }, [dispatch])
+
   const restartQuiz = useCallback(() => {
     dispatch(resetQuiz())
   }, [dispatch])
 
   const exitQuiz = useCallback(() => {
     dispatch(closeQuiz())
-  }, [dispatch])
-
-  const toggleSidebarState = useCallback((collapsed?: boolean) => {
-    dispatch(toggleSidebar(collapsed ?? !moduleState.sidebarCollapsed))
-  }, [dispatch, moduleState.sidebarCollapsed])
-
-  const toggleCompactLayout = useCallback((compact?: boolean) => {
-    dispatch(setShowCompactLayout(compact ?? !moduleState.showCompactLayout))
-  }, [dispatch, moduleState.showCompactLayout])
-
-  const changeActiveTab = useCallback((tab: 'All' | 'In Progress' | 'Completed') => {
-    dispatch(setActiveTab(tab))
   }, [dispatch])
 
   const setIsLoading = useCallback((loading: boolean) => {
@@ -122,37 +128,38 @@ export const useModules = () => {
   }, [dispatch])
 
   return {
+    // Core navigation state
     currentView: moduleState.currentView,
     selectedModuleId: moduleState.selectedModuleId,
     selectedLessonId: moduleState.selectedLessonId,
-    quizState: moduleState.quizState,
-    sidebarCollapsed: moduleState.sidebarCollapsed,
-    showCompactLayout: moduleState.showCompactLayout,
-    activeTab: moduleState.activeTab,
     isLoading: moduleState.isLoading,
     error: moduleState.error,
 
+    // Quiz state from separate slice
+    quizState,
+
+    // Navigation actions
     goToModules,
     goToLesson,
     goToQuiz,
     goToModuleQuiz,
-
+    goToMinigame,
     selectModuleById,
 
+    // Quiz actions
     startQuiz: startLessonQuiz,
     startModuleQuiz: startModuleQuizAction,
+    startMinigame: startMinigameAction,
     selectAnswer,
     nextQuestion,
     previousQuestion,
     completeQuiz: completeQuizWithScore,
     completeModuleQuiz: completeModuleQuizWithScore,
+    completeMinigame: completeMinigameWithScore,
     resetQuiz: restartQuiz,
     closeQuiz: exitQuiz,
 
-    toggleSidebar: toggleSidebarState,
-    toggleCompactLayout,
-    changeActiveTab,
-
+    // Utility actions
     setLoading: setIsLoading,
     setError: setErrorMessage,
     clearError: clearErrorMessage

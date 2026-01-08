@@ -46,8 +46,6 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
     resetQuiz,
     closeQuiz,
     completeModuleQuiz,
-    sidebarCollapsed,
-    toggleSidebar,
     startModuleQuiz
   } = useModules();
 
@@ -217,10 +215,6 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
     onBack();
   };
 
-  const toggleModuleInfo = () => {
-    if (isTransitioning) return;
-    toggleSidebar(!sidebarCollapsed);
-  };
 
   const currentQuestionData = quizState.questions[quizState.currentQuestion];
   const showFeedback = !!quizState.selectedAnswer;
@@ -351,29 +345,9 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
   return (
     <div className="pt-6 w-full h-full">
       <div className="flex h-full w-full">
-        {/* Arrow Toggle */}
-        <button
-          onClick={toggleModuleInfo}
-          disabled={isTransitioning}
-          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0`}
-          style={{
-            top: '240px'
-          }}
-        >
-          <svg 
-            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
 
         {/* Left Column - Module Info */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
-        }`}>
+        <div className={"transition-all duration-300 ease-in-out"}>
           <div 
             className="h-full px-2 flex flex-col overflow-y-auto" 
             style={{ 
@@ -574,14 +548,10 @@ const ModuleQuizView: React.FC<ModuleQuizViewProps> = ({
         </div>
 
         {/* Separator Line */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
-        }`} />
+        <div className={"transition-all duration-300 ease-in-out"} />
 
         {/* Right Column - Quiz Content */}
-        <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
-          sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
-        }`}>
+        <div className={"transition-all duration-300 ease-in-out relative overflow-hidden"}>
           <div className="p-4 h-full flex flex-col relative">
             {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-shrink-0">

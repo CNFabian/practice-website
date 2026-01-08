@@ -1,59 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useModules } from '../../../hooks/useModules';
-import ModulesView from './ModulesView';
 import LessonView from './LessonView';
 import ModuleQuizView from './ModuleQuizView';
-import { Module, Lesson } from '../../../types/modules.backup';
+import { Module} from '../../../types/modules.backup';
 import { SignupImage } from '../../../assets';
 import { getOnboardingProgress } from '../../../services/onBoardingAPI';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 import { useModules as useModulesQuery } from '../../../hooks/queries/useLearningQueries';
 
-// Sample module quiz questions for testing
-const sampleModuleQuizQuestions = [
-  {
-    id: 1,
-    question: "What is the main goal of this module?",
-    image: null,
-    options: [
-      { id: 'a', text: "To learn basic concepts", isCorrect: true },
-      { id: 'b', text: "To complete assignments", isCorrect: false },
-      { id: 'c', text: "To earn coins", isCorrect: false },
-      { id: 'd', text: "To watch videos", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Great! The main goal is to understand and apply the core concepts taught in this module.",
-      incorrect: {
-        'a': { why_wrong: "This is actually correct, but you may have misunderstood the question.", confusion_reason: "Correct answer selected incorrectly" },
-        'b': { why_wrong: "While assignments help, the main goal is conceptual understanding.", confusion_reason: "Common misconception about learning objectives" },
-        'c': { why_wrong: "Coins are rewards, not the primary learning objective.", confusion_reason: "Gamification elements vs core purpose" },
-        'd': { why_wrong: "Videos are just one delivery method for the content.", confusion_reason: "Medium vs message confusion" }
-      }
-    }
-  },
-  {
-    id: 2,
-    question: "Which of the following represents best practices covered in this module?",
-    image: null,
-    options: [
-      { id: 'a', text: "Following step-by-step procedures", isCorrect: false },
-      { id: 'b', text: "Understanding underlying principles", isCorrect: true },
-      { id: 'c', text: "Memorizing facts", isCorrect: false },
-      { id: 'd', text: "Completing tasks quickly", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Excellent! Understanding principles allows you to apply knowledge flexibly.",
-      incorrect: {
-        'a': { why_wrong: "Procedures are helpful but understanding principles is more important.", confusion_reason: "Surface vs deep learning approach" },
-        'b': { why_wrong: "This is actually correct, but you may have misunderstood the question.", confusion_reason: "Correct answer selected incorrectly" },
-        'c': { why_wrong: "Memorization without understanding limits practical application.", confusion_reason: "Rote learning vs comprehension" },
-        'd': { why_wrong: "Speed without comprehension can lead to errors.", confusion_reason: "Efficiency vs effectiveness" }
-      }
-    }
-  }
-];
-
-// Sample frontend modules data (fallback)
 const sampleModulesData: Module[] = [
   {
     id: 1,
@@ -233,7 +187,6 @@ const sampleModulesData: Module[] = [
   }
 ];
 
-// Converter function for backend modules
 const convertBackendModuleToFrontend = (backendModule: any): Module => {
   return {
     id: parseInt(backendModule.id.slice(-1)) || Math.floor(Math.random() * 1000),
@@ -250,37 +203,88 @@ const convertBackendModuleToFrontend = (backendModule: any): Module => {
   };
 };
 
+const PlaceholderModulesView: React.FC<{ moduleCount: number }> = ({ moduleCount }) => {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto text-center p-8">
+        <div className="mb-8">
+          <div className="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Coming Soon: Gamified Learning Experience</h1>
+          <p className="text-lg text-gray-600 mb-6">
+            We're preparing an exciting new way to learn with maps, neighborhoods, and interactive experiences!
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">What's Coming</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">Map-Based Navigation</h3>
+                <p className="text-sm text-gray-600">Explore modules through an interactive map interface</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">House Structures</h3>
+                <p className="text-sm text-gray-600">Enter houses containing lessons and minigames</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">Neighborhood Progression</h3>
+                <p className="text-sm text-gray-600">Progress through different homebuying journey stages</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">Coin System & Leaderboard</h3>
+                <p className="text-sm text-gray-600">Earn coins and compete on regional leaderboards</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 rounded-lg p-4">
+          <p className="text-blue-800 font-medium">
+            Data Verification: {moduleCount} modules loaded successfully
+          </p>
+          <p className="text-blue-600 text-sm mt-1">
+            All your learning progress and data will be preserved in the new experience
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ModulesPage: React.FC = () => {
   const {
     currentView,
     selectedModuleId,
     selectedLessonId,
-    goToLesson,
     goToModules,
-    goToModuleQuiz
   } = useModules();
 
   const { data: onboardingStatusData } = useOnboardingStatus();
   const { data: backendModules, isLoading: isLoadingModules, error: modulesError } = useModulesQuery();
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [backendModulesData, setBackendModulesData] = useState<Module[]>([]);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
-
-  const [moduleLessons, setModuleLessons] = useState<{ [moduleId: number]: Lesson[] }>({});
 
   const [_onboardingStatus, setOnboardingStatus] = useState<{
     isCompleted: boolean;
     currentStep: number;
     progressPercentage: number;
   } | null>(null);
-
-  const updateModuleLessons = (moduleId: number, lessons: Lesson[]) => {
-    setModuleLessons(prev => ({
-      ...prev,
-      [moduleId]: lessons
-    }));
-  };
 
   useEffect(() => {
     if (!onboardingStatusData) {
@@ -363,16 +367,16 @@ const ModulesPage: React.FC = () => {
       );
     }
 
-   if (backendModulesData.length > 0) {
-    console.log(`Successfully loaded ${backendModulesData.length} modules from backend`);
-    return null;
-}
+    if (backendModulesData.length > 0) {
+      console.log(`Successfully loaded ${backendModulesData.length} modules from backend`);
+      return null;
+    }
 
     return null;
   };
 
   const modulesToDisplay = useMemo(() => {    
-    const baseModules = backendModulesData.length > 0 
+    return backendModulesData.length > 0 
       ? (() => {
           console.log('Using backend modules data');
           return backendModulesData;
@@ -381,23 +385,10 @@ const ModulesPage: React.FC = () => {
           console.log('Using frontend sample data');
           return sampleModulesData;
         })();
-
-    // Integrate lessons from moduleLessons state
-    const modulesWithLessons = baseModules.map(module => {
-      const lessons = moduleLessons[module.id] || module.lessons;
-      return {
-        ...module,
-        lessons
-      };
-    });
-
-    return modulesWithLessons;
-  }, [backendModulesData, moduleLessons]);
+  }, [backendModulesData]);
 
   const currentModule = useMemo(() => {
-   
     if (!selectedModuleId) {
-      console.log('❌ No selectedModuleId');
       return null;
     }
     
@@ -406,18 +397,14 @@ const ModulesPage: React.FC = () => {
   }, [selectedModuleId, modulesToDisplay]);
 
   const currentLesson = useMemo(() => {
-    
     if (!selectedLessonId || !currentModule) {
       return null;
     }
     
-    // Check if lessons are loaded yet
     if (!currentModule.lessons || currentModule.lessons.length === 0) {
       return null;
     }
   
-    
-    // Try multiple lookup strategies for type safety
     let lesson = currentModule.lessons.find(l => l.id === selectedLessonId);
     
     if (!lesson) {
@@ -435,66 +422,37 @@ const ModulesPage: React.FC = () => {
     return lesson || null;
   }, [selectedLessonId, currentModule]);
 
-  const handleLessonStart = (lesson: Lesson, module: Module) => {
-    
-    setIsTransitioning(true);
-    goToLesson(lesson.id, module.id);
-    
-    requestAnimationFrame(() => {
-    });
-  };
-
-  const handleModuleQuizStart = (module: Module) => {
-    setIsTransitioning(true);
-    goToModuleQuiz(sampleModuleQuizQuestions, module.id);
-  };
-
-  const handleBackToModule = () => {
-    setIsTransitioning(true);
+  const handleBackToModules = () => {
     goToModules();
   };
 
-  useEffect(() => {
-    if (currentView === 'modules' && isTransitioning) {
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    } else if ((currentView === 'lesson' || currentView === 'quiz' || currentView === 'moduleQuiz') && isTransitioning) {
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentView, isTransitioning]);
-
   return (
-     <>
-       {renderError()}
-       {currentView === 'modules' && (
-         <ModulesView 
-           modulesData={modulesToDisplay}
-           onLessonSelect={handleLessonStart}
-           onModuleQuizSelect={handleModuleQuizStart}
-           isTransitioning={isTransitioning}
-           onLessonsUpdate={updateModuleLessons}
-         />
-       )}
-       {currentView === 'lesson' && currentLesson && currentModule && (
-         <LessonView 
-           lesson={currentLesson}
-           module={currentModule}
-           onBack={handleBackToModules}
-           isTransitioning={isTransitioning}
-         />
-       )}
-       {/* Keep existing quiz views */}
-       {currentView === 'quiz' && <QuizView />}
-       {currentView === 'moduleQuiz' && <ModuleQuizView />}
-     </>
-   );
+    <>
+      {renderBackendStatus()}
+      {currentView === 'modules' && (
+        <PlaceholderModulesView moduleCount={modulesToDisplay.length} />
+      )}
+      {currentView === 'lesson' && currentLesson && currentModule && (
+        <LessonView 
+          lesson={currentLesson}
+          module={currentModule}
+          onBack={handleBackToModules}
+        />
+      )}
+      {currentView === 'quiz' && currentModule && (
+        <ModuleQuizView 
+          module={currentModule}
+          onBack={handleBackToModules}
+        />
+      )}
+      {currentView === 'moduleQuiz' && currentModule && (
+        <ModuleQuizView 
+          module={currentModule}
+          onBack={handleBackToModules}
+        />
+      )}
+    </>
+  );
 };
 
 export default ModulesPage;

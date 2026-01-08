@@ -3,6 +3,7 @@ import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import authReducer from './slices/authSlice'
 import moduleReducer from './slices/moduleSlice'
+import quizReducer from './slices/quizSlice'
 import uiReducer from './slices/uiSlice'
 import coinReducer from './slices/coinSlice'
 
@@ -11,9 +12,7 @@ const modulesPersistConfig = {
   storage,
   whitelist: [
     'selectedModuleId',
-    'selectedLessonId',
-    'sidebarCollapsed',
-    'showCompactLayout'
+    'selectedLessonId'
   ]
 }
 
@@ -23,21 +22,28 @@ const authPersistConfig = {
   whitelist: ['user', 'isAuthenticated']
 }
 
-// Add coin persist config to maintain coin balance across sessions
 const coinPersistConfig = {
   key: 'coins',
   storage,
   whitelist: ['cachedBalance']
 }
 
+const quizPersistConfig = {
+  key: 'quiz',
+  storage,
+  whitelist: [] // Don't persist quiz state, should restart fresh each time
+}
+
 const persistedModuleReducer = persistReducer(modulesPersistConfig, moduleReducer)
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer)
 const persistedCoinReducer = persistReducer(coinPersistConfig, coinReducer)
+const persistedQuizReducer = persistReducer(quizPersistConfig, quizReducer)
 
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     modules: persistedModuleReducer,
+    quiz: persistedQuizReducer,
     ui: uiReducer,
     coins: persistedCoinReducer,
   },

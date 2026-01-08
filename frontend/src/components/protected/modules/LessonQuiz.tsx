@@ -30,8 +30,6 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
     closeQuiz,
     completeQuiz,
     goToLesson,
-    toggleSidebar,
-    sidebarCollapsed
   } = useModules();
 
   // Add submission tracking
@@ -112,10 +110,7 @@ const LessonQuiz: React.FC<LessonQuizProps> = ({
       : null;
 
     if (nextLesson) {
-      if (sidebarCollapsed) {
-        toggleSidebar(false);
-      }
-      
+    
       // Navigate to next lesson
       goToLesson(nextLesson.id, module.id);
       

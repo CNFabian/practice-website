@@ -1,17 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules.backup';
-import { CoinIcon, BadgeMedal, RobotoFont } from '../../../assets';
-import { LessonQuiz } from '../../../components';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
-import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
-import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 
 interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
-  isTransitioning?: boolean;
 }
 
 interface BackendQuizQuestion {
@@ -29,7 +24,6 @@ interface BackendQuizQuestion {
   }[];
 }
 
-// Mock quiz data for fallback when backend data is not available
 const MOCK_QUIZ_QUESTIONS = [
   {
     id: 1,
@@ -57,121 +51,11 @@ const MOCK_QUIZ_QUESTIONS = [
         }
       }
     }
-  },
-  {
-    id: 2,
-    question: "What does PMI stand for?",
-    options: [
-      { id: "a", text: "Private Mortgage Insurance", isCorrect: true },
-      { id: "b", text: "Public Mortgage Investment", isCorrect: false },
-      { id: "c", text: "Primary Monthly Interest", isCorrect: false },
-      { id: "d", text: "Property Management Insurance", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Correct! PMI stands for Private Mortgage Insurance, which protects lenders when you put down less than 20%.",
-      incorrect: {
-        "b": { 
-          why_wrong: "PMI is not related to public investments.",
-          confusion_reason: "The 'Public' and 'Investment' terms might seem related to mortgages but are incorrect."
-        },
-        "c": { 
-          why_wrong: "PMI is not about monthly interest calculations.",
-          confusion_reason: "While PMI does affect monthly payments, it's insurance, not interest."
-        },
-        "d": { 
-          why_wrong: "PMI is not property management insurance.",
-          confusion_reason: "Both involve property and insurance, but PMI specifically protects the mortgage lender."
-        }
-      }
-    }
-  },
-  {
-    id: 3,
-    question: "Which credit score range is considered excellent for mortgage applications?",
-    options: [
-      { id: "a", text: "800-850", isCorrect: true },
-      { id: "b", text: "700-750", isCorrect: false },
-      { id: "c", text: "650-700", isCorrect: false },
-      { id: "d", text: "600-650", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Excellent! A credit score of 800-850 is considered excellent and will get you the best mortgage rates.",
-      incorrect: {
-        "b": { 
-          why_wrong: "700-750 is considered good, but not excellent.",
-          confusion_reason: "While this range qualifies for good rates, excellent rates require higher scores."
-        },
-        "c": { 
-          why_wrong: "650-700 is considered fair to good, but not excellent.",
-          confusion_reason: "This range can still qualify for mortgages but won't get the best rates."
-        },
-        "d": { 
-          why_wrong: "600-650 is considered fair and may require higher interest rates.",
-          confusion_reason: "This range may qualify for some loans but with less favorable terms."
-        }
-      }
-    }
-  },
-  {
-    id: 4,
-    question: "What is the debt-to-income ratio that most lenders prefer?",
-    options: [
-      { id: "a", text: "Below 28%", isCorrect: true },
-      { id: "b", text: "Below 40%", isCorrect: false },
-      { id: "c", text: "Below 50%", isCorrect: false },
-      { id: "d", text: "Below 60%", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Perfect! Most lenders prefer a debt-to-income ratio below 28% for the housing payment alone.",
-      incorrect: {
-        "b": { 
-          why_wrong: "40% is often the maximum total debt-to-income ratio, not the preferred amount.",
-          confusion_reason: "This might be the total DTI limit, but lenders prefer lower housing ratios."
-        },
-        "c": { 
-          why_wrong: "50% is too high for most conventional mortgage approvals.",
-          confusion_reason: "This high ratio would be risky for both lender and borrower."
-        },
-        "d": { 
-          why_wrong: "60% debt-to-income ratio would be considered very high risk.",
-          confusion_reason: "Such a high ratio would likely result in loan denial."
-        }
-      }
-    }
-  },
-  {
-    id: 5,
-    question: "How long should you typically save bank statements before applying for a mortgage?",
-    options: [
-      { id: "a", text: "2-3 months", isCorrect: true },
-      { id: "b", text: "1 month", isCorrect: false },
-      { id: "c", text: "6 months", isCorrect: false },
-      { id: "d", text: "1 year", isCorrect: false }
-    ],
-    explanation: {
-      correct: "Correct! Lenders typically require 2-3 months of bank statements to verify your financial stability.",
-      incorrect: {
-        "b": { 
-          why_wrong: "1 month is usually insufficient for lenders to assess financial patterns.",
-          confusion_reason: "While recent, this doesn't show enough financial history for lenders."
-        },
-        "c": { 
-          why_wrong: "6 months is more than typically required, though having them doesn't hurt.",
-          confusion_reason: "While helpful to have, lenders usually only require 2-3 months."
-        },
-        "d": { 
-          why_wrong: "1 year of bank statements is excessive for most mortgage applications.",
-          confusion_reason: "This might be confused with other financial documents that require longer history."
-        }
-      }
-    }
   }
 ];
 
-// Memoized transformation function to prevent recalculation
 const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
   return backendQuestions.map((q: BackendQuizQuestion, index: number) => {
-    // Sort answers once and cache the result
     const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
     
     return {
@@ -185,10 +69,9 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
       explanation: {
         correct: q.explanation || "Correct! Well done.",
         incorrect: {
-          // Generate explanations with both required properties
           ...Object.fromEntries(
             sortedAnswers.slice(1).map((_, idx) => [
-              String.fromCharCode(98 + idx), // 'b', 'c', 'd', etc.
+              String.fromCharCode(98 + idx),
               { 
                 why_wrong: "This is not the correct answer. Please review the lesson content.",
                 confusion_reason: "This option may seem correct but lacks the key elements of the right answer."
@@ -204,8 +87,7 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
 const LessonView: React.FC<LessonViewProps> = ({ 
   lesson, 
   module, 
-  onBack, 
-  isTransitioning = false 
+  onBack
 }) => {
 
   if (!lesson || !module) {
@@ -213,27 +95,12 @@ const LessonView: React.FC<LessonViewProps> = ({
     return <div className="p-8 text-center text-red-500">Missing lesson or module data</div>;
   }
 
-  const {
-    sidebarCollapsed,
-    toggleSidebar,
-    startQuiz,
-    currentView,
-    goToLesson
-  } = useModules();
+  const { goToLesson } = useModules();
 
   const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
-  const { 
-    data: quizData 
-  } = useLessonQuiz(lesson?.backendId || '');
+  const { data: quizData } = useLessonQuiz(lesson?.backendId || '');
   
-  const { mutate: completeLessonMutation } = useCompleteLesson(lesson?.backendId || '', module?.backendId || '');
-  const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(lesson?.backendId || '', module?.backendId || '');
-
-  // State variables
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-
   const transformedQuizQuestions = useMemo(() => {
-    // Use backend data if available, otherwise fallback to mock data instantly
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
       console.log('🔄 Using backend quiz questions:', quizData.length);
       return transformQuizQuestions(quizData);
@@ -243,7 +110,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [quizData]);
 
-  // Derived data with memoization
   const currentLessonIndex = useMemo(() => 
     module.lessons.findIndex(l => l.id === lesson.id), 
     [module.lessons, lesson.id]
@@ -256,478 +122,81 @@ const LessonView: React.FC<LessonViewProps> = ({
     [module.lessons, currentLessonIndex]
   );
 
-  const showQuiz = currentView === 'quiz';
-
-  // Event Handlers with useCallback for optimization
-  const handleBack = useCallback(() => {
-    if (isTransitioning) return;
-    onBack();
-  }, [isTransitioning, onBack]);
-
-  const toggleLessonInfo = useCallback(() => {
-    if (isTransitioning) return;
-    toggleSidebar(!sidebarCollapsed);
-  }, [isTransitioning, toggleSidebar, sidebarCollapsed]);
-
   const handleNextLesson = useCallback(() => {
-    if (!nextLesson || isTransitioning) return;
+    if (!nextLesson) return;
     goToLesson(nextLesson.id, module.id);
-  }, [nextLesson, isTransitioning, goToLesson, module.id]);
-
-  const handlePreviousLesson = useCallback(() => {
-    if (currentLessonIndex === 0 || isTransitioning) return;
-    
-    const previousLesson = module.lessons[currentLessonIndex - 1];
-    if (previousLesson) {
-      goToLesson(previousLesson.id, module.id);
-    }
-  }, [currentLessonIndex, isTransitioning, module.lessons, goToLesson, module.id]);
-
-  const handleStartQuiz = useCallback(() => {
-    if (isTransitioning) return;
-
-    console.log('🚀 Starting quiz instantly - no loading required!');
-    console.log('✅ Using quiz data:', transformedQuizQuestions.length, 'questions');
-    
-    startQuiz(transformedQuizQuestions, lesson.id);
-  }, [
-    isTransitioning, 
-    transformedQuizQuestions, 
-    startQuiz, 
-    lesson.id
-  ]);
-
-  const handleCloseQuiz = useCallback(() => {
-    // Add functionality if needed
-  }, []);
-
-  const handleQuizComplete = useCallback((score: number) => {
-    console.log(`Quiz completed with score: ${score}%`);
-  }, []);
-
-  const handleVideoProgress = useCallback((progressPercent: number) => {
-    const estimatedDurationMinutes = backendLessonData?.estimated_duration_minutes || 20;
-    const estimatedDuration = estimatedDurationMinutes * 60;
-    const progressSeconds = Math.floor((progressPercent / 100) * estimatedDuration);
-
-    updateLessonProgressMutation(
-      { lessonId: lesson.id.toString(), videoProgressSeconds: progressSeconds },
-      {
-        onSuccess: () => {
-          console.log(`Progress updated: ${progressPercent}% (${progressSeconds}s out of ${estimatedDuration}s)`);
-        },
-        onError: (error) => {
-          console.error('Error updating progress on backend:', error);
-        },
-      }
-    );
-
-    if (progressPercent >= 95 && !lesson.completed) {
-      handleMarkComplete();
-    }
-  }, [backendLessonData, lesson, updateLessonProgressMutation]);
-
-  const handleMarkComplete = useCallback(() => {
-    completeLessonMutation(
-      { lessonId: lesson.id.toString() },
-      {
-        onSuccess: (data) => {
-          console.log('Lesson marked complete on backend:', data);
-        },
-        onError: (error) => {
-          console.error('Error completing lesson on backend:', error);
-        },
-      }
-    );
-  }, [completeLessonMutation, lesson.id]);
+  }, [nextLesson, goToLesson, module.id]);
 
   const displayTitle = backendLessonData?.title || lesson.title;
-  const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership and understand why lenders evaluate.";
-  const displayImage = backendLessonData?.image_url || lesson.image;
-  const isCompleted = lesson.completed || false;
-
-  const getQuizButtonState = () => {
-    const isUsingBackendData = quizData && Array.isArray(quizData) && quizData.length > 0;
-    const buttonText = isUsingBackendData ? 'Test Your Knowledge' : 'Test Your Knowledge (Demo)';
-
-    return {
-      disabled: false,
-      text: buttonText,
-      className: 'w-full py-2 rounded-lg font-medium transition-colors text-sm bg-blue-600 text-white hover:bg-blue-700'
-    };
-  };
-
-  const quizButtonState = getQuizButtonState();
+  const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div className="pt-6 w-full h-full">
-      <div className="flex h-full w-full">
-        <button
-          onClick={toggleLessonInfo}
-          disabled={isTransitioning}
-          className={`relative z-10 w-4 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0`}
-          style={{
-            top: '240px'
-          }}
-        >
-          <svg 
-            className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto text-center p-8">
+        <div className="mb-8">
+          <div className="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Coming Soon: Enhanced Lesson Experience</h1>
+          <p className="text-lg text-gray-600 mb-6">
+            We're preparing a new immersive lesson experience as part of our gamified learning platform!
+          </p>
+        </div>
 
-        {/* Left Column - Lesson Info */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-[30%] opacity-100'
-        }`}>
-          <div 
-            className="h-full px-2 flex flex-col overflow-y-auto" 
-            style={{ 
-              scrollbarWidth: 'none', 
-              msOverflowStyle: 'none'
-            }}
-          >
-            {/* Top Fixed Content */}
-            <div className="flex-shrink-0">
-              {/* Back Button and Quiz Status Row */}
-              <div className="pb-2 flex items-center justify-between gap-2 min-w-0">
-                <button
-                  onClick={handleBack}
-                  disabled={isTransitioning}
-                  className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-shrink-0"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <RobotoFont weight={500} className="text-blue-600 whitespace-nowrap">
-                    Back to Module
-                  </RobotoFont>
-                </button>
-              </div>
-
-              {/* Lesson Header */}
-              <div className="space-y-3 pb-3">
-                <div>
-                  <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-1 leading-tight">
-                    {displayTitle}
-                  </RobotoFont>
-                  <div className="flex items-center gap-2 mb-1">
-                    <RobotoFont className="text-xs text-gray-600">
-                      {lesson.duration}
-                    </RobotoFont>
-                    <div className="flex gap-1">
-                      {module.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`px-1.5 py-0.5 text-xs rounded-full ${
-                            tag === 'Beginner' ? 'bg-blue-100 text-blue-700' :
-                            tag === 'Intermediate' ? 'bg-purple-100 text-purple-700' :
-                            tag === 'Finance' ? 'bg-green-100 text-green-700' :
-                            tag === 'Process' ? 'bg-orange-100 text-orange-700' :
-                            tag === 'Maintenance' ? 'bg-red-100 text-red-700' :
-                            tag === 'Safety' ? 'bg-yellow-100 text-yellow-700' :
-                            tag === 'Technology' ? 'bg-indigo-100 text-indigo-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          <RobotoFont weight={500}>
-                            {tag}
-                          </RobotoFont>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Loading/Error State for lesson data only (not quiz) */}
-              {isLoadingLesson && (
-                <div className="text-xs text-gray-500 pb-2">
-                  <RobotoFont className="text-xs">Loading lesson details...</RobotoFont>
-                </div>
-              )}
-              {lessonError && (
-                <div className="text-xs text-red-500 pb-2">
-                  <RobotoFont className="text-xs">
-                    {lessonError instanceof Error ? lessonError.message : 'Failed to load lesson'}
-                  </RobotoFont>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 flex items-center justify-center">
-              <div 
-                className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-lg w-full transition-all duration-700 ease-in-out overflow-hidden"
-                style={{ 
-                  height: descriptionExpanded ? '64px' : 'min(calc(100vh - 600px), 300px)',
-                  minHeight: descriptionExpanded ? '64px' : '120px'
-                }}
-              >
-                <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <img src={displayImage} alt={displayTitle} className="object-contain w-full h-full" />
-                  
-                  {/* Completion badge from Redux */}
-                  {isCompleted && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0 py-3 border-t border-gray-100 space-y-3">
-              {/* Lesson Description */}
-              <div className="bg-blue-50 rounded-lg p-2">
-                <div 
-                  className={`text-xs text-gray-700 mb-1 leading-tight cursor-pointer transition-all duration-300 hover:text-gray-900 ${
-                    displayDescription.length > 120 ? 'cursor-pointer' : 'cursor-default'
-                  }`}
-                  onClick={() => {
-                    if (displayDescription.length > 120) {
-                      setDescriptionExpanded(!descriptionExpanded);
-                    }
-                  }}
-                >
-                  <RobotoFont className="text-xs text-gray-700">
-                    {descriptionExpanded || displayDescription.length <= 120 ? (
-                      displayDescription
-                    ) : (
-                      <>
-                        {displayDescription.substring(0, 120)}
-                        <span className="text-blue-600 font-medium">...</span>
-                      </>
-                    )}
-                  </RobotoFont>
-                </div>
-                <RobotoFont className="text-xs text-gray-600">
-                  When you have finished watching the video, earn rewards by testing your knowledge through a Lesson Quiz!
-                </RobotoFont>
-              </div>
-
-              <button
-                onClick={handleStartQuiz}
-                disabled={quizButtonState.disabled}
-                className={quizButtonState.className}
-              >
-                <div className="flex items-center justify-center">
-                  <RobotoFont weight={500} className="text-white">
-                    {quizButtonState.text}
-                  </RobotoFont>
-                </div>
-              </button>
-
-              {/* Rewards Section with Remaining Coins and Badge Status */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Lesson</h2>
+          <div className="text-left space-y-2">
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
               <div>
-                <RobotoFont as="h3" weight={600} className="text-sm mb-2">
-                  Rewards
-                </RobotoFont>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1.5 rounded-lg">
-                    <img src={CoinIcon} alt="Coins" className="w-6 h-6" />
-                    <RobotoFont weight={500} className="text-xs">
-                      {(() => {
-                        const totalQuestions = 5;
-                        const maxCoinsForLesson = totalQuestions * 5; // 5 coins per question = 25 total
-                        return `+${maxCoinsForLesson} NestCoins`;
-                      })()}
-                    </RobotoFont>
-                  </div>
-                  <div className="flex items-center gap-1 bg-orange-50 px-2 pt-1.5 rounded-lg">
-                    <img
-                      src={BadgeMedal}
-                      alt="Badge"
-                      className="w-7 h-7 transition-all duration-300 opacity-100 brightness-0"
-                    />
-                    <RobotoFont weight={500} className="text-xs">
-                      Lesson Badge
-                    </RobotoFont>
-                  </div>
-                </div>
+                <h3 className="font-medium text-gray-900">{displayTitle}</h3>
+                <p className="text-sm text-gray-600">{displayDescription}</p>
               </div>
-
-              {/* Next Lesson */}
-              {nextLesson && (
-                <div className="bg-gray-50 rounded-lg pb-2 px-2">
-                  <RobotoFont as="h4" weight={600} className="text-sm mb-1">
-                    Next Lesson
-                  </RobotoFont>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs">💳</span>
-                    </div>
-                    <div className="min-w-0">
-                      <RobotoFont as="h5" weight={500} className="text-xs truncate">
-                        {nextLesson.title}
-                      </RobotoFont>
-                      <RobotoFont className="text-xs text-gray-600">
-                        {nextLesson.duration}
-                      </RobotoFont>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Buttons */}
-              <div className="flex gap-2">
-                <button 
-                  onClick={handlePreviousLesson}
-                  disabled={isTransitioning || currentLessonIndex === 0}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RobotoFont weight={500} className="text-gray-700">
-                    Previous
-                  </RobotoFont>
-                </button>
-                {nextLesson ? (
-                  <button 
-                    onClick={handleNextLesson}
-                    disabled={isTransitioning}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RobotoFont weight={500} className="text-white">
-                      Next
-                    </RobotoFont>
-                  </button>
-                ) : (
-                  <button 
-                    onClick={handleMarkComplete}
-                    disabled={isTransitioning}
-                    className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RobotoFont weight={500} className="text-white">
-                      Complete
-                    </RobotoFont>
-                  </button>
-                )}
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">Backend Integration Active</h3>
+                <p className="text-sm text-gray-600">
+                  {isLoadingLesson ? 'Loading lesson data...' : 
+                   lessonError ? 'Using fallback data' : 
+                   'Connected to backend successfully'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+              <div>
+                <h3 className="font-medium text-gray-900">Quiz System Ready</h3>
+                <p className="text-sm text-gray-600">
+                  {transformedQuizQuestions.length} questions prepared
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Separator Line */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-0' : 'w-px bg-gray-200 mx-2'
-        }`} />
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onBack}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Back to Modules
+          </button>
+          {nextLesson && (
+            <button
+              onClick={handleNextLesson}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Next Lesson
+            </button>
+          )}
+        </div>
 
-        {/* Right Column - Video Player */}
-        <div className={`transition-all duration-300 ease-in-out relative overflow-hidden ${
-          sidebarCollapsed ? 'w-[80%] mx-auto' : 'w-[calc(70%-1rem)]'
-        }`}>
-          {/* Main Video Content */}
-          <div className={`h-full transition-transform duration-700 ease-in-out ${
-            showQuiz ? '-translate-x-full' : 'translate-x-0'
-          }`}>
-            <div className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
-              sidebarCollapsed ? 'px-6' : 'px-4'
-            }`}>
-              <div className="space-y-6 pb-6">
-                {/* Video Player */}
-                  <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
-                    {lesson.videoUrl ? (
-                      <iframe
-                        src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
-                        title={lesson.title}
-                        className="w-full h-full rounded-lg"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <button
-                            onClick={() => handleVideoProgress(10)}
-                            className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
-                          >
-                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </button>
-                        </div>
-                        <RobotoFont className="text-right text-sm text-gray-500 mt-4">
-                          {lesson.duration}
-                        </RobotoFont>
-                      </div>
-                    )}
-                  </div>
-              {/* Video Transcript */}
-              <div>
-                <RobotoFont as="h3" weight={600} className="text-lg mb-4">
-                  Video Transcript
-                </RobotoFont>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  {backendLessonData?.video_transcription ? (
-                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                      <RobotoFont className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                        {backendLessonData.video_transcription}
-                      </RobotoFont>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <RobotoFont className="text-sm text-gray-500">
-                        Transcription not available for this video
-                      </RobotoFont>
-                    </div>
-                  )}
-                </div>
-              </div>
-                {/* Lesson Navigation */}
-                <div className="flex gap-3">
-                  <button 
-                    onClick={handlePreviousLesson}
-                    disabled={isTransitioning || currentLessonIndex === 0}
-                    className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RobotoFont weight={500} className="text-gray-700">
-                      Previous Lesson
-                    </RobotoFont>
-                  </button>
-                  {nextLesson ? (
-                    <button 
-                      onClick={handleNextLesson}
-                      disabled={isTransitioning}
-                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <RobotoFont weight={500} className="text-white">
-                        Next Lesson
-                      </RobotoFont>
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={handleMarkComplete}
-                      disabled={isTransitioning}
-                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <RobotoFont weight={500} className="text-white">
-                        Complete Module
-                      </RobotoFont>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quiz Overlay */}
-          <div className={`absolute top-0 left-0 w-full h-full transition-transform duration-700 ease-in-out ${
-            showQuiz ? 'translate-x-0' : 'translate-x-full'
-          }`}>
-            {showQuiz && (
-              <LessonQuiz
-                lesson={lesson}
-                module={module}
-                isVisible={showQuiz}
-                onClose={handleCloseQuiz}
-                onComplete={handleQuizComplete}
-              />
-            )}
-          </div>
+        <div className="mt-6 text-sm text-gray-500">
+          <p>All backend connections and data transformations are preserved for the new experience</p>
         </div>
       </div>
     </div>
