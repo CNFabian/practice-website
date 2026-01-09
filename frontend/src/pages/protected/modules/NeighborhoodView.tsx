@@ -4,96 +4,97 @@ interface NeighborhoodViewProps {
   neighborhoodId?: string;
   onHouseSelect?: (houseId: string) => void;
   onBackToMap?: () => void;
+  isTransitioning?: boolean;
 }
 
 const NeighborhoodView: React.FC<NeighborhoodViewProps> = ({ 
-  neighborhoodId, 
-  onHouseSelect, 
-  onBackToMap 
+  neighborhoodId,
+  onHouseSelect,
+  onBackToMap,
+  isTransitioning = false 
 }) => {
-  // TODO: Implement house selection functionality
   const handleHouseClick = (houseId: string) => {
-    if (onHouseSelect) {
+    if (!isTransitioning && onHouseSelect) {
       onHouseSelect(houseId);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-purple-100">
-      <div className="max-w-2xl mx-auto text-center p-8">
-        <div className="mb-8">
-          <div className="w-32 h-32 mx-auto mb-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-            <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <div className="w-full h-full bg-gradient-to-b from-orange-200 via-yellow-100 to-green-100 relative overflow-hidden">
+      {/* Back Button */}
+      {onBackToMap && (
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={onBackToMap}
+            disabled={isTransitioning}
+            className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white transition-colors disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Map
+          </button>
+        </div>
+      )}
+
+      {/* Placeholder Neighborhood Interface */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl max-w-lg">
+          <div className="w-16 h-16 mx-auto mb-4 bg-orange-500 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {neighborhoodId ? `${neighborhoodId} Neighborhood` : 'Learning Neighborhood'}
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Choose a house to explore different module topics and lessons!
+          
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            🏘️ Neighborhood View
+          </h2>
+          <p className="text-lg text-gray-600 mb-6">
+            {neighborhoodId ? `Exploring: ${neighborhoodId}` : 'Learning Neighborhood'}
           </p>
           
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Coming Soon Features:</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                <span className="text-gray-700">Multiple themed houses</span>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                <span className="text-gray-700">Module grouping by topic</span>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                <span className="text-gray-700">Progress visualization</span>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                <span className="text-gray-700">Unlock requirements</span>
-              </div>
+          <div className="space-y-4">
+            <div className="text-left">
+              <h4 className="font-semibold text-gray-800">Coming Features:</h4>
+              <ul className="text-sm text-gray-600 mt-2 space-y-1">
+                <li>• Themed learning houses</li>
+                <li>• Progressive unlocking</li>
+                <li>• Neighborhood achievements</li>
+                <li>• Interactive house selection</li>
+              </ul>
             </div>
           </div>
-          
-          {/* Placeholder house buttons */}
-          <div className="mb-6">
-            <button
-              onClick={() => handleHouseClick('finance-fundamentals-house')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
-            >
-              Finance Fundamentals
-            </button>
-            <button
-              onClick={() => handleHouseClick('mortgage-basics-house')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
-            >
-              Mortgage Basics
-            </button>
-            <button
-              onClick={() => handleHouseClick('advanced-concepts-house')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              disabled
-            >
-              Advanced (Locked)
-            </button>
-          </div>
 
-          {onBackToMap && (
-            <button 
-              onClick={onBackToMap}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mb-4"
-            >
-              ← Back to Map
-            </button>
+          {/* Demo House Buttons */}
+          {onHouseSelect && (
+            <div className="mt-6">
+              <h4 className="font-semibold text-gray-800 mb-3">Preview Houses:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleHouseClick('starter_house')}
+                  disabled={isTransitioning}
+                  className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 text-sm"
+                >
+                  Starter House
+                </button>
+                <button
+                  onClick={() => handleHouseClick('advanced_house')}
+                  disabled={isTransitioning}
+                  className="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50 text-sm"
+                >
+                  Advanced House
+                </button>
+              </div>
+            </div>
           )}
-          
-          <div className="text-sm text-gray-500">
-            🏘️ Neighborhood view will group related modules into houses
-          </div>
         </div>
       </div>
+
+      {/* Decorative House Elements */}
+      <div className="absolute bottom-10 left-1/4 w-12 h-12 bg-red-400 rounded-lg opacity-70 transform rotate-12 animate-bounce"></div>
+      <div className="absolute bottom-16 right-1/3 w-10 h-10 bg-blue-400 rounded-lg opacity-60 transform -rotate-6"></div>
+      <div className="absolute top-1/3 left-10 w-8 h-8 bg-green-500 rounded-lg opacity-80 animate-pulse"></div>
+      <div className="absolute top-1/2 right-12 w-14 h-14 bg-purple-400 rounded-lg opacity-50 transform rotate-45"></div>
     </div>
   );
 };
