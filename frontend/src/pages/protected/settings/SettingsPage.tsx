@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RobotoFont } from '../../../assets';
 import AccountView from './AccountView';
 import ProfileView from './ProfileView';
@@ -9,6 +9,14 @@ import { ProfileCompletionModal } from '../../../components'; // Import your mod
 type TabType = 'Account' | 'Profile' | 'Appearance' | 'Notifications';
 
 const SettingsPage: React.FC = () => {
+  useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, []);
+
   const [activeTab, setActiveTab] = useState<TabType>('Account');
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
@@ -30,7 +38,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-hidden bg-gray-50">
+    <div className="h-full overflow-hidden">
       <div className="h-full overflow-y-auto">
         <div className="max-w-5xl mx-auto py-6">
           {/* Header */}
@@ -50,7 +58,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Tab Navigation */}
           <div className="mb-6">
-            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+            <div className="flex space-x-1 p-1 rounded-lg w-fit">
               {tabs.map((tab) => (
                 <button
                   key={tab}

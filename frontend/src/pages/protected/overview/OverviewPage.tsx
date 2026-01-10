@@ -224,6 +224,14 @@ const OverviewPage: React.FC = () => {
   };
 
   useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(239, 246, 255), rgb(224, 231, 255))', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, []);
+
+  useEffect(() => {
     console.log('OverviewPage: useEffect triggered');
     console.log('OverviewPage: showOnboarding:', showOnboarding);
     console.log('OverviewPage: onboardingStatus:', onboardingStatus);

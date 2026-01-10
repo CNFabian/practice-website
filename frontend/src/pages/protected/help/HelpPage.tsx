@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RobotoFont } from '../../../assets';
 import { TabNavigation, FAQSection, ContactForm } from './components';
 
 const HelpPage: React.FC = () => {
+
+  useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, []);
+
   const [activeTab, setActiveTab] = useState<'faq' | 'contact'>('faq');
 
   return (

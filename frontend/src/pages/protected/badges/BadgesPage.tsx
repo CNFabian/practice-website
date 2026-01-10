@@ -15,6 +15,14 @@ const BadgesPage = () => {
   const badges = badgesData?.badges || [];
   const progress = badgesData?.progress || { earned: 0, total: 0 };
 
+  useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, []);
+
   // Filter badges when filter changes
   useEffect(() => {
     const filterBadges = () => {

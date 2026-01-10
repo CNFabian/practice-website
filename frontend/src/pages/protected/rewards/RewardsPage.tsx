@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RewardsHeader, RewardsNavigation, RewardCard } from './components';
 import { NavigationButton } from './types/rewards.types';
 import { type Coupon } from '../../../services';
@@ -76,6 +76,15 @@ const FALLBACK_COUPONS: Coupon[] = [
 ];
 
 const RewardsPage: React.FC = () => {
+  
+  useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, []);
+
   const [activeTab, setActiveTab] = useState('browse');
 
   const { data: coinBalanceData, isLoading: coinsLoading } = useCoinBalance();
@@ -144,7 +153,7 @@ const RewardsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-50 p-6 min-h-screen overflow-y-auto h-screen pt-20 -mt-8 pb-8 relative">
+    <div className="p-6 min-h-screen overflow-y-auto h-screen pb-8 relative">
       {isRedeeming && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 shadow-xl">
