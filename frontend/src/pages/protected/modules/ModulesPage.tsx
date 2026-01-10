@@ -67,6 +67,19 @@ const ModulesPage: React.FC = () => {
     lessonId: null,
   });
 
+  // Define houses for each neighborhood
+  const neighborhoodHouses: Record<string, Array<{id: string; name: string; x: number; y: number; isLocked: boolean}>> = {
+    'downtown': [
+      { id: 'house_1', name: 'Starter House', x: 25, y: 40, isLocked: false },
+      { id: 'house_2', name: 'Math Manor', x: 50, y: 30, isLocked: false },
+      { id: 'house_3', name: 'Science Lab', x: 75, y: 45, isLocked: true }
+    ],
+    'suburbs': [
+      { id: 'house_4', name: 'Reading Room', x: 30, y: 50, isLocked: false },
+      { id: 'house_5', name: 'History Hall', x: 70, y: 60, isLocked: false }
+    ]
+  };
+
   // Get current module and lesson from state
   const currentModule = useMemo(() => {
     if (!navState.moduleId) return null;
@@ -139,37 +152,38 @@ const ModulesPage: React.FC = () => {
     }));
   };
 
- return (
-  <div className="relative w-full h-screen overflow-hidden">
-    {navState.currentView === 'map' && (
-      <MapView onNeighborhoodSelect={handleNeighborhoodSelect} />
-    )}
+  return (
+    <div className="relative w-full h-screen overflow-hidden">
+      {navState.currentView === 'map' && (
+        <MapView onNeighborhoodSelect={handleNeighborhoodSelect} />
+      )}
 
-    {navState.currentView === 'neighborhood' && (
-      <NeighborhoodView
-        neighborhoodId={navState.neighborhoodId || undefined}
-        onHouseSelect={handleHouseSelect}
-        onBackToMap={handleBackToMap}
-      />
-    )}
+      {navState.currentView === 'neighborhood' && (
+        <NeighborhoodView
+          neighborhoodId={navState.neighborhoodId || undefined}
+          houses={neighborhoodHouses[navState.neighborhoodId || 'downtown']}
+          onHouseSelect={handleHouseSelect}
+          onBackToMap={handleBackToMap}
+        />
+      )}
 
-    {navState.currentView === 'house' && (
-      <HouseView
-        houseId={navState.houseId || undefined}
-        onLessonSelect={handleLessonSelect}
-        onBackToNeighborhood={handleBackToNeighborhood}
-      />
-    )}
+      {navState.currentView === 'house' && (
+        <HouseView
+          houseId={navState.houseId || undefined}
+          onLessonSelect={handleLessonSelect}
+          onBackToNeighborhood={handleBackToNeighborhood}
+        />
+      )}
 
-    {navState.currentView === 'lesson' && currentLesson && currentModule && (
-      <LessonView
-        lesson={currentLesson}
-        module={currentModule}
-        onBack={handleBackToHouse}
-      />
-    )}
-  </div>
-);
+      {navState.currentView === 'lesson' && currentLesson && currentModule && (
+        <LessonView
+          lesson={currentLesson}
+          module={currentModule}
+          onBack={handleBackToHouse}
+        />
+      )}
+    </div>
+  );
 };
 
 export default ModulesPage;

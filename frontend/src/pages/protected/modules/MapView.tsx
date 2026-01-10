@@ -14,7 +14,7 @@ useEffect(() => {
   const bgElement = document.getElementById('section-background');
   if (bgElement) {
     // Force immediate style update
-    bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(56, 189, 248), rgb(125, 211, 252), rgb(187, 247, 208))', 'important');
+    bgElement.style.setProperty('background', 'rgb(56, 189, 248)', 'important');
     bgElement.style.backgroundSize = 'cover';
   }
 }, [isTransitioning]);
@@ -79,12 +79,6 @@ useEffect(() => {
           )}
         </div>
       </div>
-
-      {/* Decorative Map Elements */}
-      <div className="absolute top-10 left-10 w-8 h-8 bg-yellow-400 rounded-full opacity-80 animate-pulse"></div>
-      <div className="absolute top-20 right-20 w-6 h-6 bg-green-500 rounded-full opacity-60 animate-bounce"></div>
-      <div className="absolute bottom-20 left-20 w-4 h-4 bg-blue-600 rounded-full opacity-70"></div>
-      <div className="absolute bottom-10 right-10 w-10 h-10 bg-purple-500 rounded-full opacity-50 animate-pulse"></div>
     </div>
   );
 };
