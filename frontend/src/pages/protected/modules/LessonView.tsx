@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules.backup';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
@@ -89,11 +89,13 @@ const LessonView: React.FC<LessonViewProps> = ({
   module, 
   onBack
 }) => {
+  const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
+
   // Set the background for this section
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
-      bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(243, 244, 246), rgb(249, 250, 251), rgb(255, 255, 255))', 'important');
+      bgElement.style.setProperty('background', 'rgb(243, 244, 246)', 'important');
       bgElement.style.backgroundSize = 'cover';
     }
   }, [lesson.id]);
@@ -139,72 +141,132 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="max-w-2xl mx-auto text-center p-8">
-        <div className="mb-8">
-          <div className="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Coming Soon: Enhanced Lesson Experience</h1>
-          <p className="text-lg text-gray-600 mb-6">
-            We're preparing a new immersive lesson experience as part of our gamified learning platform!
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Lesson</h2>
-          <div className="text-left space-y-2">
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-              <div>
-                <h3 className="font-medium text-gray-900">{displayTitle}</h3>
-                <p className="text-sm text-gray-600">{displayDescription}</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-              <div>
-                <h3 className="font-medium text-gray-900">Backend Integration Active</h3>
-                <p className="text-sm text-gray-600">
-                  {isLoadingLesson ? 'Loading lesson data...' : 
-                   lessonError ? 'Using fallback data' : 
-                   'Connected to backend successfully'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-              <div>
-                <h3 className="font-medium text-gray-900">Quiz System Ready</h3>
-                <p className="text-sm text-gray-600">
-                  {transformedQuizQuestions.length} questions prepared
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={onBack}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            Back to Modules
-          </button>
-          {nextLesson && (
+    <div className="h-screen flex flex-col">
+      {/* Top Bar with Back Button and Toggle */}
+      <div className="border-b z-10 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Back Button Section */}
             <button
-              onClick={handleNextLesson}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={onBack}
+              className="flex items-center text-gray-700 hover:text-gray-900"
             >
-              Next Lesson
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
             </button>
-          )}
-        </div>
 
-        <div className="mt-6 text-sm text-gray-500">
-          <p>All backend connections and data transformations are preserved for the new experience</p>
+            {/* Toggle Section */}
+            <div className="flex items-center bg-gray-100 rounded-full p-1">
+              <button 
+                onClick={() => setViewMode('video')}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  viewMode === 'video' ? 'bg-white shadow-sm' : 'text-gray-600'
+                }`}
+              >
+                Video Lesson
+              </button>
+              <button 
+                onClick={() => setViewMode('reading')}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  viewMode === 'reading' ? 'bg-white shadow-sm' : 'text-gray-600'
+                }`}
+              >
+                Reading
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Main Content Container */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="rounded-lg shadow-sm p-8">
+            {/* Title and Finish Button */}
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
+                <p className="text-sm text-gray-600 mt-1">{displayDescription}</p>
+                {/* Backend status indicator */}
+                {isLoadingLesson && (
+                  <p className="text-xs text-blue-500 mt-1">Loading lesson data...</p>
+                )}
+                {lessonError && (
+                  <p className="text-xs text-amber-500 mt-1">Using cached data</p>
+                )}
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <button className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                  Finish
+                </button>
+                {/* Quiz indicator */}
+                <span className="text-xs text-gray-500">
+                  {transformedQuizQuestions.length} quiz questions ready
+                </span>
+              </div>
+            </div>
+
+            {/* Video Content Area */}
+            {viewMode === 'video' && (
+              <>
+                <div className="mb-6">
+                  <div className="min-h-[350px] flex items-center justify-center bg-gray-200 rounded-lg">
+                    <div className="text-center">
+                      <div className="w-64 h-64 mx-auto rounded-lg flex items-center justify-center mb-4">
+                        <svg className="w-32 h-32 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-500">Video content will appear here</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Transcript Section */}
+                <div className="mb-8">
+                  <h3 className="font-semibold text-gray-900 mb-3">Video Transcript</h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex gap-3">
+                      <span className="text-gray-500 font-mono">0:00</span>
+                      <p>Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Reading Content Area */}
+            {viewMode === 'reading' && (
+              <div className="mb-8">
+                <div className="prose prose-gray max-w-none">
+                  <p className="text-base text-gray-800 leading-relaxed mb-4">
+                    Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness.
+                  </p>
+                  <p className="text-base text-gray-800 leading-relaxed">
+                    That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation footer */}
+            {nextLesson && (
+              <div className="mt-6 pt-6 border-t">
+                <button
+                  onClick={handleNextLesson}
+                  className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-between"
+                >
+                  <span>Next: {nextLesson.title}</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
