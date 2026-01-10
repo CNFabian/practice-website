@@ -139,75 +139,37 @@ const ModulesPage: React.FC = () => {
     }));
   };
 
-  return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* Map View */}
-      <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          navState.currentView === 'map'
-            ? 'translate-x-0 opacity-100'
-            : '-translate-x-full opacity-0'
-        }`}
-        style={{ pointerEvents: navState.currentView === 'map' ? 'auto' : 'none' }}
-      >
-        <MapView onNeighborhoodSelect={handleNeighborhoodSelect} />
-      </div>
+ return (
+  <div className="relative w-full h-screen overflow-hidden">
+    {navState.currentView === 'map' && (
+      <MapView onNeighborhoodSelect={handleNeighborhoodSelect} />
+    )}
 
-      {/* Neighborhood View */}
-      <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          navState.currentView === 'neighborhood'
-            ? 'translate-x-0 opacity-100'
-            : navState.currentView === 'map'
-            ? 'translate-x-full opacity-0'
-            : '-translate-x-full opacity-0'
-        }`}
-        style={{ pointerEvents: navState.currentView === 'neighborhood' ? 'auto' : 'none' }}
-      >
-        <NeighborhoodView
-          neighborhoodId={navState.neighborhoodId || undefined}
-          onHouseSelect={handleHouseSelect}
-          onBackToMap={handleBackToMap}
-        />
-      </div>
+    {navState.currentView === 'neighborhood' && (
+      <NeighborhoodView
+        neighborhoodId={navState.neighborhoodId || undefined}
+        onHouseSelect={handleHouseSelect}
+        onBackToMap={handleBackToMap}
+      />
+    )}
 
-      {/* House View */}
-      <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          navState.currentView === 'house'
-            ? 'translate-x-0 opacity-100'
-            : navState.currentView === 'neighborhood' || navState.currentView === 'map'
-            ? 'translate-x-full opacity-0'
-            : '-translate-x-full opacity-0'
-        }`}
-        style={{ pointerEvents: navState.currentView === 'house' ? 'auto' : 'none' }}
-      >
-        <HouseView
-          houseId={navState.houseId || undefined}
-          onLessonSelect={handleLessonSelect}
-          onBackToNeighborhood={handleBackToNeighborhood}
-        />
-      </div>
+    {navState.currentView === 'house' && (
+      <HouseView
+        houseId={navState.houseId || undefined}
+        onLessonSelect={handleLessonSelect}
+        onBackToNeighborhood={handleBackToNeighborhood}
+      />
+    )}
 
-      {/* Lesson View */}
-      <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          navState.currentView === 'lesson'
-            ? 'translate-x-0 opacity-100'
-            : 'translate-x-full opacity-0'
-        }`}
-        style={{ pointerEvents: navState.currentView === 'lesson' ? 'auto' : 'none' }}
-      >
-        {currentLesson && currentModule && (
-          <LessonView
-            lesson={currentLesson}
-            module={currentModule}
-            onBack={handleBackToHouse}
-          />
-        )}
-      </div>
-    </div>
-  );
+    {navState.currentView === 'lesson' && currentLesson && currentModule && (
+      <LessonView
+        lesson={currentLesson}
+        module={currentModule}
+        onBack={handleBackToHouse}
+      />
+    )}
+  </div>
+);
 };
 
 export default ModulesPage;

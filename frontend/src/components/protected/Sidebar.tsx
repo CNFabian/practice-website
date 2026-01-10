@@ -12,7 +12,8 @@ import {
   CalculatorDarkIcon,
   DocumentDarkIcon,
   ChecklistDarkIcon,
-  ControllerDarkIcon
+  ControllerDarkIcon,
+  Logo
 } from '../../assets';
 
 const Sidebar: React.FC = () => {
@@ -62,7 +63,12 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-44 h-[calc(100vh-88px)] fixed left-2 top-[80px] flex flex-col rounded-xl shadow-sm" style={{ backgroundColor: '#EFF2FF' }}>
+<aside className="w-44 h-screen fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50" style={{ backgroundColor: '#EFF2FF' }}>
+      {/* Logo at the top */}
+      <div className="px-4 pt-4 flex items-center justify-center border-b border-white/20">
+        <img src={Logo} alt="Nest Navigate" className="w-16 h-16" />
+      </div>
+
       {/* Main Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="space-y-1">

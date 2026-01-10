@@ -1,14 +1,17 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import { Header, Sidebar } from '../components/index'
+import {Sidebar } from '../components/index'
 
 const MainLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 overflow-hidden">
-      <Header />
+    <div className="min-h-screen overflow-hidden">
       <Sidebar />
       
-      <main className="pt-16 pl-48 pr-2 h-screen overflow-hidden">
+      {/* Background layer - full viewport, behind content */}
+      <div className="fixed inset-0 -z-10" id="section-background"></div>
+      
+      {/* Content layer - with padding */}
+      <main className="pl-48 h-screen overflow-hidden relative z-0">
         <Outlet />
       </main>
     </div>

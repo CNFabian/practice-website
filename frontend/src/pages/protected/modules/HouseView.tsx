@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 // Sample module data - this should match your actual module structure
 const SAMPLE_MODULE = {
@@ -46,14 +46,24 @@ const HouseView: React.FC<HouseViewProps> = ({
   onBackToNeighborhood,
   isTransitioning = false 
 }) => {
-  const handleLessonClick = (lessonId: number) => {
-    if (!isTransitioning && onLessonSelect) {
-      onLessonSelect(lessonId.toString());
+  // Set the background for this section
+  useEffect(() => {
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(254, 243, 199), rgb(255, 247, 237), rgb(254, 226, 226))', 'important');
+      bgElement.style.backgroundSize = 'cover';
     }
-  };
+  }, [houseId, isTransitioning]);
+
+  const handleLessonClick = (lessonId: number) => {
+  if (!isTransitioning && onLessonSelect) {
+    const lessonNumber = lessonId - 100;
+    onLessonSelect(`lesson-${lessonNumber}`);
+  }
+};
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-amber-100 via-orange-50 to-red-100 relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden">
       {/* Back Button */}
       {onBackToNeighborhood && (
         <div className="absolute top-4 left-4 z-10">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface MapViewProps {
   onNeighborhoodSelect?: (neighborhoodId: string) => void;
@@ -9,6 +9,16 @@ const MapView: React.FC<MapViewProps> = ({
   onNeighborhoodSelect,
   isTransitioning = false 
 }) => {
+  // Set the background for this section
+useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    // Force immediate style update
+    bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(56, 189, 248), rgb(125, 211, 252), rgb(187, 247, 208))', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, [isTransitioning]);
+
   const handleNeighborhoodClick = (neighborhoodId: string) => {
     if (!isTransitioning && onNeighborhoodSelect) {
       onNeighborhoodSelect(neighborhoodId);
@@ -16,7 +26,7 @@ const MapView: React.FC<MapViewProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-sky-400 via-sky-300 to-green-200 relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden">
       {/* Placeholder Map Interface */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl max-w-md">

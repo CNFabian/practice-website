@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface NeighborhoodViewProps {
   neighborhoodId?: string;
@@ -13,6 +13,16 @@ const NeighborhoodView: React.FC<NeighborhoodViewProps> = ({
   onBackToMap,
   isTransitioning = false 
 }) => {
+  // Set the background for this section
+useEffect(() => {
+  const bgElement = document.getElementById('section-background');
+  if (bgElement) {
+    // Force immediate style update
+    bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(254, 215, 170), rgb(254, 249, 195), rgb(220, 252, 231))', 'important');
+    bgElement.style.backgroundSize = 'cover';
+  }
+}, [neighborhoodId, isTransitioning]); 
+
   const handleHouseClick = (houseId: string) => {
     if (!isTransitioning && onHouseSelect) {
       onHouseSelect(houseId);
@@ -20,7 +30,7 @@ const NeighborhoodView: React.FC<NeighborhoodViewProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-orange-200 via-yellow-100 to-green-100 relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden">
       {/* Back Button */}
       {onBackToMap && (
         <div className="absolute top-4 left-4 z-10">

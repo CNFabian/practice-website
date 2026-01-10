@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules.backup';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
@@ -89,6 +89,14 @@ const LessonView: React.FC<LessonViewProps> = ({
   module, 
   onBack
 }) => {
+  // Set the background for this section
+  useEffect(() => {
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(243, 244, 246), rgb(249, 250, 251), rgb(255, 255, 255))', 'important');
+      bgElement.style.backgroundSize = 'cover';
+    }
+  }, [lesson.id]);
 
   if (!lesson || !module) {
     console.error('❌ LessonView: Missing required props!');
@@ -131,7 +139,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen">
       <div className="max-w-2xl mx-auto text-center p-8">
         <div className="mb-8">
           <div className="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
