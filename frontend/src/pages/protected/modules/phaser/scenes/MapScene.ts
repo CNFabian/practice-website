@@ -25,9 +25,6 @@ export default class MapScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    // Set background color (rgb(56, 189, 248) = #38bdf8)
-    this.cameras.main.setBackgroundColor(0x38bdf8);
-
     // Define neighborhood data
     this.neighborhoods = [
       {

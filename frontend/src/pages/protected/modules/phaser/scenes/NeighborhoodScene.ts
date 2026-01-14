@@ -33,8 +33,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   create() {
-    // Set background color (rgb(254, 215, 170) = #fed7aa)
-    this.cameras.main.setBackgroundColor(0xfed7aa);
+
 
     // Fade in camera
     this.cameras.main.fadeIn(300, 254, 215, 170);

@@ -181,9 +181,9 @@ const ModulesPage: React.FC = () => {
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
-      width: window.innerWidth,
+      width: window.innerWidth - 192,
       height: window.innerHeight,
-      backgroundColor: '#38bdf8',
+      transparent: true, // Make Phaser canvas transparent so CSS background shows through
       physics: {
         default: 'arcade',
         arcade: {
@@ -195,6 +195,11 @@ const ModulesPage: React.FC = () => {
       scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
+      },
+      render: {
+        antialias: true,
+        pixelArt: false,
+        roundPixels: false
       }
     };
 
@@ -283,7 +288,7 @@ const ModulesPage: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       if (gameRef.current) {
-        gameRef.current.scale.resize(window.innerWidth, window.innerHeight);
+        gameRef.current.scale.resize(window.innerWidth - 192, window.innerHeight);
       }
     };
 
@@ -293,19 +298,43 @@ const ModulesPage: React.FC = () => {
 
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
+  // Get background color/gradient based on current view
+  const getBackgroundStyle = () => {
+    switch (navState.currentView) {
+      case 'map':
+        return { backgroundColor: '#38bdf8' }; // Sky blue
+      case 'neighborhood':
+        return { backgroundColor: '#fed7aa' }; // Orange
+      case 'house':
+        return {
+          background: 'linear-gradient(to bottom, #fef3c7 0%, #fff7ed 50%, #fee2e2 100%)'
+        }; // Yellow to pink gradient
+      default:
+        return { backgroundColor: '#ffffff' };
+    }
+  };
+
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* Phaser Game Container */}
+    <div className="w-full h-screen overflow-hidden relative">
+      {/* CSS Background Layer - fixed to viewport, extends behind sidebar */}
+      {showPhaserCanvas && (
+        <div 
+          className="fixed inset-0 z-0"
+          style={getBackgroundStyle()}
+        />
+      )}
+
+      {/* Phaser Game Container - transparent canvas over background */}
       <div
         ref={containerRef}
-        className={`absolute inset-0 transition-opacity duration-300 ${
+        className={`w-full h-full relative z-10 transition-opacity duration-300 ${
           showPhaserCanvas ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       />
 
       {/* React UI Overlays */}
       {navState.currentView === 'lesson' && currentLesson && currentModule && (
-        <div className="absolute inset-0 bg-white z-10">
+        <div className="absolute inset-0 bg-white z-20">
           <LessonView
             lesson={currentLesson}
             module={currentModule}
@@ -315,7 +344,7 @@ const ModulesPage: React.FC = () => {
       )}
 
       {navState.currentView === 'minigame' && (
-        <div className="absolute inset-0 bg-white z-10">
+        <div className="absolute inset-0 bg-white z-20">
           <Minigame onClose={handleCloseMinigame} />
         </div>
       )}

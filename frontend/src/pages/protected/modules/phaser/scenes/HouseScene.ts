@@ -76,10 +76,6 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
-    const { width, height } = this.scale;
-
-    // Set background gradient (fef3c7 -> fff7ed -> fee2e2)
-    this.createGradientBackground(width, height);
 
     // Fade in camera
     this.cameras.main.fadeIn(300, 254, 243, 199);
@@ -98,50 +94,6 @@ export default class HouseScene extends Phaser.Scene {
 
     // Handle window resize
     this.scale.on('resize', this.handleResize, this);
-  }
-
-  private createGradientBackground(width: number, height: number) {
-    // Create gradient using graphics
-    const graphics = this.add.graphics();
-    
-    // Create gradient colors from top to bottom
-    const gradient = [
-      { color: 0xfef3c7, position: 0 },    // rgb(254, 243, 199)
-      { color: 0xfff7ed, position: 0.5 },  // rgb(255, 247, 237)
-      { color: 0xfee2e2, position: 1 }     // rgb(254, 226, 226)
-    ];
-
-    // Draw gradient rectangles
-    const steps = 50;
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      let colorValue: number;
-      
-      if (t < 0.5) {
-        // Interpolate between first and second color
-        const localT = t * 2;
-        const colorObj = Phaser.Display.Color.Interpolate.ColorWithColor(
-          Phaser.Display.Color.IntegerToColor(gradient[0].color),
-          Phaser.Display.Color.IntegerToColor(gradient[1].color),
-          100,
-          localT * 100
-        );
-        colorValue = Phaser.Display.Color.GetColor(colorObj.r, colorObj.g, colorObj.b);
-      } else {
-        // Interpolate between second and third color
-        const localT = (t - 0.5) * 2;
-        const colorObj = Phaser.Display.Color.Interpolate.ColorWithColor(
-          Phaser.Display.Color.IntegerToColor(gradient[1].color),
-          Phaser.Display.Color.IntegerToColor(gradient[2].color),
-          100,
-          localT * 100
-        );
-        colorValue = Phaser.Display.Color.GetColor(colorObj.r, colorObj.g, colorObj.b);
-      }
-      
-      graphics.fillStyle(colorValue);
-      graphics.fillRect(0, (height / steps) * i, width, height / steps + 1);
-    }
   }
 
   private createBackButton() {
@@ -519,7 +471,6 @@ export default class HouseScene extends Phaser.Scene {
 
     // Recreate gradient background
     this.children.removeAll();
-    this.createGradientBackground(width, height);
 
     // Reposition back button
     if (this.backButton) {
