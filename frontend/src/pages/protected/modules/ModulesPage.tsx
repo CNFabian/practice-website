@@ -3,9 +3,10 @@ import MapView from './MapView';
 import NeighborhoodView from './NeighborhoodView';
 import HouseView from './HouseView';
 import LessonView from './LessonView';
+import Minigame from './Minigame';
 import { Module } from '../../../types/modules';
 
-type ViewType = 'map' | 'neighborhood' | 'house' | 'lesson';
+type ViewType = 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
 
 interface NavigationState {
   currentView: ViewType;
@@ -124,6 +125,13 @@ const ModulesPage: React.FC = () => {
     }));
   };
 
+  const handleMinigameSelect = () => {
+    setNavState(prev => ({
+      ...prev,
+      currentView: 'minigame',
+    }));
+  };
+
   const handleBackToMap = () => {
     setNavState({
       currentView: 'map',
@@ -152,6 +160,13 @@ const ModulesPage: React.FC = () => {
     }));
   };
 
+  const handleCloseMinigame = () => {
+    setNavState(prev => ({
+      ...prev,
+      currentView: 'house',
+    }));
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       {navState.currentView === 'map' && (
@@ -171,6 +186,7 @@ const ModulesPage: React.FC = () => {
         <HouseView
           houseId={navState.houseId || undefined}
           onLessonSelect={handleLessonSelect}
+          onMinigameSelect={handleMinigameSelect}
           onBackToNeighborhood={handleBackToNeighborhood}
         />
       )}
@@ -181,6 +197,10 @@ const ModulesPage: React.FC = () => {
           module={currentModule}
           onBack={handleBackToHouse}
         />
+      )}
+
+      {navState.currentView === 'minigame' && (
+        <Minigame onClose={handleCloseMinigame} />
       )}
     </div>
   );
