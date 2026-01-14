@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import MapView from './MapView';
-import NeighborhoodView from './NeighborhoodView';
-import HouseView from './HouseView';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Phaser from 'phaser';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import { Module } from '../../../types/modules';
+
+// Import Phaser scenes
+import MapScene from './phaser/scenes/MapScene';
+import NeighborhoodScene from './phaser/scenes/NeighborhoodScene';
+import HouseScene from './phaser/scenes/HouseScene';
 
 type ViewType = 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
 
@@ -60,6 +63,10 @@ const MOCK_MODULES: Module[] = [
 ];
 
 const ModulesPage: React.FC = () => {
+  const gameRef = useRef<Phaser.Game | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isPhaserReady, setIsPhaserReady] = useState(false);
+
   const [navState, setNavState] = useState<NavigationState>({
     currentView: 'map',
     neighborhoodId: null,
@@ -167,40 +174,150 @@ const ModulesPage: React.FC = () => {
     }));
   };
 
+  // Initialize Phaser game
+  useEffect(() => {
+    if (!containerRef.current || gameRef.current) return;
+
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      parent: containerRef.current,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: '#38bdf8',
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { x: 0, y: 0 },
+          debug: false
+        }
+      },
+      scene: [MapScene, NeighborhoodScene, HouseScene],
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      }
+    };
+
+    gameRef.current = new Phaser.Game(config);
+
+    // Set up event listeners for scene communication
+    gameRef.current.events.on('ready', () => {
+      setIsPhaserReady(true);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (gameRef.current) {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+      }
+    };
+  }, []);
+
+  // Pass navigation handlers to Phaser scenes
+  useEffect(() => {
+    if (!gameRef.current || !isPhaserReady) return;
+
+    const currentScene = gameRef.current.scene.getScenes(true)[0];
+    
+    if (currentScene) {
+      // Store navigation handlers in scene registry for access from Phaser
+      currentScene.registry.set('handleNeighborhoodSelect', handleNeighborhoodSelect);
+      currentScene.registry.set('handleHouseSelect', handleHouseSelect);
+      currentScene.registry.set('handleLessonSelect', handleLessonSelect);
+      currentScene.registry.set('handleMinigameSelect', handleMinigameSelect);
+      currentScene.registry.set('handleBackToMap', handleBackToMap);
+      currentScene.registry.set('handleBackToNeighborhood', handleBackToNeighborhood);
+      currentScene.registry.set('neighborhoodHouses', neighborhoodHouses);
+    }
+  }, [isPhaserReady, neighborhoodHouses]);
+
+  // Handle scene transitions based on navigation state
+  useEffect(() => {
+    if (!gameRef.current || !isPhaserReady) return;
+
+    const game = gameRef.current;
+
+    switch (navState.currentView) {
+      case 'map':
+        if (game.scene.isActive('NeighborhoodScene')) {
+          game.scene.stop('NeighborhoodScene');
+        }
+        if (game.scene.isActive('HouseScene')) {
+          game.scene.stop('HouseScene');
+        }
+        game.scene.start('MapScene');
+        break;
+
+      case 'neighborhood':
+        game.scene.stop('MapScene');
+        if (game.scene.isActive('HouseScene')) {
+          game.scene.stop('HouseScene');
+        }
+        game.scene.start('NeighborhoodScene', {
+          neighborhoodId: navState.neighborhoodId,
+          houses: neighborhoodHouses[navState.neighborhoodId || 'downtown']
+        });
+        break;
+
+      case 'house':
+        game.scene.stop('MapScene');
+        game.scene.stop('NeighborhoodScene');
+        game.scene.start('HouseScene', {
+          houseId: navState.houseId,
+          moduleId: navState.moduleId
+        });
+        break;
+
+      case 'lesson':
+      case 'minigame':
+        // Stop all Phaser scenes when in lesson or minigame view
+        game.scene.stop('MapScene');
+        game.scene.stop('NeighborhoodScene');
+        game.scene.stop('HouseScene');
+        break;
+    }
+  }, [navState, isPhaserReady, neighborhoodHouses]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (gameRef.current) {
+        gameRef.current.scale.resize(window.innerWidth, window.innerHeight);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {navState.currentView === 'map' && (
-        <MapView onNeighborhoodSelect={handleNeighborhoodSelect} />
-      )}
+      {/* Phaser Game Container */}
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 transition-opacity duration-300 ${
+          showPhaserCanvas ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
 
-      {navState.currentView === 'neighborhood' && (
-        <NeighborhoodView
-          neighborhoodId={navState.neighborhoodId || undefined}
-          houses={neighborhoodHouses[navState.neighborhoodId || 'downtown']}
-          onHouseSelect={handleHouseSelect}
-          onBackToMap={handleBackToMap}
-        />
-      )}
-
-      {navState.currentView === 'house' && (
-        <HouseView
-          houseId={navState.houseId || undefined}
-          onLessonSelect={handleLessonSelect}
-          onMinigameSelect={handleMinigameSelect}
-          onBackToNeighborhood={handleBackToNeighborhood}
-        />
-      )}
-
+      {/* React UI Overlays */}
       {navState.currentView === 'lesson' && currentLesson && currentModule && (
-        <LessonView
-          lesson={currentLesson}
-          module={currentModule}
-          onBack={handleBackToHouse}
-        />
+        <div className="absolute inset-0 bg-white z-10">
+          <LessonView
+            lesson={currentLesson}
+            module={currentModule}
+            onBack={handleBackToHouse}
+          />
+        </div>
       )}
 
       {navState.currentView === 'minigame' && (
-        <Minigame onClose={handleCloseMinigame} />
+        <div className="absolute inset-0 bg-white z-10">
+          <Minigame onClose={handleCloseMinigame} />
+        </div>
       )}
     </div>
   );
