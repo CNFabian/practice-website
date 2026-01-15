@@ -161,18 +161,9 @@ export default class HouseScene extends Phaser.Scene {
     // Create minigame button container
     this.minigameButton = this.add.container(width - scale(120), scale(40));
 
-    // Button background (blue)
-    const buttonBg = this.add.rectangle(0, 0, scale(140), scale(44), 0x2563eb, 1);
-    buttonBg.setStrokeStyle(scale(1), 0x1e40af);
+    // Button background
+    const buttonBg = this.add.rectangle(0, 0, scale(160), scale(44), 0x2563eb, 1);
     this.minigameButton.add(buttonBg);
-
-    // Play icon
-    const playIcon = this.add.graphics();
-    playIcon.lineStyle(scale(2), 0xffffff, 1);
-    playIcon.strokeCircle(scale(-40), 0, scale(10));
-    playIcon.fillStyle(0xffffff, 1);
-    playIcon.fillTriangle(scale(-43), scale(-5), scale(-43), scale(5), scale(-36), 0);
-    this.minigameButton.add(playIcon);
 
     // Button text
     const buttonText = this.add.text(0, 0, 'Minigame', {
@@ -187,7 +178,7 @@ export default class HouseScene extends Phaser.Scene {
     buttonBg.setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
         if (!this.isTransitioning) {
-          buttonBg.setFillStyle(0x1d4ed8); // blue-700
+          buttonBg.setFillStyle(0x1d4ed8);
           this.tweens.add({
             targets: this.minigameButton,
             scale: 1.05,
@@ -197,7 +188,7 @@ export default class HouseScene extends Phaser.Scene {
         }
       })
       .on('pointerout', () => {
-        buttonBg.setFillStyle(0x2563eb); // blue-600
+        buttonBg.setFillStyle(0x2563eb);
         this.tweens.add({
           targets: this.minigameButton,
           scale: 1,
@@ -245,32 +236,30 @@ export default class HouseScene extends Phaser.Scene {
     this.headerCard.add(progressText);
   }
 
-  private createLessonGrid() {
-    const { width, height } = this.scale;
+ private createLessonGrid() {
+  const { width, height } = this.scale;
 
-    // Grid layout parameters
-    const gridCenterX = width / 2;
-    const gridCenterY = height * 0.6;
-    const cardWidth = scale(320);
-    const cardHeight = scale(200);
-    const gapX = scale(50);
-    const gapY = scale(60);
+  const gridCenterX = width / 2;
+  const gridCenterY = height * 0.65;
+  const cardWidth = scale(320);
+  const cardHeight = scale(200);
+  const gapX = scale(50);
+  const gapY = scale(60);
 
-    // Calculate starting positions for 2x2 grid
-    const startX = gridCenterX - cardWidth - gapX / 2;
-    const startY = gridCenterY - cardHeight - gapY / 2;
+  this.module.lessons.forEach((lesson, index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    
+    // Calculate offset from center for each column
+    const offsetX = (col === 0) ? -(cardWidth / 2 + gapX / 2) : (cardWidth / 2 + gapX / 2);
+    const offsetY = (row === 0) ? -(cardHeight / 2 + gapY / 2) : (cardHeight / 2 + gapY / 2);
+    
+    const x = gridCenterX + offsetX;
+    const y = gridCenterY + offsetY;
 
-    // Create each lesson card
-    this.module.lessons.forEach((lesson, index) => {
-      const col = index % 2;
-      const row = Math.floor(index / 2);
-      
-      const x = startX + (col * (cardWidth + gapX));
-      const y = startY + (row * (cardHeight + gapY));
-
-      this.createLessonCard(lesson, x, y, cardWidth, cardHeight);
-    });
-  }
+    this.createLessonCard(lesson, x, y, cardWidth, cardHeight);
+  });
+}
 
   private createLessonCard(
     lesson: Lesson,
@@ -446,7 +435,7 @@ export default class HouseScene extends Phaser.Scene {
     const handleMinigameSelect = this.registry.get('handleMinigameSelect');
     
     if (handleMinigameSelect && typeof handleMinigameSelect === 'function') {
-      // Add transition effect before switching
+      // Add transition effect before switching scenes
       this.cameras.main.fadeOut(300, 254, 243, 199);
       
       this.cameras.main.once('camerafadeoutcomplete', () => {
