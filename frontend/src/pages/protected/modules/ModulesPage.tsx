@@ -72,17 +72,34 @@ const ModulesPage: React.FC = () => {
   });
 
   // Define houses for each neighborhood
-  const neighborhoodHouses: Record<string, Array<{id: string; name: string; x: number; y: number; isLocked: boolean}>> = {
-    'downtown': [
-      { id: 'house_1', name: 'Starter House', x: 25, y: 40, isLocked: false },
-      { id: 'house_2', name: 'Math Manor', x: 50, y: 30, isLocked: false },
-      { id: 'house_3', name: 'Science Lab', x: 75, y: 45, isLocked: true }
-    ],
-    'suburbs': [
-      { id: 'house_4', name: 'Reading Room', x: 30, y: 50, isLocked: false },
-      { id: 'house_5', name: 'History Hall', x: 70, y: 60, isLocked: false }
-    ]
-  };
+  const neighborhoodHouses = {
+  downtown: [
+    { 
+      id: 'start_house', 
+      name: 'Start House', 
+      x: 20, 
+      y: 50, 
+      isLocked: false,
+      houseType: 'house1'
+    },
+    { 
+      id: 'math_manor', 
+      name: 'Math Manor', 
+      x: 50, 
+      y: 50, 
+      isLocked: false,
+      houseType: 'house2'
+    },
+    { 
+      id: 'science_lab', 
+      name: 'Science Lab', 
+      x: 80, 
+      y: 50, 
+      isLocked: false,
+      houseType: 'house3'
+    }
+  ]
+};
 
   // Get current module and lesson from state
   const currentModule = useMemo(() => {
@@ -234,7 +251,7 @@ const ModulesPage: React.FC = () => {
         }
         game.scene.start('NeighborhoodScene', {
           neighborhoodId: navState.neighborhoodId,
-          houses: neighborhoodHouses[navState.neighborhoodId || 'downtown']
+          houses: neighborhoodHouses['downtown']
         });
         break;
 

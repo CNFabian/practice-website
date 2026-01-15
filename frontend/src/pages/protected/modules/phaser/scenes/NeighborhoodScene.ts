@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
+import { House1, House2, House3, House4 } from '../../../../../assets';
 
 interface HousePosition {
   id: string;
@@ -7,6 +8,7 @@ interface HousePosition {
   x: number; // Percentage from left (0-100)
   y: number; // Percentage from top (0-100)
   isLocked?: boolean;
+  houseType?: string; // 'house1', 'house2', 'house3', 'house4', etc.
 }
 
 interface NeighborhoodSceneData {
@@ -24,6 +26,14 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'NeighborhoodScene' });
+  }
+
+  preload() {
+    // Load house images using imported variables
+    this.load.image('house1', House1);
+    this.load.image('house2', House2);
+    this.load.image('house3', House3);
+    this.load.image('house4', House4);
   }
 
   init(data: NeighborhoodSceneData) {
@@ -110,132 +120,83 @@ export default class NeighborhoodScene extends Phaser.Scene {
       });
   }
 
-  private createHouse(house: HousePosition) {
-    const { width, height } = this.scale;
+private createHouse(house: HousePosition) {
+  const { width, height } = this.scale;
 
-    // Calculate position from percentage
-    const x = (house.x / 100) * width;
-    const y = (house.y / 100) * height;
+  // Calculate position from percentage
+  const x = (house.x / 100) * width;
+  const y = (house.y / 100) * height;
 
-    // Create house container
-    const houseContainer = this.add.container(x, y);
+  // Create house container
+  const houseContainer = this.add.container(x, y);
 
-    // House background box
-    const houseSize = scale(80);
-    const houseBg = this.add.rectangle(
-      0, 
-      0, 
-      houseSize, 
-      houseSize, 
-      house.isLocked ? 0xd1d5db : 0xf97316, // gray-300 or orange-500
-      1
-    );
-    houseBg.setStrokeStyle(scale(2), 0x000000, 0.1);
-    houseContainer.add(houseBg);
+  // House icon - use houseType to determine which image
+  this.createHouseIcon(houseContainer, house.houseType || 'house1');
 
-    // House icon
-    if (house.isLocked) {
-      // Lock icon
-      this.createLockIcon(houseContainer);
-    } else {
-      // House icon
-      this.createHouseIcon(houseContainer);
-    }
+  // House name label
+  const labelBg = this.add.rectangle(
+    0, 
+    scale(100), 
+    scale(house.name.length * 8 + 20), 
+    scale(30), 
+    house.isLocked ? 0xe5e7eb : 0xffffff, 
+    house.isLocked ? 1 : 0.9
+  );
+  houseContainer.add(labelBg);
 
-    // House name label
-    const labelBg = this.add.rectangle(
-      0, 
-      scale(60), 
-      scale(house.name.length * 8 + 20), 
-      scale(30), 
-      house.isLocked ? 0xe5e7eb : 0xffffff, 
-      house.isLocked ? 1 : 0.9
-    );
-    houseContainer.add(labelBg);
+  const nameText = this.add.text(0, scale(100), house.name, {
+    fontSize: scaleFontSize(14),
+    fontFamily: 'Arial, sans-serif',
+    color: house.isLocked ? '#4b5563' : '#1f2937',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+  houseContainer.add(nameText);
 
-    const nameText = this.add.text(0, scale(60), house.name, {
-      fontSize: scaleFontSize(14),
-      fontFamily: 'Arial, sans-serif',
-      color: house.isLocked ? '#4b5563' : '#1f2937',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    houseContainer.add(nameText);
-
-    // Make interactive if not locked
-    if (!house.isLocked) {
-      houseBg.setInteractive({ useHandCursor: true })
-        .on('pointerover', () => {
-          if (!this.isTransitioning) {
-            houseBg.setFillStyle(0xea580c); // orange-600
-            this.tweens.add({
-              targets: houseContainer,
-              scale: 1.1,
-              duration: 300,
-              ease: 'Power2'
-            });
-          }
-        })
-        .on('pointerout', () => {
-          houseBg.setFillStyle(0xf97316); // orange-500
+  // Make interactive if not locked
+  if (!house.isLocked) {
+    houseContainer.setInteractive(new Phaser.Geom.Rectangle(-75, -75, 150, 150), Phaser.Geom.Rectangle.Contains)
+      .on('pointerover', () => {
+        if (!this.isTransitioning) {
           this.tweens.add({
             targets: houseContainer,
-            scale: 1,
+            scale: 1.1,
             duration: 300,
             ease: 'Power2'
           });
-        })
-        .on('pointerdown', () => {
-          if (!this.isTransitioning) {
-            this.handleHouseClick(house.id);
-          }
+        }
+      })
+      .on('pointerout', () => {
+        this.tweens.add({
+          targets: houseContainer,
+          scale: 1,
+          duration: 300,
+          ease: 'Power2'
         });
-    } else {
-      // Reduce opacity for locked houses
-      houseContainer.setAlpha(0.6);
+      })
+      .on('pointerdown', () => {
+        if (!this.isTransitioning) {
+          this.handleHouseClick(house.id);
+        }
+      });
+    
+    // Set cursor only if input exists
+    if (houseContainer.input) {
+      houseContainer.input.cursor = 'pointer';
     }
-
-    // Store reference
-    this.houseSprites.set(house.id, houseContainer);
+  } else {
+    // Reduce opacity for locked houses
+    houseContainer.setAlpha(0.6);
   }
 
-  private createHouseIcon(container: Phaser.GameObjects.Container) {
-    // Simplified house icon using graphics
-    const graphics = this.add.graphics();
-    graphics.lineStyle(scale(2), 0xffffff, 1);
-    
-    // House outline
-    graphics.strokeRect(scale(-20), scale(-10), scale(40), scale(30));
-    
-    // Roof
-    graphics.beginPath();
-    graphics.moveTo(scale(-25), scale(-10));
-    graphics.lineTo(0, scale(-25));
-    graphics.lineTo(scale(25), scale(-10));
-    graphics.strokePath();
-    
-    // Door
-    graphics.fillStyle(0xffffff, 0.8);
-    graphics.fillRect(scale(-8), scale(5), scale(16), scale(15));
-    
-    container.add(graphics);
-  }
+  // Store reference
+  this.houseSprites.set(house.id, houseContainer);
+}
 
-  private createLockIcon(container: Phaser.GameObjects.Container) {
-    // Simplified lock icon using graphics
-    const graphics = this.add.graphics();
-    graphics.lineStyle(scale(2), 0x6b7280, 1);
-    
-    // Lock body
-    graphics.strokeRect(scale(-12), scale(-5), scale(24), scale(20));
-    
-    // Lock shackle
-    graphics.strokeCircle(0, scale(-10), scale(8));
-    
-    // Keyhole
-    graphics.fillStyle(0x6b7280, 1);
-    graphics.fillCircle(0, scale(3), scale(3));
-    
-    container.add(graphics);
+  private createHouseIcon(container: Phaser.GameObjects.Container, houseType: string) {
+    // Use the houseType to determine which image to display
+    const houseImage = this.add.image(0, 0, houseType);
+    houseImage.setDisplaySize(scale(150), scale(150)); // Set visible size
+    container.add(houseImage);
   }
 
   private createPlaceholder() {

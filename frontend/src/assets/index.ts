@@ -76,3 +76,9 @@ export { default as TermsConditionsDoc } from './downloadables/Terms_Conditions.
 
 // Fonts
 export { default as RobotoFont } from './fonts'
+
+// House Images for Phaser Scenes
+export { default as House1 } from './images/phaser/house1.svg'
+export { default as House2 } from './images/phaser/house2.svg'
+export { default as House3 } from './images/phaser/house3.svg'
+export { default as House4 } from './images/phaser/house4.svg'
