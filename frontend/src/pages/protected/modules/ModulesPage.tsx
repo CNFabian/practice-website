@@ -4,6 +4,7 @@ import LessonView from './LessonView';
 import Minigame from './Minigame';
 import { Module } from '../../../types/modules';
 import { createGameConfig } from './phaser/config/gameConfig';
+import { SuburbanBackground } from '../../../assets';
 
 type ViewType = 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
 
@@ -22,15 +23,15 @@ const MOCK_MODULES: Module[] = [
     title: 'Finance Fundamentals',
     description: 'Learn the basics of personal finance',
     image: '',
-    lessonCount: 3,
+    lessonCount: 4,
     status: 'Not Started',
     tags: ['finance', 'basics'],
     illustration: '',
     lessons: [
       {
         id: 101,
-        title: 'Introduction to Financial Literacy',
-        description: 'Understanding the basics of personal finance',
+        title: 'Renting vs Buying',
+        description: 'Understanding the basics of renting vs buying',
         image: '',
         duration: '15 min',
         coins: 50,
@@ -38,8 +39,8 @@ const MOCK_MODULES: Module[] = [
       },
       {
         id: 102,
-        title: 'Core Financial Concepts',
-        description: 'Essential knowledge for managing your finances',
+        title: 'Preparing Your Documents',
+        description: 'Essential documents for homebuying',
         image: '',
         duration: '20 min',
         coins: 50,
@@ -47,11 +48,20 @@ const MOCK_MODULES: Module[] = [
       },
       {
         id: 103,
-        title: 'Practical Application',
-        description: 'Applying financial principles to real life',
+        title: 'Financial Basics',
+        description: 'Core financial concepts',
         image: '',
         duration: '25 min',
         coins: 75,
+        completed: false,
+      },
+      {
+        id: 104,
+        title: 'Setting a Timeline',
+        description: 'Planning your homebuying journey',
+        image: '',
+        duration: '20 min',
+        coins: 50,
         completed: false,
       },
     ],
@@ -73,46 +83,45 @@ const ModulesPage: React.FC = () => {
 
   // Define houses for each neighborhood
   const neighborhoodHouses = {
-  downtown: [
-    { 
-      id: 'start_house', 
-      name: 'Start House', 
-      x: 20, 
-      y: 40, 
-      isLocked: false,
-      houseType: 'house1'
-    },
-    { 
-      id: 'math_manor', 
-      name: 'Math Manor', 
-      x: 45, 
-      y: 45, 
-      isLocked: false,
-      houseType: 'house2'
-    },
-    { 
-      id: 'science_lab', 
-      name: 'Science Lab', 
-      x: 70, 
-      y: 50, 
-      isLocked: false,
-      houseType: 'house3'
-    }
-  ]
-};
+    downtown: [
+      { 
+        id: 'start_house', 
+        name: 'Start House', 
+        x: 20, 
+        y: 40, 
+        isLocked: false,
+        houseType: 'house1'
+      },
+      { 
+        id: 'math_manor', 
+        name: 'Math Manor', 
+        x: 45, 
+        y: 45, 
+        isLocked: false,
+        houseType: 'house2'
+      },
+      { 
+        id: 'science_lab', 
+        name: 'Science Lab', 
+        x: 70, 
+        y: 50, 
+        isLocked: false,
+        houseType: 'house3'
+      },
+    ],
+  };
 
-  // Get current module and lesson from state
+  // Find the current lesson and module based on state
   const currentModule = useMemo(() => {
     if (!navState.moduleId) return null;
     return MOCK_MODULES.find(m => m.id === navState.moduleId) || null;
   }, [navState.moduleId]);
 
   const currentLesson = useMemo(() => {
-    if (!navState.lessonId || !currentModule) return null;
+    if (!currentModule || !navState.lessonId) return null;
     return currentModule.lessons.find(l => l.id === navState.lessonId) || null;
-  }, [navState.lessonId, currentModule]);
+  }, [currentModule, navState.lessonId]);
 
-  // Navigation handlers
   const handleNeighborhoodSelect = (neighborhoodId: string) => {
     setNavState({
       currentView: 'neighborhood',
@@ -128,15 +137,17 @@ const ModulesPage: React.FC = () => {
       ...prev,
       currentView: 'house',
       houseId,
-      moduleId: 1, // Set to first module for now - replace with actual mapping
-      lessonId: null,
+      moduleId: 1, // TODO: Map house to actual module
     }));
   };
 
-  const handleLessonSelect = (lessonId: string) => {
-    // Parse lessonId as number
-    const numericLessonId = parseInt(lessonId.replace('lesson-', ''));
-    const actualLessonId = 100 + numericLessonId; // Maps lesson-1 to 101, lesson-2 to 102, etc.
+  const handleLessonSelect = (lessonString: string) => {
+    // Parse lessonId from string format "lesson-1"
+    const lessonNumber = parseInt(lessonString.replace('lesson-', ''));
+    const actualLessonId = 100 + lessonNumber; // Maps lesson-1 to 101, lesson-2 to 102, etc.
+    
+    console.log('handleLessonSelect called with:', lessonString);
+    console.log('Converted to lessonId:', actualLessonId);
     
     setNavState(prev => ({
       ...prev,
@@ -233,6 +244,8 @@ const ModulesPage: React.FC = () => {
 
     const game = gameRef.current;
 
+    console.log('Navigation state changed:', navState);
+
     switch (navState.currentView) {
       case 'map':
         if (game.scene.isActive('NeighborhoodScene')) {
@@ -302,12 +315,22 @@ const ModulesPage: React.FC = () => {
         return { backgroundColor: '#fed7aa' }; // Orange
       case 'house':
         return {
-          background: 'linear-gradient(to bottom, #fef3c7 0%, #fff7ed 50%, #fee2e2 100%)'
-        }; // Yellow to pink gradient
+          backgroundImage: `url(${SuburbanBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        };
       default:
         return { backgroundColor: '#ffffff' };
     }
   };
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Current view:', navState.currentView);
+    console.log('Current module:', currentModule);
+    console.log('Current lesson:', currentLesson);
+  }, [navState.currentView, currentModule, currentLesson]);
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
@@ -328,13 +351,29 @@ const ModulesPage: React.FC = () => {
       />
 
       {/* React UI Overlays */}
-      {navState.currentView === 'lesson' && currentLesson && currentModule && (
+      {navState.currentView === 'lesson' && (
         <div className="absolute inset-0 bg-white z-20">
-          <LessonView
-            lesson={currentLesson}
-            module={currentModule}
-            onBack={handleBackToHouse}
-          />
+          {currentLesson && currentModule ? (
+            <LessonView
+              lesson={currentLesson}
+              module={currentModule}
+              onBack={handleBackToHouse}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Loading lesson...</h2>
+                <p className="text-gray-600">Module ID: {navState.moduleId}</p>
+                <p className="text-gray-600">Lesson ID: {navState.lessonId}</p>
+                <button 
+                  onClick={handleBackToHouse}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Back to House
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

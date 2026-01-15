@@ -82,6 +82,9 @@ export { default as House1 } from './images/phaser/house1.svg'
 export { default as House2 } from './images/phaser/house2.svg'
 export { default as House3 } from './images/phaser/house3.svg'
 export { default as House4 } from './images/phaser/house4.svg'
+export { default as SuburbanBackground } from './images/phaser/suburban_background1.png'
+export { default as LeftCutHouse } from './images/phaser/left_cut_house.png'
+export { default as RightCutHouse } from './images/phaser/right_cut_house.png'
 
 // Neighborhood Images for Phaser Scenes
 export { default as Road1 } from './images/phaser/road1.png'

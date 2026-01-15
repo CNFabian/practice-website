@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
+import { SuburbanBackground, LeftCutHouse, RightCutHouse } from '../../../../../assets';
 
 interface Lesson {
   id: number;
@@ -63,9 +64,20 @@ export default class HouseScene extends Phaser.Scene {
   private minigameButton?: Phaser.GameObjects.Container;
   private headerCard?: Phaser.GameObjects.Container;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
+  private background?: Phaser.GameObjects.Image;
+  private leftHouse?: Phaser.GameObjects.Image;
+  private rightHouse?: Phaser.GameObjects.Image;
 
   constructor() {
     super({ key: 'HouseScene' });
+  }
+
+  preload() {
+    // Load suburban background image
+    this.load.image('suburbanBackground', SuburbanBackground);
+    // Load house cutout images
+    this.load.image('leftCutHouse', LeftCutHouse);
+    this.load.image('rightCutHouse', RightCutHouse);
   }
 
   init(_data: HouseSceneData) {
@@ -77,19 +89,32 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
+    const { width, height } = this.scale;
+
+    // Create house cutouts - Depth 1 (in front of background, behind lesson cards)
+    // Left house cutout - positioned on the left side
+    this.leftHouse = this.add.image(width * 0.25, height / 2, 'leftCutHouse');
+    this.leftHouse.setDepth(1);
+    this.leftHouse.setScale(2);
+    
+    // Right house cutout - positioned on the right side
+    this.rightHouse = this.add.image(width * 0.76, height / 2, 'rightCutHouse');
+    this.rightHouse.setDepth(1);
+    this.rightHouse.setScale(2);
+
     // Fade in camera
     this.cameras.main.fadeIn(300, 254, 243, 199);
 
-    // Create back button
+    // Create back button - Depth 10
     this.createBackButton();
 
-    // Create minigame button
+    // Create minigame button - Depth 10
     this.createMinigameButton();
 
-    // Create header card
+    // Create header card - Depth 10
     this.createHeaderCard();
 
-    // Create lesson grid
+    // Create lesson grid - Depth 10
     this.createLessonGrid();
 
     // Handle window resize
@@ -99,6 +124,7 @@ export default class HouseScene extends Phaser.Scene {
   private createBackButton() {
     // Create back button container
     this.backButton = this.add.container(scale(100), scale(40));
+    this.backButton.setDepth(10);
 
     // Button background
     const buttonBg = this.add.rectangle(0, 0, scale(200), scale(44), 0xffffff, 0.9);
@@ -160,6 +186,7 @@ export default class HouseScene extends Phaser.Scene {
 
     // Create minigame button container
     this.minigameButton = this.add.container(width - scale(120), scale(40));
+    this.minigameButton.setDepth(10);
 
     // Button background
     const buttonBg = this.add.rectangle(0, 0, scale(160), scale(44), 0x2563eb, 1);
@@ -208,6 +235,7 @@ export default class HouseScene extends Phaser.Scene {
 
     // Create header container
     this.headerCard = this.add.container(width / 2, height * 0.15);
+    this.headerCard.setDepth(10);
 
     // Card background
     const cardWidth = scale(700);
@@ -270,6 +298,7 @@ export default class HouseScene extends Phaser.Scene {
   ) {
     // Create lesson container
     const lessonContainer = this.add.container(x, y);
+    lessonContainer.setDepth(10); // In front of house cutouts
     this.lessonContainers.push(lessonContainer);
 
     // Card background
@@ -447,6 +476,20 @@ export default class HouseScene extends Phaser.Scene {
 
   private handleResize(gameSize: Phaser.Structs.Size) {
     const { width, height } = gameSize;
+
+    // Resize and reposition background
+    if (this.background) {
+      this.background.setPosition(width / 2, height / 2);
+      this.background.setDisplaySize(width, height);
+    }
+
+    // Reposition house cutouts
+    if (this.leftHouse) {
+      this.leftHouse.setPosition(width * 0.25, height / 2);
+    }
+    if (this.rightHouse) {
+      this.rightHouse.setPosition(width * 0.75, height / 2);
+    }
 
     // Reposition back button
     if (this.backButton) {
