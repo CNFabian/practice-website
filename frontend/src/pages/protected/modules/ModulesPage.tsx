@@ -3,11 +3,7 @@ import Phaser from 'phaser';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import { Module } from '../../../types/modules';
-
-// Import Phaser scenes
-import MapScene from './phaser/scenes/MapScene';
-import NeighborhoodScene from './phaser/scenes/NeighborhoodScene';
-import HouseScene from './phaser/scenes/HouseScene';
+import { createGameConfig } from './phaser/config/gameConfig';
 
 type ViewType = 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
 
@@ -178,30 +174,7 @@ const ModulesPage: React.FC = () => {
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: containerRef.current,
-      width: window.innerWidth - 192,
-      height: window.innerHeight,
-      transparent: true, // Make Phaser canvas transparent so CSS background shows through
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { x: 0, y: 0 },
-          debug: false
-        }
-      },
-      scene: [MapScene, NeighborhoodScene, HouseScene],
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-      },
-      render: {
-        antialias: true,
-        pixelArt: false,
-        roundPixels: false
-      }
-    };
+    const config = createGameConfig(containerRef.current);
 
     gameRef.current = new Phaser.Game(config);
 
@@ -284,11 +257,16 @@ const ModulesPage: React.FC = () => {
     }
   }, [navState, isPhaserReady, neighborhoodHouses]);
 
-  // Handle window resize
+  // Handle window resize with high DPI support
   useEffect(() => {
     const handleResize = () => {
       if (gameRef.current) {
-        gameRef.current.scale.resize(window.innerWidth - 192, window.innerHeight);
+        const dpr = window.devicePixelRatio || 1;
+        const newWidth = (window.innerWidth - 192) * dpr;
+        const newHeight = window.innerHeight * dpr;
+        
+        // Resize the game canvas
+        gameRef.current.scale.resize(newWidth, newHeight);
       }
     };
 

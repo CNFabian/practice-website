@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 
 interface NeighborhoodData {
   id: string;
@@ -49,26 +50,26 @@ export default class MapScene extends Phaser.Scene {
     this.centerContainer = this.add.container(width / 2, height / 2);
 
     // Create white background card
-    const cardWidth = 400;
-    const cardHeight = 500;
+    const cardWidth = scale(400);
+    const cardHeight = scale(500);
     const card = this.add.rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.9);
-    card.setStrokeStyle(2, 0xe5e7eb);
+    card.setStrokeStyle(scale(2), 0xe5e7eb);
     this.centerContainer.add(card);
 
     // Create map icon circle at top
-    const iconCircle = this.add.circle(0, -180, 32, 0x3b82f6);
+    const iconCircle = this.add.circle(0, scale(-180), scale(32), 0x3b82f6);
     this.centerContainer.add(iconCircle);
 
     // Add map icon text (emoji as text)
-    const mapIcon = this.add.text(0, -180, '🗺️', {
-      fontSize: '32px',
+    const mapIcon = this.add.text(0, scale(-180), '🗺️', {
+      fontSize: scaleFontSize(32),
       color: '#ffffff'
     }).setOrigin(0.5);
     this.centerContainer.add(mapIcon);
 
     // Title
-    const title = this.add.text(0, -120, 'Map View', {
-      fontSize: '28px',
+    const title = this.add.text(0, scale(-120), 'Map View', {
+      fontSize: scaleFontSize(28),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -76,8 +77,8 @@ export default class MapScene extends Phaser.Scene {
     this.centerContainer.add(title);
 
     // Subtitle
-    const subtitle = this.add.text(0, -80, 'Interactive map with learning\nneighborhoods coming soon!', {
-      fontSize: '16px',
+    const subtitle = this.add.text(0, scale(-80), 'Interactive map with learning\nneighborhoods coming soon!', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#6b7280',
       align: 'center'
@@ -85,8 +86,8 @@ export default class MapScene extends Phaser.Scene {
     this.centerContainer.add(subtitle);
 
     // Features section
-    const featuresTitle = this.add.text(-160, -20, 'Features:', {
-      fontSize: '16px',
+    const featuresTitle = this.add.text(scale(-160), scale(-20), 'Features:', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -102,8 +103,8 @@ export default class MapScene extends Phaser.Scene {
     ];
 
     features.forEach((feature, index) => {
-      const featureText = this.add.text(-160, 10 + (index * 25), feature, {
-        fontSize: '14px',
+      const featureText = this.add.text(scale(-160), scale(10 + (index * 25)), feature, {
+        fontSize: scaleFontSize(14),
         fontFamily: 'Arial, sans-serif',
         color: '#6b7280'
       }).setOrigin(0, 0.5);
@@ -111,8 +112,8 @@ export default class MapScene extends Phaser.Scene {
     });
 
     // Preview Neighborhoods title
-    const previewTitle = this.add.text(0, 140, 'Preview Neighborhoods:', {
-      fontSize: '16px',
+    const previewTitle = this.add.text(0, scale(140), 'Preview Neighborhoods:', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -120,8 +121,8 @@ export default class MapScene extends Phaser.Scene {
     this.centerContainer.add(previewTitle);
 
     // Create neighborhood buttons
-    this.createNeighborhoodButton('downtown', 'Downtown', -80, 190, 0x3b82f6, 0xdbeafe);
-    this.createNeighborhoodButton('suburbs', 'Suburbs', 80, 190, 0x10b981, 0xd1fae5);
+    this.createNeighborhoodButton('downtown', 'Downtown', scale(-80), scale(190), 0x3b82f6, 0xdbeafe);
+    this.createNeighborhoodButton('suburbs', 'Suburbs', scale(80), scale(190), 0x10b981, 0xd1fae5);
 
     // Handle window resize
     this.scale.on('resize', this.handleResize, this);
@@ -135,8 +136,8 @@ export default class MapScene extends Phaser.Scene {
     bgColor: number,
     hoverColor: number
   ) {
-    const buttonWidth = 140;
-    const buttonHeight = 40;
+    const buttonWidth = scale(140);
+    const buttonHeight = scale(40);
 
     // Create button container
     const buttonContainer = this.add.container(x, y);
@@ -144,12 +145,12 @@ export default class MapScene extends Phaser.Scene {
 
     // Button background
     const buttonBg = this.add.rectangle(0, 0, buttonWidth, buttonHeight, bgColor, 0.2);
-    buttonBg.setStrokeStyle(1, bgColor, 0.3);
+    buttonBg.setStrokeStyle(scale(1), bgColor, 0.3);
     buttonContainer.add(buttonBg);
 
     // Button text
     const buttonText = this.add.text(0, 0, label, {
-      fontSize: '14px',
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: Phaser.Display.Color.IntegerToColor(bgColor).rgba
     }).setOrigin(0.5);

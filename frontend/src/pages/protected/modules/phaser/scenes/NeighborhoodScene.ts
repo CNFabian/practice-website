@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 
 interface HousePosition {
   id: string;
@@ -33,8 +34,6 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   create() {
-
-
     // Fade in camera
     this.cameras.main.fadeIn(300, 254, 215, 170);
 
@@ -54,29 +53,29 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
   private createBackButton() {
     // Create back button container
-    this.backButton = this.add.container(80, 40);
+    this.backButton = this.add.container(scale(80), scale(40));
 
     // Button background
-    const buttonBg = this.add.rectangle(0, 0, 140, 44, 0xffffff, 0.9);
-    buttonBg.setStrokeStyle(1, 0xe5e7eb);
+    const buttonBg = this.add.rectangle(0, 0, scale(140), scale(44), 0xffffff, 0.9);
+    buttonBg.setStrokeStyle(scale(1), 0xe5e7eb);
     this.backButton.add(buttonBg);
 
     // Back arrow icon (simplified SVG path as graphics)
     const arrow = this.add.graphics();
-    arrow.lineStyle(2, 0x000000, 1);
+    arrow.lineStyle(scale(2), 0x000000, 1);
     arrow.beginPath();
-    arrow.moveTo(-50, 0);
-    arrow.lineTo(-40, -5);
-    arrow.moveTo(-50, 0);
-    arrow.lineTo(-40, 5);
-    arrow.moveTo(-50, 0);
-    arrow.lineTo(-30, 0);
+    arrow.moveTo(scale(-50), 0);
+    arrow.lineTo(scale(-40), scale(-5));
+    arrow.moveTo(scale(-50), 0);
+    arrow.lineTo(scale(-40), scale(5));
+    arrow.moveTo(scale(-50), 0);
+    arrow.lineTo(scale(-30), 0);
     arrow.strokePath();
     this.backButton.add(arrow);
 
     // Button text
     const buttonText = this.add.text(0, 0, 'Back to Map', {
-      fontSize: '14px',
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: '#000000'
     }).setOrigin(0.5);
@@ -122,7 +121,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const houseContainer = this.add.container(x, y);
 
     // House background box
-    const houseSize = 80;
+    const houseSize = scale(80);
     const houseBg = this.add.rectangle(
       0, 
       0, 
@@ -131,7 +130,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
       house.isLocked ? 0xd1d5db : 0xf97316, // gray-300 or orange-500
       1
     );
-    houseBg.setStrokeStyle(2, 0x000000, 0.1);
+    houseBg.setStrokeStyle(scale(2), 0x000000, 0.1);
     houseContainer.add(houseBg);
 
     // House icon
@@ -146,16 +145,16 @@ export default class NeighborhoodScene extends Phaser.Scene {
     // House name label
     const labelBg = this.add.rectangle(
       0, 
-      60, 
-      house.name.length * 8 + 20, 
-      30, 
+      scale(60), 
+      scale(house.name.length * 8 + 20), 
+      scale(30), 
       house.isLocked ? 0xe5e7eb : 0xffffff, 
       house.isLocked ? 1 : 0.9
     );
     houseContainer.add(labelBg);
 
-    const nameText = this.add.text(0, 60, house.name, {
-      fontSize: '14px',
+    const nameText = this.add.text(0, scale(60), house.name, {
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: house.isLocked ? '#4b5563' : '#1f2937',
       fontStyle: 'bold'
@@ -202,21 +201,21 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private createHouseIcon(container: Phaser.GameObjects.Container) {
     // Simplified house icon using graphics
     const graphics = this.add.graphics();
-    graphics.lineStyle(2, 0xffffff, 1);
+    graphics.lineStyle(scale(2), 0xffffff, 1);
     
     // House outline
-    graphics.strokeRect(-20, -10, 40, 30);
+    graphics.strokeRect(scale(-20), scale(-10), scale(40), scale(30));
     
     // Roof
     graphics.beginPath();
-    graphics.moveTo(-25, -10);
-    graphics.lineTo(0, -25);
-    graphics.lineTo(25, -10);
+    graphics.moveTo(scale(-25), scale(-10));
+    graphics.lineTo(0, scale(-25));
+    graphics.lineTo(scale(25), scale(-10));
     graphics.strokePath();
     
     // Door
     graphics.fillStyle(0xffffff, 0.8);
-    graphics.fillRect(-8, 5, 16, 15);
+    graphics.fillRect(scale(-8), scale(5), scale(16), scale(15));
     
     container.add(graphics);
   }
@@ -224,17 +223,17 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private createLockIcon(container: Phaser.GameObjects.Container) {
     // Simplified lock icon using graphics
     const graphics = this.add.graphics();
-    graphics.lineStyle(2, 0x6b7280, 1);
+    graphics.lineStyle(scale(2), 0x6b7280, 1);
     
     // Lock body
-    graphics.strokeRect(-12, -5, 24, 20);
+    graphics.strokeRect(scale(-12), scale(-5), scale(24), scale(20));
     
     // Lock shackle
-    graphics.strokeCircle(0, -10, 8);
+    graphics.strokeCircle(0, scale(-10), scale(8));
     
     // Keyhole
     graphics.fillStyle(0x6b7280, 1);
-    graphics.fillCircle(0, 3, 3);
+    graphics.fillCircle(0, scale(3), scale(3));
     
     container.add(graphics);
   }
@@ -246,26 +245,26 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.placeholderCard = this.add.container(width / 2, height / 2);
 
     // Card background
-    const cardWidth = 500;
-    const cardHeight = 550;
+    const cardWidth = scale(500);
+    const cardHeight = scale(550);
     const card = this.add.rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.9);
-    card.setStrokeStyle(2, 0xe5e7eb);
+    card.setStrokeStyle(scale(2), 0xe5e7eb);
     this.placeholderCard.add(card);
 
     // Icon circle
-    const iconCircle = this.add.circle(0, -220, 32, 0xf97316);
+    const iconCircle = this.add.circle(0, scale(-220), scale(32), 0xf97316);
     this.placeholderCard.add(iconCircle);
 
     // House icon in circle
-    const houseIcon = this.add.text(0, -220, '🏘️', {
-      fontSize: '32px',
+    const houseIcon = this.add.text(0, scale(-220), '🏘️', {
+      fontSize: scaleFontSize(32),
       color: '#ffffff'
     }).setOrigin(0.5);
     this.placeholderCard.add(houseIcon);
 
     // Title
-    const title = this.add.text(0, -160, 'Neighborhood View', {
-      fontSize: '28px',
+    const title = this.add.text(0, scale(-160), 'Neighborhood View', {
+      fontSize: scaleFontSize(28),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -275,10 +274,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
     // Subtitle
     const subtitle = this.add.text(
       0, 
-      -120, 
+      scale(-120), 
       this.neighborhoodId ? `Exploring: ${this.neighborhoodId}` : 'Learning Neighborhood',
       {
-        fontSize: '18px',
+        fontSize: scaleFontSize(18),
         fontFamily: 'Arial, sans-serif',
         color: '#6b7280'
       }
@@ -286,8 +285,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.placeholderCard.add(subtitle);
 
     // Features title
-    const featuresTitle = this.add.text(-180, -60, 'Coming Features:', {
-      fontSize: '16px',
+    const featuresTitle = this.add.text(scale(-180), scale(-60), 'Coming Features:', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -303,8 +302,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     ];
 
     features.forEach((feature, index) => {
-      const featureText = this.add.text(-180, -30 + (index * 25), feature, {
-        fontSize: '14px',
+      const featureText = this.add.text(scale(-180), scale(-30 + (index * 25)), feature, {
+        fontSize: scaleFontSize(14),
         fontFamily: 'Arial, sans-serif',
         color: '#6b7280'
       }).setOrigin(0, 0.5);
@@ -314,8 +313,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     });
 
     // Preview Houses title
-    const previewTitle = this.add.text(0, 100, 'Preview Houses:', {
-      fontSize: '16px',
+    const previewTitle = this.add.text(0, scale(100), 'Preview Houses:', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -323,8 +322,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.placeholderCard.add(previewTitle);
 
     // Create demo house buttons
-    this.createDemoButton('starter_house', 'Starter House', -90, 160, 0x3b82f6, 0xdbeafe);
-    this.createDemoButton('advanced_house', 'Advanced House', 90, 160, 0xa855f7, 0xf3e8ff);
+    this.createDemoButton('starter_house', 'Starter House', scale(-90), scale(160), 0x3b82f6, 0xdbeafe);
+    this.createDemoButton('advanced_house', 'Advanced House', scale(90), scale(160), 0xa855f7, 0xf3e8ff);
   }
 
   private createDemoButton(
@@ -337,8 +336,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
   ) {
     if (!this.placeholderCard) return;
 
-    const buttonWidth = 160;
-    const buttonHeight = 40;
+    const buttonWidth = scale(160);
+    const buttonHeight = scale(40);
 
     // Create button container
     const buttonContainer = this.add.container(x, y);
@@ -346,12 +345,12 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Button background
     const buttonBg = this.add.rectangle(0, 0, buttonWidth, buttonHeight, bgColor, 0.2);
-    buttonBg.setStrokeStyle(1, bgColor, 0.3);
+    buttonBg.setStrokeStyle(scale(1), bgColor, 0.3);
     buttonContainer.add(buttonBg);
 
     // Button text
     const buttonText = this.add.text(0, 0, label, {
-      fontSize: '14px',
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: Phaser.Display.Color.IntegerToColor(bgColor).rgba
     }).setOrigin(0.5);
@@ -429,7 +428,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Reposition back button
     if (this.backButton) {
-      this.backButton.setPosition(80, 40);
+      this.backButton.setPosition(scale(80), scale(40));
     }
 
     // Reposition houses based on percentage

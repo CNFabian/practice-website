@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 
 interface Lesson {
   id: number;
@@ -76,7 +77,6 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
-
     // Fade in camera
     this.cameras.main.fadeIn(300, 254, 243, 199);
 
@@ -98,29 +98,29 @@ export default class HouseScene extends Phaser.Scene {
 
   private createBackButton() {
     // Create back button container
-    this.backButton = this.add.container(100, 40);
+    this.backButton = this.add.container(scale(100), scale(40));
 
     // Button background
-    const buttonBg = this.add.rectangle(0, 0, 200, 44, 0xffffff, 0.9);
-    buttonBg.setStrokeStyle(1, 0xe5e7eb);
+    const buttonBg = this.add.rectangle(0, 0, scale(200), scale(44), 0xffffff, 0.9);
+    buttonBg.setStrokeStyle(scale(1), 0xe5e7eb);
     this.backButton.add(buttonBg);
 
     // Back arrow icon
     const arrow = this.add.graphics();
-    arrow.lineStyle(2, 0x000000, 1);
+    arrow.lineStyle(scale(2), 0x000000, 1);
     arrow.beginPath();
-    arrow.moveTo(-75, 0);
-    arrow.lineTo(-65, -5);
-    arrow.moveTo(-75, 0);
-    arrow.lineTo(-65, 5);
-    arrow.moveTo(-75, 0);
-    arrow.lineTo(-45, 0);
+    arrow.moveTo(scale(-75), 0);
+    arrow.lineTo(scale(-65), scale(-5));
+    arrow.moveTo(scale(-75), 0);
+    arrow.lineTo(scale(-65), scale(5));
+    arrow.moveTo(scale(-75), 0);
+    arrow.lineTo(scale(-45), 0);
     arrow.strokePath();
     this.backButton.add(arrow);
 
     // Button text
     const buttonText = this.add.text(0, 0, 'Back to Neighborhood', {
-      fontSize: '14px',
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: '#000000'
     }).setOrigin(0.5);
@@ -159,24 +159,24 @@ export default class HouseScene extends Phaser.Scene {
     const { width } = this.scale;
 
     // Create minigame button container
-    this.minigameButton = this.add.container(width - 120, 40);
+    this.minigameButton = this.add.container(width - scale(120), scale(40));
 
     // Button background (blue)
-    const buttonBg = this.add.rectangle(0, 0, 140, 44, 0x2563eb, 1);
-    buttonBg.setStrokeStyle(1, 0x1e40af);
+    const buttonBg = this.add.rectangle(0, 0, scale(140), scale(44), 0x2563eb, 1);
+    buttonBg.setStrokeStyle(scale(1), 0x1e40af);
     this.minigameButton.add(buttonBg);
 
     // Play icon
     const playIcon = this.add.graphics();
-    playIcon.lineStyle(2, 0xffffff, 1);
-    playIcon.strokeCircle(-40, 0, 10);
+    playIcon.lineStyle(scale(2), 0xffffff, 1);
+    playIcon.strokeCircle(scale(-40), 0, scale(10));
     playIcon.fillStyle(0xffffff, 1);
-    playIcon.fillTriangle(-43, -5, -43, 5, -36, 0);
+    playIcon.fillTriangle(scale(-43), scale(-5), scale(-43), scale(5), scale(-36), 0);
     this.minigameButton.add(playIcon);
 
     // Button text
     const buttonText = this.add.text(0, 0, 'Minigame', {
-      fontSize: '14px',
+      fontSize: scaleFontSize(14),
       fontFamily: 'Arial, sans-serif',
       color: '#ffffff',
       fontStyle: 'bold'
@@ -219,15 +219,15 @@ export default class HouseScene extends Phaser.Scene {
     this.headerCard = this.add.container(width / 2, height * 0.15);
 
     // Card background
-    const cardWidth = 700;
-    const cardHeight = 120;
+    const cardWidth = scale(700);
+    const cardHeight = scale(120);
     const card = this.add.rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.9);
-    card.setStrokeStyle(2, 0xe5e7eb);
+    card.setStrokeStyle(scale(2), 0xe5e7eb);
     this.headerCard.add(card);
 
     // Module title
-    const title = this.add.text(0, -20, this.module.title, {
-      fontSize: '32px',
+    const title = this.add.text(0, scale(-20), this.module.title, {
+      fontSize: scaleFontSize(32),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
@@ -237,8 +237,8 @@ export default class HouseScene extends Phaser.Scene {
     // Progress text
     const completedCount = this.module.lessons.filter(l => l.completed).length;
     const totalCount = this.module.lessons.length;
-    const progressText = this.add.text(0, 25, `${completedCount}/${totalCount} Rooms Completed`, {
-      fontSize: '18px',
+    const progressText = this.add.text(0, scale(25), `${completedCount}/${totalCount} Rooms Completed`, {
+      fontSize: scaleFontSize(18),
       fontFamily: 'Arial, sans-serif',
       color: '#6b7280'
     }).setOrigin(0.5);
@@ -251,10 +251,10 @@ export default class HouseScene extends Phaser.Scene {
     // Grid layout parameters
     const gridCenterX = width / 2;
     const gridCenterY = height * 0.6;
-    const cardWidth = 320;
-    const cardHeight = 200;
-    const gapX = 50;
-    const gapY = 60;
+    const cardWidth = scale(320);
+    const cardHeight = scale(200);
+    const gapX = scale(50);
+    const gapY = scale(60);
 
     // Calculate starting positions for 2x2 grid
     const startX = gridCenterX - cardWidth - gapX / 2;
@@ -284,24 +284,24 @@ export default class HouseScene extends Phaser.Scene {
     this.lessonContainers.push(lessonContainer);
 
     // Card background
-    const card = this.add.rectangle(0, -20, width, height, 0xffffff, 0.7);
-    card.setStrokeStyle(2, 0xe5e7eb);
+    const card = this.add.rectangle(0, scale(-20), width, height, 0xffffff, 0.7);
+    card.setStrokeStyle(scale(2), 0xe5e7eb);
     lessonContainer.add(card);
 
     // Lesson title
-    const titleText = this.add.text(0, -60, lesson.title, {
-      fontSize: '22px',
+    const titleText = this.add.text(0, scale(-60), lesson.title, {
+      fontSize: scaleFontSize(22),
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold',
       align: 'center',
-      wordWrap: { width: width - 40 }
+      wordWrap: { width: width - scale(40) }
     }).setOrigin(0.5);
     lessonContainer.add(titleText);
 
     // Lesson type
-    const typeText = this.add.text(0, -20, lesson.type, {
-      fontSize: '16px',
+    const typeText = this.add.text(0, scale(-20), lesson.type, {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
       color: '#6b7280',
       align: 'center'
@@ -310,23 +310,23 @@ export default class HouseScene extends Phaser.Scene {
 
     // Lock overlay for locked lessons
     if (lesson.locked) {
-      const lockOverlay = this.add.rectangle(0, -20, width, height, 0xe5e7eb, 0.5);
+      const lockOverlay = this.add.rectangle(0, scale(-20), width, height, 0xe5e7eb, 0.5);
       lessonContainer.add(lockOverlay);
 
       // Lock icon
       const lockIcon = this.add.graphics();
-      lockIcon.lineStyle(3, 0x9ca3af, 1);
-      lockIcon.strokeRect(-20, -30, 40, 30);
-      lockIcon.strokeCircle(0, -30, 15);
+      lockIcon.lineStyle(scale(3), 0x9ca3af, 1);
+      lockIcon.strokeRect(scale(-20), scale(-30), scale(40), scale(30));
+      lockIcon.strokeCircle(0, scale(-30), scale(15));
       lockIcon.fillStyle(0x9ca3af, 1);
-      lockIcon.fillCircle(0, -15, 4);
+      lockIcon.fillCircle(0, scale(-15), scale(4));
       lessonContainer.add(lockIcon);
     }
 
     // Action button
-    const buttonY = 60;
-    const buttonWidth = 180;
-    const buttonHeight = 50;
+    const buttonY = scale(60);
+    const buttonWidth = scale(180);
+    const buttonHeight = scale(50);
 
     if (lesson.locked) {
       // Locked button
@@ -334,7 +334,7 @@ export default class HouseScene extends Phaser.Scene {
       lessonContainer.add(lockedButton);
 
       const lockedText = this.add.text(0, buttonY, 'Locked', {
-        fontSize: '16px',
+        fontSize: scaleFontSize(16),
         fontFamily: 'Arial, sans-serif',
         color: '#6b7280',
         fontStyle: 'bold'
@@ -347,7 +347,7 @@ export default class HouseScene extends Phaser.Scene {
         : this.add.rectangle(0, buttonY, buttonWidth, buttonHeight, 0x2563eb, 1);
 
       if (lesson.completed) {
-        buttonBg.setStrokeStyle(2, 0x3b82f6);
+        buttonBg.setStrokeStyle(scale(2), 0x3b82f6);
       }
 
       lessonContainer.add(buttonBg);
@@ -357,9 +357,9 @@ export default class HouseScene extends Phaser.Scene {
         buttonY,
         lesson.completed ? 'Re-read Lesson' : 'Start Lesson',
         {
-          fontSize: '16px',
+          fontSize: scaleFontSize(16),
           fontFamily: 'Arial, sans-serif',
-          color: lesson.completed ? '#2563eb' : '#ffffff',
+          color: lesson.completed ? '#3b82f6' : '#ffffff',
           fontStyle: 'bold'
         }
       ).setOrigin(0.5);
@@ -369,43 +369,33 @@ export default class HouseScene extends Phaser.Scene {
       buttonBg.setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
           if (!this.isTransitioning) {
-            if (lesson.completed) {
-              buttonBg.setFillStyle(0xdbeafe, 1); // blue-50
-            } else {
-              buttonBg.setFillStyle(0x1d4ed8, 1); // blue-700
-            }
+            buttonBg.setFillStyle(lesson.completed ? 0xdbeafe : 0x1d4ed8, 1);
             this.tweens.add({
-              targets: buttonBg,
-              scaleX: 1.05,
-              scaleY: 1.05,
+              targets: lessonContainer,
+              scale: 1.02,
               duration: 150,
               ease: 'Power2'
             });
           }
         })
         .on('pointerout', () => {
-          if (lesson.completed) {
-            buttonBg.setFillStyle(0xffffff, 1);
-          } else {
-            buttonBg.setFillStyle(0x2563eb, 1);
-          }
+          buttonBg.setFillStyle(lesson.completed ? 0xffffff : 0x2563eb, 1);
           this.tweens.add({
-            targets: buttonBg,
-            scaleX: 1,
-            scaleY: 1,
+            targets: lessonContainer,
+            scale: 1,
             duration: 150,
             ease: 'Power2'
           });
         })
         .on('pointerdown', () => {
           if (!this.isTransitioning) {
-            this.handleLessonClick(lesson.id);
+            this.handleLessonSelect(lesson.id);
           }
         });
     }
   }
 
-  private handleLessonClick(lessonId: number) {
+  private handleLessonSelect(lessonId: number) {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
@@ -469,17 +459,14 @@ export default class HouseScene extends Phaser.Scene {
   private handleResize(gameSize: Phaser.Structs.Size) {
     const { width, height } = gameSize;
 
-    // Recreate gradient background
-    this.children.removeAll();
-
     // Reposition back button
     if (this.backButton) {
-      this.backButton.setPosition(100, 40);
+      this.backButton.setPosition(scale(100), scale(40));
     }
 
     // Reposition minigame button
     if (this.minigameButton) {
-      this.minigameButton.setPosition(width - 120, 40);
+      this.minigameButton.setPosition(width - scale(120), scale(40));
     }
 
     // Reposition header card
