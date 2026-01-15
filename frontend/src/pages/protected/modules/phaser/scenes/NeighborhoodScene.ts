@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
-import { House1, House2, House3, House4, Road1, Platform1 } from '../../../../../assets';
+import { House1, House2, House3, House4, Road1, Platform1, BirdCharacter } from '../../../../../assets';
 
 interface HousePosition {
   id: string;
@@ -25,6 +25,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private placeholderCard?: Phaser.GameObjects.Container;
   private platform?: Phaser.GameObjects.Image;
   private roads: Phaser.GameObjects.Image[] = [];
+  private birdSprite?: Phaser.GameObjects.Image;
+  private currentHouseIndex: number = 0;
+  private isHopping: boolean = false;
+  private idleHopTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'NeighborhoodScene' });
@@ -40,6 +44,9 @@ export default class NeighborhoodScene extends Phaser.Scene {
     // Load background elements
     this.load.image('road1', Road1);
     this.load.image('platform1', Platform1);
+    
+    // Load bird character
+    this.load.image('bird', BirdCharacter);
   }
 
   init(data: NeighborhoodSceneData) {
@@ -48,6 +55,14 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.isTransitioning = false;
     this.houseSprites.clear();
     this.roads = [];
+    this.currentHouseIndex = 0;
+    this.isHopping = false;
+    
+    // Clear any existing timers
+    if (this.idleHopTimer) {
+      this.idleHopTimer.remove();
+      this.idleHopTimer = undefined;
+    }
   }
 
   create() {
@@ -67,12 +82,219 @@ export default class NeighborhoodScene extends Phaser.Scene {
       
       // Then create houses on top
       this.houses.forEach(house => this.createHouse(house));
+      
+      // Create bird character at first house
+      this.createBird();
+      
+      // Start idle hopping animation
+      this.startIdleHopping();
     } else {
       this.createPlaceholder();
     }
 
     // Handle window resize
     this.scale.on('resize', this.handleResize, this);
+  }
+
+  private createBird() {
+    if (this.houses.length === 0) return;
+    
+    const { width, height } = this.scale;
+    const firstHouse = this.houses[0];
+    
+    // Calculate bird position (above the first house)
+    const birdX = (firstHouse.x / 100) * width + scale(50); // Centered horizontally
+    const birdY = (firstHouse.y / 100) * height + scale(20);
+    
+    // Create bird sprite
+    this.birdSprite = this.add.image(birdX, birdY, 'bird');
+    this.birdSprite.setDisplaySize(scale(80), scale(80));
+    this.birdSprite.setDepth(1000); // Ensure bird is always on top
+  }
+
+  private startIdleHopping() {
+    // Schedule next idle hop with random delay
+    const scheduleNextIdleHop = () => {
+      const randomDelay = Phaser.Math.Between(5000, 8000); // Random delay between 5-8 seconds
+      
+      this.idleHopTimer = this.time.delayedCall(randomDelay, () => {
+        if (!this.isHopping && !this.isTransitioning && this.birdSprite) {
+          this.playIdleHop();
+        }
+        scheduleNextIdleHop(); // Schedule the next hop
+      });
+    };
+    
+    scheduleNextIdleHop();
+  }
+
+  private playIdleHop() {
+    if (!this.birdSprite || this.isHopping || this.houses.length === 0) return;
+    
+    const originalY = this.birdSprite.y;
+    const originalX = this.birdSprite.x;
+    
+    // Get current house position to constrain movement
+    const { width } = this.scale;
+    const currentHouse = this.houses[this.currentHouseIndex];
+    const houseCenterX = (currentHouse.x / 100) * width + scale(50);
+    
+    // Define the house area boundary (±60 pixels from house center)
+    const houseAreaRadius = scale(60);
+    const minX = houseCenterX - houseAreaRadius;
+    const maxX = houseCenterX + houseAreaRadius;
+    
+    // Random small movement in X direction that stays within house area
+    const moveDistance = Phaser.Math.Between(-5, 5);
+    let targetX = originalX + scale(moveDistance);
+    
+    // Clamp to house area
+    targetX = Phaser.Math.Clamp(targetX, minX, maxX);
+    
+    // Only flip if there's actual horizontal movement
+    const actualMove = targetX - originalX;
+    if (Math.abs(actualMove) > scale(2)) {
+      if (actualMove < 0) {
+        // Moving left, flip sprite
+        this.birdSprite.setFlipX(true);
+      } else {
+        // Moving right, unflip sprite
+        this.birdSprite.setFlipX(false);
+      }
+    }
+    
+    // Single hop with moderate height
+    const hopHeight = scale(2);
+    const duration = 300;
+    
+    this.tweens.add({
+      targets: this.birdSprite,
+      x: targetX,
+      y: originalY - hopHeight,
+      duration: duration,
+      ease: 'Sine.easeOut',
+      yoyo: true,
+      onStart: () => {
+        // Slight rotation during hop
+        this.tweens.add({
+          targets: this.birdSprite,
+          angle: -3,
+          duration: duration / 2,
+          ease: 'Sine.easeInOut',
+          yoyo: true
+        });
+      }
+    });
+  }
+
+  private hopToHouse(targetHouseIndex: number) {
+    if (!this.birdSprite || this.isHopping || targetHouseIndex >= this.houses.length) return;
+    
+    this.isHopping = true;
+    
+    const { width, height } = this.scale;
+    const targetHouse = this.houses[targetHouseIndex];
+    const targetX = (targetHouse.x / 100) * width + scale(50);
+    const targetY = (targetHouse.y / 100) * height + scale(20);
+    
+    // Flip bird sprite based on direction of travel
+    if (targetX < this.birdSprite.x) {
+      // Moving left
+      this.birdSprite.setFlipX(true);
+    } else {
+      // Moving right
+      this.birdSprite.setFlipX(false);
+    }
+    
+    // Calculate distance for animation
+    const distance = Phaser.Math.Distance.Between(
+      this.birdSprite.x, 
+      this.birdSprite.y, 
+      targetX, 
+      targetY
+    );
+    
+    // Create many tiny hops - one hop every 40-50 pixels
+    const numHops = Math.max(5, Math.floor(distance / scale(40)));
+    const hopHeight = scale(10); // Small hop height
+    const hopDuration = 250; // Duration for each individual hop
+    
+    // Calculate the path with landing points
+    const path: { x: number; y: number }[] = [];
+    for (let i = 0; i <= numHops; i++) {
+      const t = i / numHops;
+      const x = Phaser.Math.Linear(this.birdSprite.x, targetX, t);
+      const y = Phaser.Math.Linear(this.birdSprite.y, targetY, t);
+      path.push({ x, y });
+    }
+    
+    // Create the hopping animation
+    let currentHop = 0;
+    
+    const performNextHop = () => {
+      if (currentHop >= path.length - 1) {
+        // Final hop complete
+        this.isHopping = false;
+        this.currentHouseIndex = targetHouseIndex;
+        
+        // Trigger scene transition
+        this.handleHouseClick(targetHouse.id);
+        return;
+      }
+      
+      const startPoint = path[currentHop];
+      const endPoint = path[currentHop + 1];
+      
+      // Calculate the peak of the hop (midpoint)
+      const midX = (startPoint.x + endPoint.x) / 2;
+      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
+      
+      // Up phase of the hop
+      this.tweens.add({
+        targets: this.birdSprite,
+        x: midX,
+        y: midY,
+        duration: hopDuration / 2,
+        ease: 'Sine.easeOut',
+        onStart: () => {
+          // Slight rotation during up phase
+          this.tweens.add({
+            targets: this.birdSprite,
+            angle: currentHop % 2 === 0 ? -5 : 5,
+            duration: hopDuration / 2,
+            ease: 'Sine.easeOut'
+          });
+        },
+        onComplete: () => {
+          // Down phase of the hop
+          this.tweens.add({
+            targets: this.birdSprite,
+            x: endPoint.x,
+            y: endPoint.y,
+            duration: hopDuration / 2,
+            ease: 'Sine.easeIn',
+            onStart: () => {
+              // Rotate back during down phase
+              this.tweens.add({
+                targets: this.birdSprite,
+                angle: 0,
+                duration: hopDuration / 2,
+                ease: 'Sine.easeIn'
+              });
+            },
+            onComplete: () => {
+              currentHop++;
+              // Small delay between hops for realism
+              this.time.delayedCall(50, () => {
+                performNextHop();
+              });
+            }
+          });
+        }
+      });
+    };
+    
+    performNextHop();
   }
 
   private createPlatform() {
@@ -83,69 +305,67 @@ export default class NeighborhoodScene extends Phaser.Scene {
     
     // Scale the platform to fit the width of the scene
     this.platform.setDisplaySize(width * 0.9, scale(300));
+    this.platform.setAlpha(0.8);
+    this.platform.setDepth(0);
   }
 
   private createRoads() {
     const { width, height } = this.scale;
     
-    // Sort houses by x position to place roads between them
-    const sortedHouses = [...this.houses].sort((a, b) => a.x - b.x);
-    
-    // Create road between each pair of houses
-    sortedHouses.forEach((house, index) => {
-      if (index < sortedHouses.length - 1) {
-        const nextHouse = sortedHouses[index + 1];
-        
-        const x1 = (house.x / 100) * width;
-        const x2 = (nextHouse.x / 100) * width;
-        const y = (house.y / 100) * height + scale(50); // Slightly below house position
-        
-        // Position road in the middle between current and next house
-        const roadX = (x1 + x2) / 2;
-        
-        const road = this.add.image(roadX, y, 'road1');
-        road.setDisplaySize(scale(200), scale(200));
-        road.setAngle(-15);
-        this.roads.push(road);
-      }
-    });
+    // Create roads connecting houses in sequence
+    for (let i = 0; i < this.houses.length - 1; i++) {
+      const house1 = this.houses[i];
+      const house2 = this.houses[i + 1];
+      
+      const x1 = (house1.x / 100) * width;
+      const y1 = (house1.y / 100) * height;
+      const x2 = (house2.x / 100) * width;
+      const y2 = (house2.y / 100) * height;
+      
+      // Calculate midpoint
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+      
+      // Calculate angle between houses
+      const angle = Phaser.Math.Angle.Between(x1, y1, x2, y2);
+      
+      // Calculate distance for road length
+      const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
+      
+      // Create road
+      const road = this.add.image(midX, midY, 'road1');
+      road.setDisplaySize(distance, scale(40));
+      road.setRotation(angle);
+      road.setAlpha(0.7);
+      road.setDepth(1);
+      
+      this.roads.push(road);
+    }
   }
 
   private createBackButton() {
     // Create back button container
-    this.backButton = this.add.container(scale(80), scale(40));
+    this.backButton = this.add.container(scale(20), scale(20));
 
     // Button background
-    const buttonBg = this.add.rectangle(0, 0, scale(140), scale(44), 0xffffff, 0.9);
-    buttonBg.setStrokeStyle(scale(1), 0xe5e7eb);
+    const buttonBg = this.add.rectangle(0, 0, scale(100), scale(40), 0xffffff, 0.9);
+    buttonBg.setStrokeStyle(scale(2), 0xe5e7eb);
     this.backButton.add(buttonBg);
 
-    // Back arrow icon (simplified SVG path as graphics)
-    const arrow = this.add.graphics();
-    arrow.lineStyle(scale(2), 0x000000, 1);
-    arrow.beginPath();
-    arrow.moveTo(scale(-50), 0);
-    arrow.lineTo(scale(-40), scale(-5));
-    arrow.moveTo(scale(-50), 0);
-    arrow.lineTo(scale(-40), scale(5));
-    arrow.moveTo(scale(-50), 0);
-    arrow.lineTo(scale(-30), 0);
-    arrow.strokePath();
-    this.backButton.add(arrow);
-
-    // Button text
-    const buttonText = this.add.text(0, 0, 'Back to Map', {
-      fontSize: scaleFontSize(14),
+    // Back arrow and text
+    const backText = this.add.text(0, 0, '← Back', {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
-      color: '#000000'
+      color: '#1f2937',
+      fontStyle: 'bold'
     }).setOrigin(0.5);
-    this.backButton.add(buttonText);
+    this.backButton.add(backText);
 
     // Make interactive
     buttonBg.setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
         if (!this.isTransitioning) {
-          buttonBg.setFillStyle(0xffffff, 1);
+          buttonBg.setFillStyle(0xf3f4f6);
           this.tweens.add({
             targets: this.backButton,
             scale: 1.05,
@@ -173,22 +393,24 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private createHouse(house: HousePosition) {
     const { width, height } = this.scale;
 
-    // Calculate position from percentage
+    // Calculate position based on percentages
     const x = (house.x / 100) * width;
     const y = (house.y / 100) * height;
 
-    // Create house container
+    // Create container for house
     const houseContainer = this.add.container(x, y);
+    houseContainer.setDepth(10);
 
-    // House icon - use houseType to determine which image
-    this.createHouseIcon(houseContainer, house.houseType || 'house1');
+    // Create the house icon
+    const houseType = house.houseType || 'house1';
+    this.createHouseIcon(houseContainer, houseType);
 
-    // House name label
+    // Label background
     const labelBg = this.add.rectangle(
       0, 
       scale(100), 
-      scale(house.name.length * 8 + 20), 
-      scale(30), 
+      scale(140), 
+      scale(32), 
       house.isLocked ? 0xe5e7eb : 0xffffff, 
       house.isLocked ? 1 : 0.9
     );
@@ -206,7 +428,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     if (!house.isLocked) {
       houseContainer.setInteractive(new Phaser.Geom.Rectangle(-75, -75, 150, 150), Phaser.Geom.Rectangle.Contains)
         .on('pointerover', () => {
-          if (!this.isTransitioning) {
+          if (!this.isTransitioning && !this.isHopping) {
             this.tweens.add({
               targets: houseContainer,
               scale: 1.1,
@@ -224,8 +446,17 @@ export default class NeighborhoodScene extends Phaser.Scene {
           });
         })
         .on('pointerdown', () => {
-          if (!this.isTransitioning) {
-            this.handleHouseClick(house.id);
+          if (!this.isTransitioning && !this.isHopping) {
+            // Find the index of the clicked house
+            const targetIndex = this.houses.findIndex(h => h.id === house.id);
+            
+            if (targetIndex !== -1 && targetIndex !== this.currentHouseIndex) {
+              // Bird hops to the clicked house
+              this.hopToHouse(targetIndex);
+            } else if (targetIndex === this.currentHouseIndex) {
+              // Bird is already at this house, just transition
+              this.handleHouseClick(house.id);
+            }
           }
         });
       
@@ -286,71 +517,69 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const subtitle = this.add.text(
       0, 
       scale(-120), 
-      this.neighborhoodId ? `Exploring: ${this.neighborhoodId}` : 'Learning Neighborhood',
+      this.neighborhoodId ? 
+        `Neighborhood: ${this.neighborhoodId}` : 
+        'No neighborhood selected',
       {
-        fontSize: scaleFontSize(18),
+        fontSize: scaleFontSize(16),
         fontFamily: 'Arial, sans-serif',
-        color: '#6b7280'
+        color: '#6b7280',
+        align: 'center'
       }
     ).setOrigin(0.5);
     this.placeholderCard.add(subtitle);
 
-    // Features title
-    const featuresTitle = this.add.text(scale(-180), scale(-60), 'Coming Features:', {
-      fontSize: scaleFontSize(16),
-      fontFamily: 'Arial, sans-serif',
-      color: '#1f2937',
-      fontStyle: 'bold'
-    }).setOrigin(0, 0.5);
-    this.placeholderCard.add(featuresTitle);
-
-    // Features list
-    const features = [
-      '• Themed learning houses',
-      '• Progressive unlocking',
-      '• Neighborhood achievements',
-      '• Interactive house selection'
-    ];
-
-    features.forEach((feature, index) => {
-      const featureText = this.add.text(scale(-180), scale(-30 + (index * 25)), feature, {
+    // Description
+    const description = this.add.text(
+      0,
+      scale(-60),
+      'Houses and learning modules\nwill appear here once configured.',
+      {
         fontSize: scaleFontSize(14),
         fontFamily: 'Arial, sans-serif',
-        color: '#6b7280'
-      }).setOrigin(0, 0.5);
-      if (this.placeholderCard) {
-        this.placeholderCard.add(featureText);
+        color: '#9ca3af',
+        align: 'center',
+        wordWrap: { width: cardWidth - scale(80) }
       }
-    });
+    ).setOrigin(0.5);
+    this.placeholderCard.add(description);
 
-    // Preview Houses title
-    const previewTitle = this.add.text(0, scale(100), 'Preview Houses:', {
-      fontSize: scaleFontSize(16),
-      fontFamily: 'Arial, sans-serif',
-      color: '#1f2937',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.placeholderCard.add(previewTitle);
+    // Placeholder houses (3 sample houses)
+    const placeholderY = scale(60);
+    const placeholderSpacing = scale(140);
+    
+    for (let i = 0; i < 3; i++) {
+      this.createPlaceholderHouse(
+        scale(-140) + (i * placeholderSpacing),
+        placeholderY,
+        `House ${i + 1}`,
+        `house${i + 1}`,
+        i === 0 ? 0x3b82f6 : i === 1 ? 0x10b981 : 0xf59e0b
+      );
+    }
 
-    // Create demo house buttons
-    this.createDemoButton('starter_house', 'Starter House', scale(-90), scale(160), 0x3b82f6, 0xdbeafe);
-    this.createDemoButton('advanced_house', 'Advanced House', scale(90), scale(160), 0xa855f7, 0xf3e8ff);
+    // Call to action
+    const ctaText = this.add.text(
+      0,
+      scale(220),
+      'Configure this neighborhood in settings',
+      {
+        fontSize: scaleFontSize(12),
+        fontFamily: 'Arial, sans-serif',
+        color: '#d1d5db',
+        align: 'center'
+      }
+    ).setOrigin(0.5);
+    this.placeholderCard.add(ctaText);
   }
 
-  private createDemoButton(
-    id: string,
-    label: string,
-    x: number,
-    y: number,
-    bgColor: number,
-    hoverColor: number
-  ) {
+  private createPlaceholderHouse(x: number, y: number, label: string, id: string, bgColor: number) {
     if (!this.placeholderCard) return;
 
-    const buttonWidth = scale(160);
-    const buttonHeight = scale(40);
+    const buttonWidth = scale(120);
+    const buttonHeight = scale(100);
+    const hoverColor = Phaser.Display.Color.IntegerToColor(bgColor).lighten(20).color;
 
-    // Create button container
     const buttonContainer = this.add.container(x, y);
     this.placeholderCard.add(buttonContainer);
 
@@ -387,7 +616,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
           scale: 1,
           duration: 150,
           ease: 'Power2'
-        });
+          });
       })
       .on('pointerdown', () => {
         if (!this.isTransitioning) {
@@ -420,11 +649,11 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     this.isTransitioning = true;
 
-    // Get the navigation handler from registry
+    // Get the back handler from registry
     const handleBackToMap = this.registry.get('handleBackToMap');
     
     if (handleBackToMap && typeof handleBackToMap === 'function') {
-      // Add transition effect before switching scenes
+      // Add transition effect
       this.cameras.main.fadeOut(300, 254, 215, 170);
       
       this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -439,25 +668,34 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Reposition back button
     if (this.backButton) {
-      this.backButton.setPosition(scale(80), scale(40));
+      this.backButton.setPosition(scale(20), scale(20));
     }
 
-    // Reposition single platform
+    // Reposition platform
     if (this.platform) {
       this.platform.setPosition(width / 2, height / 2);
       this.platform.setDisplaySize(width * 0.9, scale(300));
     }
 
-    // Reposition roads between houses
-    const sortedHouses = [...this.houses].sort((a, b) => a.x - b.x);
-    sortedHouses.forEach((house, index) => {
-      if (index < sortedHouses.length - 1 && this.roads[index]) {
-        const nextHouse = sortedHouses[index + 1];
-        const x1 = (house.x / 100) * width;
-        const x2 = (nextHouse.x / 100) * width;
-        const y = (house.y / 100) * height;
-        const roadX = (x1 + x2) / 2;
-        this.roads[index].setPosition(roadX, y);
+    // Reposition roads
+    this.roads.forEach((road, index) => {
+      if (index < this.houses.length - 1) {
+        const house1 = this.houses[index];
+        const house2 = this.houses[index + 1];
+        
+        const x1 = (house1.x / 100) * width;
+        const y1 = (house1.y / 100) * height;
+        const x2 = (house2.x / 100) * width;
+        const y2 = (house2.y / 100) * height;
+        
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const angle = Phaser.Math.Angle.Between(x1, y1, x2, y2);
+        const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
+        
+        road.setPosition(midX, midY);
+        road.setDisplaySize(distance, scale(40));
+        road.setRotation(angle);
       }
     });
 
@@ -471,7 +709,15 @@ export default class NeighborhoodScene extends Phaser.Scene {
       }
     });
 
-    // Reposition placeholder card
+    // Reposition bird
+    if (this.birdSprite && this.houses.length > 0) {
+      const currentHouse = this.houses[this.currentHouseIndex];
+      const birdX = (currentHouse.x / 100) * width;
+      const birdY = (currentHouse.y / 100) * height;
+      this.birdSprite.setPosition(birdX, birdY);
+    }
+
+    // Reposition placeholder
     if (this.placeholderCard) {
       this.placeholderCard.setPosition(width / 2, height / 2);
     }
@@ -480,7 +726,11 @@ export default class NeighborhoodScene extends Phaser.Scene {
   shutdown() {
     // Clean up event listeners
     this.scale.off('resize', this.handleResize, this);
-    this.houseSprites.clear();
-    this.roads = [];
+    
+    // Clean up timer
+    if (this.idleHopTimer) {
+      this.idleHopTimer.remove();
+      this.idleHopTimer = undefined;
+    }
   }
 }
