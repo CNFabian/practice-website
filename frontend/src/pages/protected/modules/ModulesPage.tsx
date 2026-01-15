@@ -78,22 +78,22 @@ const ModulesPage: React.FC = () => {
       id: 'start_house', 
       name: 'Start House', 
       x: 20, 
-      y: 50, 
+      y: 40, 
       isLocked: false,
       houseType: 'house1'
     },
     { 
       id: 'math_manor', 
       name: 'Math Manor', 
-      x: 50, 
-      y: 50, 
+      x: 45, 
+      y: 45, 
       isLocked: false,
       houseType: 'house2'
     },
     { 
       id: 'science_lab', 
       name: 'Science Lab', 
-      x: 80, 
+      x: 70, 
       y: 50, 
       isLocked: false,
       houseType: 'house3'

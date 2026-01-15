@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
-import { House1, House2, House3, House4 } from '../../../../../assets';
+import { House1, House2, House3, House4, Road1, Platform1 } from '../../../../../assets';
 
 interface HousePosition {
   id: string;
@@ -23,6 +23,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private houseSprites: Map<string, Phaser.GameObjects.Container> = new Map();
   private backButton?: Phaser.GameObjects.Container;
   private placeholderCard?: Phaser.GameObjects.Container;
+  private platform?: Phaser.GameObjects.Image;
+  private roads: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super({ key: 'NeighborhoodScene' });
@@ -34,6 +36,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.load.image('house2', House2);
     this.load.image('house3', House3);
     this.load.image('house4', House4);
+    
+    // Load background elements
+    this.load.image('road1', Road1);
+    this.load.image('platform1', Platform1);
   }
 
   init(data: NeighborhoodSceneData) {
@@ -41,6 +47,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.houses = data.houses || [];
     this.isTransitioning = false;
     this.houseSprites.clear();
+    this.roads = [];
   }
 
   create() {
@@ -52,6 +59,13 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Create houses or placeholder
     if (this.houses.length > 0) {
+      // Create single platform as background first
+      this.createPlatform();
+      
+      // Create roads between houses
+      this.createRoads();
+      
+      // Then create houses on top
       this.houses.forEach(house => this.createHouse(house));
     } else {
       this.createPlaceholder();
@@ -59,6 +73,42 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Handle window resize
     this.scale.on('resize', this.handleResize, this);
+  }
+
+  private createPlatform() {
+    const { width, height } = this.scale;
+    
+    // Create single platform centered in the scene
+    this.platform = this.add.image(width / 2, height / 2, 'platform1');
+    
+    // Scale the platform to fit the width of the scene
+    this.platform.setDisplaySize(width * 0.9, scale(300));
+  }
+
+  private createRoads() {
+    const { width, height } = this.scale;
+    
+    // Sort houses by x position to place roads between them
+    const sortedHouses = [...this.houses].sort((a, b) => a.x - b.x);
+    
+    // Create road between each pair of houses
+    sortedHouses.forEach((house, index) => {
+      if (index < sortedHouses.length - 1) {
+        const nextHouse = sortedHouses[index + 1];
+        
+        const x1 = (house.x / 100) * width;
+        const x2 = (nextHouse.x / 100) * width;
+        const y = (house.y / 100) * height + scale(50); // Slightly below house position
+        
+        // Position road in the middle between current and next house
+        const roadX = (x1 + x2) / 2;
+        
+        const road = this.add.image(roadX, y, 'road1');
+        road.setDisplaySize(scale(200), scale(200));
+        road.setAngle(-15);
+        this.roads.push(road);
+      }
+    });
   }
 
   private createBackButton() {
@@ -120,77 +170,77 @@ export default class NeighborhoodScene extends Phaser.Scene {
       });
   }
 
-private createHouse(house: HousePosition) {
-  const { width, height } = this.scale;
+  private createHouse(house: HousePosition) {
+    const { width, height } = this.scale;
 
-  // Calculate position from percentage
-  const x = (house.x / 100) * width;
-  const y = (house.y / 100) * height;
+    // Calculate position from percentage
+    const x = (house.x / 100) * width;
+    const y = (house.y / 100) * height;
 
-  // Create house container
-  const houseContainer = this.add.container(x, y);
+    // Create house container
+    const houseContainer = this.add.container(x, y);
 
-  // House icon - use houseType to determine which image
-  this.createHouseIcon(houseContainer, house.houseType || 'house1');
+    // House icon - use houseType to determine which image
+    this.createHouseIcon(houseContainer, house.houseType || 'house1');
 
-  // House name label
-  const labelBg = this.add.rectangle(
-    0, 
-    scale(100), 
-    scale(house.name.length * 8 + 20), 
-    scale(30), 
-    house.isLocked ? 0xe5e7eb : 0xffffff, 
-    house.isLocked ? 1 : 0.9
-  );
-  houseContainer.add(labelBg);
+    // House name label
+    const labelBg = this.add.rectangle(
+      0, 
+      scale(100), 
+      scale(house.name.length * 8 + 20), 
+      scale(30), 
+      house.isLocked ? 0xe5e7eb : 0xffffff, 
+      house.isLocked ? 1 : 0.9
+    );
+    houseContainer.add(labelBg);
 
-  const nameText = this.add.text(0, scale(100), house.name, {
-    fontSize: scaleFontSize(14),
-    fontFamily: 'Arial, sans-serif',
-    color: house.isLocked ? '#4b5563' : '#1f2937',
-    fontStyle: 'bold'
-  }).setOrigin(0.5);
-  houseContainer.add(nameText);
+    const nameText = this.add.text(0, scale(100), house.name, {
+      fontSize: scaleFontSize(14),
+      fontFamily: 'Arial, sans-serif',
+      color: house.isLocked ? '#4b5563' : '#1f2937',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    houseContainer.add(nameText);
 
-  // Make interactive if not locked
-  if (!house.isLocked) {
-    houseContainer.setInteractive(new Phaser.Geom.Rectangle(-75, -75, 150, 150), Phaser.Geom.Rectangle.Contains)
-      .on('pointerover', () => {
-        if (!this.isTransitioning) {
+    // Make interactive if not locked
+    if (!house.isLocked) {
+      houseContainer.setInteractive(new Phaser.Geom.Rectangle(-75, -75, 150, 150), Phaser.Geom.Rectangle.Contains)
+        .on('pointerover', () => {
+          if (!this.isTransitioning) {
+            this.tweens.add({
+              targets: houseContainer,
+              scale: 1.1,
+              duration: 300,
+              ease: 'Power2'
+            });
+          }
+        })
+        .on('pointerout', () => {
           this.tweens.add({
             targets: houseContainer,
-            scale: 1.1,
+            scale: 1,
             duration: 300,
             ease: 'Power2'
           });
-        }
-      })
-      .on('pointerout', () => {
-        this.tweens.add({
-          targets: houseContainer,
-          scale: 1,
-          duration: 300,
-          ease: 'Power2'
+        })
+        .on('pointerdown', () => {
+          if (!this.isTransitioning) {
+            this.handleHouseClick(house.id);
+          }
         });
-      })
-      .on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          this.handleHouseClick(house.id);
-        }
-      });
-    
-    // Set cursor only if input exists
-    if (houseContainer.input) {
-      houseContainer.input.cursor = 'pointer';
+      
+      // Set cursor only if input exists
+      if (houseContainer.input) {
+        houseContainer.input.cursor = 'pointer';
+      }
+    } else {
+      // Reduce opacity for locked houses
+      houseContainer.setAlpha(0.6);
     }
-  } else {
-    // Reduce opacity for locked houses
-    houseContainer.setAlpha(0.6);
-  }
 
-  // Store reference
-  this.houseSprites.set(house.id, houseContainer);
-}
+    // Store reference
+    this.houseSprites.set(house.id, houseContainer);
+  }
 
   private createHouseIcon(container: Phaser.GameObjects.Container, houseType: string) {
     // Use the houseType to determine which image to display
@@ -392,7 +442,26 @@ private createHouse(house: HousePosition) {
       this.backButton.setPosition(scale(80), scale(40));
     }
 
-    // Reposition houses based on percentage
+    // Reposition single platform
+    if (this.platform) {
+      this.platform.setPosition(width / 2, height / 2);
+      this.platform.setDisplaySize(width * 0.9, scale(300));
+    }
+
+    // Reposition roads between houses
+    const sortedHouses = [...this.houses].sort((a, b) => a.x - b.x);
+    sortedHouses.forEach((house, index) => {
+      if (index < sortedHouses.length - 1 && this.roads[index]) {
+        const nextHouse = sortedHouses[index + 1];
+        const x1 = (house.x / 100) * width;
+        const x2 = (nextHouse.x / 100) * width;
+        const y = (house.y / 100) * height;
+        const roadX = (x1 + x2) / 2;
+        this.roads[index].setPosition(roadX, y);
+      }
+    });
+
+    // Reposition houses
     this.houses.forEach(house => {
       const houseContainer = this.houseSprites.get(house.id);
       if (houseContainer) {
@@ -412,5 +481,6 @@ private createHouse(house: HousePosition) {
     // Clean up event listeners
     this.scale.off('resize', this.handleResize, this);
     this.houseSprites.clear();
+    this.roads = [];
   }
 }

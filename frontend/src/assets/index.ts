@@ -82,3 +82,10 @@ export { default as House1 } from './images/phaser/house1.svg'
 export { default as House2 } from './images/phaser/house2.svg'
 export { default as House3 } from './images/phaser/house3.svg'
 export { default as House4 } from './images/phaser/house4.svg'
+
+// Neighborhood Images for Phaser Scenes
+export { default as Road1 } from './images/phaser/road1.png'
+export { default as Platform1 } from './images/phaser/platform1.png'
+
+// Avatar Images for Phaser Scenes
+export { default as BirdCharacter } from './images/phaser/bird_character.svg'
