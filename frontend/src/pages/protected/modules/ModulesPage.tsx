@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { SuburbanBackground } from '../../../assets';
 import GameManager from './GameManager';
 import LessonView from './LessonView';
-import ModuleQuizView from './ModuleQuizView';
+import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
 
 interface ModulesPageProps {}
@@ -46,69 +46,33 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   }, [navState]);
 
   // Mock data that matches the full Module and Lesson interfaces
-  // This needs to match the SAMPLE_MODULE data in HouseScene.ts
-  const SAMPLE_LESSONS: Lesson[] = [
-    {
-      id: 101,
-      backendId: 'lesson-101',
-      image: '/placeholder-lesson.jpg',
-      title: 'Renting vs Buying',
-      duration: '10 min',
-      description: 'Learn the key differences between renting and buying a home.',
-      coins: 25,
-      completed: false,
-      videoUrl: ''
-    },
-    {
-      id: 102,
-      backendId: 'lesson-102',
-      image: '/placeholder-lesson.jpg',
-      title: 'Preparing Your Documents',
-      duration: '15 min',
-      description: 'Get organized with the essential documents you need.',
-      coins: 30,
-      completed: true,
-      videoUrl: ''
-    },
-    {
-      id: 103,
-      backendId: 'lesson-103',
-      image: '/placeholder-lesson.jpg',
-      title: 'Financial Basics',
-      duration: '20 min',
-      description: 'Understand the financial fundamentals of homebuying.',
-      coins: 35,
-      completed: true,
-      videoUrl: ''
-    },
-    {
-      id: 104,
-      backendId: 'lesson-104',
-      image: '/placeholder-lesson.jpg',
-      title: 'Setting a Timeline',
-      duration: '12 min',
-      description: 'Create a realistic timeline for your homebuying journey.',
-      coins: 25,
-      completed: false,
-      videoUrl: ''
-    },
-  ];
-
   const mockModule: Module | null = navState.moduleId ? {
     id: navState.moduleId,
     backendId: `module-${navState.moduleId}`,
     image: '/placeholder-module.jpg',
-    title: navState.moduleId === 1 ? 'Homebuying Foundations' : `Module ${navState.moduleId}`,
+    title: `Module ${navState.moduleId}`,
     description: 'Module description',
-    lessonCount: 4,
+    lessonCount: 5,
     status: 'In Progress' as const,
     tags: ['Learning'],
     illustration: 'default',
-    lessons: SAMPLE_LESSONS
+    lessons: []
+  } : null;
+
+  const mockLesson: Lesson | null = navState.lessonId ? {
+    id: navState.lessonId,
+    backendId: `lesson-${navState.lessonId}`,
+    image: '/placeholder-lesson.jpg',
+    title: `Lesson ${navState.lessonId}`,
+    duration: '10 min',
+    description: 'Lesson description',
+    coins: 25,
+    completed: false,
+    videoUrl: ''
   } : null;
 
   const currentModule = mockModule;
-  const currentLesson = currentModule?.lessons.find(l => l.id === navState.lessonId) || null;
+  const currentLesson = mockLesson;
 
   const neighborhoodHouses: Record<string, any> = {
     downtown: [
@@ -173,15 +137,15 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     }));
   };
 
-  const handleLessonSelect = (lessonId: number) => {
-    const actualLessonId = lessonId;
-    setNavState(prev => ({
-      ...prev,
-      currentView: 'lesson',
-      lessonId: actualLessonId,
-      moduleId: prev.moduleId || (prev.houseId ? neighborhoodHouses['downtown'].find((h: any) => h.id === prev.houseId)?.moduleId : null)
-    }));
-  };
+const handleLessonSelect = (lessonId: number) => {
+  const actualLessonId = lessonId;
+  setNavState(prev => ({
+    ...prev,
+    currentView: 'lesson',
+    lessonId: actualLessonId,
+    moduleId: prev.moduleId || (prev.houseId ? neighborhoodHouses['downtown'].find((h: any) => h.id === prev.houseId)?.moduleId : null)
+  }));
+};
 
   const handleMinigameSelect = () => {
     setNavState(prev => ({
@@ -437,16 +401,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
       {navState.currentView === 'minigame' && (
         <div className="absolute inset-0 bg-white z-20">
-          {currentModule ? (
-            <ModuleQuizView
-              module={currentModule}
-              onBack={handleCloseMinigame}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p>Module not found</p>
-            </div>
-          )}
+          <Minigame
+            onClose={handleCloseMinigame}
+          />
         </div>
       )}
     </div>

@@ -131,17 +131,21 @@ export default class HouseScene extends Phaser.Scene {
     
     // Get travel info from registry
     const travelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
+    const returningFromLesson = this.registry.get('returningFromLesson');
     
     // Default position (center bottom of screen)
     const finalX = width / 2;
     const finalY = height * 0.85;
     
-    if (!travelInfo || !travelInfo.traveled) {
-      // Bird was already at this house - no entrance animation, just place it
+    if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
+      // Bird was already at this house OR returning from lesson - no entrance animation, just place it
       this.birdSprite = this.add.image(finalX, finalY, 'bird_idle');
       this.birdSprite.setDisplaySize(scale(80), scale(80));
       this.birdSprite.setDepth(1000);
       this.startBirdIdleAnimation();
+      
+      // Clear the returning flag
+      this.registry.set('returningFromLesson', false);
       return;
     }
     
@@ -149,13 +153,11 @@ export default class HouseScene extends Phaser.Scene {
     const previousIndex = travelInfo.previousHouseIndex;
     const currentIndex = travelInfo.currentHouseIndex;
     const distance = Math.abs(currentIndex - previousIndex);
-    const comingFromLeft = currentIndex > previousIndex; // If current > previous, bird came from left (traveled right)
+    const comingFromLeft = currentIndex > previousIndex;
     
     if (distance > 1) {
-      // Long distance travel - bird flew, so it flies into view
       this.createFlyingEntrance(finalX, finalY, comingFromLeft);
     } else {
-      // Short distance travel - bird hopped, so it hops into view
       this.createHoppingEntrance(finalX, finalY, comingFromLeft);
     }
   }
@@ -535,15 +537,7 @@ export default class HouseScene extends Phaser.Scene {
     if (lesson.locked) {
       const lockOverlay = this.add.rectangle(0, scale(-20), width, height, 0xe5e7eb, 0.5);
       lessonContainer.add(lockOverlay);
-
-      // Lock icon
-      const lockIcon = this.add.graphics();
-      lockIcon.lineStyle(scale(3), 0x9ca3af, 1);
-      lockIcon.strokeRect(scale(-20), scale(-30), scale(40), scale(30));
-      lockIcon.strokeCircle(0, scale(-30), scale(15));
-      lockIcon.fillStyle(0x9ca3af, 1);
-      lockIcon.fillCircle(0, scale(-15), scale(4));
-      lessonContainer.add(lockIcon);
+      
     }
 
     // Action button
@@ -611,23 +605,21 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   private handleLessonClick(lessonId: number) {
-    if (this.isTransitioning) return;
+  if (this.isTransitioning) return;
 
-    this.isTransitioning = true;
+  this.isTransitioning = true;
 
-    // Get the navigation handler from registry
-    const handleLessonSelect = this.registry.get('handleLessonSelect');
-    
-    if (handleLessonSelect && typeof handleLessonSelect === 'function') {
-      // Add transition effect before switching scenes
-      this.cameras.main.fadeOut(300, 254, 243, 199);
-      
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        handleLessonSelect(lessonId);
-        this.isTransitioning = false;
-      });
-    }
+  // Set flag to indicate we're going to a lesson
+  this.registry.set('returningFromLesson', true);
+
+  // Get the navigation handler from registry
+  const handleLessonSelect = this.registry.get('handleLessonSelect');
+  
+  if (handleLessonSelect && typeof handleLessonSelect === 'function') {
+    handleLessonSelect(lessonId);
+    this.isTransitioning = false;
   }
+}
 
   private handleBackToNeighborhood() {
     if (this.isTransitioning) return;
@@ -657,13 +649,8 @@ export default class HouseScene extends Phaser.Scene {
     const handleMinigameSelect = this.registry.get('handleMinigameSelect');
     
     if (handleMinigameSelect && typeof handleMinigameSelect === 'function') {
-      // Add transition effect before switching scenes
-      this.cameras.main.fadeOut(300, 254, 243, 199);
-      
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        handleMinigameSelect();
-        this.isTransitioning = false;
-      });
+      handleMinigameSelect();
+      this.isTransitioning = false;
     }
   }
 
