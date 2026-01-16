@@ -72,14 +72,36 @@ const ModulesPage: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
+  const scenesInitialized = useRef<Set<string>>(new Set());
 
-  const [navState, setNavState] = useState<NavigationState>({
-    currentView: 'map',
-    neighborhoodId: null,
-    houseId: null,
-    moduleId: null,
-    lessonId: null,
+  // Initialize navState from localStorage or default to 'map'
+  const [navState, setNavState] = useState<NavigationState>(() => {
+    // Try to load saved navigation state from localStorage
+    const savedState = localStorage.getItem('modules_nav_state');
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        console.log('Restored navigation state from localStorage:', parsed);
+        return parsed;
+      } catch (error) {
+        console.error('Failed to parse saved navigation state:', error);
+      }
+    }
+    // Default state if nothing saved
+    return {
+      currentView: 'map',
+      neighborhoodId: null,
+      houseId: null,
+      moduleId: null,
+      lessonId: null,
+    };
   });
+
+  // Save navState to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('modules_nav_state', JSON.stringify(navState));
+    console.log('Saved navigation state to localStorage:', navState);
+  }, [navState]);
 
   // Define houses for each neighborhood
   const neighborhoodHouses = {
@@ -238,7 +260,7 @@ const ModulesPage: React.FC = () => {
     }
   }, [isPhaserReady, neighborhoodHouses]);
 
-  // Handle scene transitions based on navigation state
+  // Handle scene transitions based on navigation state - Using sleep/wake instead of stop/start
   useEffect(() => {
     if (!gameRef.current || !isPhaserReady) return;
 
@@ -248,41 +270,99 @@ const ModulesPage: React.FC = () => {
 
     switch (navState.currentView) {
       case 'map':
+        // Sleep other scenes instead of stopping them
         if (game.scene.isActive('NeighborhoodScene')) {
-          game.scene.stop('NeighborhoodScene');
+          game.scene.sleep('NeighborhoodScene');
         }
         if (game.scene.isActive('HouseScene')) {
-          game.scene.stop('HouseScene');
+          game.scene.sleep('HouseScene');
         }
-        game.scene.start('MapScene');
+        
+        // Wake or start MapScene
+        if (game.scene.isSleeping('MapScene')) {
+          game.scene.wake('MapScene');
+        } else if (!scenesInitialized.current.has('MapScene')) {
+          game.scene.start('MapScene');
+          scenesInitialized.current.add('MapScene');
+        }
         break;
 
       case 'neighborhood':
-        game.scene.stop('MapScene');
-        if (game.scene.isActive('HouseScene')) {
-          game.scene.stop('HouseScene');
+        // Sleep other scenes
+        if (game.scene.isActive('MapScene')) {
+          game.scene.sleep('MapScene');
         }
-        game.scene.start('NeighborhoodScene', {
-          neighborhoodId: navState.neighborhoodId,
-          houses: neighborhoodHouses['downtown']
-        });
+        if (game.scene.isActive('HouseScene')) {
+          game.scene.sleep('HouseScene');
+        }
+        
+        // Wake or start NeighborhoodScene
+        if (game.scene.isSleeping('NeighborhoodScene')) {
+          game.scene.wake('NeighborhoodScene', {
+            neighborhoodId: navState.neighborhoodId,
+            houses: neighborhoodHouses['downtown']
+          });
+        } else if (scenesInitialized.current.has('NeighborhoodScene')) {
+          // If already initialized, restart it with new data
+          game.scene.stop('NeighborhoodScene');
+          game.scene.start('NeighborhoodScene', {
+            neighborhoodId: navState.neighborhoodId,
+            houses: neighborhoodHouses['downtown']
+          });
+        } else {
+          // First time initialization
+          game.scene.start('NeighborhoodScene', {
+            neighborhoodId: navState.neighborhoodId,
+            houses: neighborhoodHouses['downtown']
+          });
+          scenesInitialized.current.add('NeighborhoodScene');
+        }
         break;
 
       case 'house':
-        game.scene.stop('MapScene');
-        game.scene.stop('NeighborhoodScene');
-        game.scene.start('HouseScene', {
-          houseId: navState.houseId,
-          moduleId: navState.moduleId
-        });
+        // Sleep other scenes
+        if (game.scene.isActive('MapScene')) {
+          game.scene.sleep('MapScene');
+        }
+        if (game.scene.isActive('NeighborhoodScene')) {
+          game.scene.sleep('NeighborhoodScene');
+        }
+        
+        // Wake or start HouseScene
+        if (game.scene.isSleeping('HouseScene')) {
+          game.scene.wake('HouseScene', {
+            houseId: navState.houseId,
+            moduleId: navState.moduleId
+          });
+        } else if (scenesInitialized.current.has('HouseScene')) {
+          // If already initialized, restart it with new data
+          game.scene.stop('HouseScene');
+          game.scene.start('HouseScene', {
+            houseId: navState.houseId,
+            moduleId: navState.moduleId
+          });
+        } else {
+          // First time initialization
+          game.scene.start('HouseScene', {
+            houseId: navState.houseId,
+            moduleId: navState.moduleId
+          });
+          scenesInitialized.current.add('HouseScene');
+        }
         break;
 
       case 'lesson':
       case 'minigame':
-        // Stop all Phaser scenes when in lesson or minigame view
-        game.scene.stop('MapScene');
-        game.scene.stop('NeighborhoodScene');
-        game.scene.stop('HouseScene');
+        // Sleep all Phaser scenes when in lesson or minigame view
+        if (game.scene.isActive('MapScene')) {
+          game.scene.sleep('MapScene');
+        }
+        if (game.scene.isActive('NeighborhoodScene')) {
+          game.scene.sleep('NeighborhoodScene');
+        }
+        if (game.scene.isActive('HouseScene')) {
+          game.scene.sleep('HouseScene');
+        }
         break;
     }
   }, [navState, isPhaserReady, neighborhoodHouses]);

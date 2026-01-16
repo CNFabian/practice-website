@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import PreloaderScene from '../scenes/PreloaderScene';
 import MapScene from '../scenes/MapScene';
 import NeighborhoodScene from '../scenes/NeighborhoodScene';
 import HouseScene from '../scenes/HouseScene';
@@ -23,7 +24,8 @@ export const createGameConfig = (parent: HTMLElement): Phaser.Types.Core.GameCon
         debug: false
       }
     },
-    scene: [MapScene, NeighborhoodScene, HouseScene],
+    // PreloaderScene MUST be first - it loads all assets once
+    scene: [PreloaderScene, MapScene, NeighborhoodScene, HouseScene],
     scale: {
       mode: Phaser.Scale.NONE, // Manual control for high DPI
       autoCenter: Phaser.Scale.CENTER_BOTH,
