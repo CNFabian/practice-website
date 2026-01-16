@@ -16,7 +16,6 @@ interface NavigationState {
   lessonId: number | null;
 }
 
-// Mock data for testing - replace with real data from your backend/context
 const MOCK_MODULES: Module[] = [
   {
     id: 1,
@@ -72,11 +71,9 @@ const ModulesPage: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
-  const scenesInitialized = useRef<Set<string>>(new Set());
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
-  // Initialize navState from localStorage or default to 'map'
   const [navState, setNavState] = useState<NavigationState>(() => {
-    // Try to load saved navigation state from localStorage
     const savedState = localStorage.getItem('modules_nav_state');
     if (savedState) {
       try {
@@ -87,7 +84,6 @@ const ModulesPage: React.FC = () => {
         console.error('Failed to parse saved navigation state:', error);
       }
     }
-    // Default state if nothing saved
     return {
       currentView: 'map',
       neighborhoodId: null,
@@ -97,13 +93,11 @@ const ModulesPage: React.FC = () => {
     };
   });
 
-  // Save navState to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('modules_nav_state', JSON.stringify(navState));
     console.log('Saved navigation state to localStorage:', navState);
   }, [navState]);
 
-  // Define houses for each neighborhood
   const neighborhoodHouses = {
     downtown: [
       { 
@@ -133,7 +127,6 @@ const ModulesPage: React.FC = () => {
     ],
   };
 
-  // Find the current lesson and module based on state
   const currentModule = useMemo(() => {
     if (!navState.moduleId) return null;
     return MOCK_MODULES.find(m => m.id === navState.moduleId) || null;
@@ -159,14 +152,13 @@ const ModulesPage: React.FC = () => {
       ...prev,
       currentView: 'house',
       houseId,
-      moduleId: 1, // TODO: Map house to actual module
+      moduleId: 1,
     }));
   };
 
   const handleLessonSelect = (lessonString: string) => {
-    // Parse lessonId from string format "lesson-1"
     const lessonNumber = parseInt(lessonString.replace('lesson-', ''));
-    const actualLessonId = 100 + lessonNumber; // Maps lesson-1 to 101, lesson-2 to 102, etc.
+    const actualLessonId = 100 + lessonNumber;
     
     console.log('handleLessonSelect called with:', lessonString);
     console.log('Converted to lessonId:', actualLessonId);
@@ -225,15 +217,33 @@ const ModulesPage: React.FC = () => {
     if (!containerRef.current || gameRef.current) return;
 
     const config = createGameConfig(containerRef.current);
-
     gameRef.current = new Phaser.Game(config);
 
-    // Set up event listeners for scene communication
     gameRef.current.events.on('ready', () => {
+      console.log('Phaser game ready');
       setIsPhaserReady(true);
+      
+      // Check for assetsLoaded flag in registry
+      const checkAssetsLoaded = setInterval(() => {
+        if (gameRef.current) {
+          const assetsLoadedFlag = gameRef.current.registry.get('assetsLoaded');
+          if (assetsLoadedFlag) {
+            console.log('Assets loaded flag detected!');
+            setAssetsLoaded(true);
+            clearInterval(checkAssetsLoaded);
+          }
+        }
+      }, 100);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkAssetsLoaded);
+        if (!assetsLoaded) {
+          console.error('Assets failed to load within timeout');
+        }
+      }, 10000);
     });
 
-    // Cleanup on unmount
     return () => {
       if (gameRef.current) {
         gameRef.current.destroy(true);
@@ -244,33 +254,34 @@ const ModulesPage: React.FC = () => {
 
   // Pass navigation handlers to Phaser scenes
   useEffect(() => {
-    if (!gameRef.current || !isPhaserReady) return;
+    if (!gameRef.current || !isPhaserReady || !assetsLoaded) return;
 
-    const currentScene = gameRef.current.scene.getScenes(true)[0];
-    
-    if (currentScene) {
-      // Store navigation handlers in scene registry for access from Phaser
-      currentScene.registry.set('handleNeighborhoodSelect', handleNeighborhoodSelect);
-      currentScene.registry.set('handleHouseSelect', handleHouseSelect);
-      currentScene.registry.set('handleLessonSelect', handleLessonSelect);
-      currentScene.registry.set('handleMinigameSelect', handleMinigameSelect);
-      currentScene.registry.set('handleBackToMap', handleBackToMap);
-      currentScene.registry.set('handleBackToNeighborhood', handleBackToNeighborhood);
-      currentScene.registry.set('neighborhoodHouses', neighborhoodHouses);
+    // Get the first active scene (might be MapScene or whatever scene is running)
+    const scenes = gameRef.current.scene.getScenes(false);
+    if (scenes.length > 0) {
+      const scene = scenes[0];
+      scene.registry.set('handleNeighborhoodSelect', handleNeighborhoodSelect);
+      scene.registry.set('handleHouseSelect', handleHouseSelect);
+      scene.registry.set('handleLessonSelect', handleLessonSelect);
+      scene.registry.set('handleMinigameSelect', handleMinigameSelect);
+      scene.registry.set('handleBackToMap', handleBackToMap);
+      scene.registry.set('handleBackToNeighborhood', handleBackToNeighborhood);
+      scene.registry.set('neighborhoodHouses', neighborhoodHouses);
     }
-  }, [isPhaserReady, neighborhoodHouses]);
+  }, [isPhaserReady, assetsLoaded, neighborhoodHouses]);
 
-  // Handle scene transitions based on navigation state - Using sleep/wake instead of stop/start
+  // Handle scene transitions - ONLY AFTER ASSETS ARE LOADED
   useEffect(() => {
-    if (!gameRef.current || !isPhaserReady) return;
+    if (!gameRef.current || !isPhaserReady || !assetsLoaded) {
+      console.log('Waiting for game initialization...', { isPhaserReady, assetsLoaded });
+      return;
+    }
 
     const game = gameRef.current;
-
     console.log('Navigation state changed:', navState);
 
     switch (navState.currentView) {
       case 'map':
-        // Sleep other scenes instead of stopping them
         if (game.scene.isActive('NeighborhoodScene')) {
           game.scene.sleep('NeighborhoodScene');
         }
@@ -278,17 +289,12 @@ const ModulesPage: React.FC = () => {
           game.scene.sleep('HouseScene');
         }
         
-        // Wake or start MapScene
-        if (game.scene.isSleeping('MapScene')) {
-          game.scene.wake('MapScene');
-        } else if (!scenesInitialized.current.has('MapScene')) {
+        if (!game.scene.isActive('MapScene')) {
           game.scene.start('MapScene');
-          scenesInitialized.current.add('MapScene');
         }
         break;
 
       case 'neighborhood':
-        // Sleep other scenes
         if (game.scene.isActive('MapScene')) {
           game.scene.sleep('MapScene');
         }
@@ -296,31 +302,18 @@ const ModulesPage: React.FC = () => {
           game.scene.sleep('HouseScene');
         }
         
-        // Wake or start NeighborhoodScene
-        if (game.scene.isSleeping('NeighborhoodScene')) {
-          game.scene.wake('NeighborhoodScene', {
-            neighborhoodId: navState.neighborhoodId,
-            houses: neighborhoodHouses['downtown']
-          });
-        } else if (scenesInitialized.current.has('NeighborhoodScene')) {
-          // If already initialized, restart it with new data
+        // Always restart neighborhood scene with new data
+        if (game.scene.isActive('NeighborhoodScene')) {
           game.scene.stop('NeighborhoodScene');
-          game.scene.start('NeighborhoodScene', {
-            neighborhoodId: navState.neighborhoodId,
-            houses: neighborhoodHouses['downtown']
-          });
-        } else {
-          // First time initialization
-          game.scene.start('NeighborhoodScene', {
-            neighborhoodId: navState.neighborhoodId,
-            houses: neighborhoodHouses['downtown']
-          });
-          scenesInitialized.current.add('NeighborhoodScene');
         }
+        
+        game.scene.start('NeighborhoodScene', {
+          neighborhoodId: navState.neighborhoodId,
+          houses: neighborhoodHouses['downtown']
+        });
         break;
 
       case 'house':
-        // Sleep other scenes
         if (game.scene.isActive('MapScene')) {
           game.scene.sleep('MapScene');
         }
@@ -328,32 +321,19 @@ const ModulesPage: React.FC = () => {
           game.scene.sleep('NeighborhoodScene');
         }
         
-        // Wake or start HouseScene
-        if (game.scene.isSleeping('HouseScene')) {
-          game.scene.wake('HouseScene', {
-            houseId: navState.houseId,
-            moduleId: navState.moduleId
-          });
-        } else if (scenesInitialized.current.has('HouseScene')) {
-          // If already initialized, restart it with new data
+        // Always restart house scene with new data
+        if (game.scene.isActive('HouseScene')) {
           game.scene.stop('HouseScene');
-          game.scene.start('HouseScene', {
-            houseId: navState.houseId,
-            moduleId: navState.moduleId
-          });
-        } else {
-          // First time initialization
-          game.scene.start('HouseScene', {
-            houseId: navState.houseId,
-            moduleId: navState.moduleId
-          });
-          scenesInitialized.current.add('HouseScene');
         }
+        
+        game.scene.start('HouseScene', {
+          houseId: navState.houseId,
+          moduleId: navState.moduleId
+        });
         break;
 
       case 'lesson':
       case 'minigame':
-        // Sleep all Phaser scenes when in lesson or minigame view
         if (game.scene.isActive('MapScene')) {
           game.scene.sleep('MapScene');
         }
@@ -365,17 +345,14 @@ const ModulesPage: React.FC = () => {
         }
         break;
     }
-  }, [navState, isPhaserReady, neighborhoodHouses]);
+  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHouses]);
 
-  // Handle window resize with high DPI support
   useEffect(() => {
     const handleResize = () => {
       if (gameRef.current) {
         const dpr = window.devicePixelRatio || 1;
         const newWidth = (window.innerWidth - 192) * dpr;
         const newHeight = window.innerHeight * dpr;
-        
-        // Resize the game canvas
         gameRef.current.scale.resize(newWidth, newHeight);
       }
     };
@@ -386,13 +363,12 @@ const ModulesPage: React.FC = () => {
 
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
-  // Get background color/gradient based on current view
   const getBackgroundStyle = () => {
     switch (navState.currentView) {
       case 'map':
-        return { backgroundColor: '#38bdf8' }; // Sky blue
+        return { backgroundColor: '#38bdf8' };
       case 'neighborhood':
-        return { backgroundColor: '#fed7aa' }; // Orange
+        return { backgroundColor: '#fed7aa' };
       case 'house':
         return {
           backgroundImage: `url(${SuburbanBackground})`,
@@ -405,7 +381,6 @@ const ModulesPage: React.FC = () => {
     }
   };
 
-  // Debug logging
   useEffect(() => {
     console.log('Current view:', navState.currentView);
     console.log('Current module:', currentModule);
@@ -414,7 +389,6 @@ const ModulesPage: React.FC = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
-      {/* CSS Background Layer - fixed to viewport, extends behind sidebar */}
       {showPhaserCanvas && (
         <div 
           className="fixed inset-0 z-0"
@@ -422,7 +396,6 @@ const ModulesPage: React.FC = () => {
         />
       )}
 
-      {/* Phaser Game Container - transparent canvas over background */}
       <div
         ref={containerRef}
         className={`w-full h-full relative z-10 transition-opacity duration-300 ${
@@ -430,7 +403,6 @@ const ModulesPage: React.FC = () => {
         }`}
       />
 
-      {/* React UI Overlays */}
       {navState.currentView === 'lesson' && (
         <div className="absolute inset-0 bg-white z-20">
           {currentLesson && currentModule ? (

@@ -19,7 +19,7 @@ export default class PreloaderScene extends Phaser.Scene {
   }
 
   preload() {
-    // Create a loading bar (optional but nice visual feedback)
+    // Create a loading bar
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     
@@ -71,36 +71,21 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image('platform1', Platform1);
     this.load.image('bird_idle', BirdIdle);
     this.load.image('bird_fly', BirdFly);
-    
-    // MapScene assets would go here if you had any
-    // this.load.image('mapBackground', MapBackground);
   }
 
   create() {
     console.log('PreloaderScene: All assets loaded successfully');
     console.log('Available textures:', this.textures.getTextureKeys());
     
-    // Check localStorage for saved navigation state
-    const savedState = localStorage.getItem('modules_nav_state');
+    // Signal that preloading is complete by setting a flag in the registry
+    // This will be accessible to all scenes
+    this.registry.set('assetsLoaded', true);
     
-    if (savedState) {
-      try {
-        const navState = JSON.parse(savedState);
-        console.log('PreloaderScene: Found saved nav state:', navState);
-        
-        // Start the appropriate scene based on saved state
-        // But let ModulesPage handle the actual scene switching
-        // We just start MapScene and let the useEffect in ModulesPage handle the rest
-        this.scene.start('MapScene');
-      } catch (error) {
-        console.error('PreloaderScene: Error parsing saved state:', error);
-        // Default to MapScene
-        this.scene.start('MapScene');
-      }
-    } else {
-      console.log('PreloaderScene: No saved state, starting MapScene');
-      // No saved state, start with MapScene
-      this.scene.start('MapScene');
-    }
+    // Stop this scene but DON'T destroy it - keeps textures in cache
+    this.scene.stop();
+    
+    // The texture cache is shared across all scenes in the game
+    // So stopping PreloaderScene won't remove the textures
+    console.log('PreloaderScene: Stopped. Textures remain in global cache.');
   }
 }
