@@ -22,11 +22,15 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   
   // Initialize navState from GameManager's saved state or default to 'map'
   const [navState, setNavState] = useState<NavState>(() => {
-    const savedState = GameManager.restoreNavState();
-    if (savedState) {
-      console.log('=== RESTORED NAV STATE FROM GAMEMANAGER ===', savedState);
-      return savedState;
+     const saved = localStorage.getItem('moduleNavState');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved nav state:', e);
+      }
     }
+    // Default state if nothing saved
     return {
       currentView: 'map',
       neighborhoodId: null,
@@ -331,6 +335,11 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    // Save navigation state to localStorage
+    localStorage.setItem('moduleNavState', JSON.stringify(navState));
+  }, [navState]);
 
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
