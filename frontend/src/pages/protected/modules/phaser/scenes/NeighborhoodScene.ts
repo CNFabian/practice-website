@@ -13,6 +13,7 @@ interface HousePosition {
 interface NeighborhoodSceneData {
   neighborhoodId?: string;
   houses?: HousePosition[];
+  currentHouseIndex?: number;
 }
 
 export default class NeighborhoodScene extends Phaser.Scene {
@@ -28,12 +29,11 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private currentHouseIndex: number = 0;
   private isHopping: boolean = false;
   private idleHopTimer?: Phaser.Time.TimerEvent;
+  private previousHouseIndex: number = 0; // Track where bird came from
 
   constructor() {
     super({ key: 'NeighborhoodScene' });
   }
-
-  // REMOVED preload() - assets are now loaded by PreloaderScene
 
   init(data: NeighborhoodSceneData) {
     this.neighborhoodId = data.neighborhoodId;
@@ -41,7 +41,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.isTransitioning = false;
     this.houseSprites.clear();
     this.roads = [];
-    this.currentHouseIndex = 0;
+    this.currentHouseIndex = data.currentHouseIndex ?? 0;
+    this.previousHouseIndex = this.currentHouseIndex; // Initialize previous to current
     this.isHopping = false;
     
     // Clear any existing timers
@@ -69,7 +70,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
       // Then create houses on top
       this.houses.forEach(house => this.createHouse(house));
       
-      // Create bird character at first house
+      // Create bird character at current house
       this.createBird();
       
       // Start idle hopping animation
@@ -86,11 +87,11 @@ export default class NeighborhoodScene extends Phaser.Scene {
     if (this.houses.length === 0) return;
     
     const { width, height } = this.scale;
-    const firstHouse = this.houses[0];
+    const currentHouse = this.houses[this.currentHouseIndex];
     
-    // Calculate bird position (above the first house)
-    const birdX = (firstHouse.x / 100) * width + scale(50); // Centered horizontally
-    const birdY = (firstHouse.y / 100) * height + scale(20);
+    // Calculate bird position (above the current house)
+    const birdX = (currentHouse.x / 100) * width + scale(50); // Centered horizontally
+    const birdY = (currentHouse.y / 100) * height + scale(20);
     
     // Create bird sprite
     this.birdSprite = this.add.image(birdX, birdY, 'bird_idle');
@@ -177,6 +178,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     if (!this.birdSprite || this.isHopping || targetHouseIndex >= this.houses.length) return;
     
     this.isHopping = true;
+    this.previousHouseIndex = this.currentHouseIndex; // Store where we're coming from
     
     const { width, height } = this.scale;
     const targetHouse = this.houses[targetHouseIndex];
@@ -630,6 +632,17 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     this.isTransitioning = true;
 
+    // Store the current house index in the registry before transitioning
+    this.registry.set('currentHouseIndex', this.currentHouseIndex);
+    
+    // Store bird travel info for HouseScene entrance animation
+    const travelInfo = {
+      previousHouseIndex: this.previousHouseIndex,
+      currentHouseIndex: this.currentHouseIndex,
+      traveled: this.previousHouseIndex !== this.currentHouseIndex
+    };
+    this.registry.set('birdTravelInfo', travelInfo);
+
     // Get the navigation handler from registry
     const handleHouseSelect = this.registry.get('handleHouseSelect');
     
@@ -712,8 +725,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     // Reposition bird
     if (this.birdSprite && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
-      const birdX = (currentHouse.x / 100) * width;
-      const birdY = (currentHouse.y / 100) * height;
+      const birdX = (currentHouse.x / 100) * width + scale(50);
+      const birdY = (currentHouse.y / 100) * height + scale(20);
       this.birdSprite.setPosition(birdX, birdY);
     }
 

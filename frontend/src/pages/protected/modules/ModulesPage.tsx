@@ -294,11 +294,16 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         if (game.scene.isActive('HouseScene')) game.scene.sleep('HouseScene');
         if (game.scene.isActive('NeighborhoodScene')) game.scene.stop('NeighborhoodScene');
         
+        // Get stored house index from registry
+        const scenes = game.scene.getScenes(false);
+        const currentHouseIndex = scenes.length > 0 ? scenes[0].registry.get('currentHouseIndex') : undefined;
+        
         game.scene.start('NeighborhoodScene', {
           neighborhoodId: navState.neighborhoodId,
-          houses: neighborhoodHouses['downtown']
+          houses: neighborhoodHouses['downtown'],
+          currentHouseIndex: currentHouseIndex
         });
-        break;
+      break;
 
       case 'house':
         if (game.scene.isActive('MapScene')) game.scene.sleep('MapScene');
