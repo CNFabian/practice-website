@@ -14,12 +14,44 @@ import {
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
+  private shouldLoad: boolean = false;
+
   constructor() {
     super({ key: 'PreloaderScene' });
   }
 
+  init() {
+    // This runs BEFORE preload() - check if textures already exist
+    const texturesExist = 
+      this.textures.exists('suburbanBackground') &&
+      this.textures.exists('leftCutHouse') &&
+      this.textures.exists('rightCutHouse') &&
+      this.textures.exists('house1') &&
+      this.textures.exists('house2') &&
+      this.textures.exists('house3') &&
+      this.textures.exists('house4') &&
+      this.textures.exists('road1') &&
+      this.textures.exists('platform1') &&
+      this.textures.exists('bird_idle') &&
+      this.textures.exists('bird_fly');
+    
+    this.shouldLoad = !texturesExist;
+    
+    if (!this.shouldLoad) {
+      console.log('✓ PreloaderScene: Textures already cached, will skip loading');
+    } else {
+      console.log('→ PreloaderScene: Loading textures for first time');
+    }
+  }
+
   preload() {
-    // Create a loading bar
+    if (!this.shouldLoad) {
+      console.log('✓ PreloaderScene.preload: Skipped (textures cached)');
+      return;
+    }
+
+    console.log('→ PreloaderScene.preload: Creating loading bar and loading assets');
+
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     
@@ -40,7 +72,6 @@ export default class PreloaderScene extends Phaser.Scene {
     });
     percentText.setOrigin(0.5, 0.5);
 
-    // Update loading bar as assets load
     this.load.on('progress', (value: number) => {
       percentText.setText(Math.floor(value * 100) + '%');
       progressBar.clear();
@@ -55,14 +86,10 @@ export default class PreloaderScene extends Phaser.Scene {
       percentText.destroy();
     });
 
-    // ===== LOAD ALL ASSETS HERE - ONLY ONCE =====
-    
-    // HouseScene assets
+    // Load all assets
     this.load.image('suburbanBackground', SuburbanBackground);
     this.load.image('leftCutHouse', LeftCutHouse);
     this.load.image('rightCutHouse', RightCutHouse);
-    
-    // NeighborhoodScene assets
     this.load.image('house1', House1);
     this.load.image('house2', House2);
     this.load.image('house3', House3);
@@ -74,18 +101,15 @@ export default class PreloaderScene extends Phaser.Scene {
   }
 
   create() {
-    console.log('PreloaderScene: All assets loaded successfully');
-    console.log('Available textures:', this.textures.getTextureKeys());
+    if (this.shouldLoad) {
+      console.log('✓ PreloaderScene.create: Assets loaded');
+    } else {
+      console.log('✓ PreloaderScene.create: No loading needed');
+    }
     
-    // Signal that preloading is complete by setting a flag in the registry
-    // This will be accessible to all scenes
     this.registry.set('assetsLoaded', true);
-    
-    // Stop this scene but DON'T destroy it - keeps textures in cache
     this.scene.stop();
     
-    // The texture cache is shared across all scenes in the game
-    // So stopping PreloaderScene won't remove the textures
-    console.log('PreloaderScene: Stopped. Textures remain in global cache.');
+    console.log('✓ PreloaderScene stopped, textures remain in cache');
   }
 }
