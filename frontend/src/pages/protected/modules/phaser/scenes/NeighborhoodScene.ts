@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
-import { House1, House2, House3, House4, Road1, Platform1, BirdCharacter } from '../../../../../assets';
+import { House1, House2, House3, House4, Road1, Platform1, BirdIdle, BirdFly } from '../../../../../assets';
 
 interface HousePosition {
   id: string;
@@ -46,7 +46,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.load.image('platform1', Platform1);
     
     // Load bird character
-    this.load.image('bird', BirdCharacter);
+    this.load.image('bird_idle', BirdIdle);
+    this.load.image('bird_fly', BirdFly);
   }
 
   init(data: NeighborhoodSceneData) {
@@ -107,7 +108,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const birdY = (firstHouse.y / 100) * height + scale(20);
     
     // Create bird sprite
-    this.birdSprite = this.add.image(birdX, birdY, 'bird');
+    this.birdSprite = this.add.image(birdX, birdY, 'bird_idle');
     this.birdSprite.setDisplaySize(scale(80), scale(80));
     this.birdSprite.setDepth(1000); // Ensure bird is always on top
   }
@@ -187,7 +188,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     });
   }
 
-  private hopToHouse(targetHouseIndex: number) {
+  private travelToHouse(targetHouseIndex: number) {
     if (!this.birdSprite || this.isHopping || targetHouseIndex >= this.houses.length) return;
     
     this.isHopping = true;
@@ -206,95 +207,109 @@ export default class NeighborhoodScene extends Phaser.Scene {
       this.birdSprite.setFlipX(false);
     }
     
-    // Calculate distance for animation
-    const distance = Phaser.Math.Distance.Between(
-      this.birdSprite.x, 
-      this.birdSprite.y, 
-      targetX, 
-      targetY
-    );
+    // Calculate house distance
+    const houseDistance = Math.abs(targetHouseIndex - this.currentHouseIndex);
     
-    // Create many tiny hops - one hop every 40-50 pixels
-    const numHops = Math.max(5, Math.floor(distance / scale(40)));
-    const hopHeight = scale(10); // Small hop height
-    const hopDuration = 250; // Duration for each individual hop
-    
-    // Calculate the path with landing points
-    const path: { x: number; y: number }[] = [];
-    for (let i = 0; i <= numHops; i++) {
-      const t = i / numHops;
-      const x = Phaser.Math.Linear(this.birdSprite.x, targetX, t);
-      const y = Phaser.Math.Linear(this.birdSprite.y, targetY, t);
-      path.push({ x, y });
-    }
-    
-    // Create the hopping animation
-    let currentHop = 0;
-    
-    const performNextHop = () => {
-      if (currentHop >= path.length - 1) {
-        // Final hop complete
-        this.isHopping = false;
-        this.currentHouseIndex = targetHouseIndex;
-        
-        // Trigger scene transition
-        this.handleHouseClick(targetHouse.id);
-        return;
-      }
+    // If more than 1 house away, glide. Otherwise, hop
+    if (houseDistance > 1) {
+      // GLIDE ANIMATION - smooth movement that takes time proportional to number of houses traveled
+      const hopDuration = 250;
+      const totalGlideTime = houseDistance * hopDuration * 4;
       
-      const startPoint = path[currentHop];
-      const endPoint = path[currentHop + 1];
+      // Change to flight texture - get original dimensions and scale proportionally
+      this.birdSprite.setTexture('bird_fly');
+      const flyTexture = this.textures.get('bird_fly');
+      const flyWidth = flyTexture.getSourceImage().width;
+      const flyHeight = flyTexture.getSourceImage().height;
+      const flyAspectRatio = flyWidth / flyHeight;
       
-      // Calculate the peak of the hop (midpoint)
-      const midX = (startPoint.x + endPoint.x) / 2;
-      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
+      // Set size maintaining aspect ratio (base height 100, width scales accordingly)
+      this.birdSprite.setDisplaySize(scale(100) * flyAspectRatio, scale(100));
       
-      // Up phase of the hop
       this.tweens.add({
         targets: this.birdSprite,
-        x: midX,
-        y: midY,
-        duration: hopDuration / 2,
-        ease: 'Sine.easeOut',
-        onStart: () => {
-          // Slight rotation during up phase
-          this.tweens.add({
-            targets: this.birdSprite,
-            angle: currentHop % 2 === 0 ? -5 : 5,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeOut'
-          });
-        },
+        x: targetX,
+        y: targetY,
+        duration: totalGlideTime,
+        ease: 'Sine.easeInOut',
         onComplete: () => {
-          // Down phase of the hop
-          this.tweens.add({
-            targets: this.birdSprite,
-            x: endPoint.x,
-            y: endPoint.y,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeIn',
-            onStart: () => {
-              // Rotate back during down phase
-              this.tweens.add({
-                targets: this.birdSprite,
-                angle: 0,
-                duration: hopDuration / 2,
-                ease: 'Sine.easeIn'
-              });
-            },
-            onComplete: () => {
-              currentHop++;
-              // Small delay between hops for realism
-              this.time.delayedCall(50, () => {
-                performNextHop();
-              });
-            }
-          });
+          // Change back to idle texture and restore original size
+          this.birdSprite!.setTexture('bird_idle');
+          this.birdSprite!.setDisplaySize(scale(80), scale(80));
+          this.isHopping = false;
+          this.currentHouseIndex = targetHouseIndex;
+          this.handleHouseClick(targetHouse.id);
         }
       });
-    };
-    
-    performNextHop();
+    } else {
+      // HOP ANIMATION (existing code)
+      const distance = Phaser.Math.Distance.Between(
+        this.birdSprite.x, 
+        this.birdSprite.y, 
+        targetX, 
+        targetY
+      );
+      
+      const numHops = Math.max(5, Math.floor(distance / scale(40)));
+      const hopHeight = scale(10);
+      const hopDuration = 250;
+      
+      const path: { x: number; y: number }[] = [];
+      for (let i = 0; i <= numHops; i++) {
+        const t = i / numHops;
+        const x = Phaser.Math.Linear(this.birdSprite.x, targetX, t);
+        const y = Phaser.Math.Linear(this.birdSprite.y, targetY, t);
+        path.push({ x, y });
+      }
+      
+      let currentHop = 0;
+      
+      const performNextHop = () => {
+        if (currentHop >= path.length - 1) {
+          this.isHopping = false;
+          this.currentHouseIndex = targetHouseIndex;
+          this.handleHouseClick(targetHouse.id);
+          return;
+        }
+        
+        const startPoint = path[currentHop];
+        const endPoint = path[currentHop + 1];
+        const midX = (startPoint.x + endPoint.x) / 2;
+        const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
+        
+        this.tweens.add({
+          targets: this.birdSprite,
+          x: midX,
+          y: midY,
+          duration: hopDuration / 2,
+          ease: 'Sine.easeOut',
+          onStart: () => {
+            this.tweens.add({
+              targets: this.birdSprite,
+              angle: currentHop % 2 === 0 ? -5 : 5,
+              duration: hopDuration / 2,
+              ease: 'Sine.easeInOut',
+              yoyo: true
+            });
+          },
+          onComplete: () => {
+            this.tweens.add({
+              targets: this.birdSprite,
+              x: endPoint.x,
+              y: endPoint.y,
+              duration: hopDuration / 2,
+              ease: 'Sine.easeIn',
+              onComplete: () => {
+                currentHop++;
+                performNextHop();
+              }
+            });
+          }
+        });
+      };
+      
+      performNextHop();
+    }
   }
 
   private createPlatform() {
@@ -451,8 +466,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
             const targetIndex = this.houses.findIndex(h => h.id === house.id);
             
             if (targetIndex !== -1 && targetIndex !== this.currentHouseIndex) {
-              // Bird hops to the clicked house
-              this.hopToHouse(targetIndex);
+              // Bird travels to the clicked house
+              this.travelToHouse(targetIndex);
             } else if (targetIndex === this.currentHouseIndex) {
               // Bird is already at this house, just transition
               this.handleHouseClick(house.id);

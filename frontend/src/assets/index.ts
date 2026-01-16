@@ -91,4 +91,5 @@ export { default as Road1 } from './images/phaser/road1.png'
 export { default as Platform1 } from './images/phaser/platform1.png'
 
 // Avatar Images for Phaser Scenes
-export { default as BirdCharacter } from './images/phaser/bird_character.svg'
+export { default as BirdIdle } from './images/phaser/bird_idle.svg'
+export { default as BirdFly } from './images/phaser/bird_flight.svg'
