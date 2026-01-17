@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { SuburbanBackground } from '../../../assets';
-import GameManager from './GameManager';
+import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';

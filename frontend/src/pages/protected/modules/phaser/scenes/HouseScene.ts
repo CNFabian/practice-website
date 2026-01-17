@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
+import { SCENE_KEYS } from '../constants/SceneKeys';
+import { ASSET_KEYS } from '../constants/AssetKeys';
+import { COLORS, OPACITY } from '../constants/Colors';
+import { ButtonBuilder } from '../ui/ButtonBuilder';
 
 interface Lesson {
   id: number;
@@ -26,64 +30,51 @@ interface BirdTravelInfo {
   traveled: boolean;
 }
 
-// Sample module data - this should match your actual module structure
+// Sample module data
 const SAMPLE_MODULE: Module = {
   id: 1,
   title: 'Homebuying Foundations',
   lessons: [
-    {
-      id: 101,
-      title: 'Renting vs Buying',
-      type: 'Video/Reading',
-      completed: false,
-      locked: false,
-    },
-    {
-      id: 102,
-      title: 'Preparing Your Documents',
-      type: 'Video/Reading',
-      completed: true,
-      locked: false,
-    },
-    {
-      id: 103,
-      title: 'Financial Basics',
-      type: 'Video/Reading',
-      completed: true,
-      locked: false,
-    },
-    {
-      id: 104,
-      title: 'Setting a Timeline',
-      type: 'Video/Reading',
-      completed: false,
-      locked: true,
-    },
+    { id: 101, title: 'Renting vs Buying', type: 'Video/Reading', completed: false, locked: false },
+    { id: 102, title: 'Preparing Your Documents', type: 'Video/Reading', completed: true, locked: false },
+    { id: 103, title: 'Financial Basics', type: 'Video/Reading', completed: true, locked: false },
+    { id: 104, title: 'Setting a Timeline', type: 'Video/Reading', completed: false, locked: true },
   ],
 };
 
 export default class HouseScene extends Phaser.Scene {
+  // ═══════════════════════════════════════════════════════════
+  // PROPERTIES
+  // ═══════════════════════════════════════════════════════════
   private module: Module = SAMPLE_MODULE;
   private isTransitioning: boolean = false;
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
   private headerCard?: Phaser.GameObjects.Container;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
-  private background?: Phaser.GameObjects.Image;
+  
+  // Environment
   private leftHouse?: Phaser.GameObjects.Image;
   private rightHouse?: Phaser.GameObjects.Image;
+  
+  // Bird animation
   private birdSprite?: Phaser.GameObjects.Image;
   private birdIdleTimer?: Phaser.Time.TimerEvent;
 
+  // ═══════════════════════════════════════════════════════════
+  // CONSTRUCTOR
+  // ═══════════════════════════════════════════════════════════
   constructor() {
-    super({ key: 'HouseScene' });
+    super({ key: SCENE_KEYS.HOUSE });
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // LIFECYCLE METHODS
+  // ═══════════════════════════════════════════════════════════
   init(_data: HouseSceneData) {
     this.isTransitioning = false;
     this.lessonContainers = [];
     
-    // Clear any existing bird idle timer
     if (this.birdIdleTimer) {
       this.birdIdleTimer.remove();
       this.birdIdleTimer = undefined;
@@ -91,387 +82,143 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
-    const { width, height } = this.scale;
-
-    // Create house cutouts - Depth 1 (in front of background, behind lesson cards)
-    // Left house cutout - positioned on the left side
-    this.leftHouse = this.add.image(width * 0.25, height / 2, 'leftCutHouse');
-    this.leftHouse.setDepth(1);
-    this.leftHouse.setScale(2);
-    
-    // Right house cutout - positioned on the right side
-    this.rightHouse = this.add.image(width * 0.76, height / 2, 'rightCutHouse');
-    this.rightHouse.setDepth(1);
-    this.rightHouse.setScale(2);
-
-    // Fade in camera
-    this.cameras.main.fadeIn(300, 254, 243, 199);
-
-    // Create back button - Depth 10
-    this.createBackButton();
-
-    // Create minigame button - Depth 10
-    this.createMinigameButton();
-
-    // Create header card - Depth 10
-    this.createHeaderCard();
-
-    // Create lesson grid - Depth 10
-    this.createLessonGrid();
-
-    // Create bird with entrance animation based on travel info
+    this.setupCamera();
+    this.createEnvironment();
+    this.createUI();
     this.createBirdWithEntrance();
+    this.setupEventListeners();
+  }
 
-    // Handle window resize
+  shutdown() {
+    this.cleanupEventListeners();
+    this.cleanupTimers();
+    this.lessonContainers = [];
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SETUP METHODS
+  // ═══════════════════════════════════════════════════════════
+  private setupCamera(): void {
+    this.cameras.main.fadeIn(300, 254, 243, 199);
+  }
+
+  private setupEventListeners(): void {
     this.scale.on('resize', this.handleResize, this);
   }
 
-  private createBirdWithEntrance() {
+  private cleanupEventListeners(): void {
+    this.scale.off('resize', this.handleResize, this);
+  }
+
+  private cleanupTimers(): void {
+    if (this.birdIdleTimer) {
+      this.birdIdleTimer.remove();
+      this.birdIdleTimer = undefined;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ENVIRONMENT CREATION METHODS
+  // ═══════════════════════════════════════════════════════════
+  private createEnvironment(): void {
     const { width, height } = this.scale;
-    
-    // Get travel info from registry
-    const travelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
-    const returningFromLesson = this.registry.get('returningFromLesson');
-    
-    // Default position (center bottom of screen)
-    const finalX = width / 2;
-    const finalY = height * 0.85;
-    
-    if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
-      // Bird was already at this house OR returning from lesson - no entrance animation, just place it
-      this.birdSprite = this.add.image(finalX, finalY, 'bird_idle');
-      this.birdSprite.setDisplaySize(scale(80), scale(80));
-      this.birdSprite.setDepth(1000);
-      this.startBirdIdleAnimation();
-      
-      // Clear the returning flag
-      this.registry.set('returningFromLesson', false);
-      return;
-    }
-    
-    // Determine animation type based on travel distance
-    const previousIndex = travelInfo.previousHouseIndex;
-    const currentIndex = travelInfo.currentHouseIndex;
-    const distance = Math.abs(currentIndex - previousIndex);
-    const comingFromLeft = currentIndex > previousIndex;
-    
-    if (distance > 1) {
-      this.createFlyingEntrance(finalX, finalY, comingFromLeft);
-    } else {
-      this.createHoppingEntrance(finalX, finalY, comingFromLeft);
-    }
+
+    // Left house cutout
+    this.leftHouse = this.add.image(width * 0.25, height / 2, ASSET_KEYS.LEFT_CUT_HOUSE);
+    this.leftHouse.setDepth(1);
+    this.leftHouse.setScale(2);
+
+    // Right house cutout
+    this.rightHouse = this.add.image(width * 0.76, height / 2, ASSET_KEYS.RIGHT_CUT_HOUSE);
+    this.rightHouse.setDepth(1);
+    this.rightHouse.setScale(2);
   }
 
-  private createFlyingEntrance(finalX: number, finalY: number, fromLeft: boolean) {
-    const { width, height } = this.scale;
-    
-    // Start position (off-screen)
-    const startX = fromLeft ? -scale(100) : width + scale(100);
-    const startY = height * 0.5; // Mid height
-    
-    // Create bird in flying texture
-    this.birdSprite = this.add.image(startX, startY, 'bird_fly');
-    const flyTexture = this.textures.get('bird_fly');
-    const flyWidth = flyTexture.getSourceImage().width;
-    const flyHeight = flyTexture.getSourceImage().height;
-    const flyAspectRatio = flyWidth / flyHeight;
-    this.birdSprite.setDisplaySize(scale(100) * flyAspectRatio, scale(100));
-    this.birdSprite.setDepth(1000);
-    
-    // Flip sprite based on direction
-    this.birdSprite.setFlipX(!fromLeft); // Flip if coming from right
-    
-    // Fly animation
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: finalX,
-      y: finalY,
-      duration: 1500,
-      ease: 'Sine.easeInOut',
-      onComplete: () => {
-        // Change to idle texture
-        this.birdSprite!.setTexture('bird_idle');
-        this.birdSprite!.setDisplaySize(scale(80), scale(80));
-        this.birdSprite!.setFlipX(false); // Reset flip
-        
-        // Start idle animation
-        this.startBirdIdleAnimation();
-      }
+  // ═══════════════════════════════════════════════════════════
+  // UI CREATION METHODS
+  // ═══════════════════════════════════════════════════════════
+  private createUI(): void {
+    this.createBackButton();
+    this.createMinigameButton();
+    this.createHeaderCard();
+    this.createLessonGrid();
+  }
+
+  private createBackButton(): void {
+    this.backButton = ButtonBuilder.createIconButton({
+      scene: this,
+      x: scale(100),
+      y: scale(40),
+      width: scale(120),
+      height: scale(40),
+      text: 'Back',
+      icon: '←',
+      iconSize: 24,
+      fontSize: 16,
+      backgroundColor: COLORS.GRAY_700,
+      hoverColor: COLORS.GRAY_800,
+      onClick: () => this.handleBackToNeighborhood(),
     });
-  }
-
-  private createHoppingEntrance(finalX: number, finalY: number, fromLeft: boolean) {
-    const { width } = this.scale;
-    
-    // Start position (off-screen on the appropriate side)
-    const startX = fromLeft ? -scale(100) : width + scale(100);
-    const startY = finalY; // Same Y level
-    
-    // Create bird in idle texture
-    this.birdSprite = this.add.image(startX, startY, 'bird_idle');
-    this.birdSprite.setDisplaySize(scale(80), scale(80));
-    this.birdSprite.setDepth(1000);
-    
-    // Flip sprite based on direction
-    this.birdSprite.setFlipX(!fromLeft); // Flip if coming from right
-    
-    // Calculate hop path
-    const distance = Math.abs(finalX - startX);
-    const numHops = Math.max(5, Math.floor(distance / scale(80)));
-    const hopHeight = scale(10);
-    const hopDuration = 200;
-    
-    const path: { x: number; y: number }[] = [];
-    for (let i = 0; i <= numHops; i++) {
-      const t = i / numHops;
-      const x = Phaser.Math.Linear(startX, finalX, t);
-      const y = finalY;
-      path.push({ x, y });
-    }
-    
-    let currentHop = 0;
-    
-    const performNextHop = () => {
-      if (currentHop >= path.length - 1) {
-        // Hopping complete
-        this.birdSprite!.setFlipX(false); // Reset flip
-        this.startBirdIdleAnimation();
-        return;
-      }
-      
-      const startPoint = path[currentHop];
-      const endPoint = path[currentHop + 1];
-      const midX = (startPoint.x + endPoint.x) / 2;
-      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
-      
-      this.tweens.add({
-        targets: this.birdSprite,
-        x: midX,
-        y: midY,
-        duration: hopDuration / 2,
-        ease: 'Sine.easeOut',
-        onStart: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            angle: currentHop % 2 === 0 ? -5 : 5,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeInOut',
-            yoyo: true
-          });
-        },
-        onComplete: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            x: endPoint.x,
-            y: endPoint.y,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeIn',
-            onComplete: () => {
-              currentHop++;
-              performNextHop();
-            }
-          });
-        }
-      });
-    };
-    
-    performNextHop();
-  }
-
-  private startBirdIdleAnimation() {
-    if (!this.birdSprite) return;
-    
-    const scheduleNextIdleHop = () => {
-      const randomDelay = Phaser.Math.Between(5000, 8000);
-      
-      this.birdIdleTimer = this.time.delayedCall(randomDelay, () => {
-        if (this.birdSprite && !this.isTransitioning) {
-          this.playBirdIdleHop();
-        }
-        scheduleNextIdleHop();
-      });
-    };
-    
-    scheduleNextIdleHop();
-  }
-
-  private playBirdIdleHop() {
-    if (!this.birdSprite || this.isTransitioning) return;
-    
-    const originalY = this.birdSprite.y;
-    const originalX = this.birdSprite.x;
-    
-    // Small random movement
-    const moveX = Phaser.Math.Between(-scale(10), scale(10));
-    const targetX = Phaser.Math.Clamp(
-      originalX + moveX,
-      scale(100),
-      this.scale.width - scale(100)
-    );
-    
-    // Only flip if there's significant horizontal movement
-    if (Math.abs(moveX) > scale(5)) {
-      if (moveX < 0) {
-        this.birdSprite.setFlipX(true);
-      } else {
-        this.birdSprite.setFlipX(false);
-      }
-    }
-    
-    const hopHeight = scale(3);
-    const duration = 300;
-    
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: targetX,
-      y: originalY - hopHeight,
-      duration: duration,
-      ease: 'Sine.easeOut',
-      yoyo: true,
-      onStart: () => {
-        this.tweens.add({
-          targets: this.birdSprite,
-          angle: -3,
-          duration: duration / 2,
-          ease: 'Sine.easeInOut',
-          yoyo: true
-        });
-      }
-    });
-  }
-
-  private createBackButton() {
-    // Create back button container
-    this.backButton = this.add.container(scale(100), scale(40));
     this.backButton.setDepth(10);
-
-    // Button background
-    const buttonBg = this.add.rectangle(0, 0, scale(160), scale(44), 0xffffff, 0.9);
-    buttonBg.setStrokeStyle(scale(2), 0xe5e7eb);
-    this.backButton.add(buttonBg);
-
-    // Back arrow and text
-    const backText = this.add.text(0, 0, '← Neighborhood', {
-      fontSize: scaleFontSize(14),
-      fontFamily: 'Arial, sans-serif',
-      color: '#1f2937',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.backButton.add(backText);
-
-    // Make interactive
-    buttonBg.setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        if (!this.isTransitioning) {
-          buttonBg.setFillStyle(0xf3f4f6);
-          this.tweens.add({
-            targets: this.backButton,
-            scale: 1.05,
-            duration: 150,
-            ease: 'Power2'
-          });
-        }
-      })
-      .on('pointerout', () => {
-        buttonBg.setFillStyle(0xffffff, 0.9);
-        this.tweens.add({
-          targets: this.backButton,
-          scale: 1,
-          duration: 150,
-          ease: 'Power2'
-        });
-      })
-      .on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          this.handleBackToNeighborhood();
-        }
-      });
   }
 
-  private createMinigameButton() {
+  private createMinigameButton(): void {
     const { width } = this.scale;
 
-    // Create minigame button container
-    this.minigameButton = this.add.container(width - scale(120), scale(40));
+    this.minigameButton = ButtonBuilder.createButton({
+      scene: this,
+      x: width - scale(120),
+      y: scale(40),
+      width: scale(140),
+      height: scale(40),
+      text: 'Minigame',
+      fontSize: 16,
+      backgroundColor: COLORS.BLUE_500,
+      hoverColor: COLORS.BLUE_600,
+      onClick: () => this.handleMinigameSelect(),
+    });
     this.minigameButton.setDepth(10);
-
-    // Button background
-    const buttonBg = this.add.rectangle(0, 0, scale(160), scale(44), 0x2563eb, 1);
-    this.minigameButton.add(buttonBg);
-
-    // Button text
-    const buttonText = this.add.text(0, 0, 'Minigame', {
-      fontSize: scaleFontSize(14),
-      fontFamily: 'Arial, sans-serif',
-      color: '#ffffff',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.minigameButton.add(buttonText);
-
-    // Make interactive
-    buttonBg.setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        if (!this.isTransitioning) {
-          buttonBg.setFillStyle(0x1d4ed8);
-          this.tweens.add({
-            targets: this.minigameButton,
-            scale: 1.05,
-            duration: 150,
-            ease: 'Power2'
-          });
-        }
-      })
-      .on('pointerout', () => {
-        buttonBg.setFillStyle(0x2563eb);
-        this.tweens.add({
-          targets: this.minigameButton,
-          scale: 1,
-          duration: 150,
-          ease: 'Power2'
-        });
-      })
-      .on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          this.handleMinigameSelect();
-        }
-      });
   }
 
-  private createHeaderCard() {
+  private createHeaderCard(): void {
     const { width, height } = this.scale;
 
-    // Create header container
     this.headerCard = this.add.container(width / 2, height * 0.15);
     this.headerCard.setDepth(10);
 
     // Card background
     const cardWidth = scale(700);
     const cardHeight = scale(120);
-    const card = this.add.rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.9);
-    card.setStrokeStyle(scale(2), 0xe5e7eb);
+    const card = this.add.rectangle(0, 0, cardWidth, cardHeight, COLORS.WHITE, OPACITY.HIGH);
+    card.setStrokeStyle(scale(2), COLORS.GRAY_200);
     this.headerCard.add(card);
 
     // Module title
     const title = this.add.text(0, scale(-20), this.module.title, {
       fontSize: scaleFontSize(32),
       fontFamily: 'Arial, sans-serif',
-      color: '#1f2937',
-      fontStyle: 'bold'
+      color: COLORS.TEXT_PRIMARY,
+      fontStyle: 'bold',
     }).setOrigin(0.5);
     this.headerCard.add(title);
 
     // Progress text
     const completedCount = this.module.lessons.filter(l => l.completed).length;
     const totalCount = this.module.lessons.length;
-    const progressText = this.add.text(0, scale(25), `${completedCount}/${totalCount} Rooms Completed`, {
-      fontSize: scaleFontSize(18),
-      fontFamily: 'Arial, sans-serif',
-      color: '#6b7280'
-    }).setOrigin(0.5);
+    const progressText = this.add.text(
+      0,
+      scale(25),
+      `${completedCount}/${totalCount} Rooms Completed`,
+      {
+        fontSize: scaleFontSize(18),
+        fontFamily: 'Arial, sans-serif',
+        color: COLORS.TEXT_SECONDARY,
+      }
+    ).setOrigin(0.5);
     this.headerCard.add(progressText);
   }
 
-  private createLessonGrid() {
+  private createLessonGrid(): void {
     const { width, height } = this.scale;
 
     const gridCenterX = width / 2;
@@ -484,11 +231,10 @@ export default class HouseScene extends Phaser.Scene {
     this.module.lessons.forEach((lesson, index) => {
       const col = index % 2;
       const row = Math.floor(index / 2);
-      
-      // Calculate offset from center for each column
-      const offsetX = (col === 0) ? -(cardWidth / 2 + gapX / 2) : (cardWidth / 2 + gapX / 2);
-      const offsetY = (row === 0) ? -(cardHeight / 2 + gapY / 2) : (cardHeight / 2 + gapY / 2);
-      
+
+      const offsetX = col === 0 ? -(cardWidth / 2 + gapX / 2) : cardWidth / 2 + gapX / 2;
+      const offsetY = row === 0 ? -(cardHeight / 2 + gapY / 2) : cardHeight / 2 + gapY / 2;
+
       const x = gridCenterX + offsetX;
       const y = gridCenterY + offsetY;
 
@@ -502,25 +248,24 @@ export default class HouseScene extends Phaser.Scene {
     y: number,
     width: number,
     height: number
-  ) {
-    // Create lesson container
+  ): void {
     const lessonContainer = this.add.container(x, y);
-    lessonContainer.setDepth(10); // In front of house cutouts
+    lessonContainer.setDepth(10);
     this.lessonContainers.push(lessonContainer);
 
     // Card background
-    const card = this.add.rectangle(0, scale(-20), width, height, 0xffffff, 0.7);
-    card.setStrokeStyle(scale(2), 0xe5e7eb);
+    const card = this.add.rectangle(0, scale(-20), width, height, COLORS.WHITE, 0.7);
+    card.setStrokeStyle(scale(2), COLORS.GRAY_200);
     lessonContainer.add(card);
 
     // Lesson title
     const titleText = this.add.text(0, scale(-60), lesson.title, {
       fontSize: scaleFontSize(22),
       fontFamily: 'Arial, sans-serif',
-      color: '#1f2937',
+      color: COLORS.TEXT_PRIMARY,
       fontStyle: 'bold',
       align: 'center',
-      wordWrap: { width: width - scale(40) }
+      wordWrap: { width: width - scale(40) },
     }).setOrigin(0.5);
     lessonContainer.add(titleText);
 
@@ -528,142 +273,281 @@ export default class HouseScene extends Phaser.Scene {
     const typeText = this.add.text(0, scale(-20), lesson.type, {
       fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
-      color: '#6b7280',
-      align: 'center'
+      color: COLORS.TEXT_SECONDARY,
+      align: 'center',
     }).setOrigin(0.5);
     lessonContainer.add(typeText);
 
     // Lock overlay for locked lessons
     if (lesson.locked) {
-      const lockOverlay = this.add.rectangle(0, scale(-20), width, height, 0xe5e7eb, 0.5);
+      const lockOverlay = this.add.rectangle(0, scale(-20), width, height, COLORS.GRAY_200, 0.5);
       lessonContainer.add(lockOverlay);
-      
     }
 
     // Action button
+    this.createLessonButton(lessonContainer, lesson);
+  }
+
+  private createLessonButton(container: Phaser.GameObjects.Container, lesson: Lesson): void {
     const buttonY = scale(60);
-    const buttonWidth = scale(180);
-    const buttonHeight = scale(50);
 
-    if (lesson.locked) {
-      // Locked button
-      const lockedButton = this.add.rectangle(0, buttonY, buttonWidth, buttonHeight, 0xd1d5db, 1);
-      lessonContainer.add(lockedButton);
+    const button = ButtonBuilder.createLessonButton({
+      scene: this,
+      x: 0,
+      y: buttonY,
+      width: scale(180),
+      height: scale(50),
+      text: lesson.locked ? 'Locked' : lesson.completed ? 'Review' : 'Start',
+      fontSize: 16,
+      completed: lesson.completed,
+      locked: lesson.locked,
+      onClick: () => this.handleLessonClick(lesson.id),
+    });
 
-      const lockedText = this.add.text(0, buttonY, 'Locked', {
-        fontSize: scaleFontSize(16),
-        fontFamily: 'Arial, sans-serif',
-        color: '#6b7280',
-        fontStyle: 'bold'
-      }).setOrigin(0.5);
-      lessonContainer.add(lockedText);
+    container.add(button);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BIRD CHARACTER METHODS
+  // ═══════════════════════════════════════════════════════════
+  private createBirdWithEntrance(): void {
+    const { width, height } = this.scale;
+
+    const travelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
+    const returningFromLesson = this.registry.get('returningFromLesson');
+
+    const finalX = width / 2;
+    const finalY = height * 0.85;
+
+    if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
+      // No entrance animation
+      this.createBirdStatic(finalX, finalY);
+      this.registry.set('returningFromLesson', false);
+      return;
+    }
+
+    // Determine animation type
+    const distance = Math.abs(travelInfo.currentHouseIndex - travelInfo.previousHouseIndex);
+    const comingFromLeft = travelInfo.currentHouseIndex > travelInfo.previousHouseIndex;
+
+    if (distance > 1) {
+      this.animateBirdFlyingEntrance(finalX, finalY, comingFromLeft);
     } else {
-      // Active button
-      const buttonBg = lesson.completed
-        ? this.add.rectangle(0, buttonY, buttonWidth, buttonHeight, 0x10b981, 1)
-        : this.add.rectangle(0, buttonY, buttonWidth, buttonHeight, 0x3b82f6, 1);
-      lessonContainer.add(buttonBg);
-
-      const buttonText = this.add.text(0, buttonY, lesson.completed ? 'Review' : 'Start', {
-        fontSize: scaleFontSize(16),
-        fontFamily: 'Arial, sans-serif',
-        color: '#ffffff',
-        fontStyle: 'bold'
-      }).setOrigin(0.5);
-      lessonContainer.add(buttonText);
-
-      // Make interactive
-      buttonBg.setInteractive({ useHandCursor: true })
-        .on('pointerover', () => {
-          if (!this.isTransitioning) {
-            const hoverColor = lesson.completed ? 0x059669 : 0x2563eb;
-            buttonBg.setFillStyle(hoverColor);
-            this.tweens.add({
-              targets: lessonContainer,
-              scale: 1.05,
-              duration: 150,
-              ease: 'Power2'
-            });
-          }
-        })
-        .on('pointerout', () => {
-          const normalColor = lesson.completed ? 0x10b981 : 0x3b82f6;
-          buttonBg.setFillStyle(normalColor);
-          this.tweens.add({
-            targets: lessonContainer,
-            scale: 1,
-            duration: 150,
-            ease: 'Power2'
-          });
-        })
-        .on('pointerdown', () => {
-          if (!this.isTransitioning) {
-            this.handleLessonClick(lesson.id);
-          }
-        });
+      this.animateBirdHoppingEntrance(finalX, finalY, comingFromLeft);
     }
   }
 
-  private handleLessonClick(lessonId: number) {
-  if (this.isTransitioning) return;
-
-  this.isTransitioning = true;
-
-  // Set flag to indicate we're going to a lesson
-  this.registry.set('returningFromLesson', true);
-
-  // Get the navigation handler from registry
-  const handleLessonSelect = this.registry.get('handleLessonSelect');
-  
-  if (handleLessonSelect && typeof handleLessonSelect === 'function') {
-    handleLessonSelect(lessonId);
-    this.isTransitioning = false;
+  private createBirdStatic(x: number, y: number): void {
+    this.birdSprite = this.add.image(x, y, ASSET_KEYS.BIRD_IDLE);
+    this.birdSprite.setDisplaySize(scale(80), scale(80));
+    this.birdSprite.setDepth(1000);
+    this.startBirdIdleAnimation();
   }
-}
 
-  private handleBackToNeighborhood() {
+  private animateBirdFlyingEntrance(finalX: number, finalY: number, fromLeft: boolean): void {
+    const { width, height } = this.scale;
+
+    const startX = fromLeft ? -scale(100) : width + scale(100);
+    const startY = height * 0.5;
+
+    // Create bird in flying texture
+    this.birdSprite = this.add.image(startX, startY, ASSET_KEYS.BIRD_FLY);
+    const flyTexture = this.textures.get(ASSET_KEYS.BIRD_FLY);
+    const flyWidth = flyTexture.getSourceImage().width;
+    const flyHeight = flyTexture.getSourceImage().height;
+    const flyAspectRatio = flyWidth / flyHeight;
+    this.birdSprite.setDisplaySize(scale(100) * flyAspectRatio, scale(100));
+    this.birdSprite.setDepth(1000);
+    this.birdSprite.setFlipX(!fromLeft);
+
+    // Fly animation
+    this.tweens.add({
+      targets: this.birdSprite,
+      x: finalX,
+      y: finalY,
+      duration: 1500,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.birdSprite!.setTexture(ASSET_KEYS.BIRD_IDLE);
+        this.birdSprite!.setDisplaySize(scale(80), scale(80));
+        this.birdSprite!.setFlipX(false);
+        this.startBirdIdleAnimation();
+      },
+    });
+  }
+
+  private animateBirdHoppingEntrance(finalX: number, finalY: number, fromLeft: boolean): void {
+    const { width } = this.scale;
+
+    const startX = fromLeft ? -scale(100) : width + scale(100);
+
+    this.birdSprite = this.add.image(startX, finalY, ASSET_KEYS.BIRD_IDLE);
+    this.birdSprite.setDisplaySize(scale(80), scale(80));
+    this.birdSprite.setDepth(1000);
+    this.birdSprite.setFlipX(!fromLeft);
+
+    // Calculate hop path
+    const distance = Math.abs(finalX - startX);
+    const numHops = Math.max(5, Math.floor(distance / scale(80)));
+    const hopHeight = scale(10);
+    const hopDuration = 200;
+
+    const path: { x: number; y: number }[] = [];
+    for (let i = 0; i <= numHops; i++) {
+      const t = i / numHops;
+      path.push({
+        x: Phaser.Math.Linear(startX, finalX, t),
+        y: finalY,
+      });
+    }
+
+    let currentHop = 0;
+
+    const performNextHop = () => {
+      if (currentHop >= path.length - 1) {
+        this.birdSprite!.setFlipX(false);
+        this.startBirdIdleAnimation();
+        return;
+      }
+
+      const startPoint = path[currentHop];
+      const endPoint = path[currentHop + 1];
+      const midX = (startPoint.x + endPoint.x) / 2;
+      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
+
+      this.tweens.add({
+        targets: this.birdSprite,
+        x: midX,
+        y: midY,
+        duration: hopDuration / 2,
+        ease: 'Sine.easeOut',
+        onStart: () => {
+          this.tweens.add({
+            targets: this.birdSprite,
+            angle: currentHop % 2 === 0 ? -5 : 5,
+            duration: hopDuration / 2,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+          });
+        },
+        onComplete: () => {
+          this.tweens.add({
+            targets: this.birdSprite,
+            x: endPoint.x,
+            y: endPoint.y,
+            duration: hopDuration / 2,
+            ease: 'Sine.easeIn',
+            onComplete: () => {
+              currentHop++;
+              performNextHop();
+            },
+          });
+        },
+      });
+    };
+
+    performNextHop();
+  }
+
+  private startBirdIdleAnimation(): void {
+    const scheduleNextIdleHop = () => {
+      const randomDelay = Phaser.Math.Between(5000, 8000);
+
+      this.birdIdleTimer = this.time.delayedCall(randomDelay, () => {
+        if (this.birdSprite && !this.isTransitioning) {
+          this.playBirdIdleHop();
+        }
+        scheduleNextIdleHop();
+      });
+    };
+
+    scheduleNextIdleHop();
+  }
+
+  private playBirdIdleHop(): void {
+    if (!this.birdSprite || this.isTransitioning) return;
+
+    const originalY = this.birdSprite.y;
+    const originalX = this.birdSprite.x;
+
+    const moveX = Phaser.Math.Between(-scale(10), scale(10));
+    const targetX = Phaser.Math.Clamp(originalX + moveX, scale(100), this.scale.width - scale(100));
+
+    if (Math.abs(moveX) > scale(5)) {
+      this.birdSprite.setFlipX(moveX < 0);
+    }
+
+    const hopHeight = scale(5);
+    const duration = 400;
+
+    this.tweens.add({
+      targets: this.birdSprite,
+      x: targetX,
+      y: originalY - hopHeight,
+      duration: duration,
+      ease: 'Sine.easeOut',
+      yoyo: true,
+      onStart: () => {
+        this.tweens.add({
+          targets: this.birdSprite,
+          angle: -3,
+          duration: duration / 2,
+          ease: 'Sine.easeInOut',
+          yoyo: true,
+        });
+      },
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // EVENT HANDLERS
+  // ═══════════════════════════════════════════════════════════
+  private handleLessonClick(lessonId: number): void {
+    if (this.isTransitioning) return;
+
+    this.isTransitioning = true;
+    this.registry.set('returningFromLesson', true);
+
+    const handleLessonSelect = this.registry.get('handleLessonSelect');
+
+    if (handleLessonSelect && typeof handleLessonSelect === 'function') {
+      handleLessonSelect(lessonId);
+      this.isTransitioning = false;
+    }
+  }
+
+  private handleBackToNeighborhood(): void {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
 
-    // Get the navigation handler from registry
     const handleBackToNeighborhood = this.registry.get('handleBackToNeighborhood');
-    
+
     if (handleBackToNeighborhood && typeof handleBackToNeighborhood === 'function') {
-      // Add transition effect before switching scenes
-      this.cameras.main.fadeOut(300, 254, 243, 199);
-      
-      this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.transitionToNeighborhood(() => {
         handleBackToNeighborhood();
         this.isTransitioning = false;
       });
     }
   }
 
-  private handleMinigameSelect() {
+  private handleMinigameSelect(): void {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
 
-    // Get the navigation handler from registry
     const handleMinigameSelect = this.registry.get('handleMinigameSelect');
-    
+
     if (handleMinigameSelect && typeof handleMinigameSelect === 'function') {
       handleMinigameSelect();
       this.isTransitioning = false;
     }
   }
 
-  private handleResize(gameSize: Phaser.Structs.Size) {
+  private handleResize(gameSize: Phaser.Structs.Size): void {
     const { width, height } = gameSize;
 
-    // Resize and reposition background
-    if (this.background) {
-      this.background.setPosition(width / 2, height / 2);
-      this.background.setDisplaySize(width, height);
-    }
-
-    // Reposition house cutouts
+    // Reposition environment
     if (this.leftHouse) {
       this.leftHouse.setPosition(width * 0.25, height / 2);
     }
@@ -671,17 +555,15 @@ export default class HouseScene extends Phaser.Scene {
       this.rightHouse.setPosition(width * 0.76, height / 2);
     }
 
-    // Reposition back button
+    // Reposition buttons
     if (this.backButton) {
       this.backButton.setPosition(scale(100), scale(40));
     }
-
-    // Reposition minigame button
     if (this.minigameButton) {
       this.minigameButton.setPosition(width - scale(120), scale(40));
     }
 
-    // Reposition header card
+    // Reposition header
     if (this.headerCard) {
       this.headerCard.setPosition(width / 2, height * 0.15);
     }
@@ -691,21 +573,17 @@ export default class HouseScene extends Phaser.Scene {
       this.birdSprite.setPosition(width / 2, height * 0.85);
     }
 
-    // Recreate lesson grid with new dimensions
+    // Recreate lesson grid
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
     this.createLessonGrid();
   }
 
-  shutdown() {
-    // Clean up event listeners
-    this.scale.off('resize', this.handleResize, this);
-    this.lessonContainers = [];
-    
-    // Clear bird idle timer
-    if (this.birdIdleTimer) {
-      this.birdIdleTimer.remove();
-      this.birdIdleTimer = undefined;
-    }
+  // ═══════════════════════════════════════════════════════════
+  // TRANSITION METHODS
+  // ═══════════════════════════════════════════════════════════
+  private transitionToNeighborhood(callback: () => void): void {
+    this.cameras.main.fadeOut(300, 254, 243, 199);
+    this.cameras.main.once('camerafadeoutcomplete', callback);
   }
 }

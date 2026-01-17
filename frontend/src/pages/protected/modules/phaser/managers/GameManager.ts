@@ -1,10 +1,6 @@
 import Phaser from 'phaser';
-import { createGameConfig } from './phaser/config/gameConfig';
+import { createGameConfig } from '../config/gameConfig';
 
-/**
- * Singleton Game Manager
- * Ensures Phaser game instance persists across component unmounts/remounts
- */
 class GameManager {
   private static instance: GameManager;
   private game: Phaser.Game | null = null;
