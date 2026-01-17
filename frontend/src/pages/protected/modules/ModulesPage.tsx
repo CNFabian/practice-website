@@ -4,6 +4,7 @@ import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
+import { getModules } from '../../../services/learningAPI';
 
 interface ModulesPageProps {}
 
@@ -15,10 +16,25 @@ interface NavState {
   lessonId: number | null;
 }
 
+interface HouseData {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  moduleId: number;
+  moduleBackendId: string;
+  isLocked: boolean;
+  houseType: string;
+  description?: string;
+  coinReward?: number;
+}
+
 const ModulesPage: React.FC<ModulesPageProps> = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [neighborhoodHousesData, setNeighborhoodHousesData] = useState<Record<string, HouseData[]>>({});
+  const [isLoadingHouses, setIsLoadingHouses] = useState(true);
   
   // Initialize navState from GameManager's saved state or default to 'map'
   const [navState, setNavState] = useState<NavState>(() => {
@@ -44,6 +60,84 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   useEffect(() => {
     GameManager.saveNavState(navState);
   }, [navState]);
+
+  // Helper function to calculate house positions
+  const calculateHousePosition = (index: number) => {
+    const positions = [
+      { x: 20, y: 40 },
+      { x: 45, y: 45 },
+      { x: 70, y: 50 },
+      { x: 85, y: 55 }
+    ];
+    return positions[index % positions.length];
+  };
+
+  // Fetch modules from backend and transform to house structure
+  useEffect(() => {
+    const fetchModulesAndMapToHouses = async () => {
+      setIsLoadingHouses(true);
+      try {
+        console.log('🏠 Fetching modules from backend to map to houses...');
+        const modules = await getModules();
+        
+        if (!modules || !Array.isArray(modules)) {
+          console.warn('⚠️ No modules returned from backend');
+          setIsLoadingHouses(false);
+          return;
+        }
+
+        console.log(`✅ Fetched ${modules.length} modules from backend`);
+        
+        // Transform modules into house structure
+        const housesData: Record<string, HouseData[]> = {
+          downtown: modules.map((module: any, index: number) => {
+            const position = calculateHousePosition(index);
+            const houseType = `house${(index % 4) + 1}`;
+            
+            // Generate a stable frontend ID from the backend UUID
+            const generateFrontendId = (uuid: string): number => {
+              let hash = 0;
+              for (let i = 0; i < uuid.length; i++) {
+                const char = uuid.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+              }
+              return Math.abs(hash) + 10000;
+            };
+
+            const frontendId = generateFrontendId(module.id || `module-${index}`);
+            
+            return {
+              id: `house${index + 1}`,
+              name: module.title || `Module ${index + 1}`,
+              x: position.x,
+              y: position.y,
+              moduleId: frontendId,
+              moduleBackendId: module.id,
+              isLocked: module.is_locked !== undefined ? module.is_locked : false,
+              houseType: houseType,
+              description: module.description || '',
+              coinReward: module.nest_coins_reward || 0
+            };
+          })
+        };
+
+        console.log('🏠 House data created:', housesData);
+        setNeighborhoodHousesData(housesData);
+        setIsLoadingHouses(false);
+      } catch (error) {
+        console.error('❌ Failed to fetch modules for houses:', error);
+        
+        // Fallback to empty or sample data
+        setNeighborhoodHousesData({
+          downtown: []
+        });
+        setIsLoadingHouses(false);
+      }
+    };
+
+    fetchModulesAndMapToHouses();
+  }, []);
 
   // Mock data that matches the full Module and Lesson interfaces
   const mockModule: Module | null = navState.moduleId ? {
@@ -74,47 +168,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   const currentModule = mockModule;
   const currentLesson = mockLesson;
 
-  const neighborhoodHouses: Record<string, any> = {
-    downtown: [
-      { 
-        id: 'house1', 
-        name: 'House 1', 
-        x: 20,  // Position from left (percentage)
-        y: 40,  // Position from top (percentage)
-        moduleId: 1, 
-        isLocked: false,
-        houseType: 'house1'  // Which house texture to use
-      },
-      { 
-        id: 'house2', 
-        name: 'House 2', 
-        x: 45, 
-        y: 45, 
-        moduleId: 2, 
-        isLocked: false,
-        houseType: 'house2'
-      },
-      { 
-        id: 'house3', 
-        name: 'House 3', 
-        x: 70, 
-        y: 50, 
-        moduleId: 3, 
-        isLocked: false,
-        houseType: 'house3'
-      },
-      { 
-        id: 'house4', 
-        name: 'House 4', 
-        x: 85, 
-        y: 55, 
-        moduleId: 4, 
-        isLocked: false,
-        houseType: 'house4'
-      },
-    ],
-  };
-
   // Navigation handlers
   const handleNeighborhoodSelect = (neighborhoodId: string) => {
     setNavState(prev => ({
@@ -137,15 +190,15 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     }));
   };
 
-const handleLessonSelect = (lessonId: number) => {
-  const actualLessonId = lessonId;
-  setNavState(prev => ({
-    ...prev,
-    currentView: 'lesson',
-    lessonId: actualLessonId,
-    moduleId: prev.moduleId || (prev.houseId ? neighborhoodHouses['downtown'].find((h: any) => h.id === prev.houseId)?.moduleId : null)
-  }));
-};
+  const handleLessonSelect = (lessonId: number) => {
+    const actualLessonId = lessonId;
+    setNavState(prev => ({
+      ...prev,
+      currentView: 'lesson',
+      lessonId: actualLessonId,
+      moduleId: prev.moduleId || (prev.houseId ? neighborhoodHousesData['downtown']?.find((h: any) => h.id === prev.houseId)?.moduleId ?? null : null)
+    }));
+  };
 
   const handleMinigameSelect = () => {
     setNavState(prev => ({
@@ -260,10 +313,10 @@ const handleLessonSelect = (lessonId: number) => {
     }
   }, [navState.currentView, isPhaserReady]);
 
-  // Set navigation handlers
+  // Set navigation handlers and house data in registry
   useEffect(() => {
     const game = GameManager.getGame();
-    if (!game || !isPhaserReady || !assetsLoaded) return;
+    if (!game || !isPhaserReady || !assetsLoaded || isLoadingHouses) return;
 
     const scenes = game.scene.getScenes(false);
     if (scenes.length > 0) {
@@ -274,14 +327,16 @@ const handleLessonSelect = (lessonId: number) => {
       scene.registry.set('handleMinigameSelect', handleMinigameSelect);
       scene.registry.set('handleBackToMap', handleBackToMap);
       scene.registry.set('handleBackToNeighborhood', handleBackToNeighborhood);
-      scene.registry.set('neighborhoodHouses', neighborhoodHouses);
+      scene.registry.set('neighborhoodHouses', neighborhoodHousesData);
+      
+      console.log('✅ Set neighborhood houses in registry:', neighborhoodHousesData);
     }
-  }, [isPhaserReady, assetsLoaded]);
+  }, [isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses]);
 
   // Handle scene transitions
   useEffect(() => {
     const game = GameManager.getGame();
-    if (!game || !isPhaserReady || !assetsLoaded) return;
+    if (!game || !isPhaserReady || !assetsLoaded || isLoadingHouses) return;
 
     switch (navState.currentView) {
       case 'map':
@@ -301,7 +356,7 @@ const handleLessonSelect = (lessonId: number) => {
         
         game.scene.start('NeighborhoodScene', {
           neighborhoodId: navState.neighborhoodId,
-          houses: neighborhoodHouses['downtown'],
+          houses: neighborhoodHousesData['downtown'] || [],
           currentHouseIndex: currentHouseIndex
         });
       break;
@@ -324,7 +379,7 @@ const handleLessonSelect = (lessonId: number) => {
         if (game.scene.isActive('HouseScene')) game.scene.sleep('HouseScene');
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHouses]);
+  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses]);
 
   // Handle resize
   useEffect(() => {
@@ -369,6 +424,13 @@ const handleLessonSelect = (lessonId: number) => {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
+      {/* Loading indicator for houses */}
+      {isLoadingHouses && (
+        <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-gray-600">Loading modules...</p>
+        </div>
+      )}
+
       {showPhaserCanvas && (
         <div 
           className="fixed inset-0 z-0"

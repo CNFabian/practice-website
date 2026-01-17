@@ -9,11 +9,15 @@ import { UIComponents } from '../ui/UIComponents';
 
 interface HousePosition {
   id: string;
-  name: string;
+  name: string; // NOW COMES FROM MODULE TITLE
   x: number; // Percentage from left (0-100)
   y: number; // Percentage from top (0-100)
-  isLocked?: boolean;
+  isLocked?: boolean; // NOW COMES FROM MODULE UNLOCK STATUS
   houseType?: string; // 'house1', 'house2', 'house3', 'house4', etc.
+  moduleId?: number; // Frontend module ID
+  moduleBackendId?: string; // Backend module UUID
+  description?: string; // Module description
+  coinReward?: number; // Module coin reward
 }
 
 interface NeighborhoodSceneData {
@@ -59,6 +63,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.currentHouseIndex = data.currentHouseIndex ?? 0;
     this.previousHouseIndex = this.currentHouseIndex;
     this.isHopping = false;
+    
+    console.log('🏘️ NeighborhoodScene init with houses:', this.houses);
     
     // Clear existing data
     this.houseSprites.clear();
@@ -182,13 +188,13 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     // Create house icon
     if (house.houseType) {
-      this.createHouseIcon(houseContainer, house.houseType);
+      this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
     }
 
-    // Create house name label
+    // Create house name label (module title from backend)
     const nameLabel = this.add.text(0, scale(90), house.name, {
       fontSize: scaleFontSize(14),
-      fontFamily: 'Arial, sans-serif',
+      fontFamily: 'Fredoka, sans-serif',
       color: COLORS.TEXT_PRIMARY,
       fontStyle: 'bold',
       backgroundColor: '#ffffff',
@@ -196,20 +202,66 @@ export default class NeighborhoodScene extends Phaser.Scene {
     }).setOrigin(0.5);
     houseContainer.add(nameLabel);
 
+    // Add coin reward badge if available
+    if (house.coinReward && house.coinReward > 0) {
+      this.createCoinBadge(houseContainer, house.coinReward);
+    }
+
     // Make interactive if not locked
     if (!house.isLocked) {
       this.makeHouseInteractive(houseContainer, house);
     } else {
+      // Show locked state
       houseContainer.setAlpha(OPACITY.MEDIUM);
+      this.createLockIcon(houseContainer);
     }
 
     this.houseSprites.set(house.id, houseContainer);
   }
 
-  private createHouseIcon(container: Phaser.GameObjects.Container, houseType: string): void {
+  private createHouseIcon(
+    container: Phaser.GameObjects.Container, 
+    houseType: string, 
+    isLocked?: boolean
+  ): void {
     const houseImage = this.add.image(0, 0, houseType);
     houseImage.setDisplaySize(scale(150), scale(150));
+    
+    // Add a slight tint to locked houses
+    if (isLocked) {
+      houseImage.setTint(0x999999);
+    }
+    
     container.add(houseImage);
+  }
+
+  private createCoinBadge(container: Phaser.GameObjects.Container, coinReward: number): void {
+    // Create coin badge background
+    const badgeBg = this.add.circle(scale(50), scale(-50), scale(20), 0xFFD700);
+    badgeBg.setStrokeStyle(scale(2), 0xFFA500);
+    container.add(badgeBg);
+
+    // Create coin text
+    const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`, {
+      fontSize: scaleFontSize(12),
+      fontFamily: 'Fredoka, sans-serif',
+      color: '#000000',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    container.add(coinText);
+  }
+
+  private createLockIcon(container: Phaser.GameObjects.Container): void {
+    // Create lock icon background
+    const lockBg = this.add.circle(scale(-50), scale(-50), scale(18), 0xFF6B6B);
+    lockBg.setStrokeStyle(scale(2), 0xCC0000);
+    container.add(lockBg);
+
+    // Create lock emoji/icon
+    const lockIcon = this.add.text(scale(-50), scale(-50), '🔒', {
+      fontSize: scaleFontSize(20),
+    }).setOrigin(0.5);
+    container.add(lockIcon);
   }
 
   private makeHouseInteractive(
@@ -221,6 +273,28 @@ export default class NeighborhoodScene extends Phaser.Scene {
     if (background) {
       background.setInteractive({ useHandCursor: true });
       
+      background.on('pointerover', () => {
+        // Hover effect - slightly scale up
+        this.tweens.add({
+          targets: background,
+          scaleX: 1.1,
+          scaleY: 1.1,
+          duration: 200,
+          ease: 'Power2',
+        });
+      });
+
+      background.on('pointerout', () => {
+        // Remove hover effect
+        this.tweens.add({
+          targets: background,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 200,
+          ease: 'Power2',
+        });
+      });
+      
       background.on('pointerdown', () => {
         if (!this.isTransitioning) {
           const targetIndex = this.houses.findIndex(h => h.id === house.id);
@@ -228,7 +302,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
           if (targetIndex !== -1 && targetIndex !== this.currentHouseIndex) {
             this.travelToHouse(targetIndex);
           } else if (targetIndex === this.currentHouseIndex) {
-            this.handleHouseClick(house.id);
+            this.handleHouseClick(house);
           }
         }
       });
@@ -414,7 +488,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
         this.birdSprite!.setDisplaySize(scale(80), scale(80));
         this.isHopping = false;
         this.currentHouseIndex = targetHouseIndex;
-        this.handleHouseClick(targetHouse.id);
+        this.handleHouseClick(targetHouse);
       },
     });
   }
@@ -451,7 +525,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
       if (currentHop >= path.length - 1) {
         this.isHopping = false;
         this.currentHouseIndex = targetHouseIndex;
-        this.handleHouseClick(targetHouse.id);
+        this.handleHouseClick(targetHouse);
         return;
       }
 
@@ -497,10 +571,12 @@ export default class NeighborhoodScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // EVENT HANDLERS
   // ═══════════════════════════════════════════════════════════
-  private handleHouseClick(houseId: string): void {
+  private handleHouseClick(house: HousePosition): void {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
+
+    console.log('🏠 House clicked:', house.name, 'Module ID:', house.moduleId);
 
     // Store bird travel info for HouseScene
     this.registry.set('currentHouseIndex', this.currentHouseIndex);
@@ -510,12 +586,19 @@ export default class NeighborhoodScene extends Phaser.Scene {
       traveled: this.previousHouseIndex !== this.currentHouseIndex,
     });
 
+    // Store module backend ID for HouseScene to use
+    if (house.moduleBackendId) {
+      this.registry.set('currentModuleUUID', house.moduleBackendId);
+      this.registry.set('currentModuleTitle', house.name);
+      console.log('✅ Stored module UUID in registry:', house.moduleBackendId);
+    }
+
     // Get navigation handler
     const handleHouseSelect = this.registry.get('handleHouseSelect');
 
     if (handleHouseSelect && typeof handleHouseSelect === 'function') {
       this.transitionToHouse(() => {
-        handleHouseSelect(houseId);
+        handleHouseSelect(house.id, house.moduleId || 0);
         this.isTransitioning = false;
       });
     }

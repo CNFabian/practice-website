@@ -47,11 +47,15 @@ export interface NeighborhoodData {
  */
 export interface HousePosition {
   id: string;
-  name: string;
-  x: number; // Percentage from left (0-100)
-  y: number; // Percentage from top (0-100)
-  isLocked?: boolean;
-  houseType?: string; // 'house1', 'house2', 'house3', 'house4', etc.
+  name: string; // Module title
+  x: number;
+  y: number;
+  isLocked?: boolean; // Module lock status
+  houseType?: string;
+  moduleId?: number; // Frontend module ID
+  moduleBackendId?: string; // Backend module UUID
+  description?: string; // Module description
+  coinReward?: number; // Coins for completing module
 }
 
 // ═══════════════════════════════════════════════════════════
