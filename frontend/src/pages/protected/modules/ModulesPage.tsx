@@ -443,9 +443,17 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       break;
 
       case 'house':
+        // CRITICAL FIX: Wait for lessons to be loaded before starting HouseScene
+        if (navState.moduleBackendId && !moduleLessonsData[navState.moduleBackendId]) {
+          console.log('⏳ Waiting for lessons to load before starting HouseScene...');
+          return; // Don't start scene yet, wait for lessons
+        }
+        
         if (game.scene.isActive('MapScene')) game.scene.sleep('MapScene');
         if (game.scene.isActive('NeighborhoodScene')) game.scene.sleep('NeighborhoodScene');
         if (game.scene.isActive('HouseScene')) game.scene.stop('HouseScene');
+        
+        console.log('✅ Lessons loaded, starting HouseScene with data:', moduleLessonsData[navState.moduleBackendId!]);
         
         game.scene.start('HouseScene', {
           houseId: navState.houseId,
@@ -461,7 +469,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         if (game.scene.isActive('HouseScene')) game.scene.sleep('HouseScene');
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingModules]);
+  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingModules, moduleLessonsData]);
 
   // Handle resize
   useEffect(() => {
