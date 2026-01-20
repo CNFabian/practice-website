@@ -5,6 +5,7 @@ import LessonView from './LessonView';
 import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
 import { getModules } from '../../../services/learningAPI';
+import { useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 
 interface ModulesPageProps {}
 
@@ -13,6 +14,7 @@ interface NavState {
   neighborhoodId: string | null;
   houseId: string | null;
   moduleId: number | null;
+  moduleBackendId: string | null;
   lessonId: number | null;
 }
 
@@ -29,12 +31,38 @@ interface HouseData {
   coinReward?: number;
 }
 
+interface BackendLessonData {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  video_url: string;
+  estimated_duration_minutes: number;
+  nest_coins_reward: number;
+  is_completed: boolean;
+  progress_seconds: number;
+}
+
+interface ModuleLessonsData {
+  id: number;
+  title: string;
+  lessons: {
+    id: number;
+    title: string;
+    type: string;
+    completed: boolean;
+    locked: boolean;
+  }[];
+}
+
 const ModulesPage: React.FC<ModulesPageProps> = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [neighborhoodHousesData, setNeighborhoodHousesData] = useState<Record<string, HouseData[]>>({});
   const [isLoadingHouses, setIsLoadingHouses] = useState(true);
+  const [moduleLessonsData, setModuleLessonsData] = useState<Record<string, ModuleLessonsData>>({});
   
   // Initialize navState from GameManager's saved state or default to 'map'
   const [navState, setNavState] = useState<NavState>(() => {
@@ -52,9 +80,17 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       neighborhoodId: null,
       houseId: null,
       moduleId: null,
+      moduleBackendId: null,
       lessonId: null,
     };
   });
+
+  // Use the existing hook to fetch module lessons
+  const { 
+    data: lessonsData, 
+    isLoading: isLoadingLessons,
+    error: lessonsError 
+  } = useModuleLessons(navState.moduleBackendId || '');
 
   // Save navState to GameManager whenever it changes
   useEffect(() => {
@@ -139,10 +175,63 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     fetchModulesAndMapToHouses();
   }, []);
 
+  // Transform lessons data when it's available from the hook
+  useEffect(() => {
+    if (!navState.moduleBackendId || !navState.moduleId || !lessonsData) return;
+
+    // Check if we already have lessons for this module
+    if (moduleLessonsData[navState.moduleBackendId]) {
+      console.log(`✅ Lessons already loaded for module ${navState.moduleBackendId}`);
+      return;
+    }
+
+    if (!Array.isArray(lessonsData)) {
+      console.warn('⚠️ Invalid lessons data from backend');
+      return;
+    }
+
+    console.log(`✅ Fetched ${lessonsData.length} lessons from backend via hook`);
+
+    // Transform backend lessons to HouseScene format
+    const transformedLessons: ModuleLessonsData = {
+      id: navState.moduleId,
+      title: neighborhoodHousesData['downtown']?.find(h => h.moduleBackendId === navState.moduleBackendId)?.name || `Module ${navState.moduleId}`,
+      lessons: lessonsData.map((lesson: BackendLessonData, index: number) => {
+        // Generate a stable frontend ID from the backend UUID
+        const generateFrontendId = (uuid: string): number => {
+          let hash = 0;
+          for (let i = 0; i < uuid.length; i++) {
+            const char = uuid.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+          }
+          return Math.abs(hash) + 20000; // Different offset for lessons
+        };
+
+        const frontendId = generateFrontendId(lesson.id || `lesson-${index}`);
+
+        return {
+          id: frontendId,
+          title: lesson.title || `Lesson ${index + 1}`,
+          type: 'Video/Reading',
+          completed: lesson.is_completed || false,
+          locked: false // You can add lock logic based on prerequisites
+        };
+      })
+    };
+
+    setModuleLessonsData(prev => ({
+      ...prev,
+      [navState.moduleBackendId!]: transformedLessons
+    }));
+
+    console.log('📚 Transformed lessons data:', transformedLessons);
+  }, [lessonsData, navState.moduleBackendId, navState.moduleId, neighborhoodHousesData, moduleLessonsData]);
+
   // Mock data that matches the full Module and Lesson interfaces
   const mockModule: Module | null = navState.moduleId ? {
     id: navState.moduleId,
-    backendId: `module-${navState.moduleId}`,
+    backendId: navState.moduleBackendId || `module-${navState.moduleId}`,
     image: '/placeholder-module.jpg',
     title: `Module ${navState.moduleId}`,
     description: 'Module description',
@@ -176,16 +265,22 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       neighborhoodId,
       houseId: null,
       moduleId: null,
+      moduleBackendId: null,
       lessonId: null,
     }));
   };
 
   const handleHouseSelect = (houseId: string, moduleId: number) => {
+    // Find the house to get the backend module ID
+    const house = neighborhoodHousesData['downtown']?.find(h => h.id === houseId);
+    const moduleBackendId = house?.moduleBackendId || null;
+
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
       houseId,
       moduleId,
+      moduleBackendId,
       lessonId: null,
     }));
   };
@@ -196,7 +291,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       ...prev,
       currentView: 'lesson',
       lessonId: actualLessonId,
-      moduleId: prev.moduleId || (prev.houseId ? neighborhoodHousesData['downtown']?.find((h: any) => h.id === prev.houseId)?.moduleId ?? null : null)
+      moduleId: prev.moduleId || (prev.houseId ? neighborhoodHousesData['downtown']?.find((h: any) => h.id === prev.houseId)?.moduleId ?? null : null),
+      moduleBackendId: prev.moduleBackendId || (prev.houseId ? neighborhoodHousesData['downtown']?.find((h: any) => h.id === prev.houseId)?.moduleBackendId ?? null : null)
     }));
   };
 
@@ -213,6 +309,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       neighborhoodId: null,
       houseId: null,
       moduleId: null,
+      moduleBackendId: null,
       lessonId: null,
     });
   };
@@ -223,6 +320,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       currentView: 'neighborhood',
       houseId: null,
       moduleId: null,
+      moduleBackendId: null,
       lessonId: null,
     }));
   };
@@ -313,7 +411,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     }
   }, [navState.currentView, isPhaserReady]);
 
-  // Set navigation handlers and house data in registry
+  // Set navigation handlers, house data, and module lessons data in registry
   useEffect(() => {
     const game = GameManager.getGame();
     if (!game || !isPhaserReady || !assetsLoaded || isLoadingHouses) return;
@@ -328,10 +426,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       scene.registry.set('handleBackToMap', handleBackToMap);
       scene.registry.set('handleBackToNeighborhood', handleBackToNeighborhood);
       scene.registry.set('neighborhoodHouses', neighborhoodHousesData);
+      scene.registry.set('moduleLessonsData', moduleLessonsData);
       
       console.log('✅ Set neighborhood houses in registry:', neighborhoodHousesData);
+      console.log('✅ Set module lessons data in registry:', moduleLessonsData);
     }
-  }, [isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses]);
+  }, [isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses, moduleLessonsData]);
 
   // Handle scene transitions
   useEffect(() => {
@@ -368,7 +468,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         
         game.scene.start('HouseScene', {
           houseId: navState.houseId,
-          moduleId: navState.moduleId
+          moduleId: navState.moduleId,
+          moduleBackendId: navState.moduleBackendId
         });
         break;
 
@@ -428,6 +529,20 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       {isLoadingHouses && (
         <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
           <p className="text-sm text-gray-600">Loading modules...</p>
+        </div>
+      )}
+
+      {/* Loading indicator for lessons */}
+      {isLoadingLessons && navState.currentView === 'house' && (
+        <div className="absolute top-16 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-gray-600">Loading lessons...</p>
+        </div>
+      )}
+
+      {/* Error indicator for lessons */}
+      {lessonsError && navState.currentView === 'house' && (
+        <div className="absolute top-16 right-4 bg-red-100 px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-red-600">Failed to load lessons</p>
         </div>
       )}
 

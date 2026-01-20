@@ -22,6 +22,7 @@ interface Module {
 interface HouseSceneData {
   houseId?: string;
   moduleId?: number;
+  moduleBackendId?: string;
 }
 
 interface BirdTravelInfo {
@@ -30,23 +31,18 @@ interface BirdTravelInfo {
   traveled: boolean;
 }
 
-// Sample module data
-const SAMPLE_MODULE: Module = {
-  id: 1,
-  title: 'Homebuying Foundations',
-  lessons: [
-    { id: 101, title: 'Renting vs Buying', type: 'Video/Reading', completed: false, locked: false },
-    { id: 102, title: 'Preparing Your Documents', type: 'Video/Reading', completed: true, locked: false },
-    { id: 103, title: 'Financial Basics', type: 'Video/Reading', completed: true, locked: false },
-    { id: 104, title: 'Setting a Timeline', type: 'Video/Reading', completed: false, locked: true },
-  ],
-};
+interface ModuleLessonsData {
+  id: number;
+  title: string;
+  lessons: Lesson[];
+}
 
 export default class HouseScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // PROPERTIES
   // ═══════════════════════════════════════════════════════════
-  private module: Module = SAMPLE_MODULE;
+  private module: Module | null = null;
+  private moduleBackendId?: string;
   private isTransitioning: boolean = false;
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
@@ -71,9 +67,30 @@ export default class HouseScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // LIFECYCLE METHODS
   // ═══════════════════════════════════════════════════════════
-  init(_data: HouseSceneData) {
+  init(data: HouseSceneData) {
     this.isTransitioning = false;
     this.lessonContainers = [];
+    this.moduleBackendId = data.moduleBackendId;
+    
+    // Get module lessons data from registry
+    const moduleLessonsData: Record<string, ModuleLessonsData> = this.registry.get('moduleLessonsData') || {};
+    
+    console.log('🏠 HouseScene init - moduleBackendId:', this.moduleBackendId);
+    console.log('🏠 HouseScene init - available module lessons data:', moduleLessonsData);
+    
+    // Find the module data for this backend ID
+    if (this.moduleBackendId && moduleLessonsData[this.moduleBackendId]) {
+      this.module = moduleLessonsData[this.moduleBackendId];
+      console.log('✅ Loaded module from backend:', this.module);
+    } else {
+      console.warn('⚠️ No module data found for backend ID:', this.moduleBackendId);
+      // Fallback to empty module
+      this.module = {
+        id: data.moduleId || 0,
+        title: 'Loading...',
+        lessons: []
+      };
+    }
     
     if (this.birdIdleTimer) {
       this.birdIdleTimer.remove();
@@ -140,8 +157,29 @@ export default class HouseScene extends Phaser.Scene {
   private createUI(): void {
     this.createBackButton();
     this.createMinigameButton();
-    this.createHeaderCard();
-    this.createLessonGrid();
+    
+    if (this.module && this.module.lessons.length > 0) {
+      this.createHeaderCard();
+      this.createLessonGrid();
+    } else {
+      this.createLoadingPlaceholder();
+    }
+  }
+
+  private createLoadingPlaceholder(): void {
+    const { width, height } = this.scale;
+    
+    const loadingText = this.add.text(
+      width / 2,
+      height / 2,
+      'Loading lessons...',
+      {
+        fontSize: scaleFontSize(24),
+        fontFamily: 'Arial, sans-serif',
+        color: COLORS.TEXT_SECONDARY,
+      }
+    ).setOrigin(0.5);
+    loadingText.setDepth(10);
   }
 
   private createBackButton(): void {
@@ -181,6 +219,8 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   private createHeaderCard(): void {
+    if (!this.module) return;
+
     const { width, height } = this.scale;
 
     this.headerCard = this.add.container(width / 2, height * 0.15);
@@ -219,6 +259,8 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   private createLessonGrid(): void {
+    if (!this.module) return;
+
     const { width, height } = this.scale;
 
     const gridCenterX = width / 2;

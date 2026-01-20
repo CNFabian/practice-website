@@ -24,6 +24,7 @@ export interface NeighborhoodSceneData {
 export interface HouseSceneData {
   houseId?: string;
   moduleId?: number;
+  moduleBackendId?: string;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -122,6 +123,7 @@ export interface RegistryData {
 
   // Data
   neighborhoodHouses?: { [key: string]: HousePosition[] };
+  moduleLessonsData?: { [key: string]: ModuleLessonsData };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -152,4 +154,13 @@ export interface Bounds {
   y: number;
   width: number;
   height: number;
+}
+
+/**
+ * Module lessons data stored in registry
+ */
+export interface ModuleLessonsData {
+  id: number;
+  title: string;
+  lessons: Lesson[];
 }
