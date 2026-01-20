@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
-import { Module, Lesson } from '../../../types/modules.backup';
+import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
 
 interface LessonViewProps {

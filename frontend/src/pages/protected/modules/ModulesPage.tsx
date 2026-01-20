@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { SuburbanBackground } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
-import { getModules } from '../../../services/learningAPI';
-import { useModuleLessons } from '../../../hooks/queries/useLearningQueries';
+import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 
 interface ModulesPageProps {}
 
@@ -60,8 +59,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [neighborhoodHousesData, setNeighborhoodHousesData] = useState<Record<string, HouseData[]>>({});
-  const [isLoadingHouses, setIsLoadingHouses] = useState(true);
   const [moduleLessonsData, setModuleLessonsData] = useState<Record<string, ModuleLessonsData>>({});
   
   // Initialize navState from GameManager's saved state or default to 'map'
@@ -85,7 +82,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     };
   });
 
-  // Use the existing hook to fetch module lessons
+  // REFACTOR: Use existing hooks instead of manual API calls
+  const { 
+    data: modulesData, 
+    isLoading: isLoadingModules, 
+    error: modulesError 
+  } = useModules();
+
   const { 
     data: lessonsData, 
     isLoading: isLoadingLessons,
@@ -108,72 +111,50 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     return positions[index % positions.length];
   };
 
-  // Fetch modules from backend and transform to house structure
-  useEffect(() => {
-    const fetchModulesAndMapToHouses = async () => {
-      setIsLoadingHouses(true);
-      try {
-        console.log('🏠 Fetching modules from backend to map to houses...');
-        const modules = await getModules();
-        
-        if (!modules || !Array.isArray(modules)) {
-          console.warn('⚠️ No modules returned from backend');
-          setIsLoadingHouses(false);
-          return;
-        }
+  // REFACTOR: Transform modules data to house structure using useMemo instead of useEffect
+  const neighborhoodHousesData = useMemo(() => {
+    if (!modulesData || !Array.isArray(modulesData)) {
+      console.warn('⚠️ No modules data available');
+      return { downtown: [] };
+    }
 
-        console.log(`✅ Fetched ${modules.length} modules from backend`);
-        
-        // Transform modules into house structure
-        const housesData: Record<string, HouseData[]> = {
-          downtown: modules.map((module: any, index: number) => {
-            const position = calculateHousePosition(index);
-            const houseType = `house${(index % 4) + 1}`;
-            
-            // Generate a stable frontend ID from the backend UUID
-            const generateFrontendId = (uuid: string): number => {
-              let hash = 0;
-              for (let i = 0; i < uuid.length; i++) {
-                const char = uuid.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-              }
-              return Math.abs(hash) + 10000;
-            };
+    console.log(`✅ Transforming ${modulesData.length} modules to house structure`);
 
-            const frontendId = generateFrontendId(module.id || `module-${index}`);
-            
-            return {
-              id: `house${index + 1}`,
-              name: module.title || `Module ${index + 1}`,
-              x: position.x,
-              y: position.y,
-              moduleId: frontendId,
-              moduleBackendId: module.id,
-              isLocked: module.is_locked !== undefined ? module.is_locked : false,
-              houseType: houseType,
-              description: module.description || '',
-              coinReward: module.nest_coins_reward || 0
-            };
-          })
-        };
-
-        console.log('🏠 House data created:', housesData);
-        setNeighborhoodHousesData(housesData);
-        setIsLoadingHouses(false);
-      } catch (error) {
-        console.error('❌ Failed to fetch modules for houses:', error);
-        
-        // Fallback to empty or sample data
-        setNeighborhoodHousesData({
-          downtown: []
-        });
-        setIsLoadingHouses(false);
+    // Generate a stable frontend ID from the backend UUID
+    const generateFrontendId = (uuid: string): number => {
+      let hash = 0;
+      for (let i = 0; i < uuid.length; i++) {
+        const char = uuid.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
       }
+      return Math.abs(hash) + 10000;
     };
 
-    fetchModulesAndMapToHouses();
-  }, []);
+    const housesData: Record<string, HouseData[]> = {
+      downtown: modulesData.map((module: any, index: number) => {
+        const position = calculateHousePosition(index);
+        const houseType = `house${(index % 4) + 1}`;
+        const frontendId = generateFrontendId(module.id || `module-${index}`);
+        
+        return {
+          id: `house${index + 1}`,
+          name: module.title || `Module ${index + 1}`,
+          x: position.x,
+          y: position.y,
+          moduleId: frontendId,
+          moduleBackendId: module.id,
+          isLocked: module.is_locked !== undefined ? module.is_locked : false,
+          houseType: houseType,
+          description: module.description || '',
+          coinReward: module.nest_coins_reward || 0
+        };
+      })
+    };
+
+    console.log('🏠 House data created from modules hook:', housesData);
+    return housesData;
+  }, [modulesData]);
 
   // Transform lessons data when it's available from the hook
   useEffect(() => {
@@ -414,7 +395,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   // Set navigation handlers, house data, and module lessons data in registry
   useEffect(() => {
     const game = GameManager.getGame();
-    if (!game || !isPhaserReady || !assetsLoaded || isLoadingHouses) return;
+    if (!game || !isPhaserReady || !assetsLoaded || isLoadingModules) return;
 
     const scenes = game.scene.getScenes(false);
     if (scenes.length > 0) {
@@ -431,12 +412,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       console.log('✅ Set neighborhood houses in registry:', neighborhoodHousesData);
       console.log('✅ Set module lessons data in registry:', moduleLessonsData);
     }
-  }, [isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses, moduleLessonsData]);
+  }, [isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingModules, moduleLessonsData]);
 
   // Handle scene transitions
   useEffect(() => {
     const game = GameManager.getGame();
-    if (!game || !isPhaserReady || !assetsLoaded || isLoadingHouses) return;
+    if (!game || !isPhaserReady || !assetsLoaded || isLoadingModules) return;
 
     switch (navState.currentView) {
       case 'map':
@@ -480,7 +461,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         if (game.scene.isActive('HouseScene')) game.scene.sleep('HouseScene');
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingHouses]);
+  }, [navState, isPhaserReady, assetsLoaded, neighborhoodHousesData, isLoadingModules]);
 
   // Handle resize
   useEffect(() => {
@@ -525,10 +506,17 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
-      {/* Loading indicator for houses */}
-      {isLoadingHouses && (
+      {/* Loading indicator for modules - REFACTOR: Use hook loading state */}
+      {isLoadingModules && (
         <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
           <p className="text-sm text-gray-600">Loading modules...</p>
+        </div>
+      )}
+
+      {/* Error indicator for modules - REFACTOR: Use hook error state */}
+      {modulesError && (
+        <div className="absolute top-4 right-4 bg-red-100 px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-red-600">Failed to load modules</p>
         </div>
       )}
 

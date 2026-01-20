@@ -6,7 +6,6 @@ import moduleReducer from './slices/moduleSlice'
 import quizReducer from './slices/quizSlice'
 import uiReducer from './slices/uiSlice'
 import coinReducer from './slices/coinSlice'
-import gameStateReducer from './slices/gameStateSlice'
 
 const modulesPersistConfig = {
   key: 'modules',
@@ -35,26 +34,10 @@ const quizPersistConfig = {
   whitelist: [] // Don't persist quiz state, should restart fresh each time
 }
 
-const gameStatePersistConfig = {
-  key: 'gameState',
-  storage,
-  whitelist: [
-    'coinBalance',
-    'unlockedNeighborhoods', 
-    'unlockedHouses',
-    'neighborhoodProgress',
-    'houseProgress',
-    'totalLearningProgress',
-    'streakDays',
-    'lastActivityDate'
-  ]
-}
-
 const persistedModuleReducer = persistReducer(modulesPersistConfig, moduleReducer)
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer)
 const persistedCoinReducer = persistReducer(coinPersistConfig, coinReducer)
 const persistedQuizReducer = persistReducer(quizPersistConfig, quizReducer)
-const persistedGameStateReducer = persistReducer(gameStatePersistConfig, gameStateReducer)
 
 export const store = configureStore({
   reducer: {
@@ -63,7 +46,6 @@ export const store = configureStore({
     quiz: persistedQuizReducer,
     ui: uiReducer,
     coins: persistedCoinReducer,
-    gameState: persistedGameStateReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
