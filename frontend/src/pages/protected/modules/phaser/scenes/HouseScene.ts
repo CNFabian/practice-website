@@ -99,7 +99,6 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
-    this.setupCamera();
     this.createEnvironment();
     this.createUI();
     this.createBirdWithEntrance();
@@ -115,9 +114,7 @@ export default class HouseScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // SETUP METHODS
   // ═══════════════════════════════════════════════════════════
-  private setupCamera(): void {
-    this.cameras.main.fadeIn(300, 254, 243, 199);
-  }
+ 
 
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResize, this);
@@ -625,7 +622,6 @@ export default class HouseScene extends Phaser.Scene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToNeighborhood(callback: () => void): void {
-    this.cameras.main.fadeOut(300, 254, 243, 199);
-    this.cameras.main.once('camerafadeoutcomplete', callback);
+    callback();
   }
 }

@@ -301,8 +301,6 @@ export default class MapScene extends Phaser.Scene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToNeighborhood(callback: () => void): void {
-    this.cameras.main.fadeOut(300, 0, 0, 0);
-
-    this.cameras.main.once('camerafadeoutcomplete', callback);
+    callback();
   }
 }

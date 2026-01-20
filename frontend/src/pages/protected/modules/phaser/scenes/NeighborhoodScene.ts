@@ -78,7 +78,6 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   create() {
-    this.setupCamera();
     this.createUI();
     this.setupEventListeners();
   }
@@ -91,10 +90,6 @@ export default class NeighborhoodScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // SETUP METHODS
   // ═══════════════════════════════════════════════════════════
-  private setupCamera(): void {
-    this.cameras.main.fadeIn(300, 254, 215, 170);
-  }
-
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResize, this);
   }
@@ -683,12 +678,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToHouse(callback: () => void): void {
-    this.cameras.main.fadeOut(300, 254, 215, 170);
-    this.cameras.main.once('camerafadeoutcomplete', callback);
+    callback();
   }
 
   private transitionToMap(callback: () => void): void {
-    this.cameras.main.fadeOut(300, 254, 215, 170);
-    this.cameras.main.once('camerafadeoutcomplete', callback);
+    callback();
   }
 }
