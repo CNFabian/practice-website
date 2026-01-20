@@ -93,3 +93,9 @@ export { default as Platform1 } from './images/phaser/platform1.png'
 // Avatar Images for Phaser Scenes
 export { default as BirdIdle } from './images/phaser/bird_idle.svg'
 export { default as BirdFly } from './images/phaser/bird_flight.svg'
+
+// Onboarding Images
+export { default as OnboardingImage1 } from './images/onboarding/onboarding_1.png'
+export { default as OnboardingImage2 } from './images/onboarding/onboarding_2.png'
+export { default as OnboardingImage3_5 } from './images/onboarding/onboarding_3_5.png'
+export { default as OnboardingImage4 } from './images/onboarding/onboarding_4.png'

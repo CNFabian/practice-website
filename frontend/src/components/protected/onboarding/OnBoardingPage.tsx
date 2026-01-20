@@ -1,503 +1,585 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LoadingSpinner from '../../common/LoadingSpinner';
+import {
+  OnboardingImage1,
+  OnboardingImage2,
+  OnboardingImage3_5,
+  OnboardingImage4
+} from '../../../assets';
 import {
   getOnboardingOptions,
-  getOnboardingDataFromLocalStorage,
-  saveStep1ToLocalStorage,
-  saveStep3ToLocalStorage,
-  saveStep4ToLocalStorage,
-  saveStep5ToLocalStorage,
-  clearOnboardingDataFromLocalStorage,
-  type CompleteOnboardingData,
+  completeStep2,
+  completeStep3,
+  completeStep4,
+  completeStep5,
   type OnboardingOptions
 } from '../../../services/onBoardingAPI';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
-import { useCompleteOnboardingStep } from '../../../hooks/mutations/useCompleteOnboardingStep';
-
-const AVATAR_ICON: Record<string, string> = {
-  'Professional': '👔',
-  'Student': '🎓',
-  'Family': '👨‍👩‍👧‍👦',
-  'Young Professional': '💼',
-  'Entrepreneur': '🚀',
-}
-
-const cx = (...c: (string | false)[]) => c.filter(Boolean).join(' ')
 
 interface OnBoardingPageProps {
   isOpen: boolean;
   onClose?: () => void;
 }
 
-export default function OnBoardingPage({ isOpen, onClose }: OnBoardingPageProps) {
-  console.log('OnBoardingPage: Component rendering, isOpen:', isOpen);
-  
-  const nav = useNavigate();
-  const { data: onboardingStatus, refetch: refetchOnboardingStatus } = useOnboardingStatus();
-  const { mutate: completeOnboardingMutation, isPending: isCompletingOnboarding } = useCompleteOnboardingStep();
+interface ZipcodeData {
+  city: string;
+  state: string;
+  zipcode: string;
+}
 
+const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
+  const nav = useNavigate();
+  const { refetch: refetchOnboardingStatus } = useOnboardingStatus();
+
+  // State management
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
   const [onboardingOptions, setOnboardingOptions] = useState<OnboardingOptions | null>(null);
 
-  const loading = isCompletingOnboarding;
+  // Form data state - NO PRESELECTED VALUES
+  const [formData, setFormData] = useState({
+    has_realtor: null as boolean | null,
+    has_loan_officer: null as boolean | null,
+    wants_expert_contact: '',
+    homeownership_timeline_months: 28, // Default: 2 years 4 months
+    zipcode: ''
+  });
 
-  const STEPS = useMemo(() => {
-    if (!onboardingOptions) return [];
-    
-    return [
-      { 
-        id: 'avatar', 
-        label: "Let's get started!\nChoose your avatar:", 
-        options: onboardingOptions.avatars.map(avatar => avatar.name),
-        helpText: 'Your avatar will represent you throughout your learning journey!'
-      },
-      { 
-        id: 'expert_contact', 
-        label: "Would you like to be contacted by our real estate experts for personalized guidance?", 
-        options: onboardingOptions.expert_contact_options.map(option => option.name),
-        helpText: 'Our experts can help you navigate the home buying process with confidence.'
-      },
-      { 
-        id: 'Home Ownership', 
-        label: "When are you looking to buy your home?", 
-        options: [],
-        helpText: 'This helps us tailor your learning experience to your timeline.'
-      },
-      { 
-        id: 'city', 
-        label: "Finally, let's find your future home base!\nEnter your zipcode:", 
-        options: [],
-        helpText: onboardingOptions.zipcode_validation.description
-      },
-    ];
-  }, [onboardingOptions]);
+  // Zipcode validation state
+  const [zipcodeInput, setZipcodeInput] = useState('');
+  const [isValidatingZipcode, setIsValidatingZipcode] = useState(false);
+  const [zipcodeData, setZipcodeData] = useState<ZipcodeData | null>(null);
+  const [zipcodeError, setZipcodeError] = useState<string | null>(null);
 
+  // Load onboarding options on mount
   useEffect(() => {
-    console.log('OnBoarding: useEffect triggered, isOpen:', isOpen);
-    
-    if (!isOpen) {
-      console.log('OnBoarding: Modal is not open, skipping initialization');
-      return;
-    }
-
-    console.log('OnBoarding: Modal opened, starting initialization...');
-
-    const initializeOnboarding = async () => {
+    const loadOptions = async () => {
       try {
-        console.log('OnBoarding: Checking onboarding status...');
-        setIsInitializing(true);
-
         const options = await getOnboardingOptions();
         setOnboardingOptions(options);
-        console.log('OnBoarding: Options loaded:', options);
-
-        const status = onboardingStatus;
-        console.log('OnBoarding: Status received:', status);
-
-        const isCompleted = status?.completed === true;
-        console.log('OnBoarding: Parsed - isCompleted:', isCompleted);
-
-        if (isCompleted) {
-          console.log('OnBoarding: User has already completed onboarding');
-          if (onClose) {
-            onClose();
-          } else {
-            nav('/app', { replace: true });
-          }
-          return;
-        }
-
-        const localData = getOnboardingDataFromLocalStorage();
-        console.log('OnBoarding: Local storage data:', localData);
-
-        const mappedAnswers: Record<string, any> = {};
-
-        if (localData.selected_avatar) {
-          const avatar = options.avatars.find(a => a.id === localData.selected_avatar);
-          if (avatar) {
-            mappedAnswers.avatar = avatar.name;
-          }
-        }
-
-        if (localData.wants_expert_contact) {
-          mappedAnswers.expert_contact = localData.wants_expert_contact;
-        }
-
-        if (localData.homeownership_timeline_months) {
-          mappedAnswers['Home Ownership'] = localData.homeownership_timeline_months;
-        }
-
-        if (localData.zipcode) {
-          mappedAnswers.city = localData.zipcode;
-        }
-
-        setAnswers(mappedAnswers);
-
-        let step = 0;
-        if (mappedAnswers.avatar) step = Math.max(step, 1);
-        if (mappedAnswers.expert_contact) step = Math.max(step, 2);
-        if (mappedAnswers['Home Ownership']) step = Math.max(step, 3);
-        if (mappedAnswers.city) step = Math.max(step, 4);
-
-        setCurrentStep(step);
-        console.log('OnBoarding: Restored step:', step);
-
-      } catch (error) {
-        console.error('OnBoarding: Initialization error:', error);
-        setError('Failed to load onboarding. Please try again.');
-      } finally {
-        console.log('OnBoarding: Initialization complete, showing form');
-        setIsInitializing(false);
-        console.log('OnBoarding: Setting isInitializing to false');
+      } catch (err) {
+        console.error('Failed to load onboarding options:', err);
+        setError('Failed to load onboarding options');
       }
     };
 
-    initializeOnboarding();
+    if (isOpen) {
+      loadOptions();
+    }
   }, [isOpen]);
 
-  // Handle answer selection
-  const handleAnswerSelect = async (value: string | number) => {
-    const step = STEPS[currentStep];
-    if (!step) return;
-    
-    setAnswers(prev => ({ ...prev, [step.id]: value }));
-    
-    try {
-      console.log(`OnBoarding: Saving step ${step.id} with value:`, value);
-      
-      // Save to localStorage based on step
-      switch (step.id) {
-        case 'avatar':
-          const avatar = onboardingOptions?.avatars.find(a => a.name === value);
-          if (avatar) {
-            saveStep1ToLocalStorage({ selected_avatar: avatar.id });
-          }
-          break;
-        case 'expert_contact':
-          saveStep3ToLocalStorage({ wants_expert_contact: value as string });
-          break;
-        case 'Home Ownership':
-          saveStep4ToLocalStorage({ homeownership_timeline_months: value as number });
-          break;
-        case 'city':
-          const zipcode = Array.isArray(value) ? value[0] : value;
-          saveStep5ToLocalStorage({ zipcode: zipcode as string });
-          break;
-        default:
-          console.warn('OnBoarding: Unknown step ID:', step.id);
+  // Validate zipcode when user types
+  useEffect(() => {
+    const validateZipcode = async () => {
+      // Only validate if input is exactly 5 digits
+      if (zipcodeInput.length !== 5 || !/^\d{5}$/.test(zipcodeInput)) {
+        setZipcodeData(null);
+        setZipcodeError(null);
+        setFormData({ ...formData, zipcode: '' });
+        return;
       }
-      
-      console.log(`OnBoarding: Step ${step.id} saved to localStorage successfully`);
-      
-    } catch (error) {
-      console.error(`OnBoarding: Error saving step ${step.id} to localStorage:`, error);
-      setError(`Failed to save ${step.id} information. Please try again.`);
-      throw error;
-    }
-  };
 
-  const handleCompleteOnboarding = () => {
-    setError(null);
+      setIsValidatingZipcode(true);
+      setZipcodeError(null);
 
-    console.log('OnBoarding: Completing all steps...');
+      try {
+        const response = await fetch(`https://api.zippopotam.us/us/${zipcodeInput}`);
+        
+        if (!response.ok) {
+          throw new Error('Invalid zipcode');
+        }
 
-    const localData = getOnboardingDataFromLocalStorage();
-    console.log('OnBoarding: Final localStorage data:', localData);
+        const data = await response.json();
+        
+        // Extract city and state from response
+        const place = data.places[0];
+        const zipcodeInfo: ZipcodeData = {
+          city: place['place name'],
+          state: place['state abbreviation'],
+          zipcode: zipcodeInput
+        };
 
-    const onboardingData: CompleteOnboardingData = {
-      selected_avatar: localData.selected_avatar || '',
-      has_realtor: localData.has_realtor ?? false,
-      has_loan_officer: localData.has_loan_officer ?? false,
-      wants_expert_contact: localData.wants_expert_contact || answers.expert_contact,
-      homeownership_timeline_months: localData.homeownership_timeline_months || answers['Home Ownership'],
-      zipcode: localData.zipcode || answers.city
+        setZipcodeData(zipcodeInfo);
+        setFormData({ ...formData, zipcode: zipcodeInput });
+        setZipcodeError(null);
+      } catch (err) {
+        console.error('Zipcode validation error:', err);
+        setZipcodeData(null);
+        setZipcodeError('Invalid zipcode. Please enter a valid US zipcode.');
+        setFormData({ ...formData, zipcode: '' });
+      } finally {
+        setIsValidatingZipcode(false);
+      }
     };
 
-    console.log('OnBoarding: Final payload to backend:', onboardingData);
+    // Debounce the validation
+    const timeoutId = setTimeout(validateZipcode, 500);
+    return () => clearTimeout(timeoutId);
+  }, [zipcodeInput]);
 
-    completeOnboardingMutation(onboardingData, {
-      onSuccess: async () => {
-        console.log('OnBoarding: All steps completed successfully');
-        clearOnboardingDataFromLocalStorage();
+  // Progress calculation (6 total steps)
+  const progress = ((currentStep + 1) / 6) * 100;
 
-        console.log('OnBoarding: Waiting for backend status to update...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        let attempts = 0;
-        const maxAttempts = 5;
-        let isActuallyCompleted = false;
-
-        while (attempts < maxAttempts && !isActuallyCompleted) {
-          try {
-            console.log(`OnBoarding: Verification attempt ${attempts + 1}`);
-            const { data: status } = await refetchOnboardingStatus();
-            console.log(`OnBoarding: Status check result:`, status);
-
-            if (status?.completed) {
-              isActuallyCompleted = true;
-              console.log('OnBoarding: Backend confirms completion!');
-              break;
-            } else {
-              console.log('OnBoarding: Backend still shows incomplete, waiting...');
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              attempts++;
-            }
-          } catch (error) {
-            console.error('OnBoarding: Error checking status during verification:', error);
-            attempts++;
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-
-        if (!isActuallyCompleted) {
-          console.warn('OnBoarding: Backend never confirmed completion after', maxAttempts, 'attempts');
-          console.log('OnBoarding: Proceeding anyway as API confirmed successful completion');
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        if (onClose) {
-          console.log('OnBoarding: Calling onClose callback');
-          onClose();
-        } else {
-          console.log('OnBoarding: Navigating to /app');
-          nav('/app', { replace: true });
-        }
-      },
-      onError: (error) => {
-        console.error('OnBoarding: Error completing onboarding:', error);
-        setError('Failed to complete onboarding. Please try again.');
-      },
-    });
-  };
-
+  // Handle next button click
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleComplete = () => {
-    if (currentStep === STEPS.length - 1) {
-      handleCompleteOnboarding();
-    } else {
-      handleNext();
-    }
-  };
-
-  const isCurrentStepCompleted = () => {
-    const step = STEPS[currentStep];
-    if (!step) return false;
-    
-    switch (step.id) {
-      case 'avatar':
-        return !!answers.avatar;
-      case 'expert_contact':
-        return !!answers.expert_contact;
-      case 'Home Ownership':
-        return !!answers['Home Ownership'];
-      case 'city':
-        return !!answers.city && answers.city.length >= 5;
+  // Check if current step can proceed
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0: // Welcome screen
+      case 1: // Intro screen
+        return true;
+      case 2: // Professionals screen
+        return formData.has_realtor !== null && formData.has_loan_officer !== null;
+      case 3: // Expert contact
+        return formData.wants_expert_contact !== '';
+      case 4: // Timeline
+        return formData.homeownership_timeline_months > 0;
+      case 5: // City/Zipcode
+        return formData.zipcode !== '' && zipcodeData !== null;
       default:
         return false;
     }
   };
 
-  const renderAvatarStep = () => {
-    if (!onboardingOptions) return null;
-    
-    return (
-      <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-        {onboardingOptions.avatars.map((avatar) => (
-          <button
-            key={avatar.id}
-            onClick={() => handleAnswerSelect(avatar.name)}
-            className={cx(
-              'p-6 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-3',
-              answers.avatar === avatar.name
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            )}
-          >
-            <div className="text-4xl">
-              {AVATAR_ICON[avatar.name] || '👤'}
-            </div>
-            <span className="font-medium text-gray-700">{avatar.name}</span>
-          </button>
-        ))}
-      </div>
-    );
+  // Handle final submission
+  const handleComplete = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Call individual step endpoints
+      
+      // Step 2: Professionals (has_realtor, has_loan_officer)
+      await completeStep2({
+        has_realtor: formData.has_realtor ?? false,
+        has_loan_officer: formData.has_loan_officer ?? false
+      });
+
+      // Step 3: Expert Contact
+      await completeStep3({
+        wants_expert_contact: formData.wants_expert_contact
+      });
+
+      // Step 4: Timeline
+      await completeStep4({
+        homeownership_timeline_months: formData.homeownership_timeline_months
+      });
+
+      // Step 5: Zipcode
+      await completeStep5({
+        zipcode: formData.zipcode
+      });
+
+      console.log('All onboarding steps completed successfully');
+
+      // Wait for backend to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await refetchOnboardingStatus();
+
+      // Close or navigate
+      if (onClose) {
+        onClose();
+      } else {
+        nav('/app', { replace: true });
+      }
+    } catch (err) {
+      console.error('Failed to complete onboarding:', err);
+      setError('Failed to complete onboarding. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const renderExpertContactStep = () => {
-    if (!onboardingOptions) return null;
+  // Convert months to years and months display
+  const formatTimeline = (months: number) => {
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
     
-    return (
-      <div className="space-y-3 max-w-md mx-auto">
-        {onboardingOptions.expert_contact_options.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => handleAnswerSelect(option.name)}
-            className={cx(
-              'w-full p-4 rounded-lg border-2 transition-all duration-200 text-left',
-              answers.expert_contact === option.name
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            )}
-          >
-            <span className="font-medium text-gray-700">{option.name}</span>
-          </button>
-        ))}
-      </div>
-    );
+    if (years === 0) {
+      return `${months} month${months !== 1 ? 's' : ''}`;
+    } else if (remainingMonths === 0) {
+      return `${years} year${years !== 1 ? 's' : ''}`;
+    } else {
+      return `${years} year${years !== 1 ? 's' : ''} ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
+    }
   };
 
-  const renderTimelineStep = () => {
-    if (!onboardingOptions) return null;
-    
-    return (
-      <div className="space-y-3 max-w-md mx-auto">
-        {onboardingOptions.timeline_options.map((option) => (
-          <button
-            key={option.months}
-            onClick={() => handleAnswerSelect(option.months)}
-            className={cx(
-              'w-full p-4 rounded-lg border-2 transition-all duration-200 text-left',
-              answers['Home Ownership'] === option.months
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            )}
-          >
-            <span className="font-medium text-gray-700">{option.label}</span>
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  const renderZipcodeStep = () => {
-    if (!onboardingOptions) return null;
-    
-    return (
-      <div className="max-w-md mx-auto">
-        <input
-          type="text"
-          value={answers.city || ''}
-          onChange={(e) => handleAnswerSelect(e.target.value)}
-          placeholder="Enter your zipcode"
-          pattern={onboardingOptions.zipcode_validation.pattern}
-          className="w-full p-4 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-lg text-center"
-          maxLength={10}
-        />
-        {answers.city && answers.city.length >= 5 && (
-          <p className="mt-2 text-green-600 text-center">✓ Valid zipcode</p>
-        )}
-      </div>
-    );
-  };
-
-  if (!isOpen) {
-    console.log('OnBoardingPage: isOpen is false, returning null');
-    return null;
-  }
-
-  if (isInitializing) {
-    console.log('OnBoardingPage: Still initializing, showing spinner');
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-8">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
-  }
-
-  const currentStepData = STEPS[currentStep];
-  if (!currentStepData) {
-    console.log('OnBoardingPage: No current step data, returning null');
-    return null;
-  }
-
-  console.log('OnBoardingPage: Rendering modal form');
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Welcome to Nest Navigate!
-            </h2>
-            <div className="text-sm text-gray-500">
-              Step {currentStep + 1} of {STEPS.length}
-            </div>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+    <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+      {/* Progress Bar */}
+      <div className="w-full px-8 pt-8 pb-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+              className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700">{error}</p>
+      {/* Content Area */}
+      <div className="flex-1 flex items-center justify-center px-8 pb-16">
+        <div className="max-w-2xl w-full">
+          
+          {/* Screen 1: Welcome */}
+          {currentStep === 0 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex flex-col items-center">
+                <img src={OnboardingImage1} alt="Welcome" className="w-64 h-64 object-contain mb-6" />
+                <div className="bg-white rounded-3xl shadow-lg px-8 py-4 inline-block">
+                  <h1 className="text-2xl font-semibold text-gray-800">
+                    Hi! Welcome to NestNavigate!
+                  </h1>
+                </div>
+              </div>
+              <button
+                onClick={handleNext}
+                className="mx-auto block px-12 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full text-lg font-medium transition-colors shadow-md"
+              >
+                CONTINUE
+              </button>
             </div>
           )}
 
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2 whitespace-pre-line">
-              {currentStepData.label}
-            </h3>
-            {currentStepData.helpText && (
-              <p className="text-gray-600">{currentStepData.helpText}</p>
-            )}
-          </div>
+          {/* Screen 2: Let's Build */}
+          {currentStep === 1 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex flex-col items-center">
+                <img src={OnboardingImage2} alt="Let's Build" className="w-64 h-64 object-contain mb-6" />
+                <div className="bg-white rounded-3xl shadow-lg px-8 py-4 inline-block">
+                  <h1 className="text-2xl font-semibold text-gray-800">
+                    Let's build the learning path for you!
+                  </h1>
+                </div>
+              </div>
+              <button
+                onClick={handleNext}
+                className="mx-auto block px-12 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full text-lg font-medium transition-colors shadow-md"
+              >
+                CONTINUE
+              </button>
+            </div>
+          )}
 
-          <div className="mb-8">
-            {currentStepData.id === 'avatar' && renderAvatarStep()}
-            {currentStepData.id === 'expert_contact' && renderExpertContactStep()}
-            {currentStepData.id === 'Home Ownership' && renderTimelineStep()}
-            {currentStepData.id === 'city' && renderZipcodeStep()}
-          </div>
-        </div>
+          {/* Screen 3: Professionals */}
+          {currentStep === 2 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <img src={OnboardingImage3_5} alt="Question" className="w-16 h-16 object-contain" />
+                <h1 className="text-2xl font-semibold text-gray-800">
+                  Are you working with a ...
+                </h1>
+              </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 flex justify-between">
-          <button
-            onClick={handleBack}
-            disabled={currentStep === 0}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Back
-          </button>
-          
-          <button
-            onClick={handleComplete}
-            disabled={!isCurrentStepCompleted() || loading}
-            className="px-8 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {loading && <LoadingSpinner />}
-            {currentStep === STEPS.length - 1 ? 'Complete' : 'Next'}
-          </button>
+              <div className="space-y-8">
+                {/* Real Estate Officer */}
+                <div>
+                  <h2 className="text-xl font-semibold text-indigo-600 mb-4">Real Estate Officer?</h2>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => setFormData({ ...formData, has_realtor: true })}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_realtor === true
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      Yes, I am
+                    </button>
+                    <button
+                      onClick={() => setFormData({ ...formData, has_realtor: false })}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_realtor === false
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      Not yet
+                    </button>
+                  </div>
+                </div>
+
+                {/* Loan Officer */}
+                <div>
+                  <h2 className="text-xl font-semibold text-indigo-600 mb-4">Loan Officer?</h2>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => setFormData({ ...formData, has_loan_officer: true })}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_loan_officer === true
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      Yes, I am
+                    </button>
+                    <button
+                      onClick={() => setFormData({ ...formData, has_loan_officer: false })}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_loan_officer === false
+                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      Not yet
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
+                  canProceed()
+                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                CONTINUE
+              </button>
+            </div>
+          )}
+
+          {/* Screen 4: Expert Contact */}
+          {currentStep === 3 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <img src={OnboardingImage4} alt="Expert Contact" className="w-16 h-16 object-contain" />
+                <h1 className="text-xl font-semibold text-gray-800">
+                  Would you like to get in contact with an expert?
+                </h1>
+              </div>
+
+              <div className="space-y-4 max-w-md mx-auto">
+                {onboardingOptions?.expert_contact_options.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setFormData({ ...formData, wants_expert_contact: option.name })}
+                    className={`w-full px-8 py-4 rounded-xl border-2 transition-all ${
+                      formData.wants_expert_contact === option.name
+                        ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
+                    }`}
+                  >
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
+                  canProceed()
+                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                CONTINUE
+              </button>
+            </div>
+          )}
+
+          {/* Screen 5: Timeline Slider */}
+          {currentStep === 4 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <img src={OnboardingImage3_5} alt="Timeline" className="w-16 h-16 object-contain" />
+                <h1 className="text-xl font-semibold text-gray-800">
+                  When do you want to achieve homeownership?
+                </h1>
+              </div>
+
+              <div className="max-w-xl mx-auto space-y-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-indigo-600 mb-2">
+                    {formatTimeline(formData.homeownership_timeline_months)}
+                  </div>
+                  <div className="text-sm text-gray-500">Estimated timeline</div>
+                </div>
+
+                <div className="px-4">
+                  <input
+                    type="range"
+                    min="6"
+                    max="60"
+                    value={formData.homeownership_timeline_months}
+                    onChange={(e) => setFormData({ ...formData, homeownership_timeline_months: parseInt(e.target.value) })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb 100%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-sm text-gray-600 mt-2">
+                    <span>6 months</span>
+                    <span>5 years</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
+                  canProceed()
+                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                CONTINUE
+              </button>
+            </div>
+          )}
+
+          {/* Screen 6: Zipcode */}
+          {currentStep === 5 && (
+            <div className="text-center space-y-8 animate-fadeIn">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <img src={OnboardingImage3_5} alt="Location" className="w-16 h-16 object-contain" />
+                <h1 className="text-xl font-semibold text-gray-800">
+                  Finally, let's find your future home base!
+                </h1>
+              </div>
+
+              <div className="max-w-xl mx-auto space-y-4">
+                <p className="text-sm text-indigo-600">Enter your zipcode</p>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter 5-digit zipcode"
+                    value={zipcodeInput}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                      setZipcodeInput(value);
+                    }}
+                    maxLength={5}
+                    className={`w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 text-lg transition-colors ${
+                      zipcodeData
+                        ? 'border-green-500 focus:ring-green-500'
+                        : zipcodeError
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-indigo-500 focus:ring-indigo-500'
+                    }`}
+                  />
+                  
+                  {/* Loading Spinner */}
+                  {isValidatingZipcode && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  
+                  {/* Success Checkmark */}
+                  {zipcodeData && !isValidatingZipcode && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-2xl">
+                      ✓
+                    </div>
+                  )}
+                  
+                  {/* Error X */}
+                  {zipcodeError && !isValidatingZipcode && zipcodeInput.length === 5 && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 text-2xl">
+                      ✕
+                    </div>
+                  )}
+                </div>
+
+                {/* Zipcode Info Display */}
+                {zipcodeData && (
+                  <div className="bg-green-50 border-2 border-green-500 rounded-xl p-4 text-left">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <span className="text-lg">✓</span>
+                      <div>
+                        <p className="font-semibold text-lg">{zipcodeData.city}, {zipcodeData.state}</p>
+                        <p className="text-sm text-green-600">Zipcode: {zipcodeData.zipcode}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {zipcodeError && (
+                  <div className="text-red-600 text-sm">{zipcodeError}</div>
+                )}
+
+                {/* Helper Text */}
+                {!zipcodeInput && (
+                  <p className="text-sm text-gray-500">Please enter a valid 5-digit US zipcode</p>
+                )}
+              </div>
+
+              {error && (
+                <div className="text-red-600 text-sm font-medium">{error}</div>
+              )}
+
+              <button
+                onClick={handleComplete}
+                disabled={!canProceed() || isLoading}
+                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
+                  canProceed() && !isLoading
+                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isLoading ? 'LOADING...' : "LET'S GO"}
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* Custom CSS for slider */}
+      <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #6366f1;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #6366f1;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+export default OnBoardingPage;
