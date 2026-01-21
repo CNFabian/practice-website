@@ -193,10 +193,15 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
         return {
           id: frontendId,
+          backendId: lesson.id,
           title: lesson.title || `Lesson ${index + 1}`,
           type: 'Video/Reading',
           completed: lesson.is_completed || false,
-          locked: false // You can add lock logic based on prerequisites
+          locked: false, // You can add lock logic based on prerequisites
+          duration: `${lesson.estimated_duration_minutes || 10} min`,
+          description: lesson.description || '',
+          image: lesson.image_url || '/placeholder-lesson.jpg',
+          coins: lesson.nest_coins_reward || 0
         };
       })
     };

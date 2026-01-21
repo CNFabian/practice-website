@@ -2,11 +2,22 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
+import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
+import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 
 interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
+}
+
+// Updated interface with is_correct field
+interface BackendQuizAnswer {
+  id: string;
+  question_id: string;
+  answer_text: string;
+  order_index: number;
+  is_correct?: boolean; // Optional since backend may not always provide it
 }
 
 interface BackendQuizQuestion {
@@ -16,12 +27,7 @@ interface BackendQuizQuestion {
   question_type: string;
   explanation: string;
   order_index: number;
-  answers: {
-    id: string;
-    question_id: string;
-    answer_text: string;
-    order_index: number;
-  }[];
+  answers: BackendQuizAnswer[];
 }
 
 const MOCK_QUIZ_QUESTIONS = [
@@ -54,9 +60,23 @@ const MOCK_QUIZ_QUESTIONS = [
   }
 ];
 
+// Improved transform function with better error handling
 const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
+  if (!backendQuestions || !Array.isArray(backendQuestions)) {
+    console.warn('⚠️ Invalid quiz questions data');
+    return [];
+  }
+
   return backendQuestions.map((q: BackendQuizQuestion, index: number) => {
     const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
+    
+    // Find correct answer - try is_correct field first, fallback to first answer
+    let correctAnswerIndex = sortedAnswers.findIndex(ans => ans.is_correct === true);
+    
+    if (correctAnswerIndex === -1) {
+      console.warn('⚠️ No is_correct field found, assuming first answer is correct for question:', q.id);
+      correctAnswerIndex = 0;
+    }
     
     return {
       id: index + 1, 
@@ -64,19 +84,25 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
       options: sortedAnswers.map((answer, answerIndex) => ({
         id: String.fromCharCode(97 + answerIndex),
         text: answer.answer_text,
-        isCorrect: answerIndex === 0
+        isCorrect: answer.is_correct !== undefined ? answer.is_correct : answerIndex === 0
       })),
       explanation: {
         correct: q.explanation || "Correct! Well done.",
         incorrect: {
           ...Object.fromEntries(
-            sortedAnswers.slice(1).map((_, idx) => [
-              String.fromCharCode(98 + idx),
-              { 
-                why_wrong: "This is not the correct answer. Please review the lesson content.",
-                confusion_reason: "This option may seem correct but lacks the key elements of the right answer."
-              }
-            ])
+            sortedAnswers
+              .map((answer, idx) => ({
+                id: String.fromCharCode(97 + idx),
+                answer
+              }))
+              .filter(item => !item.answer.is_correct && item.id !== String.fromCharCode(97 + correctAnswerIndex))
+              .map(item => [
+                item.id,
+                { 
+                  why_wrong: "This is not the correct answer. Please review the lesson content.",
+                  confusion_reason: "This option may seem correct but lacks the key elements of the right answer."
+                }
+              ])
           )
         }
       }
@@ -107,9 +133,52 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const { goToLesson } = useModules();
 
-  const { data: backendLessonData, isLoading: isLoadingLesson, error: lessonError } = useLesson(lesson?.backendId || '');
-  const { data: quizData } = useLessonQuiz(lesson?.backendId || '');
+  // Validate backend ID before making API calls
+  const isValidBackendId = useMemo(() => {
+    const id = lesson?.backendId;
+    if (!id) {
+      console.warn('⚠️ No backendId found for lesson:', lesson?.id, lesson?.title);
+      return false;
+    }
+    
+    // Check if it's a UUID format (8-4-4-4-12 hex characters with dashes)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidUUID = uuidRegex.test(String(id));
+    
+    if (!isValidUUID) {
+      console.warn('⚠️ Backend ID is not a valid UUID format:', id, '(expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+      return false;
+    }
+    
+    console.log('✅ Valid backend UUID for lesson:', id);
+    return true;
+  }, [lesson?.backendId, lesson?.id, lesson?.title]);
+
+  // Conditional API calls - only execute if we have valid backend ID
+  const { 
+    data: backendLessonData, 
+    isLoading: isLoadingLesson, 
+    error: lessonError 
+  } = useLesson(isValidBackendId ? lesson.backendId! : '');
   
+  const { 
+    data: quizData,
+    isLoading: isLoadingQuiz,
+    error: quizError
+  } = useLessonQuiz(isValidBackendId ? lesson.backendId! : '');
+  
+  // Mutations with validation
+  const { mutate: completeLessonMutation } = useCompleteLesson(
+    isValidBackendId ? lesson.backendId! : '', 
+    module?.backendId || ''
+  );
+  
+  const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(
+    isValidBackendId ? lesson.backendId! : '', 
+    module?.backendId || ''
+  );
+
+  // Transform quiz questions with memoization
   const transformedQuizQuestions = useMemo(() => {
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
       console.log('🔄 Using backend quiz questions:', quizData.length);
@@ -132,10 +201,60 @@ const LessonView: React.FC<LessonViewProps> = ({
     [module.lessons, currentLessonIndex]
   );
 
+  // Safe handler for completing lesson
+  const handleCompleteLesson = useCallback(() => {
+    if (!isValidBackendId || !module?.backendId) {
+      console.error('❌ Cannot complete lesson - invalid backend IDs');
+      console.error('Lesson backendId:', lesson?.backendId);
+      console.error('Module backendId:', module?.backendId);
+      // Still allow navigation even if backend call fails
+      if (nextLesson) {
+        goToLesson(nextLesson.id, module.id);
+      }
+      return;
+    }
+    
+    completeLessonMutation({ lessonId: lesson.backendId! }, {
+      onSuccess: () => {
+        console.log('✅ Lesson completed successfully');
+        if (nextLesson) {
+          goToLesson(nextLesson.id, module.id);
+        }
+      },
+      onError: (error) => {
+        console.error('❌ Failed to complete lesson:', error);
+        // Still allow navigation even if backend call fails
+        if (nextLesson) {
+          goToLesson(nextLesson.id, module.id);
+        }
+      }
+    });
+  }, [isValidBackendId, module?.backendId, module?.id, completeLessonMutation, nextLesson, goToLesson, lesson?.backendId]);
+
+  // Safe handler for updating progress
+  const handleVideoProgress = useCallback((seconds: number) => {
+    if (!isValidBackendId || !module?.backendId) {
+      console.warn('⚠️ Cannot update progress - invalid backend IDs');
+      return;
+    }
+    
+    updateLessonProgressMutation({ 
+      lessonId: lesson.backendId!, 
+      videoProgressSeconds: seconds 
+    }, {
+      onSuccess: () => {
+        console.log('✅ Progress updated:', seconds, 'seconds');
+      },
+      onError: (error) => {
+        console.error('❌ Failed to update progress:', error);
+      }
+    });
+  }, [isValidBackendId, module?.backendId, updateLessonProgressMutation, lesson?.backendId]);
+
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
-    goToLesson(nextLesson.id, module.id);
-  }, [nextLesson, goToLesson, module.id]);
+    handleCompleteLesson();
+  }, [nextLesson, handleCompleteLesson]);
 
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
@@ -186,25 +305,67 @@ const LessonView: React.FC<LessonViewProps> = ({
           <div className="rounded-lg shadow-sm p-8">
             {/* Title and Finish Button */}
             <div className="flex items-start justify-between mb-6">
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
                 <p className="text-sm text-gray-600 mt-1">{displayDescription}</p>
-                {/* Backend status indicator */}
-                {isLoadingLesson && (
-                  <p className="text-xs text-blue-500 mt-1">Loading lesson data...</p>
-                )}
-                {lessonError && (
-                  <p className="text-xs text-amber-500 mt-1">Using cached data</p>
-                )}
+                
+                {/* Enhanced Backend Status Indicators */}
+                <div className="mt-2 space-y-1">
+                  {isLoadingLesson && (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <p className="text-xs text-blue-500">Loading lesson data from server...</p>
+                    </div>
+                  )}
+                  
+                  {lessonError && !isLoadingLesson && (
+                    <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      <p className="text-xs text-amber-700">
+                        ⚠️ Unable to load lesson data from server. Using local data.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!isValidBackendId && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1">
+                      <p className="text-xs text-yellow-700">
+                        📌 This lesson is using demonstration mode
+                      </p>
+                    </div>
+                  )}
+                  
+                  {isValidBackendId && !lessonError && !isLoadingLesson && backendLessonData && (
+                    <p className="text-xs text-green-600">
+                      ✓ Connected to server
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <button className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
-                  Finish
+              
+              <div className="flex flex-col items-end gap-2 ml-4">
+                <button 
+                  onClick={handleCompleteLesson}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoadingLesson}
+                >
+                  {nextLesson ? 'Next Lesson' : 'Finish'}
                 </button>
-                {/* Quiz indicator */}
-                <span className="text-xs text-gray-500">
-                  {transformedQuizQuestions.length} quiz questions ready
-                </span>
+                
+                {/* Quiz Status Indicator */}
+                <div className="text-xs text-gray-500 text-right">
+                  {isLoadingQuiz ? (
+                    <span className="text-blue-500">Loading quiz...</span>
+                  ) : quizError ? (
+                    <span className="text-amber-500">Quiz unavailable</span>
+                  ) : (
+                    <span>
+                      {transformedQuizQuestions.length} quiz question{transformedQuizQuestions.length !== 1 ? 's' : ''} ready
+                      {quizData && quizData.length > 0 && (
+                        <span className="text-green-600"> (from server)</span>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -214,13 +375,20 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <div className="mb-6">
                   <div className="min-h-[350px] flex items-center justify-center bg-gray-200 rounded-lg">
                     <div className="text-center">
-                      <div className="w-64 h-64 mx-auto rounded-lg flex items-center justify-center mb-4">
+                      <button
+                        onClick={() => handleVideoProgress(30)}
+                        className="w-64 h-64 mx-auto rounded-lg flex items-center justify-center mb-4 hover:bg-gray-300 transition-colors"
+                        title="Click to simulate video progress"
+                      >
                         <svg className="w-32 h-32 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                      </div>
+                      </button>
                       <p className="text-gray-500">Video content will appear here</p>
+                      {isValidBackendId && (
+                        <p className="text-xs text-gray-400 mt-2">Click play button to track progress</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -257,7 +425,8 @@ const LessonView: React.FC<LessonViewProps> = ({
               <div className="mt-6 pt-6 border-t">
                 <button
                   onClick={handleNextLesson}
-                  className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-between"
+                  disabled={isLoadingLesson}
+                  className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Next: {nextLesson.title}</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
