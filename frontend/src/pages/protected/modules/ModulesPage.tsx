@@ -48,10 +48,16 @@ interface ModuleLessonsData {
   title: string;
   lessons: {
     id: number;
+    backendId: string;
     title: string;
     type: string;
     completed: boolean;
     locked: boolean;
+    duration: string;
+    description: string;
+    image: string;
+    coins: number;
+    videoUrl?: string;
   }[];
 }
 
@@ -193,7 +199,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
         return {
           id: frontendId,
-          backendId: lesson.id,
+          backendId: lesson.id, // ✅ Store the real backend UUID
           title: lesson.title || `Lesson ${index + 1}`,
           type: 'Video/Reading',
           completed: lesson.is_completed || false,
@@ -201,7 +207,8 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
           duration: `${lesson.estimated_duration_minutes || 10} min`,
           description: lesson.description || '',
           image: lesson.image_url || '/placeholder-lesson.jpg',
-          coins: lesson.nest_coins_reward || 0
+          coins: lesson.nest_coins_reward || 0,
+          videoUrl: lesson.video_url || ''
         };
       })
     };
@@ -214,34 +221,52 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     console.log('📚 Transformed lessons data:', transformedLessons);
   }, [lessonsData, navState.moduleBackendId, navState.moduleId, neighborhoodHousesData, moduleLessonsData]);
 
-  // Mock data that matches the full Module and Lesson interfaces
-  const mockModule: Module | null = navState.moduleId ? {
-    id: navState.moduleId,
-    backendId: navState.moduleBackendId || `module-${navState.moduleId}`,
-    image: '/placeholder-module.jpg',
-    title: `Module ${navState.moduleId}`,
-    description: 'Module description',
-    lessonCount: 5,
-    status: 'In Progress' as const,
-    tags: ['Learning'],
-    illustration: 'default',
-    lessons: []
-  } : null;
+  // ✅ FIXED: Get real module data instead of mock data
+  const currentModule: Module | null = useMemo(() => {
+    if (!navState.moduleId || !navState.moduleBackendId) return null;
+    
+    const house = neighborhoodHousesData['downtown']?.find(h => h.moduleBackendId === navState.moduleBackendId);
+    const moduleData = moduleLessonsData[navState.moduleBackendId];
+    
+    return {
+      id: navState.moduleId,
+      backendId: navState.moduleBackendId,
+      image: '/placeholder-module.jpg',
+      title: house?.name || `Module ${navState.moduleId}`,
+      description: house?.description || 'Module description',
+      lessonCount: moduleData?.lessons?.length || 0,
+      status: 'In Progress' as const,
+      tags: ['Learning'],
+      illustration: 'default',
+      lessons: moduleData?.lessons || []
+    };
+  }, [navState.moduleId, navState.moduleBackendId, neighborhoodHousesData, moduleLessonsData]);
 
-  const mockLesson: Lesson | null = navState.lessonId ? {
-    id: navState.lessonId,
-    backendId: `lesson-${navState.lessonId}`,
-    image: '/placeholder-lesson.jpg',
-    title: `Lesson ${navState.lessonId}`,
-    duration: '10 min',
-    description: 'Lesson description',
-    coins: 25,
-    completed: false,
-    videoUrl: ''
-  } : null;
-
-  const currentModule = mockModule;
-  const currentLesson = mockLesson;
+  // ✅ FIXED: Get real lesson data instead of mock data
+  const currentLesson: Lesson | null = useMemo(() => {
+    if (!navState.lessonId || !navState.moduleBackendId) return null;
+    
+    // Get the actual lessons data for this module
+    const moduleData = moduleLessonsData[navState.moduleBackendId];
+    if (!moduleData || !moduleData.lessons) return null;
+    
+    // Find the actual lesson by frontend ID
+    const lessonData = moduleData.lessons.find(l => l.id === navState.lessonId);
+    if (!lessonData) return null;
+    
+    // Return the lesson with the REAL backendId
+    return {
+      id: lessonData.id,
+      backendId: lessonData.backendId, // ✅ This is the actual UUID from backend
+      image: lessonData.image || '/placeholder-lesson.jpg',
+      title: lessonData.title,
+      duration: lessonData.duration,
+      description: lessonData.description || '',
+      coins: lessonData.coins || 25,
+      completed: lessonData.completed || false,
+      videoUrl: lessonData.videoUrl || ''
+    };
+  }, [navState.lessonId, navState.moduleBackendId, moduleLessonsData]);
 
   // Navigation handlers
   const handleNeighborhoodSelect = (neighborhoodId: string) => {
