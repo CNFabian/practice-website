@@ -137,7 +137,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const { width, height } = this.scale;
     
     this.platform = this.add.image(width / 2, height / 2, ASSET_KEYS.PLATFORM_1);
-    this.platform.setDisplaySize(width * 0.9, scale(300));
+    // Use percentage of height instead of fixed scale value
+    this.platform.setDisplaySize(width * 0.9, height * 0.4);
     this.platform.setAlpha(0.8);
     this.platform.setDepth(0);
   }
@@ -160,7 +161,9 @@ export default class NeighborhoodScene extends Phaser.Scene {
       const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
       
       const road = this.add.image(midX, midY, ASSET_KEYS.ROAD_1);
-      road.setDisplaySize(distance, scale(40));
+      // Make road width responsive - use percentage of screen height
+      const roadWidth = Math.min(height * 0.05, 50); // 5% of height, max 50px
+      road.setDisplaySize(distance, roadWidth);
       road.setRotation(angle);
       road.setAlpha(0.7);
       road.setDepth(1);
@@ -268,23 +271,27 @@ export default class NeighborhoodScene extends Phaser.Scene {
     if (background) {
       background.setInteractive({ useHandCursor: true });
       
+      // Store original size
+      const originalWidth = background.displayWidth;
+      const originalHeight = background.displayHeight;
+      
       background.on('pointerover', () => {
-        // Hover effect - slightly scale up
+        // Hover effect - slightly scale up using display size
         this.tweens.add({
           targets: background,
-          scaleX: 1.1,
-          scaleY: 1.1,
+          displayWidth: originalWidth * 1.1,
+          displayHeight: originalHeight * 1.1,
           duration: 200,
           ease: 'Power2',
         });
       });
 
       background.on('pointerout', () => {
-        // Remove hover effect
+        // Remove hover effect - return to original size
         this.tweens.add({
           targets: background,
-          scaleX: 1,
-          scaleY: 1,
+          displayWidth: originalWidth,
+          displayHeight: originalHeight,
           duration: 200,
           ease: 'Power2',
         });
@@ -355,11 +362,19 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
-    const birdX = (currentHouse.x / 100) * width + scale(50);
-    const birdY = (currentHouse.y / 100) * height + scale(20);
+    
+    // Make bird offset responsive to viewport
+    const birdOffsetX = width * 0.04; // 4% of width
+    const birdOffsetY = height * 0.025; // 2.5% of height
+    
+    const birdX = (currentHouse.x / 100) * width + birdOffsetX;
+    const birdY = (currentHouse.y / 100) * height + birdOffsetY;
 
     this.birdSprite = this.add.image(birdX, birdY, ASSET_KEYS.BIRD_IDLE);
-    this.birdSprite.setDisplaySize(scale(80), scale(80));
+    
+    // Make bird size responsive - use percentage of viewport
+    const birdSize = Math.min(width, height) * 0.08; // 8% of smaller dimension
+    this.birdSprite.setDisplaySize(birdSize, birdSize);
     this.birdSprite.setDepth(1000);
   }
 
@@ -385,12 +400,14 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const originalX = this.birdSprite.x;
 
     // Get current house position to constrain movement
-    const { width } = this.scale;
+    const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
-    const houseCenterX = (currentHouse.x / 100) * width + scale(50);
+    
+    const birdOffsetX = width * 0.04;
+    const houseCenterX = (currentHouse.x / 100) * width + birdOffsetX;
 
-    // Define boundary around house
-    const houseAreaRadius = scale(60);
+    // Define boundary around house - responsive
+    const houseAreaRadius = width * 0.05;
     const minX = houseCenterX - houseAreaRadius;
     const maxX = houseCenterX + houseAreaRadius;
 
@@ -406,8 +423,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
     }
 
     // Single hop animation
-    const hopHeight = scale(2);
-    const duration = 300;
+    const hopHeight = height * 0.003;    const duration = 300;
 
     this.tweens.add({
       targets: this.birdSprite,
@@ -436,8 +452,13 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const targetHouse = this.houses[targetHouseIndex];
-    const targetX = (targetHouse.x / 100) * width + scale(50);
-    const targetY = (targetHouse.y / 100) * height + scale(20);
+    
+    // Make bird offset responsive
+    const birdOffsetX = width * 0.04;
+    const birdOffsetY = height * 0.025;
+    
+    const targetX = (targetHouse.x / 100) * width + birdOffsetX;
+    const targetY = (targetHouse.y / 100) * height + birdOffsetY;
 
     // Flip sprite based on direction
     this.birdSprite.setFlipX(targetX < this.birdSprite.x);
@@ -465,12 +486,17 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const totalGlideTime = houseDistance * hopDuration * 4;
 
     // Change to flight texture
-    this.birdSprite!.setTexture(ASSET_KEYS.BIRD_FLY);
+     this.birdSprite!.setTexture(ASSET_KEYS.BIRD_FLY);
     const flyTexture = this.textures.get(ASSET_KEYS.BIRD_FLY);
     const flyWidth = flyTexture.getSourceImage().width;
     const flyHeight = flyTexture.getSourceImage().height;
     const flyAspectRatio = flyWidth / flyHeight;
-    this.birdSprite!.setDisplaySize(scale(100) * flyAspectRatio, scale(100));
+    
+    // Make fly size responsive
+    const { width, height } = this.scale;
+    const flySize = Math.min(width, height) * 0.1; // 10% of smaller dimension
+    this.birdSprite!.setDisplaySize(flySize * flyAspectRatio, flySize);
+
 
     this.tweens.add({
       targets: this.birdSprite,
@@ -480,7 +506,9 @@ export default class NeighborhoodScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
       onComplete: () => {
         this.birdSprite!.setTexture(ASSET_KEYS.BIRD_IDLE);
-        this.birdSprite!.setDisplaySize(scale(80), scale(80));
+        const { width, height } = this.scale;
+        const birdSize = Math.min(width, height) * 0.08;
+        this.birdSprite!.setDisplaySize(birdSize, birdSize);
         this.isHopping = false;
         this.currentHouseIndex = targetHouseIndex;
         this.handleHouseClick(targetHouse);
@@ -645,10 +673,18 @@ export default class NeighborhoodScene extends Phaser.Scene {
         const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
 
         road.setPosition(midX, midY);
-        road.setDisplaySize(distance, scale(40));
+        // Make road width responsive on resize
+        const roadWidth = Math.min(height * 0.05, 50);
+        road.setDisplaySize(distance, roadWidth);
         road.setRotation(angle);
       }
     });
+
+    // Reposition and resize platform
+    if (this.platform) {
+      this.platform.setPosition(width / 2, height / 2);
+      this.platform.setDisplaySize(width * 0.9, height * 0.4);
+    }
 
     // Reposition houses
     this.houses.forEach(house => {
@@ -663,9 +699,18 @@ export default class NeighborhoodScene extends Phaser.Scene {
     // Reposition bird
     if (this.birdSprite && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
-      const birdX = (currentHouse.x / 100) * width + scale(50);
-      const birdY = (currentHouse.y / 100) * height + scale(20);
+      
+      // Make bird offset responsive to viewport
+      const birdOffsetX = width * 0.04; // 4% of width
+      const birdOffsetY = height * 0.025; // 2.5% of height
+      
+      const birdX = (currentHouse.x / 100) * width + birdOffsetX;
+      const birdY = (currentHouse.y / 100) * height + birdOffsetY;
       this.birdSprite.setPosition(birdX, birdY);
+      
+      // Update bird size on resize
+      const birdSize = Math.min(width, height) * 0.08;
+      this.birdSprite.setDisplaySize(birdSize, birdSize);
     }
 
     // Reposition placeholder

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useModules } from '../../../hooks/useModules';
 import { useSubmitQuiz } from '../../../hooks/mutations/useSubmitQuiz';
-import { Lesson, Module } from '../../../types/modules.backup';
+import { Lesson, Module } from '../../../types/modules';
 import { QuestionImage } from '../../../assets';
 import FeedbackContainer from './FeedbackContainer';
 import QuizResults from './QuizResults';
