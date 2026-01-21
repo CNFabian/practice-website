@@ -373,23 +373,30 @@ const LessonView: React.FC<LessonViewProps> = ({
             {viewMode === 'video' && (
               <>
                 <div className="mb-6">
-                  <div className="min-h-[350px] flex items-center justify-center bg-gray-200 rounded-lg">
-                    <div className="text-center">
-                      <button
-                        onClick={() => handleVideoProgress(30)}
-                        className="w-64 h-64 mx-auto rounded-lg flex items-center justify-center mb-4 hover:bg-gray-300 transition-colors"
-                        title="Click to simulate video progress"
-                      >
-                        <svg className="w-32 h-32 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </button>
-                      <p className="text-gray-500">Video content will appear here</p>
-                      {isValidBackendId && (
-                        <p className="text-xs text-gray-400 mt-2">Click play button to track progress</p>
-                      )}
-                    </div>
+                  <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
+                    {lesson.videoUrl ? (
+                      <iframe
+                        src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
+                        title={lesson.title}
+                        className="w-full h-full rounded-lg"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <button
+                            onClick={() => handleVideoProgress(10)}
+                            className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
+                          >
+                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </button>
+                        </div>
+                        <p className="text-gray-500 text-sm">No video available</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -397,10 +404,60 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <div className="mb-8">
                   <h3 className="font-semibold text-gray-900 mb-3">Video Transcript</h3>
                   <div className="space-y-2 text-sm text-gray-700">
-                    <div className="flex gap-3">
-                      <span className="text-gray-500 font-mono">0:00</span>
-                      <p>Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?</p>
-                    </div>
+                    {backendLessonData?.video_transcription ? (
+                      (() => {
+                        // Split transcript by timestamp pattern [HH:MM:SS]
+                        const timestampRegex = /\[(\d{2}:\d{2}:\d{2})\]/g;
+                        const segments: Array<{ timestamp: string; text: string }> = [];
+                        
+                        let match;
+                        let lastIndex = 0;
+                        
+                        while ((match = timestampRegex.exec(backendLessonData.video_transcription)) !== null) {
+                          if (lastIndex > 0) {
+                            // Add the previous segment's text
+                            const text = backendLessonData.video_transcription
+                              .substring(lastIndex, match.index)
+                              .trim();
+                            if (text) {
+                              segments[segments.length - 1].text = text;
+                            }
+                          }
+                          
+                          // Start a new segment
+                          segments.push({
+                            timestamp: match[1],
+                            text: ''
+                          });
+                          
+                          lastIndex = match.index + match[0].length;
+                        }
+                        
+                        // Add the last segment's text
+                        if (segments.length > 0 && lastIndex < backendLessonData.video_transcription.length) {
+                          segments[segments.length - 1].text = backendLessonData.video_transcription
+                            .substring(lastIndex)
+                            .trim();
+                        }
+                        
+                        return segments.map((segment, index) => {
+                          // Convert HH:MM:SS to MM:SS
+                          const timeFormatted = segment.timestamp.substring(3); // Remove first 3 chars (HH:)
+                          
+                          return (
+                            <div key={index} className="flex gap-3">
+                              <span className="text-gray-500 font-mono">{timeFormatted}</span>
+                              <p>{segment.text}</p>
+                            </div>
+                          );
+                        });
+                      })()
+                    ) : (
+                      <div className="flex gap-3">
+                        <span className="text-gray-500 font-mono">0:00</span>
+                        <p>Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -410,12 +467,46 @@ const LessonView: React.FC<LessonViewProps> = ({
             {viewMode === 'reading' && (
               <div className="mb-8">
                 <div className="prose prose-gray max-w-none">
-                  <p className="text-base text-gray-800 leading-relaxed mb-4">
-                    Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness.
-                  </p>
-                  <p className="text-base text-gray-800 leading-relaxed">
-                    That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
-                  </p>
+                  {backendLessonData?.video_transcription ? (
+                    (() => {
+                      // Remove all timestamps [HH:MM:SS] from the transcript
+                      const cleanText = backendLessonData.video_transcription
+                        .replace(/\[\d{2}:\d{2}:\d{2}\]/g, '')
+                        .trim();
+                      
+                      // Split into sentences (roughly) for better paragraph formatting
+                      const sentences = cleanText.split(/(?<=[.!?])\s+/);
+                      
+                      // Group sentences into paragraphs (every 3-4 sentences)
+                      const paragraphs: string[] = [];
+                      let currentParagraph: string[] = [];
+                      
+                      sentences.forEach((sentence: string, index: number) => {
+                        currentParagraph.push(sentence);
+                        
+                        // Create a new paragraph every 3-4 sentences or at the end
+                        if (currentParagraph.length >= 3 || index === sentences.length - 1) {
+                          paragraphs.push(currentParagraph.join(' '));
+                          currentParagraph = [];
+                        }
+                      });
+                      
+                      return paragraphs.map((paragraph, index) => (
+                        <p key={index} className="text-base text-gray-800 leading-relaxed mb-4">
+                          {paragraph}
+                        </p>
+                      ));
+                    })()
+                  ) : (
+                    <>
+                      <p className="text-base text-gray-800 leading-relaxed mb-4">
+                        Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness.
+                      </p>
+                      <p className="text-base text-gray-800 leading-relaxed">
+                        That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             )}
