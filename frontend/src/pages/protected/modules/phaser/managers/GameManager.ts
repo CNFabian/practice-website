@@ -6,7 +6,7 @@ class GameManager {
   private game: Phaser.Game | null = null;
   private assetsLoaded: boolean = false;
   private isPhaserReady: boolean = false;
-  private savedNavState: any = null; // Store navigation state
+  private savedNavState: any = null;
 
   private constructor() {}
 

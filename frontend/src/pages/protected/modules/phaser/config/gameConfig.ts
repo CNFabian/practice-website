@@ -3,6 +3,7 @@ import PreloaderScene from '../scenes/PreloaderScene';
 import MapScene from '../scenes/MapScene';
 import NeighborhoodScene from '../scenes/NeighborhoodScene';
 import HouseScene from '../scenes/HouseScene';
+import GrowYourNestMinigame from '../scenes/minigames/GrowYourNestMinigame';
 
 export const createGameConfig = (parent: HTMLElement): Phaser.Types.Core.GameConfig => {
   const dpr = window.devicePixelRatio || 1;
@@ -23,7 +24,13 @@ export const createGameConfig = (parent: HTMLElement): Phaser.Types.Core.GameCon
       }
     },
     // All scenes but don't auto-start any
-    scene: [PreloaderScene, MapScene, NeighborhoodScene, HouseScene],
+    scene: [
+      PreloaderScene, 
+      MapScene, 
+      NeighborhoodScene, 
+      HouseScene,
+      GrowYourNestMinigame
+    ],
     scale: {
       mode: Phaser.Scale.NONE,
       autoCenter: Phaser.Scale.CENTER_BOTH,

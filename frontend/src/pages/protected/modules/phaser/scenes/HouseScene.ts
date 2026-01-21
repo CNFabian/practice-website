@@ -625,17 +625,21 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   private handleMinigameSelect(): void {
-    if (this.isTransitioning) return;
-
-    this.isTransitioning = true;
-
-    const handleMinigameSelect = this.registry.get('handleMinigameSelect');
-
-    if (handleMinigameSelect && typeof handleMinigameSelect === 'function') {
-      handleMinigameSelect();
-      this.isTransitioning = false;
-    }
+    this.scene.launch('GrowYourNestMinigame', {
+      questions: this.getMinigameQuestions()
+    });
+    
+    this.scene.pause();
+    
+    this.scene.get('GrowYourNestMinigame').events.once('shutdown', () => {
+      this.scene.resume();
+    });
   }
+
+// Add this helper method to fetch from backend
+private getMinigameQuestions() {
+  return undefined;
+}
 
   private handleResize(gameSize: Phaser.Structs.Size): void {
     const { width, height } = gameSize;
