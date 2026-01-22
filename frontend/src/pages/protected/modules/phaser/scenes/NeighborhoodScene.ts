@@ -473,7 +473,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     if (handleHouseSelect && typeof handleHouseSelect === 'function') {
       this.transitionToHouse(() => {
-        handleHouseSelect(house.id, house.moduleId || 0);
+        handleHouseSelect(house.id, house.moduleId || 0, house.moduleBackendId);
         this.isTransitioning = false;
       });
     }

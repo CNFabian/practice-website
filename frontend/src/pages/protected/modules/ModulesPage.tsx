@@ -259,7 +259,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         GameManager.pauseAllScenes();
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules]);
+  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules, lessonsData, isLoadingLessons]);
 
   // Handle resize
   useEffect(() => {
@@ -272,7 +272,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       const newHeight = window.innerHeight * dpr;
       
       // Add safety check before resizing
-      if (game.scale && typeof game.scale.resize === 'function') {
+      if (game.scale && typeof game.scale.resize === 'function' && game.scale.gameSize) {
         game.scale.resize(newWidth, newHeight);
         game.scale.emit('resize', game.scale.gameSize);
       }

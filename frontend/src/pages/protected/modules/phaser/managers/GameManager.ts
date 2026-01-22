@@ -220,32 +220,38 @@ class GameManager {
   }
 
   /**
-   * Update lessons data for a specific module
-   */
-  updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
-    const house = this.housesData['downtown']?.find(h => h.moduleBackendId === moduleBackendId);
-    if (!house) {
-      console.warn(`⚠️ House not found for module ${moduleBackendId}`);
-      return;
-    }
-
-    const transformedLessons = transformBackendLessonsToFrontend(
-      lessonsData,
-      house.moduleId!,
-      house.name
-    );
-
-    this.moduleLessonsData[moduleBackendId] = transformedLessons;
-
-    if (!this.game) return;
-
-    const scenes = this.game.scene.getScenes(false);
-    if (scenes.length > 0) {
-      const scene = scenes[0];
-      scene.registry.set('moduleLessonsData', this.moduleLessonsData);
-      console.log('✅ Set module lessons data in registry:', this.moduleLessonsData);
-    }
+ * Update lessons data for a specific module
+ */
+updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
+  // Wait for houses data to be available
+  if (!this.housesData['downtown'] || this.housesData['downtown'].length === 0) {
+    console.warn(`⚠️ Houses data not ready yet, skipping lessons update for ${moduleBackendId}`);
+    return;
   }
+
+  const house = this.housesData['downtown'].find(h => h.moduleBackendId === moduleBackendId);
+  if (!house) {
+    console.warn(`⚠️ House not found for module ${moduleBackendId}`);
+    return;
+  }
+
+  const transformedLessons = transformBackendLessonsToFrontend(
+    lessonsData,
+    house.moduleId!,
+    house.name
+  );
+
+  this.moduleLessonsData[moduleBackendId] = transformedLessons;
+
+  if (!this.game) return;
+
+  const scenes = this.game.scene.getScenes(false);
+  if (scenes.length > 0) {
+    const scene = scenes[0];
+    scene.registry.set('moduleLessonsData', this.moduleLessonsData);
+    console.log('✅ Set module lessons data in registry:', this.moduleLessonsData);
+  }
+}
 
   /**
    * Check if lessons data exists for a module
