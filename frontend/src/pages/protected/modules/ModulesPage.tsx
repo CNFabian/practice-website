@@ -14,6 +14,7 @@ interface NavState {
   moduleId: number | null;
   moduleBackendId: string | null;
   lessonId: number | null;
+  currentHouseIndex: number;  
 }
 
 const ModulesPage: React.FC = () => {
@@ -39,6 +40,7 @@ const ModulesPage: React.FC = () => {
       moduleId: null,
       moduleBackendId: null,
       lessonId: null,
+      currentHouseIndex: 0,
     };
   });
 
@@ -73,6 +75,9 @@ const ModulesPage: React.FC = () => {
   }, []);
 
   const handleHouseSelect = useCallback((houseId: string, moduleId: number, moduleBackendId: string) => {
+    const game = GameManager.getGame();
+    const currentHouseIndex = game?.registry.get('currentHouseIndex') ?? 0;
+  
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
@@ -80,6 +85,7 @@ const ModulesPage: React.FC = () => {
       moduleId,
       moduleBackendId,
       lessonId: null,
+      currentHouseIndex,
     }));
   }, []);
 
@@ -106,6 +112,7 @@ const ModulesPage: React.FC = () => {
       moduleId: null,
       moduleBackendId: null,
       lessonId: null,
+      currentHouseIndex: 0,
     });
   }, []);
 
@@ -227,9 +234,9 @@ const ModulesPage: React.FC = () => {
         GameManager.transitionToMap();
         break;
 
-      case 'neighborhood':
-        GameManager.transitionToNeighborhood(navState.neighborhoodId);
-        break;
+     case 'neighborhood':
+      GameManager.transitionToNeighborhood(navState.neighborhoodId, navState.currentHouseIndex);
+      break;
 
       case 'house':
         if (navState.moduleBackendId && !GameManager.hasLessonsData(navState.moduleBackendId)) {
