@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { HouseBackground } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
@@ -6,8 +6,6 @@ import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
-
-interface ModulesPageProps {}
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
@@ -18,7 +16,7 @@ interface NavState {
   lessonId: number | null;
 }
 
-const ModulesPage: React.FC<ModulesPageProps> = () => {
+const ModulesPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -56,12 +54,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     error: lessonsError 
   } = useModuleLessons(navState.moduleBackendId || '');
 
+  // Save nav state to localStorage
   useEffect(() => {
     GameManager.saveNavState(navState);
   }, [navState]);
 
-  // Navigation handlers
-  const handleNeighborhoodSelect = (neighborhoodId: string) => {
+  // Navigation handlers - memoized with useCallback
+  const handleNeighborhoodSelect = useCallback((neighborhoodId: string) => {
     setNavState(prev => ({
       ...prev,
       currentView: 'neighborhood',
@@ -71,9 +70,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       moduleBackendId: null,
       lessonId: null,
     }));
-  };
+  }, []);
 
-  const handleHouseSelect = (houseId: string, moduleId: number, moduleBackendId: string) => {
+  const handleHouseSelect = useCallback((houseId: string, moduleId: number, moduleBackendId: string) => {
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
@@ -82,24 +81,24 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       moduleBackendId,
       lessonId: null,
     }));
-  };
+  }, []);
 
-  const handleLessonSelect = (lessonId: number) => {
+  const handleLessonSelect = useCallback((lessonId: number) => {
     setNavState(prev => ({
       ...prev,
       currentView: 'lesson',
       lessonId,
     }));
-  };
+  }, []);
 
-  const handleMinigameSelect = () => {
+  const handleMinigameSelect = useCallback(() => {
     setNavState(prev => ({
       ...prev,
       currentView: 'minigame',
     }));
-  };
+  }, []);
 
-  const handleBackToMap = () => {
+  const handleBackToMap = useCallback(() => {
     setNavState({
       currentView: 'map',
       neighborhoodId: null,
@@ -108,9 +107,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       moduleBackendId: null,
       lessonId: null,
     });
-  };
+  }, []);
 
-  const handleBackToNeighborhood = () => {
+  const handleBackToNeighborhood = useCallback(() => {
     setNavState(prev => ({
       ...prev,
       currentView: 'neighborhood',
@@ -119,24 +118,24 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       moduleBackendId: null,
       lessonId: null,
     }));
-  };
+  }, []);
 
-  const handleBackToHouse = () => {
+  const handleBackToHouse = useCallback(() => {
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
       lessonId: null,
     }));
-  };
+  }, []);
 
-  const handleCloseMinigame = () => {
+  const handleCloseMinigame = useCallback(() => {
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
     }));
-  };
+  }, []);
 
-  // Initialize Phaser game using GameManager
+  // Initialize Phaser game
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -146,18 +145,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       setIsPhaserReady(true);
       
       if (GameManager.areAssetsLoaded()) {
-        console.log('=== ASSETS ALREADY LOADED ===');
         setAssetsLoaded(true);
       } else {
         const checkInterval = setInterval(() => {
           const game = GameManager.getGame();
-          if (game) {
-            const flag = game.registry.get('assetsLoaded');
-            if (flag) {
-              console.log('=== ASSETS LOADED AND READY ===');
-              setAssetsLoaded(true);
-              clearInterval(checkInterval);
-            }
+          if (game?.registry.get('assetsLoaded')) {
+            setAssetsLoaded(true);
+            clearInterval(checkInterval);
           }
         }, 50);
         
@@ -165,28 +159,19 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
       }
     } else {
       game.events.once('ready', () => {
-        console.log('=== PHASER READY IN COMPONENT ===');
         setIsPhaserReady(true);
         
         const checkInterval = setInterval(() => {
           const game = GameManager.getGame();
-          if (game) {
-            const flag = game.registry.get('assetsLoaded');
-            if (flag) {
-              console.log('=== ASSETS LOADED AND READY ===');
-              setAssetsLoaded(true);
-              clearInterval(checkInterval);
-            }
+          if (game?.registry.get('assetsLoaded')) {
+            setAssetsLoaded(true);
+            clearInterval(checkInterval);
           }
         }, 50);
         
         setTimeout(() => clearInterval(checkInterval), 10000);
       });
     }
-
-    return () => {
-      console.log('=== COMPONENT UNMOUNT - GAME PERSISTS ===');
-    };
   }, []);
 
   // Pause/resume game based on view
@@ -218,8 +203,13 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
     if (modulesData) {
       GameManager.updateModulesData(modulesData);
+      
+      // After houses are created, retry any pending lessons updates
+      if (navState.moduleBackendId && lessonsData && !isLoadingLessons) {
+        GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
+      }
     }
-  }, [isPhaserReady, assetsLoaded, isLoadingModules, modulesData]);
+  }, [isPhaserReady, assetsLoaded, isLoadingModules, modulesData, navState.moduleBackendId, lessonsData, isLoadingLessons, handleNeighborhoodSelect, handleHouseSelect, handleLessonSelect, handleMinigameSelect, handleBackToMap, handleBackToNeighborhood]);
 
   // Sync lessons data with GameManager
   useEffect(() => {
@@ -243,7 +233,6 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
       case 'house':
         if (navState.moduleBackendId && !GameManager.hasLessonsData(navState.moduleBackendId)) {
-          console.log('⏳ Waiting for lessons to load before starting HouseScene...');
           return;
         }
         
@@ -259,29 +248,26 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         GameManager.pauseAllScenes();
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules, lessonsData, isLoadingLessons]);
+  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules]);
 
-  // Handle resize
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       const game = GameManager.getGame();
-      if (!game || !isPhaserReady || !assetsLoaded) return; // Add checks
+      if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
       
       const dpr = window.devicePixelRatio || 1;
       const newWidth = (window.innerWidth - 192) * dpr;
       const newHeight = window.innerHeight * dpr;
       
-      // Add safety check before resizing
-      if (game.scale && typeof game.scale.resize === 'function' && game.scale.gameSize) {
-        game.scale.resize(newWidth, newHeight);
-        game.scale.emit('resize', game.scale.gameSize);
-      }
+      game.scale.resize(newWidth, newHeight);
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isPhaserReady, assetsLoaded]);
 
+  // Sync total coins with game registry
   useEffect(() => {
     const game = GameManager.getGame();
     if (game) {
@@ -290,12 +276,12 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   }, [totalCoins]);
 
   // Get current module and lesson from GameManager
-  const currentModule: Module | null = useMemo(() => {
+  const currentModule = useMemo(() => {
     if (!navState.moduleId || !navState.moduleBackendId) return null;
     return GameManager.getCurrentModule(navState.moduleId, navState.moduleBackendId);
   }, [navState.moduleId, navState.moduleBackendId]);
 
-  const currentLesson: Lesson | null = useMemo(() => {
+  const currentLesson = useMemo(() => {
     if (!navState.lessonId || !navState.moduleBackendId) return null;
     return GameManager.getCurrentLesson(navState.moduleBackendId, navState.lessonId);
   }, [navState.lessonId, navState.moduleBackendId]);
@@ -322,6 +308,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
+      {/* Loading indicators */}
       {isLoadingModules && (
         <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
           <p className="text-sm text-gray-600">Loading modules...</p>
@@ -346,6 +333,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         </div>
       )}
 
+      {/* Phaser background */}
       {showPhaserCanvas && (
         <div 
           className="fixed inset-0 z-0"
@@ -353,6 +341,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         />
       )}
 
+      {/* Phaser container */}
       <div
         ref={containerRef}
         className={`w-full h-full relative z-10 transition-opacity duration-300 ${
@@ -360,6 +349,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         }`}
       />
 
+      {/* Lesson view */}
       {navState.currentView === 'lesson' && (
         <div className="absolute inset-0 bg-white z-20">
           {currentLesson && currentModule ? (
@@ -376,11 +366,10 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         </div>
       )}
 
+      {/* Minigame view */}
       {navState.currentView === 'minigame' && (
         <div className="absolute inset-0 bg-white z-20">
-          <Minigame
-            onClose={handleCloseMinigame}
-          />
+          <Minigame onClose={handleCloseMinigame} />
         </div>
       )}
     </div>
