@@ -282,8 +282,8 @@ export default class MapScene extends Phaser.Scene {
     }
   }
 
-  private handleResize(gameSize: Phaser.Structs.Size): void {
-    const { width, height } = gameSize;
+  private handleResize(): void {
+    const { width, height } = this.scale;
 
     // Reposition center container
     if (this.centerContainer) {

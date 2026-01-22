@@ -36,12 +36,36 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.score = 0;
   }
 
-  create() {
-    const { width, height } = this.cameras.main;
-    this.createBackButton();
-    this.createHeader(width);
-    this.createPanels(width, height);
-  }
+create() {
+  const { width, height } = this.cameras.main;
+  this.createBackButton();
+  this.createHeader(width);
+  this.createPanels(width, height);
+  
+  // Add resize listener
+  this.scale.on('resize', this.handleResize, this);
+}
+
+private handleResize(gameSize: Phaser.Structs.Size): void {
+  const { width, height } = gameSize;
+  
+  // Destroy and recreate all UI elements while preserving game state
+  // The state (currentQuestionIndex, score, selectedAnswer) is already stored in class properties
+  
+  // Clear existing containers
+  if (this.leftPanel) this.leftPanel.destroy();
+  if (this.rightPanel) this.rightPanel.destroy();
+  
+  // Recreate everything with new dimensions
+  this.createBackButton();
+  this.createHeader(width);
+  this.createPanels(width, height);
+}
+
+shutdown() {
+  // Clean up resize listener
+  this.scale.off('resize', this.handleResize, this);
+}
 
   private createBackButton(): void {
     const backButton = this.add.container(60, 48);
@@ -201,7 +225,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const OPTION_BUTTON_HEIGHT_PERCENT = 0.095;
     const OPTION_GAP_PERCENT = 0.02;
     const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
-    const QUESTION_NUMBER_FONT_PERCENT = 0.06;
     const QUESTION_TEXT_FONT_PERCENT = 0.04;
     const OPTION_LETTER_FONT_PERCENT = 0.035;
     const OPTION_TEXT_FONT_PERCENT = 0.03;
@@ -210,7 +233,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const optionButtonHeight = panelHeight * OPTION_BUTTON_HEIGHT_PERCENT;
     const optionGap = panelHeight * OPTION_GAP_PERCENT;
     const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
-    const questionNumberFontSize = Math.round(panelWidth * QUESTION_NUMBER_FONT_PERCENT);
     const questionTextFontSize = Math.round(panelWidth * QUESTION_TEXT_FONT_PERCENT);
     const optionLetterFontSize = Math.round(panelWidth * OPTION_LETTER_FONT_PERCENT);
     const optionTextFontSize = Math.round(panelWidth * OPTION_TEXT_FONT_PERCENT);

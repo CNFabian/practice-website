@@ -636,55 +636,25 @@ export default class HouseScene extends Phaser.Scene {
     });
   }
 
-// Add this helper method to fetch from backend
-private getMinigameQuestions() {
-  return undefined;
-}
+  private getMinigameQuestions() {
+    return undefined;
+  }
 
-  private handleResize(gameSize: Phaser.Structs.Size): void {
-    const { width, height } = gameSize;
-
-    // Reposition and rescale environment
-    if (this.leftHouse) {
-      this.leftHouse.setPosition(width * 0.25, height / 2);
-      const houseScale = Math.min(width, height) * 0.003;
-      this.leftHouse.setScale(houseScale);
-    }
-    if (this.rightHouse) {
-      this.rightHouse.setPosition(width * 0.76, height / 2);
-      const houseScale = Math.min(width, height) * 0.003;
-      this.rightHouse.setScale(houseScale);
-    }
-
-    // Reposition and resize buttons (they will be recreated, but we can update positions)
-    // Note: ButtonBuilder may need updates to support responsive sizing
-    // For now, destroy and recreate buttons
-    if (this.backButton) {
-      this.backButton.destroy();
-      this.createBackButton();
-    }
-    if (this.minigameButton) {
-      this.minigameButton.destroy();
-      this.createMinigameButton();
-    }
-
-    // Recreate header card with new sizes
-    if (this.headerCard) {
-      this.headerCard.destroy();
-      this.createHeaderCard();
-    }
-
-    // Reposition and resize bird
-    if (this.birdSprite) {
-      this.birdSprite.setPosition(width / 2, height * 0.85);
-      const birdSize = Math.min(width, height) * 0.08;
-      this.birdSprite.setDisplaySize(birdSize, birdSize);
-    }
-
-    // Recreate lesson grid
+  private handleResize(): void {
+    // Destroy existing elements
+    if (this.leftHouse) this.leftHouse.destroy();
+    if (this.rightHouse) this.rightHouse.destroy();
+    if (this.backButton) this.backButton.destroy();
+    if (this.minigameButton) this.minigameButton.destroy();
+    if (this.headerCard) this.headerCard.destroy();
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
-    this.createLessonGrid();
+    if (this.birdSprite) this.birdSprite.destroy();
+    
+    // Recreate everything with new dimensions
+    this.createEnvironment();
+    this.createUI();
+    this.createBirdStatic(this.scale.width / 2, this.scale.height * 0.85); // Use static bird on resize
   }
 
   // ═══════════════════════════════════════════════════════════

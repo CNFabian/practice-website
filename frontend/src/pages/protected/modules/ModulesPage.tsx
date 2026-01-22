@@ -510,6 +510,10 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         const newWidth = (window.innerWidth - 192) * dpr;
         const newHeight = window.innerHeight * dpr;
         game.scale.resize(newWidth, newHeight);
+        game.scale.emit('resize', game.scale.gameSize);
+        
+       
+        // Minigame will handle resize via its own handleResize method
       }
     };
 

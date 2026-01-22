@@ -642,82 +642,28 @@ export default class NeighborhoodScene extends Phaser.Scene {
     }
   }
 
-  private handleResize(gameSize: Phaser.Structs.Size): void {
-    const { width, height } = gameSize;
-
-    // Reposition back button
-    if (this.backButton) {
-      this.backButton.setPosition(scale(20), scale(20));
-    }
-
-    // Reposition platform
-    if (this.platform) {
-      this.platform.setPosition(width / 2, height / 2);
-      this.platform.setDisplaySize(width * 0.9, scale(300));
-    }
-
-    // Reposition roads
-    this.roads.forEach((road, index) => {
-      if (index < this.houses.length - 1) {
-        const house1 = this.houses[index];
-        const house2 = this.houses[index + 1];
-
-        const x1 = (house1.x / 100) * width;
-        const y1 = (house1.y / 100) * height;
-        const x2 = (house2.x / 100) * width;
-        const y2 = (house2.y / 100) * height;
-
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
-        const angle = Phaser.Math.Angle.Between(x1, y1, x2, y2);
-        const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
-
-        road.setPosition(midX, midY);
-        // Make road width responsive on resize
-        const roadWidth = Math.min(height * 0.05, 50);
-        road.setDisplaySize(distance, roadWidth);
-        road.setRotation(angle);
-      }
-    });
-
-    // Reposition and resize platform
-    if (this.platform) {
-      this.platform.setPosition(width / 2, height / 2);
-      this.platform.setDisplaySize(width * 0.9, height * 0.4);
-    }
-
-    // Reposition houses
-    this.houses.forEach(house => {
-      const houseContainer = this.houseSprites.get(house.id);
-      if (houseContainer) {
-        const x = (house.x / 100) * width;
-        const y = (house.y / 100) * height;
-        houseContainer.setPosition(x, y);
-      }
-    });
-
-    // Reposition bird
-    if (this.birdSprite && this.houses.length > 0) {
-      const currentHouse = this.houses[this.currentHouseIndex];
-      
-      // Make bird offset responsive to viewport
-      const birdOffsetX = width * 0.04; // 4% of width
-      const birdOffsetY = height * 0.025; // 2.5% of height
-      
-      const birdX = (currentHouse.x / 100) * width + birdOffsetX;
-      const birdY = (currentHouse.y / 100) * height + birdOffsetY;
-      this.birdSprite.setPosition(birdX, birdY);
-      
-      // Update bird size on resize
-      const birdSize = Math.min(width, height) * 0.08;
-      this.birdSprite.setDisplaySize(birdSize, birdSize);
-    }
-
-    // Reposition placeholder
-    if (this.placeholderCard) {
-      this.placeholderCard.setPosition(width / 2, height / 2);
-    }
+  private handleResize(): void {
+  // Destroy existing elements
+  if (this.backButton) this.backButton.destroy();
+  this.roads.forEach(road => road.destroy());
+  this.roads = [];
+  if (this.platform) this.platform.destroy();
+  this.houseSprites.forEach(sprite => sprite.destroy());
+  this.houseSprites.clear();
+  if (this.birdSprite) this.birdSprite.destroy();
+  if (this.placeholderCard) this.placeholderCard.destroy();
+  
+  // Recreate everything with new dimensions
+  this.createBackButton();
+  
+  if (this.houses.length > 0) {
+    this.createEnvironment();
+    this.createHouses();
+    this.createBird();
+  } else {
+    this.createPlaceholder();
   }
+}
 
   // ═══════════════════════════════════════════════════════════
   // TRANSITION METHODS
