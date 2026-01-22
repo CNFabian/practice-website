@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
-import { COLORS, OPACITY } from '../constants/Colors';
+import { COLORS } from '../constants/Colors';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { BirdCharacter } from '../characters/BirdCharacter';
 
@@ -12,6 +12,8 @@ interface Lesson {
   type: string;
   completed: boolean;
   locked: boolean;
+  x?: number; // Position as percentage of viewport width
+  y?: number; // Position as percentage of viewport height
 }
 
 interface Module {
@@ -47,12 +49,10 @@ export default class HouseScene extends Phaser.Scene {
   private isTransitioning: boolean = false;
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
-  private headerCard?: Phaser.GameObjects.Container;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
   
   // Environment
-  private leftHouse?: Phaser.GameObjects.Image;
-  private rightHouse?: Phaser.GameObjects.Image;
+  private lessonHouse?: Phaser.GameObjects.Image;
   
  // Bird character
   private bird?: BirdCharacter;
@@ -134,20 +134,14 @@ export default class HouseScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
   // ENVIRONMENT CREATION METHODS
   // ═══════════════════════════════════════════════════════════
-   private createEnvironment(): void {
+  private createEnvironment(): void {
     const { width, height } = this.scale;
 
-    // Left house cutout - responsive scaling
-    this.leftHouse = this.add.image(width * 0.25, height / 2, ASSET_KEYS.LEFT_CUT_HOUSE);
-    this.leftHouse.setDepth(1);
-    // Reduced to 0.001 (67% smaller than original)
+    // Single house image - responsive scaling
+    this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
+    this.lessonHouse.setDepth(1);
     const houseScale = Math.min(width, height) * 0.00121;
-    this.leftHouse.setScale(houseScale);
-
-    // Right house cutout - responsive scaling
-    this.rightHouse = this.add.image(width * 0.76, height / 2, ASSET_KEYS.RIGHT_CUT_HOUSE);
-    this.rightHouse.setDepth(1);
-    this.rightHouse.setScale(houseScale);
+    this.lessonHouse.setScale(houseScale);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -158,8 +152,8 @@ export default class HouseScene extends Phaser.Scene {
     this.createMinigameButton();
     
     if (this.module && this.module.lessons.length > 0) {
-      this.createHeaderCard();
-      this.createLessonGrid();
+      // this.createHeaderCard(); // COMMENTED OUT
+      this.createLessonCards();
     } else {
       this.createLoadingPlaceholder();
     }
@@ -231,113 +225,109 @@ export default class HouseScene extends Phaser.Scene {
     this.minigameButton.setDepth(10);
   }
 
-  private createHeaderCard(): void {
+  // COMMENTED OUT - Header Card
+  // private createHeaderCard(): void {
+  //   if (!this.module) return;
+
+  //   const { width, height } = this.scale;
+
+  //   this.headerCard = this.add.container(width / 2, height * 0.15);
+  //   this.headerCard.setDepth(10);
+
+  //   // Card background - responsive sizing
+  //   const cardWidth = width * 0.6; // 60% of viewport width
+  //   const cardHeight = height * 0.15; // 15% of viewport height
+  //   const card = this.add.rectangle(0, 0, cardWidth, cardHeight, COLORS.WHITE, OPACITY.HIGH);
+  //   const strokeWidth = Math.max(2, width * 0.002); // Responsive stroke
+  //   card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
+  //   this.headerCard.add(card);
+
+  //   // Module title - responsive sizing
+  //   const titleSize = Math.min(width, height) * 0.032; // Responsive title size
+  //   const titleOffsetY = -cardHeight * 0.15; // Position relative to card height
+  //   const title = this.add.text(0, titleOffsetY, this.module.title, {
+  //     fontSize: `${titleSize}px`,
+  //     fontFamily: 'Arial, sans-serif',
+  //     color: COLORS.TEXT_PRIMARY,
+  //     fontStyle: 'bold',
+  //   }).setOrigin(0.5);
+  //   this.headerCard.add(title);
+
+  //   // Progress text - responsive sizing
+  //   const completedCount = this.module.lessons.filter(l => l.completed).length;
+  //   const totalCount = this.module.lessons.length;
+  //   const progressSize = Math.min(width, height) * 0.018; // Responsive progress size
+  //   const progressOffsetY = cardHeight * 0.2; // Position relative to card height
+  //   const progressText = this.add.text(
+  //     0,
+  //     progressOffsetY,
+  //     `${completedCount}/${totalCount} Rooms Completed`,
+  //     {
+  //       fontSize: `${progressSize}px`,
+  //       fontFamily: 'Arial, sans-serif',
+  //       color: COLORS.TEXT_SECONDARY,
+  //     }
+  //   ).setOrigin(0.5);
+  //   this.headerCard.add(progressText);
+  // }
+
+  private createLessonCards(): void {
     if (!this.module) return;
-
-    const { width, height } = this.scale;
-
-    this.headerCard = this.add.container(width / 2, height * 0.15);
-    this.headerCard.setDepth(10);
-
-    // Card background - responsive sizing
-    const cardWidth = width * 0.6; // 60% of viewport width
-    const cardHeight = height * 0.15; // 15% of viewport height
-    const card = this.add.rectangle(0, 0, cardWidth, cardHeight, COLORS.WHITE, OPACITY.HIGH);
-    const strokeWidth = Math.max(2, width * 0.002); // Responsive stroke
-    card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
-    this.headerCard.add(card);
-
-    // Module title - responsive sizing
-    const titleSize = Math.min(width, height) * 0.032; // Responsive title size
-    const titleOffsetY = -cardHeight * 0.15; // Position relative to card height
-    const title = this.add.text(0, titleOffsetY, this.module.title, {
-      fontSize: `${titleSize}px`,
-      fontFamily: 'Arial, sans-serif',
-      color: COLORS.TEXT_PRIMARY,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-    this.headerCard.add(title);
-
-    // Progress text - responsive sizing
-    const completedCount = this.module.lessons.filter(l => l.completed).length;
-    const totalCount = this.module.lessons.length;
-    const progressSize = Math.min(width, height) * 0.018; // Responsive progress size
-    const progressOffsetY = cardHeight * 0.2; // Position relative to card height
-    const progressText = this.add.text(
-      0,
-      progressOffsetY,
-      `${completedCount}/${totalCount} Rooms Completed`,
-      {
-        fontSize: `${progressSize}px`,
-        fontFamily: 'Arial, sans-serif',
-        color: COLORS.TEXT_SECONDARY,
-      }
-    ).setOrigin(0.5);
-    this.headerCard.add(progressText);
-  }
-
-  private createLessonGrid(): void {
-    if (!this.module) return;
-
-    const { width, height } = this.scale;
-
-    const gridCenterX = width / 2;
-    const gridCenterY = height * 0.65;
-    
-    // Make card dimensions responsive
-    const cardWidth = width * 0.25; // 25% of viewport width
-    const cardHeight = height * 0.25; // 25% of viewport height
-    const gapX = width * 0.04; // 4% of width for horizontal gap
-    const gapY = height * 0.08; // 8% of height for vertical gap
 
     this.module.lessons.forEach((lesson, index) => {
-      const col = index % 2;
-      const row = Math.floor(index / 2);
-
-      const offsetX = col === 0 ? -(cardWidth / 2 + gapX / 2) : cardWidth / 2 + gapX / 2;
-      const offsetY = row === 0 ? -(cardHeight / 2 + gapY / 2) : cardHeight / 2 + gapY / 2;
-
-      const x = gridCenterX + offsetX;
-      const y = gridCenterY + offsetY;
-
-      this.createLessonCard(lesson, x, y, cardWidth, cardHeight);
+      this.createLessonCard(lesson, index);
     });
   }
 
-  private createLessonCard(
-    lesson: Lesson,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void {
+  private createLessonCard(lesson: Lesson, index: number): void {
+    const { width, height } = this.scale;
+
+    // Default positions based on index (2x2 grid pattern)
+    const defaultPositions = [
+      { x: 26, y: 31 },  // Top-left
+      { x: 77, y: 31 },  // Top-right
+      { x: 31, y: 74 },  // Bottom-left
+      { x: 63, y: 72 },  // Bottom-right
+    ];
+
+    // Get default position for this lesson index, or use center if index exceeds defaults
+    const defaultPos = defaultPositions[index] || { x: 50, y: 50 };
+
+    // Calculate position based on percentage (use lesson's x/y if provided, otherwise use defaults)
+    const x = lesson.x !== undefined ? (lesson.x / 100) * width : (defaultPos.x / 100) * width;
+    const y = lesson.y !== undefined ? (lesson.y / 100) * height : (defaultPos.y / 100) * height;
+
+    // Card dimensions - responsive sizing (reduced by 25%)
+    const cardWidth = width * 0.1875; // 18.75% of viewport width (was 25%)
+    const cardHeight = height * 0.1875; // 18.75% of viewport height (was 25%)
+
     const lessonContainer = this.add.container(x, y);
     lessonContainer.setDepth(10);
     this.lessonContainers.push(lessonContainer);
 
     // Card background - responsive positioning and stroke
-    const cardOffsetY = -height * 0.1; // Position relative to card height
-    const card = this.add.rectangle(0, cardOffsetY, width, height, COLORS.WHITE, 0.7);
+    const cardOffsetY = -cardHeight * 0.1; // Position relative to card height
+    const card = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.WHITE, 0.7);
     const strokeWidth = Math.max(2, this.scale.width * 0.002);
     card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
     lessonContainer.add(card);
 
     // Lesson title - responsive sizing and positioning
     const titleSize = Math.min(this.scale.width, this.scale.height) * 0.022;
-    const titleOffsetY = -height * 0.3;
+    const titleOffsetY = -cardHeight * 0.3;
     const titleText = this.add.text(0, titleOffsetY, lesson.title, {
       fontSize: `${titleSize}px`,
       fontFamily: 'Arial, sans-serif',
       color: COLORS.TEXT_PRIMARY,
       fontStyle: 'bold',
       align: 'center',
-      wordWrap: { width: width * 0.9 }, // 90% of card width
+      wordWrap: { width: cardWidth * 0.9 }, // 90% of card width
     }).setOrigin(0.5);
     lessonContainer.add(titleText);
 
     // Lesson type - responsive sizing and positioning
     const typeSize = Math.min(this.scale.width, this.scale.height) * 0.016;
-    const typeOffsetY = -height * 0.1;
+    const typeOffsetY = -cardHeight * 0.1;
     const typeText = this.add.text(0, typeOffsetY, lesson.type, {
       fontSize: `${typeSize}px`,
       fontFamily: 'Arial, sans-serif',
@@ -348,39 +338,105 @@ export default class HouseScene extends Phaser.Scene {
 
     // Lock overlay for locked lessons
     if (lesson.locked) {
-      const lockOverlay = this.add.rectangle(0, cardOffsetY, width, height, COLORS.GRAY_200, 0.5);
+      const lockOverlay = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.GRAY_200, 0.5);
       lessonContainer.add(lockOverlay);
     }
 
-    // Action button
-    this.createLessonButton(lessonContainer, lesson, width, height);
+    // Status badge (non-clickable visual component)
+    this.createStatusBadge(lessonContainer, lesson, cardWidth, cardHeight);
+
+    // Make the entire container interactive (clickable)
+    this.makeCardInteractive(lessonContainer, card, lesson);
   }
 
-  private createLessonButton(
+  private createStatusBadge(
     container: Phaser.GameObjects.Container, 
     lesson: Lesson,
     cardWidth: number,
     cardHeight: number
   ): void {
-    const buttonY = cardHeight * 0.3; // Position relative to card height
-    const buttonWidth = cardWidth * 0.6; // 60% of card width
-    const buttonHeight = cardHeight * 0.25; // 25% of card height
+    const badgeY = cardHeight * 0.3; // Position relative to card height
+    const badgeWidth = cardWidth * 0.6; // 60% of card width
+    const badgeHeight = cardHeight * 0.25; // 25% of card height
     const fontSize = Math.min(this.scale.width, this.scale.height) * 0.016;
+    const borderRadius = badgeHeight * 0.3; // Rounded corners
 
-    const button = ButtonBuilder.createLessonButton({
-      scene: this,
-      x: 0,
-      y: buttonY,
-      width: buttonWidth,
-      height: buttonHeight,
-      text: lesson.locked ? 'Locked' : lesson.completed ? 'Review' : 'Start',
-      fontSize: fontSize,
-      completed: lesson.completed,
-      locked: lesson.locked,
-      onClick: () => this.handleLessonClick(lesson.id),
-    });
+    // Determine badge color and text based on lesson state
+    let backgroundColor: number;
+    let text: string;
 
-    container.add(button);
+    if (lesson.locked) {
+      backgroundColor = COLORS.GRAY_400;
+      text = 'Locked';
+    } else if (lesson.completed) {
+      backgroundColor = COLORS.GREEN_500;
+      text = 'Review';
+    } else {
+      backgroundColor = COLORS.BLUE_500;
+      text = 'Start';
+    }
+
+    // Create rounded rectangle for badge background
+    const badgeGraphics = this.add.graphics();
+    badgeGraphics.fillStyle(backgroundColor, 1);
+    badgeGraphics.fillRoundedRect(
+      -badgeWidth / 2, 
+      badgeY - badgeHeight / 2, 
+      badgeWidth, 
+      badgeHeight, 
+      borderRadius
+    );
+    container.add(badgeGraphics);
+
+    // Badge text
+    const badgeText = this.add.text(0, badgeY, text, {
+      fontSize: `${fontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#ffffff',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    container.add(badgeText);
+  }
+
+  private makeCardInteractive(
+    container: Phaser.GameObjects.Container,
+    cardBackground: Phaser.GameObjects.Rectangle,
+    lesson: Lesson
+  ): void {
+    // Make the card background interactive
+    cardBackground.setInteractive({ useHandCursor: !lesson.locked });
+
+    // Store original scale for hover effect
+    const originalScaleX = container.scaleX;
+    const originalScaleY = container.scaleY;
+
+    if (!lesson.locked) {
+      // Hover effects
+      cardBackground.on('pointerover', () => {
+        this.tweens.add({
+          targets: container,
+          scaleX: originalScaleX * 1.05,
+          scaleY: originalScaleY * 1.05,
+          duration: 200,
+          ease: 'Power2',
+        });
+      });
+
+      cardBackground.on('pointerout', () => {
+        this.tweens.add({
+          targets: container,
+          scaleX: originalScaleX,
+          scaleY: originalScaleY,
+          duration: 200,
+          ease: 'Power2',
+        });
+      });
+
+      // Click handler
+      cardBackground.on('pointerdown', () => {
+        this.handleLessonClick(lesson.id);
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -473,11 +529,9 @@ export default class HouseScene extends Phaser.Scene {
 
   private handleResize(): void {
     // Destroy existing elements
-    if (this.leftHouse) this.leftHouse.destroy();
-    if (this.rightHouse) this.rightHouse.destroy();
+    if (this.lessonHouse) this.lessonHouse.destroy();
     if (this.backButton) this.backButton.destroy();
     if (this.minigameButton) this.minigameButton.destroy();
-    if (this.headerCard) this.headerCard.destroy();
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
     

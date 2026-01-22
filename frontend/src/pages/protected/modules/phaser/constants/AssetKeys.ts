@@ -3,8 +3,7 @@ export const ASSET_KEYS = {
   SUBURBAN_BACKGROUND: 'suburbanBackground',
   
   // House Assets
-  LEFT_CUT_HOUSE: 'leftCutHouse',
-  RIGHT_CUT_HOUSE: 'rightCutHouse',
+  LESSON_HOUSE: 'lessonHouse',
   HOUSE_1: 'house1',
   HOUSE_2: 'house2',
   HOUSE_3: 'house3',

@@ -1,8 +1,7 @@
 import Phaser from 'phaser';
 import { 
   SuburbanBackground, 
-  LeftCutHouse, 
-  RightCutHouse,
+  LessonHouse, 
   House1, 
   House2, 
   House3, 
@@ -24,8 +23,7 @@ export default class PreloaderScene extends Phaser.Scene {
     // This runs BEFORE preload() - check if textures already exist
     const texturesExist = 
       this.textures.exists('suburbanBackground') &&
-      this.textures.exists('leftCutHouse') &&
-      this.textures.exists('rightCutHouse') &&
+      this.textures.exists('lessonHouse') &&
       this.textures.exists('house1') &&
       this.textures.exists('house2') &&
       this.textures.exists('house3') &&
@@ -88,8 +86,7 @@ export default class PreloaderScene extends Phaser.Scene {
 
     // Load all assets
     this.load.image('suburbanBackground', SuburbanBackground);
-    this.load.image('leftCutHouse', LeftCutHouse);
-    this.load.image('rightCutHouse', RightCutHouse);
+    this.load.image('lessonHouse', LessonHouse);
     this.load.image('house1', House1);
     this.load.image('house2', House2);
     this.load.image('house3', House3);
