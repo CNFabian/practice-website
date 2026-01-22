@@ -1,3 +1,13 @@
+import type { Lesson as AppLesson, Module as AppModule } from '../../../../../types/modules';
+
+// ═══════════════════════════════════════════════════════════
+// RE-EXPORT MAIN APP TYPES
+// ═══════════════════════════════════════════════════════════
+
+// Re-export the main Lesson and Module types so phaser code uses the same types
+export type Lesson = AppLesson;
+export type Module = AppModule;
+
 // ═══════════════════════════════════════════════════════════
 // SCENE DATA INTERFACES
 // ═══════════════════════════════════════════════════════════
@@ -57,30 +67,6 @@ export interface HousePosition {
   moduleBackendId?: string; // Backend module UUID
   description?: string; // Module description
   coinReward?: number; // Coins for completing module
-}
-
-// ═══════════════════════════════════════════════════════════
-// MODULE & LESSON INTERFACES
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Lesson data for HouseScene
- */
-export interface Lesson {
-  id: number;
-  title: string;
-  type: string;
-  completed: boolean;
-  locked: boolean;
-}
-
-/**
- * Module data containing lessons
- */
-export interface Module {
-  id: number;
-  title: string;
-  lessons: Lesson[];
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -162,5 +148,21 @@ export interface Bounds {
 export interface ModuleLessonsData {
   id: number;
   title: string;
-  lessons: Lesson[];
+  lessons: Lesson[]; // Now uses the full Lesson type from main app
+}
+
+/**
+ * Backend lesson data interface from API
+ */
+export interface BackendLessonData {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  video_url: string;
+  estimated_duration_minutes: number;
+  nest_coins_reward: number;
+  is_completed: boolean;
+  progress_seconds: number;
 }
