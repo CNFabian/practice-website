@@ -82,7 +82,7 @@ export { default as House1 } from './images/phaser/house1.svg'
 export { default as House2 } from './images/phaser/house2.svg'
 export { default as House3 } from './images/phaser/house3.svg'
 export { default as House4 } from './images/phaser/house4.svg'
-export { default as SuburbanBackground } from './images/phaser/suburban_background1.png'
+export { default as HouseBackground } from './images/phaser/house_background1.png'
 export { default as LessonHouse } from './images/phaser/House.png'
 
 // Neighborhood Images for Phaser Scenes

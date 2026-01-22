@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { BaseScene } from './BaseScene';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { COLORS } from '../constants/Colors';
@@ -14,7 +15,7 @@ interface NeighborhoodData {
   isLocked: boolean;
 }
 
-export default class MapScene extends Phaser.Scene {
+export default class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   // PROPERTIES
   // ═══════════════════════════════════════════════════════════
@@ -37,12 +38,14 @@ export default class MapScene extends Phaser.Scene {
   }
 
   create() {
+    super.create();
     this.setupNeighborhoodData();
     this.createUI();
     this.setupEventListeners();
   }
 
   shutdown() {
+    super.shutdown();
     this.cleanupEventListeners();
   }
 
@@ -284,6 +287,8 @@ export default class MapScene extends Phaser.Scene {
 
   private handleResize(): void {
     const { width, height } = this.scale;
+
+    this.handleCoinCounterResize();
 
     // Reposition center container
     if (this.centerContainer) {

@@ -3,6 +3,41 @@ import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { COLORS } from '../constants/Colors';
 
 export class UIComponents {
+
+  /**
+   * Create a coin counter display
+   */
+  static createCoinCounter(
+    scene: Phaser.Scene,
+    coins: number
+  ): Phaser.GameObjects.Container {
+    const container = scene.add.container(0, 0);
+    container.setDepth(100); // High depth to stay on top
+
+    // Background
+    const background = scene.add.rectangle(0, 0, scale(120), scale(40), 0xFFFFFF, 0.95); // Changed opacity to match BaseScene
+    background.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    container.add(background);
+
+    // Coin text
+    const coinText = scene.add.text(-scale(15), 0, coins.toString(), { // Changed position to match BaseScene
+      fontSize: scaleFontSize(20), // Changed size to match BaseScene
+      fontFamily: 'Fredoka, sans-serif',
+      color: '#000000',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    coinText.setName('coinText'); // ADD THIS LINE - so BaseScene can find it
+    container.add(coinText);
+
+    // Coin icon
+    const coinIcon = scene.add.text(scale(30), 0, '🪙', { // Changed position to match BaseScene
+      fontSize: scaleFontSize(28), // Changed size to match BaseScene
+    }).setOrigin(0.5);
+    container.add(coinIcon);
+
+    return container;
+  }
+
   /**
    * Create a status badge (e.g., "Completed", "Locked")
    */

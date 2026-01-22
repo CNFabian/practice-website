@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { BaseScene } from './BaseScene';
 import { scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
@@ -40,7 +41,7 @@ interface ModuleLessonsData {
   lessons: Lesson[];
 }
 
-export default class HouseScene extends Phaser.Scene {
+export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   // PROPERTIES
   // ═══════════════════════════════════════════════════════════
@@ -99,6 +100,7 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   create() {
+    super.create();
     this.createEnvironment();
     this.createUI();
     this.createBirdWithEntrance();
@@ -106,6 +108,7 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   shutdown() {
+    super.shutdown();
     this.cleanupEventListeners();
     this.cleanupBird();
     this.lessonContainers = [];
@@ -208,7 +211,7 @@ export default class HouseScene extends Phaser.Scene {
     const buttonWidth = width * 0.12; // 12% of width
     const buttonHeight = height * 0.05; // 5% of height
     const buttonX = width - (width * 0.08); // 8% from right
-    const buttonY = height * 0.05; // 5% from top
+    const buttonY = height - (height * 0.05); // 5% from bottom (CHANGED)
     
     this.minigameButton = ButtonBuilder.createButton({
       scene: this,
@@ -217,7 +220,7 @@ export default class HouseScene extends Phaser.Scene {
       width: buttonWidth,
       height: buttonHeight,
       text: 'Minigame',
-      fontSize: Math.min(width, height) * 0.016, // Responsive font size
+      fontSize: Math.min(width, height) * 0.016,
       backgroundColor: COLORS.BLUE_500,
       hoverColor: COLORS.BLUE_600,
       onClick: () => this.handleMinigameSelect(),
@@ -534,6 +537,8 @@ export default class HouseScene extends Phaser.Scene {
     if (this.minigameButton) this.minigameButton.destroy();
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
+
+    this.handleCoinCounterResize();
     
     // Handle bird resize
     if (this.bird) {

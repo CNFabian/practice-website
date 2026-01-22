@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { BaseScene } from './BaseScene';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
@@ -27,7 +28,7 @@ interface NeighborhoodSceneData {
   currentHouseIndex?: number;
 }
 
-export default class NeighborhoodScene extends Phaser.Scene {
+export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   // PROPERTIES
   // ═══════════════════════════════════════════════════════════
@@ -76,11 +77,13 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   create() {
+    super.create();
     this.createUI();
     this.setupEventListeners();
   }
 
   shutdown() {
+    super.shutdown();
     this.cleanupEventListeners();
     this.cleanupBird();
   }
@@ -500,6 +503,8 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.houseSprites.forEach(sprite => sprite.destroy());
     this.houseSprites.clear();
     if (this.placeholderCard) this.placeholderCard.destroy();
+
+    this.handleCoinCounterResize();
     
     // Handle bird resize
     if (this.bird && this.houses.length > 0) {

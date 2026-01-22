@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { 
-  SuburbanBackground, 
+  HouseBackground, 
   LessonHouse, 
   House1, 
   House2, 
@@ -85,7 +85,7 @@ export default class PreloaderScene extends Phaser.Scene {
     });
 
     // Load all assets
-    this.load.image('suburbanBackground', SuburbanBackground);
+    this.load.image('houseBackground', HouseBackground);
     this.load.image('lessonHouse', LessonHouse);
     this.load.image('house1', House1);
     this.load.image('house2', House2);

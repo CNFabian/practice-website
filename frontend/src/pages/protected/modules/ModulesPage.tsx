@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { SuburbanBackground } from '../../../assets';
+import { HouseBackground } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
 import type { Module, Lesson } from '../../../types/modules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
+import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 
 interface ModulesPageProps {}
 
@@ -66,7 +67,9 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [moduleLessonsData, setModuleLessonsData] = useState<Record<string, ModuleLessonsData>>({});
-  
+  const { data: coinBalanceData } = useCoinBalance();
+  const totalCoins = coinBalanceData?.current_balance || 0;
+
   // Initialize navState from GameManager's saved state or default to 'map'
   const [navState, setNavState] = useState<NavState>(() => {
      const saved = localStorage.getItem('moduleNavState');
@@ -221,7 +224,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     console.log('📚 Transformed lessons data:', transformedLessons);
   }, [lessonsData, navState.moduleBackendId, navState.moduleId, neighborhoodHousesData, moduleLessonsData]);
 
-  // ✅ FIXED: Get real module data instead of mock data
+  // Get real module data instead of mock data
   const currentModule: Module | null = useMemo(() => {
     if (!navState.moduleId || !navState.moduleBackendId) return null;
     
@@ -242,7 +245,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     };
   }, [navState.moduleId, navState.moduleBackendId, neighborhoodHousesData, moduleLessonsData]);
 
-  // ✅ FIXED: Get real lesson data instead of mock data
+  // Get real lesson data instead of mock data
   const currentLesson: Lesson | null = useMemo(() => {
     if (!navState.lessonId || !navState.moduleBackendId) return null;
     
@@ -257,7 +260,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     // Return the lesson with the REAL backendId
     return {
       id: lessonData.id,
-      backendId: lessonData.backendId, // ✅ This is the actual UUID from backend
+      backendId: lessonData.backendId,
       image: lessonData.image || '/placeholder-lesson.jpg',
       title: lessonData.title,
       duration: lessonData.duration,
@@ -526,6 +529,14 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
     localStorage.setItem('moduleNavState', JSON.stringify(navState));
   }, [navState]);
 
+  useEffect(() => {
+    const game = GameManager.getGame();
+    if (game) {
+      // Update the registry value - this will trigger the coin counter update in all scenes
+      game.registry.set('totalCoins', totalCoins);
+    }
+  }, [totalCoins]);
+
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
   const getBackgroundStyle = () => {
@@ -536,7 +547,7 @@ const ModulesPage: React.FC<ModulesPageProps> = () => {
         return { backgroundColor: '#fed7aa' };
       case 'house':
         return {
-          backgroundImage: `url(${SuburbanBackground})`,
+          backgroundImage: `url(${HouseBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
