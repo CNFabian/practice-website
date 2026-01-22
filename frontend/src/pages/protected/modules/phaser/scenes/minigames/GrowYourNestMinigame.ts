@@ -24,6 +24,8 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private progressText!: Phaser.GameObjects.Text;
   private plantGraphics!: Phaser.GameObjects.Container;
   private stageText!: Phaser.GameObjects.Text;
+  private backButton?: Phaser.GameObjects.Container;
+  private headerTitle?: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -41,22 +43,20 @@ create() {
   this.createBackButton();
   this.createHeader(width);
   this.createPanels(width, height);
-  
-  // Add resize listener
   this.scale.on('resize', this.handleResize, this);
 }
 
-private handleResize(gameSize: Phaser.Structs.Size): void {
-  const { width, height } = gameSize;
+private handleResize(): void {
+  // Destroy existing header elements
+  if (this.backButton) this.backButton.destroy();
+  if (this.headerTitle) this.headerTitle.destroy();
   
-  // Destroy and recreate all UI elements while preserving game state
-  // The state (currentQuestionIndex, score, selectedAnswer) is already stored in class properties
-  
-  // Clear existing containers
+  // Destroy existing panels
   if (this.leftPanel) this.leftPanel.destroy();
   if (this.rightPanel) this.rightPanel.destroy();
   
   // Recreate everything with new dimensions
+  const { width, height } = this.scale;
   this.createBackButton();
   this.createHeader(width);
   this.createPanels(width, height);
@@ -68,30 +68,30 @@ shutdown() {
 }
 
   private createBackButton(): void {
-    const backButton = this.add.container(60, 48);
+    this.backButton = this.add.container(60, 48); // Assign to class property
     const arrow = this.add.text(0, 0, '←', { fontSize: '48px', color: '#6b7280' });
     arrow.setOrigin(0.5);
     const text = this.add.text(40, 0, 'Module 1', { fontSize: '36px', fontFamily: 'Arial, sans-serif', color: '#1f2937' });
     text.setOrigin(0, 0.5);
-    backButton.add([arrow, text]);
-    backButton.setDepth(100);
+    this.backButton.add([arrow, text]);
+    this.backButton.setDepth(100);
     const hitArea = this.add.rectangle(-10, 0, 250, 70, 0x000000, 0);
     hitArea.setOrigin(0, 0.5);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => this.scene.stop());
-    backButton.add(hitArea);
-    backButton.sendToBack(hitArea);
+    this.backButton.add(hitArea);
+    this.backButton.sendToBack(hitArea);
   }
 
   private createHeader(width: number): void {
-    const titleText = this.add.text(width / 2, 48, 'Grow Your Nest', {
+    this.headerTitle = this.add.text(width / 2, 48, 'Grow Your Nest', { // Assign to class property
       fontSize: '42px',
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
     });
-    titleText.setOrigin(0.5, 0.5);
-    titleText.setDepth(10);
+    this.headerTitle.setOrigin(0.5, 0.5);
+    this.headerTitle.setDepth(10);
   }
 
   private createPanels(width: number, height: number): void {

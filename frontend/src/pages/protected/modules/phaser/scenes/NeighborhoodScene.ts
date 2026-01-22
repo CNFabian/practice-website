@@ -6,18 +6,19 @@ import { COLORS, OPACITY } from '../constants/Colors';
 import { CardBuilder } from '../ui/CardBuilder';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
+import { BirdCharacter } from '../characters/BirdCharacter';
 
 interface HousePosition {
   id: string;
-  name: string; // NOW COMES FROM MODULE TITLE
-  x: number; // Percentage from left (0-100)
-  y: number; // Percentage from top (0-100)
-  isLocked?: boolean; // NOW COMES FROM MODULE UNLOCK STATUS
-  houseType?: string; // 'house1', 'house2', 'house3', 'house4', etc.
-  moduleId?: number; // Frontend module ID
-  moduleBackendId?: string; // Backend module UUID
-  description?: string; // Module description
-  coinReward?: number; // Module coin reward
+  name: string;
+  x: number;
+  y: number;
+  isLocked?: boolean;
+  houseType?: string;
+  moduleId?: number;
+  moduleBackendId?: string;
+  description?: string;
+  coinReward?: number;
 }
 
 interface NeighborhoodSceneData {
@@ -39,12 +40,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
   private platform?: Phaser.GameObjects.Image;
   private roads: Phaser.GameObjects.Image[] = [];
   
-  // Bird animation properties
-  private birdSprite?: Phaser.GameObjects.Image;
+  // Bird character properties
+  private bird?: BirdCharacter;
   private currentHouseIndex: number = 0;
   private previousHouseIndex: number = 0;
-  private isHopping: boolean = false;
-  private idleHopTimer?: Phaser.Time.TimerEvent;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -62,7 +61,6 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.isTransitioning = false;
     this.currentHouseIndex = data.currentHouseIndex ?? 0;
     this.previousHouseIndex = this.currentHouseIndex;
-    this.isHopping = false;
     
     console.log('🏘️ NeighborhoodScene init with houses:', this.houses);
     
@@ -70,10 +68,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.houseSprites.clear();
     this.roads = [];
     
-    // Clear any existing timers
-    if (this.idleHopTimer) {
-      this.idleHopTimer.remove();
-      this.idleHopTimer = undefined;
+    // Cleanup existing bird
+    if (this.bird) {
+      this.bird.destroy();
+      this.bird = undefined;
     }
   }
 
@@ -84,7 +82,7 @@ export default class NeighborhoodScene extends Phaser.Scene {
 
   shutdown() {
     this.cleanupEventListeners();
-    this.cleanupTimers();
+    this.cleanupBird();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -98,10 +96,10 @@ export default class NeighborhoodScene extends Phaser.Scene {
     this.scale.off('resize', this.handleResize, this);
   }
 
-  private cleanupTimers(): void {
-    if (this.idleHopTimer) {
-      this.idleHopTimer.remove();
-      this.idleHopTimer = undefined;
+  private cleanupBird(): void {
+    if (this.bird) {
+      this.bird.destroy();
+      this.bird = undefined;
     }
   }
 
@@ -363,27 +361,29 @@ export default class NeighborhoodScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
     
-    // Make bird offset responsive to viewport
-    const birdOffsetX = width * 0.04; // 4% of width
-    const birdOffsetY = height * 0.025; // 2.5% of height
+    const birdOffsetX = width * 0.04;
+    const birdOffsetY = height * 0.025;
     
     const birdX = (currentHouse.x / 100) * width + birdOffsetX;
     const birdY = (currentHouse.y / 100) * height + birdOffsetY;
 
-    this.birdSprite = this.add.image(birdX, birdY, ASSET_KEYS.BIRD_IDLE);
-    
-    // Make bird size responsive - use percentage of viewport
-    const birdSize = Math.min(width, height) * 0.08; // 8% of smaller dimension
-    this.birdSprite.setDisplaySize(birdSize, birdSize);
-    this.birdSprite.setDepth(1000);
+    // Initialize bird character
+    this.bird = new BirdCharacter(this);
+    this.bird.createStatic(birdX, birdY);
   }
 
   private startBirdIdleAnimation(): void {
+    if (!this.bird) return;
+
+    // Stop any existing idle animation
+    this.bird.stopIdleAnimation();
+
+    // Start new idle animation with custom logic for neighborhood boundaries
     const scheduleNextIdleHop = () => {
       const randomDelay = Phaser.Math.Between(5000, 8000);
 
-      this.idleHopTimer = this.time.delayedCall(randomDelay, () => {
-        if (!this.isHopping && !this.isTransitioning && this.birdSprite) {
+      this.time.delayedCall(randomDelay, () => {
+        if (!this.bird?.getIsAnimating() && !this.isTransitioning) {
           this.playBirdIdleHop();
         }
         scheduleNextIdleHop();
@@ -394,201 +394,50 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   private playBirdIdleHop(): void {
-    if (!this.birdSprite || this.isHopping || this.houses.length === 0) return;
+    if (!this.bird || this.bird.getIsAnimating() || this.houses.length === 0) return;
 
-    const originalY = this.birdSprite.y;
-    const originalX = this.birdSprite.x;
-
-    // Get current house position to constrain movement
-    const { width, height } = this.scale;
+    const { width } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
     
     const birdOffsetX = width * 0.04;
     const houseCenterX = (currentHouse.x / 100) * width + birdOffsetX;
-
-    // Define boundary around house - responsive
     const houseAreaRadius = width * 0.05;
-    const minX = houseCenterX - houseAreaRadius;
-    const maxX = houseCenterX + houseAreaRadius;
 
-    // Random small movement
-    const moveDistance = Phaser.Math.Between(-5, 5);
-    let targetX = originalX + scale(moveDistance);
-    targetX = Phaser.Math.Clamp(targetX, minX, maxX);
-
-    // Flip sprite based on movement direction
-    const actualMove = targetX - originalX;
-    if (Math.abs(actualMove) > scale(2)) {
-      this.birdSprite.setFlipX(actualMove < 0);
-    }
-
-    // Single hop animation
-    const hopHeight = height * 0.003;    const duration = 300;
-
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: targetX,
-      y: originalY - hopHeight,
-      duration: duration,
-      ease: 'Sine.easeOut',
-      yoyo: true,
-      onStart: () => {
-        this.tweens.add({
-          targets: this.birdSprite,
-          angle: -3,
-          duration: duration / 2,
-          ease: 'Sine.easeInOut',
-          yoyo: true,
-        });
-      },
-    });
+    // Use bird's idle hop method with boundary constraints
+    this.bird.playIdleHopWithBoundary(houseCenterX, houseAreaRadius);
   }
 
   private travelToHouse(targetHouseIndex: number): void {
-    if (!this.birdSprite || this.isHopping || targetHouseIndex >= this.houses.length) return;
+    if (!this.bird || this.bird.getIsAnimating() || targetHouseIndex >= this.houses.length) return;
 
-    this.isHopping = true;
+    this.bird.setIsAnimating(true);
     this.previousHouseIndex = this.currentHouseIndex;
 
     const { width, height } = this.scale;
     const targetHouse = this.houses[targetHouseIndex];
     
-    // Make bird offset responsive
     const birdOffsetX = width * 0.04;
     const birdOffsetY = height * 0.025;
     
     const targetX = (targetHouse.x / 100) * width + birdOffsetX;
     const targetY = (targetHouse.y / 100) * height + birdOffsetY;
 
-    // Flip sprite based on direction
-    this.birdSprite.setFlipX(targetX < this.birdSprite.x);
-
     // Calculate distance
     const houseDistance = Math.abs(targetHouseIndex - this.currentHouseIndex);
 
     if (houseDistance > 1) {
       // Glide animation for long distances
-      this.animateBirdGlide(targetX, targetY, targetHouseIndex, targetHouse, houseDistance);
+      this.bird.glideToPosition(targetX, targetY, houseDistance, () => {
+        this.currentHouseIndex = targetHouseIndex;
+        this.handleHouseClick(targetHouse);
+      });
     } else {
       // Hop animation for short distances
-      this.animateBirdHop(targetX, targetY, targetHouseIndex, targetHouse);
-    }
-  }
-
-  private animateBirdGlide(
-    targetX: number,
-    targetY: number,
-    targetHouseIndex: number,
-    targetHouse: HousePosition,
-    houseDistance: number
-  ): void {
-    const hopDuration = 250;
-    const totalGlideTime = houseDistance * hopDuration * 4;
-
-    // Change to flight texture
-     this.birdSprite!.setTexture(ASSET_KEYS.BIRD_FLY);
-    const flyTexture = this.textures.get(ASSET_KEYS.BIRD_FLY);
-    const flyWidth = flyTexture.getSourceImage().width;
-    const flyHeight = flyTexture.getSourceImage().height;
-    const flyAspectRatio = flyWidth / flyHeight;
-    
-    // Make fly size responsive
-    const { width, height } = this.scale;
-    const flySize = Math.min(width, height) * 0.1; // 10% of smaller dimension
-    this.birdSprite!.setDisplaySize(flySize * flyAspectRatio, flySize);
-
-
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: targetX,
-      y: targetY,
-      duration: totalGlideTime,
-      ease: 'Sine.easeInOut',
-      onComplete: () => {
-        this.birdSprite!.setTexture(ASSET_KEYS.BIRD_IDLE);
-        const { width, height } = this.scale;
-        const birdSize = Math.min(width, height) * 0.08;
-        this.birdSprite!.setDisplaySize(birdSize, birdSize);
-        this.isHopping = false;
+      this.bird.hopToPosition(targetX, targetY, () => {
         this.currentHouseIndex = targetHouseIndex;
         this.handleHouseClick(targetHouse);
-      },
-    });
-  }
-
-  private animateBirdHop(
-    targetX: number,
-    targetY: number,
-    targetHouseIndex: number,
-    targetHouse: HousePosition
-  ): void {
-    const distance = Phaser.Math.Distance.Between(
-      this.birdSprite!.x,
-      this.birdSprite!.y,
-      targetX,
-      targetY
-    );
-
-    const numHops = Math.max(5, Math.floor(distance / scale(40)));
-    const hopHeight = scale(10);
-    const hopDuration = 250;
-
-    // Create hop path
-    const path: { x: number; y: number }[] = [];
-    for (let i = 0; i <= numHops; i++) {
-      const t = i / numHops;
-      const x = Phaser.Math.Linear(this.birdSprite!.x, targetX, t);
-      const y = Phaser.Math.Linear(this.birdSprite!.y, targetY, t);
-      path.push({ x, y });
-    }
-
-    let currentHop = 0;
-
-    const performNextHop = () => {
-      if (currentHop >= path.length - 1) {
-        this.isHopping = false;
-        this.currentHouseIndex = targetHouseIndex;
-        this.handleHouseClick(targetHouse);
-        return;
-      }
-
-      const startPoint = path[currentHop];
-      const endPoint = path[currentHop + 1];
-      const midX = (startPoint.x + endPoint.x) / 2;
-      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
-
-      this.tweens.add({
-        targets: this.birdSprite,
-        x: midX,
-        y: midY,
-        duration: hopDuration / 2,
-        ease: 'Sine.easeOut',
-        onStart: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            angle: currentHop % 2 === 0 ? -5 : 5,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-          });
-        },
-        onComplete: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            x: endPoint.x,
-            y: endPoint.y,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeIn',
-            onComplete: () => {
-              currentHop++;
-              performNextHop();
-            },
-          });
-        },
       });
-    };
-
-    performNextHop();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -643,27 +492,38 @@ export default class NeighborhoodScene extends Phaser.Scene {
   }
 
   private handleResize(): void {
-  // Destroy existing elements
-  if (this.backButton) this.backButton.destroy();
-  this.roads.forEach(road => road.destroy());
-  this.roads = [];
-  if (this.platform) this.platform.destroy();
-  this.houseSprites.forEach(sprite => sprite.destroy());
-  this.houseSprites.clear();
-  if (this.birdSprite) this.birdSprite.destroy();
-  if (this.placeholderCard) this.placeholderCard.destroy();
-  
-  // Recreate everything with new dimensions
-  this.createBackButton();
-  
-  if (this.houses.length > 0) {
-    this.createEnvironment();
-    this.createHouses();
-    this.createBird();
-  } else {
-    this.createPlaceholder();
+    // Destroy existing elements
+    if (this.backButton) this.backButton.destroy();
+    this.roads.forEach(road => road.destroy());
+    this.roads = [];
+    if (this.platform) this.platform.destroy();
+    this.houseSprites.forEach(sprite => sprite.destroy());
+    this.houseSprites.clear();
+    if (this.placeholderCard) this.placeholderCard.destroy();
+    
+    // Handle bird resize
+    if (this.bird && this.houses.length > 0) {
+      const { width, height } = this.scale;
+      const currentHouse = this.houses[this.currentHouseIndex];
+      const birdOffsetX = width * 0.04;
+      const birdOffsetY = height * 0.025;
+      const birdX = (currentHouse.x / 100) * width + birdOffsetX;
+      const birdY = (currentHouse.y / 100) * height + birdOffsetY;
+      
+      this.bird.setPosition(birdX, birdY);
+      this.bird.handleResize();
+    }
+    
+    // Recreate everything with new dimensions
+    this.createBackButton();
+    
+    if (this.houses.length > 0) {
+      this.createEnvironment();
+      this.createHouses();
+    } else {
+      this.createPlaceholder();
+    }
   }
-}
 
   // ═══════════════════════════════════════════════════════════
   // TRANSITION METHODS

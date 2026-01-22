@@ -4,6 +4,7 @@ import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS, OPACITY } from '../constants/Colors';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
+import { BirdCharacter } from '../characters/BirdCharacter';
 
 interface Lesson {
   id: number;
@@ -53,9 +54,8 @@ export default class HouseScene extends Phaser.Scene {
   private leftHouse?: Phaser.GameObjects.Image;
   private rightHouse?: Phaser.GameObjects.Image;
   
-  // Bird animation
-  private birdSprite?: Phaser.GameObjects.Image;
-  private birdIdleTimer?: Phaser.Time.TimerEvent;
+ // Bird character
+  private bird?: BirdCharacter;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -92,9 +92,9 @@ export default class HouseScene extends Phaser.Scene {
       };
     }
     
-    if (this.birdIdleTimer) {
-      this.birdIdleTimer.remove();
-      this.birdIdleTimer = undefined;
+    if (this.bird) {
+      this.bird.destroy();
+      this.bird = undefined;
     }
   }
 
@@ -107,7 +107,7 @@ export default class HouseScene extends Phaser.Scene {
 
   shutdown() {
     this.cleanupEventListeners();
-    this.cleanupTimers();
+    this.cleanupBird();
     this.lessonContainers = [];
   }
 
@@ -124,10 +124,10 @@ export default class HouseScene extends Phaser.Scene {
     this.scale.off('resize', this.handleResize, this);
   }
 
-  private cleanupTimers(): void {
-    if (this.birdIdleTimer) {
-      this.birdIdleTimer.remove();
-      this.birdIdleTimer = undefined;
+  private cleanupBird(): void {
+    if (this.bird) {
+      this.bird.destroy();
+      this.bird = undefined;
     }
   }
 
@@ -395,201 +395,32 @@ export default class HouseScene extends Phaser.Scene {
     const finalX = width / 2;
     const finalY = height * 0.85;
 
+    // Initialize bird character
+    this.bird = new BirdCharacter(this);
+
     if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
-      // No entrance animation
-      this.createBirdStatic(finalX, finalY);
+      // No entrance animation - just create static bird
+      this.bird.createStatic(finalX, finalY);
+      this.bird.startIdleAnimation();
       this.registry.set('returningFromLesson', false);
       return;
     }
 
-    // Determine animation type
+    // Determine animation type based on travel distance
     const distance = Math.abs(travelInfo.currentHouseIndex - travelInfo.previousHouseIndex);
     const comingFromLeft = travelInfo.currentHouseIndex > travelInfo.previousHouseIndex;
 
     if (distance > 1) {
-      this.animateBirdFlyingEntrance(finalX, finalY, comingFromLeft);
+      // Long distance - flying entrance
+      this.bird.createWithFlyingEntrance(finalX, finalY, comingFromLeft, () => {
+        this.bird!.startIdleAnimation();
+      });
     } else {
-      this.animateBirdHoppingEntrance(finalX, finalY, comingFromLeft);
-    }
-  }
-
-  private createBirdStatic(x: number, y: number): void {
-    this.birdSprite = this.add.image(x, y, ASSET_KEYS.BIRD_IDLE);
-    // Make bird size responsive
-    const birdSize = Math.min(this.scale.width, this.scale.height) * 0.08;
-    this.birdSprite.setDisplaySize(birdSize, birdSize);
-    this.birdSprite.setDepth(1000);
-    this.startBirdIdleAnimation();
-  }
-
-  private animateBirdFlyingEntrance(finalX: number, finalY: number, fromLeft: boolean): void {
-    const { width, height } = this.scale;
-
-    // Responsive offsets
-    const offset = Math.min(width, height) * 0.1;
-    const startX = fromLeft ? -offset : width + offset;
-    const startY = height * 0.5;
-
-    // Create bird in flying texture
-    this.birdSprite = this.add.image(startX, startY, ASSET_KEYS.BIRD_FLY);
-    const flyTexture = this.textures.get(ASSET_KEYS.BIRD_FLY);
-    const flyWidth = flyTexture.getSourceImage().width;
-    const flyHeight = flyTexture.getSourceImage().height;
-    const flyAspectRatio = flyWidth / flyHeight;
-    
-    // Responsive fly size
-    const flySize = Math.min(width, height) * 0.1;
-    this.birdSprite.setDisplaySize(flySize * flyAspectRatio, flySize);
-    this.birdSprite.setDepth(1000);
-    this.birdSprite.setFlipX(!fromLeft);
-
-    // Fly animation
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: finalX,
-      y: finalY,
-      duration: 1500,
-      ease: 'Sine.easeInOut',
-      onComplete: () => {
-        this.birdSprite!.setTexture(ASSET_KEYS.BIRD_IDLE);
-        const birdSize = Math.min(width, height) * 0.08;
-        this.birdSprite!.setDisplaySize(birdSize, birdSize);
-        this.birdSprite!.setFlipX(false);
-        this.startBirdIdleAnimation();
-      },
-    });
-  }
-
-  private animateBirdHoppingEntrance(finalX: number, finalY: number, fromLeft: boolean): void {
-    const { width, height } = this.scale;
-
-    // Responsive offsets
-    const offset = Math.min(width, height) * 0.1;
-    const startX = fromLeft ? -offset : width + offset;
-
-    this.birdSprite = this.add.image(startX, finalY, ASSET_KEYS.BIRD_IDLE);
-    const birdSize = Math.min(width, height) * 0.08;
-    this.birdSprite.setDisplaySize(birdSize, birdSize);
-    this.birdSprite.setDepth(1000);
-    this.birdSprite.setFlipX(!fromLeft);
-
-    // Calculate hop path - responsive
-    const distance = Math.abs(finalX - startX);
-    const hopDistance = birdSize; // Use bird size for hop distance
-    const numHops = Math.max(5, Math.floor(distance / hopDistance));
-    const hopHeight = height * 0.015; // 1.5% of height
-    const hopDuration = 200;
-
-    const path: { x: number; y: number }[] = [];
-    for (let i = 0; i <= numHops; i++) {
-      const t = i / numHops;
-      path.push({
-        x: Phaser.Math.Linear(startX, finalX, t),
-        y: finalY,
+      // Short distance - hopping entrance
+      this.bird.createWithHoppingEntrance(finalX, finalY, comingFromLeft, () => {
+        this.bird!.startIdleAnimation();
       });
     }
-
-    let currentHop = 0;
-
-    const performNextHop = () => {
-      if (currentHop >= path.length - 1) {
-        this.birdSprite!.setFlipX(false);
-        this.startBirdIdleAnimation();
-        return;
-      }
-
-      const startPoint = path[currentHop];
-      const endPoint = path[currentHop + 1];
-      const midX = (startPoint.x + endPoint.x) / 2;
-      const midY = (startPoint.y + endPoint.y) / 2 - hopHeight;
-
-      this.tweens.add({
-        targets: this.birdSprite,
-        x: midX,
-        y: midY,
-        duration: hopDuration / 2,
-        ease: 'Sine.easeOut',
-        onStart: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            angle: currentHop % 2 === 0 ? -5 : 5,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-          });
-        },
-        onComplete: () => {
-          this.tweens.add({
-            targets: this.birdSprite,
-            x: endPoint.x,
-            y: endPoint.y,
-            duration: hopDuration / 2,
-            ease: 'Sine.easeIn',
-            onComplete: () => {
-              currentHop++;
-              performNextHop();
-            },
-          });
-        },
-      });
-    };
-
-    performNextHop();
-  }
-
-  private startBirdIdleAnimation(): void {
-    const scheduleNextIdleHop = () => {
-      const randomDelay = Phaser.Math.Between(5000, 8000);
-
-      this.birdIdleTimer = this.time.delayedCall(randomDelay, () => {
-        if (this.birdSprite && !this.isTransitioning) {
-          this.playBirdIdleHop();
-        }
-        scheduleNextIdleHop();
-      });
-    };
-
-    scheduleNextIdleHop();
-  }
-
-  private playBirdIdleHop(): void {
-    if (!this.birdSprite || this.isTransitioning) return;
-
-    const { width, height } = this.scale;
-    const originalY = this.birdSprite.y;
-    const originalX = this.birdSprite.x;
-
-    // Responsive movement and boundaries
-    const moveRange = Math.floor(width * 0.01); // 1% of width, converted to integer
-    const moveX = Phaser.Math.Between(-moveRange, moveRange);
-    const minX = width * 0.1; // 10% from left
-    const maxX = width * 0.9; // 10% from right
-    const targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
-
-    if (Math.abs(moveX) > moveRange * 0.5) {
-      this.birdSprite.setFlipX(moveX < 0);
-    }
-
-    const hopHeight = height * 0.008; // 0.8% of height
-    const duration = 400;
-
-    this.tweens.add({
-      targets: this.birdSprite,
-      x: targetX,
-      y: originalY - hopHeight,
-      duration: duration,
-      ease: 'Sine.easeOut',
-      yoyo: true,
-      onStart: () => {
-        this.tweens.add({
-          targets: this.birdSprite,
-          angle: -3,
-          duration: duration / 2,
-          ease: 'Sine.easeInOut',
-          yoyo: true,
-        });
-      },
-    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -649,12 +480,21 @@ export default class HouseScene extends Phaser.Scene {
     if (this.headerCard) this.headerCard.destroy();
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
-    if (this.birdSprite) this.birdSprite.destroy();
+    
+    // Handle bird resize
+    if (this.bird) {
+      const position = this.bird.getPosition();
+      if (position) {
+        // Recalculate position based on new viewport
+        const { width, height } = this.scale;
+        this.bird.setPosition(width / 2, height * 0.85);
+        this.bird.handleResize();
+      }
+    }
     
     // Recreate everything with new dimensions
     this.createEnvironment();
     this.createUI();
-    this.createBirdStatic(this.scale.width / 2, this.scale.height * 0.85); // Use static bird on resize
   }
 
   // ═══════════════════════════════════════════════════════════
