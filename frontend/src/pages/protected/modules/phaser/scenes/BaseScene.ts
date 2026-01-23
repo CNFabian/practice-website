@@ -6,6 +6,7 @@ import { UIComponents } from '../ui/UIComponents';
 export class BaseScene extends Phaser.Scene {
   protected coinCounter?: Phaser.GameObjects.Container;
   private coinUpdateListener?: () => void;
+  private coinCounterTween?: Phaser.Tweens.Tween;
 
   create(): void {
     this.createCoinCounter();
@@ -75,6 +76,12 @@ export class BaseScene extends Phaser.Scene {
 
   protected handleCoinCounterResize(): void {
     if (this.coinCounter) {
+      // Kill tween before destroying counter
+      if (this.coinCounterTween) {
+        this.coinCounterTween.stop();
+        this.coinCounterTween = undefined;
+      }
+      
       this.coinCounter.destroy();
       this.createCoinCounter();
     }

@@ -26,6 +26,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private stageText!: Phaser.GameObjects.Text;
   private backButton?: Phaser.GameObjects.Container;
   private headerTitle?: Phaser.GameObjects.Text;
+  private completionReturnButton?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -36,36 +37,107 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.currentQuestionIndex = 0;
     this.selectedAnswer = null;
     this.score = 0;
+    this.optionButtons = [];
   }
 
-create() {
-  const { width, height } = this.cameras.main;
-  this.createBackButton();
-  this.createHeader(width);
-  this.createPanels(width, height);
-  this.scale.on('resize', this.handleResize, this);
-}
+  create() {
+    const { width, height } = this.cameras.main;
+    this.createBackButton();
+    this.createHeader(width);
+    this.createPanels(width, height);
+    this.scale.on('resize', this.handleResize, this);
+  }
 
-private handleResize(): void {
-  // Destroy existing header elements
-  if (this.backButton) this.backButton.destroy();
-  if (this.headerTitle) this.headerTitle.destroy();
-  
-  // Destroy existing panels
-  if (this.leftPanel) this.leftPanel.destroy();
-  if (this.rightPanel) this.rightPanel.destroy();
-  
-  // Recreate everything with new dimensions
-  const { width, height } = this.scale;
-  this.createBackButton();
-  this.createHeader(width);
-  this.createPanels(width, height);
-}
+  private handleResize(): void {
+    // Kill all tweens FIRST
+    this.tweens.killAll();
+    
+    // Clean up interactive elements before destroying
+    this.optionButtons.forEach(btn => {
+      const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    });
+    
+    if (this.nextButton) {
+      const hitArea = this.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    }
+    
+    if (this.backButton) {
+      const hitArea = this.backButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    }
+    
+    // Destroy existing header elements
+    if (this.backButton) this.backButton.destroy();
+    if (this.headerTitle) this.headerTitle.destroy();
+    
+    // Destroy existing panels
+    if (this.leftPanel) this.leftPanel.destroy();
+    if (this.rightPanel) this.rightPanel.destroy();
+    
+    // Reset arrays
+    this.optionButtons = [];
+    
+    // Recreate everything with new dimensions
+    const { width, height } = this.scale;
+    this.createBackButton();
+    this.createHeader(width);
+    this.createPanels(width, height);
+  }
 
-shutdown() {
-  // Clean up resize listener
-  this.scale.off('resize', this.handleResize, this);
-}
+  shutdown() {
+    // Kill all tweens
+    this.tweens.killAll();
+    
+    // Clean up back button
+    if (this.backButton) {
+      const hitArea = this.backButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    }
+    
+    // Clean up option buttons
+    this.optionButtons.forEach(btn => {
+      const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    });
+    
+    // Clean up next button
+    if (this.nextButton) {
+      const hitArea = this.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    }
+    
+    // Clean up completion button if it exists
+    if (this.completionReturnButton) {
+      const hitArea = this.completionReturnButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+    }
+    
+    // Clean up resize listener
+    this.scale.off('resize', this.handleResize, this);
+  }
 
   private createBackButton(): void {
     this.backButton = this.add.container(60, 48); // Assign to class property
@@ -211,11 +283,30 @@ shutdown() {
     const panelWidth = this.rightPanel.getData('panelWidth') as number;
     const panelHeight = this.rightPanel.getData('panelHeight') as number;
 
-    this.optionButtons.forEach(btn => btn.destroy());
+    // Clean up old option buttons PROPERLY
+    this.optionButtons.forEach(btn => {
+      const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+      btn.destroy();
+    });
     this.optionButtons = [];
+    
+    // Clean up old question elements
     if (this.questionText) this.questionText.destroy();
     if (this.questionNumber) this.questionNumber.destroy();
-    if (this.nextButton) this.nextButton.destroy();
+    
+    // Clean up old next button
+    if (this.nextButton) {
+      const hitArea = this.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      if (hitArea && hitArea.input) {
+        hitArea.removeAllListeners();
+        hitArea.disableInteractive();
+      }
+      this.nextButton.destroy();
+    }
 
     const HORIZONTAL_PADDING_PERCENT = 0.08;
     const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
@@ -449,32 +540,40 @@ shutdown() {
   }
 
   private showCompletion(): void {
-    this.leftPanel.setVisible(false);
+     this.leftPanel.setVisible(false);
     this.rightPanel.setVisible(false);
+    
     const { width, height } = this.cameras.main;
     const centerX = width / 2;
     const centerY = height / 2;
+
     const completionText = this.add.text(centerX, centerY - 80, 'Minigame Complete! 🎉', {
       fontSize: '48px',
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
     });
+
     completionText.setOrigin(0.5, 0.5);
     completionText.setDepth(20);
+  
     const finalScoreText = this.add.text(centerX, centerY, `Final Score: ${this.score}/${this.questions.length}`, {
       fontSize: '32px',
       fontFamily: 'Arial, sans-serif',
       color: '#3b82f6',
       fontStyle: 'bold'
     });
+
     finalScoreText.setOrigin(0.5, 0.5);
     finalScoreText.setDepth(20);
-    const returnButton = this.add.container(centerX, centerY + 100);
-    returnButton.setDepth(20);
+
+    this.completionReturnButton = this.add.container(centerX, centerY + 100);
+    this.completionReturnButton.setDepth(20);
+    
     const returnBg = this.add.graphics();
     returnBg.fillStyle(0x3b82f6);
     returnBg.fillRoundedRect(-130, -35, 260, 70, 35);
+    
     const returnText = this.add.text(0, 0, 'Return to House', {
       fontSize: '22px',
       fontFamily: 'Arial, sans-serif',
@@ -482,12 +581,14 @@ shutdown() {
       fontStyle: 'bold'
     });
     returnText.setOrigin(0.5, 0.5);
-    returnButton.add([returnBg, returnText]);
+    
+    this.completionReturnButton.add([returnBg, returnText]);
+    
     const hitArea = this.add.rectangle(0, 0, 260, 70, 0x000000, 0);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => this.scene.stop());
-    returnButton.add(hitArea);
-    returnButton.sendToBack(hitArea);
+    this.completionReturnButton.add(hitArea);
+    this.completionReturnButton.sendToBack(hitArea);
   }
 
   private getDefaultQuestions(): QuizQuestion[] {

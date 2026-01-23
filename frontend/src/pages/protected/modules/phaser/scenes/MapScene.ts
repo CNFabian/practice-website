@@ -22,6 +22,8 @@ export default class MapScene extends BaseScene {
   private neighborhoods: NeighborhoodData[] = [];
   private isTransitioning: boolean = false;
   private centerContainer!: Phaser.GameObjects.Container;
+  private neighborhoodButtons: Phaser.GameObjects.Container[] = [];
+  private resizeDebounceTimer?: Phaser.Time.TimerEvent;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -35,6 +37,7 @@ export default class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   init() {
     this.isTransitioning = false;
+    this.neighborhoodButtons = []; // Reset button array
   }
 
   create() {
@@ -46,6 +49,27 @@ export default class MapScene extends BaseScene {
 
   shutdown() {
     super.shutdown();
+    
+    // Clean up debounce timer
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+      this.resizeDebounceTimer = undefined;
+    }
+    
+    // Clean up neighborhood button listeners
+    this.neighborhoodButtons.forEach(button => {
+      const buttonBg = button.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+    });
+    
+    this.neighborhoodButtons = [];
+    
+    // Kill all tweens
+    this.tweens.killAll();
+    
     this.cleanupEventListeners();
   }
 
@@ -76,7 +100,20 @@ export default class MapScene extends BaseScene {
   }
 
   private setupEventListeners(): void {
-    this.scale.on('resize', this.handleResize, this);
+    this.scale.on('resize', this.handleResizeDebounced, this);
+  }
+
+  private handleResizeDebounced(): void {
+    // Clear existing debounce timer
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+    }
+    
+    // Set new debounce timer (wait 100ms after last resize)
+    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
+      this.handleResize();
+      this.resizeDebounceTimer = undefined;
+    });
   }
 
   private cleanupEventListeners(): void {
@@ -237,32 +274,38 @@ export default class MapScene extends BaseScene {
     bgColor: number,
     hoverColor: number
   ): void {
-    background.setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        if (!this.isTransitioning) {
-          background.setFillStyle(hoverColor, 0.3);
-          this.tweens.add({
-            targets: container,
-            scale: 1.05,
-            duration: 150,
-            ease: 'Power2',
-          });
-        }
-      })
-      .on('pointerout', () => {
-        background.setFillStyle(bgColor, 0.2);
+    background.setInteractive({ useHandCursor: true });
+    
+    // Store the container for cleanup
+    this.neighborhoodButtons.push(container);
+    
+    background.on('pointerover', () => {
+      if (!this.isTransitioning) {
+        background.setFillStyle(hoverColor, 0.3);
         this.tweens.add({
           targets: container,
-          scale: 1,
+          scale: 1.05,
           duration: 150,
           ease: 'Power2',
         });
-      })
-      .on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          this.handleNeighborhoodClick(id);
-        }
+      }
+    });
+    
+    background.on('pointerout', () => {
+      background.setFillStyle(bgColor, 0.2);
+      this.tweens.add({
+        targets: container,
+        scale: 1,
+        duration: 150,
+        ease: 'Power2',
       });
+    });
+    
+    background.on('pointerdown', () => {
+      if (!this.isTransitioning) {
+        this.handleNeighborhoodClick(id);
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -287,6 +330,9 @@ export default class MapScene extends BaseScene {
 
   private handleResize(): void {
     const { width, height } = this.scale;
+
+    // Kill all active tweens before repositioning
+    this.tweens.killAll();
 
     this.handleCoinCounterResize();
 

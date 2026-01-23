@@ -24,6 +24,7 @@ export class BirdCharacter {
   private sprite?: Phaser.GameObjects.Image;
   private idleTimer?: Phaser.Time.TimerEvent;
   private isAnimating: boolean = false;
+  private cleanupScheduled: boolean = false;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -133,27 +134,34 @@ export class BirdCharacter {
   /**
    * Start idle animation (small random hops)
    */
+
   startIdleAnimation(): void {
     this.stopIdleAnimation();
-
+    this.cleanupScheduled = false; // Reset flag
+    
     const scheduleNextIdleHop = () => {
+      if (this.cleanupScheduled) return; // Exit if cleanup requested
+      
       const randomDelay = Phaser.Math.Between(5000, 8000);
-
       this.idleTimer = this.scene.time.delayedCall(randomDelay, () => {
+        if (this.cleanupScheduled) return;
         if (!this.isAnimating && this.sprite) {
           this.playIdleHop();
         }
         scheduleNextIdleHop();
       });
     };
-
+    
     scheduleNextIdleHop();
   }
+
+ 
 
   /**
    * Stop idle animation
    */
   stopIdleAnimation(): void {
+    this.cleanupScheduled = true;
     if (this.idleTimer) {
       this.idleTimer.remove();
       this.idleTimer = undefined;

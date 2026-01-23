@@ -40,7 +40,11 @@ export default class NeighborhoodScene extends BaseScene {
   private placeholderCard?: Phaser.GameObjects.Container;
   private platform?: Phaser.GameObjects.Image;
   private roads: Phaser.GameObjects.Image[] = [];
-  
+  private idleAnimationTimer?: Phaser.Time.TimerEvent;
+  private houseImages: Phaser.GameObjects.Image[] = [];
+  private isShuttingDown: boolean = false;
+  private resizeDebounceTimer?: Phaser.Time.TimerEvent;
+
   // Bird character properties
   private bird?: BirdCharacter;
   private currentHouseIndex: number = 0;
@@ -60,6 +64,7 @@ export default class NeighborhoodScene extends BaseScene {
     this.neighborhoodId = data.neighborhoodId;
     this.houses = data.houses || [];
     this.isTransitioning = false;
+    this.isShuttingDown = false;
     this.currentHouseIndex = data.currentHouseIndex ?? 0;
     this.previousHouseIndex = this.currentHouseIndex;
     
@@ -67,12 +72,19 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Clear existing data
     this.houseSprites.clear();
+    this.houseImages = []; // Reset house images array
     this.roads = [];
     
     // Cleanup existing bird
     if (this.bird) {
       this.bird.destroy();
       this.bird = undefined;
+    }
+    
+    // Clear any existing idle animation timer
+    if (this.idleAnimationTimer) {
+      this.idleAnimationTimer.remove();
+      this.idleAnimationTimer = undefined;
     }
   }
 
@@ -85,6 +97,44 @@ export default class NeighborhoodScene extends BaseScene {
 
   shutdown() {
     super.shutdown();
+    
+    // Set shutdown flag to prevent timer callbacks
+    this.isShuttingDown = true;
+    
+    // Clean up resize debounce timer
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+      this.resizeDebounceTimer = undefined;
+    }
+    
+    // Clean up house sprite listeners
+    this.houseImages.forEach(image => {
+      if (image && image.input) {
+        image.removeAllListeners();
+        image.disableInteractive();
+      }
+    });
+    
+    this.houseImages = [];
+    
+    // Clean up back button
+    if (this.backButton) {
+      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+    }
+    
+    // Clean up idle animation timer
+    if (this.idleAnimationTimer) {
+      this.idleAnimationTimer.remove();
+      this.idleAnimationTimer = undefined;
+    }
+    
+    // Kill all tweens
+    this.tweens.killAll();
+    
     this.cleanupEventListeners();
     this.cleanupBird();
   }
@@ -296,6 +346,9 @@ export default class NeighborhoodScene extends BaseScene {
     if (background) {
       background.setInteractive({ useHandCursor: true });
       
+      // Store the house image for cleanup
+      this.houseImages.push(background);
+      
       // Store original size
       const originalWidth = background.displayWidth;
       const originalHeight = background.displayHeight;
@@ -400,23 +453,26 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private startBirdIdleAnimation(): void {
-    if (!this.bird) return;
-
-    // Stop any existing idle animation
-    this.bird.stopIdleAnimation();
-
-    // Start new idle animation with custom logic for neighborhood boundaries
+    if (this.idleAnimationTimer) {
+      this.idleAnimationTimer.remove();
+    }
+    
+    this.isShuttingDown = false;
+    
     const scheduleNextIdleHop = () => {
+      if (this.isShuttingDown) return;
+      
       const randomDelay = Phaser.Math.Between(5000, 8000);
-
-      this.time.delayedCall(randomDelay, () => {
+      
+      this.idleAnimationTimer = this.time.delayedCall(randomDelay, () => {
+        if (this.isShuttingDown) return;
         if (!this.bird?.getIsAnimating() && !this.isTransitioning) {
           this.playBirdIdleHop();
         }
         scheduleNextIdleHop();
       });
     };
-
+    
     scheduleNextIdleHop();
   }
 
@@ -454,14 +510,16 @@ export default class NeighborhoodScene extends BaseScene {
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
     if (houseDistance > 1) {
-      // Glide animation for long distances
       this.bird.glideToPosition(targetX, targetY, houseDistance, () => {
-        this.handleHouseClick(targetHouse);
+        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+          this.handleHouseClick(targetHouse);
+        }
       });
     } else {
-      // Hop animation for short distances
       this.bird.hopToPosition(targetX, targetY, () => {
-        this.handleHouseClick(targetHouse);
+        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+          this.handleHouseClick(targetHouse);
+        }
       });
     }
   }
@@ -518,6 +576,24 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private handleResize(): void {
+    // Debounce rapid resize events
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+    }
+    
+    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
+      this.performResize();
+      this.resizeDebounceTimer = undefined;
+    });
+  }
+
+  private performResize(): void {
+    // Kill all tweens FIRST
+    this.tweens.killAll();
+    
+    // Clean up house images array
+    this.houseImages = [];
+    
     // Destroy existing elements
     if (this.backButton) this.backButton.destroy();
     this.roads.forEach(road => road.destroy());

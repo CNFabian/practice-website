@@ -51,6 +51,7 @@ export default class HouseScene extends BaseScene {
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
+  private minigameShutdownHandler?: () => void;
   
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
@@ -109,6 +110,46 @@ export default class HouseScene extends BaseScene {
 
   shutdown() {
     super.shutdown();
+    
+    // Clean up minigame event listener
+    if (this.minigameShutdownHandler) {
+      const minigameScene = this.scene.get('GrowYourNestMinigame');
+      if (minigameScene) {
+        minigameScene.events.off('shutdown', this.minigameShutdownHandler);
+      }
+      this.minigameShutdownHandler = undefined;
+    }
+    
+    // Clean up back button
+    if (this.backButton) {
+      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+    }
+    
+    // Clean up minigame button
+    if (this.minigameButton) {
+      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+    }
+    
+    // Clean up all lesson card event listeners
+    this.lessonContainers.forEach(container => {
+      const cardBackground = container.list[0] as Phaser.GameObjects.Rectangle;
+      if (cardBackground && cardBackground.input) {
+        cardBackground.removeAllListeners();
+        cardBackground.disableInteractive();
+      }
+    });
+    
+    // Kill all tweens
+    this.tweens.killAll();
+    
     this.cleanupEventListeners();
     this.cleanupBird();
     this.lessonContainers = [];
@@ -414,8 +455,8 @@ export default class HouseScene extends BaseScene {
     const originalScaleY = container.scaleY;
 
     if (!lesson.locked) {
-      // Hover effects
-      cardBackground.on('pointerover', () => {
+      // Store references to the handlers so we can remove them later
+      const handlePointerOver = () => {
         this.tweens.add({
           targets: container,
           scaleX: originalScaleX * 1.05,
@@ -423,9 +464,9 @@ export default class HouseScene extends BaseScene {
           duration: 200,
           ease: 'Power2',
         });
-      });
+      };
 
-      cardBackground.on('pointerout', () => {
+      const handlePointerOut = () => {
         this.tweens.add({
           targets: container,
           scaleX: originalScaleX,
@@ -433,12 +474,15 @@ export default class HouseScene extends BaseScene {
           duration: 200,
           ease: 'Power2',
         });
-      });
+      };
 
-      // Click handler
-      cardBackground.on('pointerdown', () => {
+      const handlePointerDown = () => {
         this.handleLessonClick(lesson.id);
-      });
+      };
+
+      cardBackground.on('pointerover', handlePointerOver);
+      cardBackground.on('pointerout', handlePointerOut);
+      cardBackground.on('pointerdown', handlePointerDown);
     }
   }
 
@@ -521,9 +565,15 @@ export default class HouseScene extends BaseScene {
     
     this.scene.pause();
     
-    this.scene.get('GrowYourNestMinigame').events.once('shutdown', () => {
+    // Store reference to handler for cleanup
+    this.minigameShutdownHandler = () => {
       this.scene.resume();
-    });
+    };
+    
+    const minigameScene = this.scene.get('GrowYourNestMinigame');
+    if (minigameScene) {
+      minigameScene.events.once('shutdown', this.minigameShutdownHandler);
+    }
   }
 
   private getMinigameQuestions() {

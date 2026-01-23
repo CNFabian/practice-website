@@ -162,6 +162,9 @@ const ModulesPage: React.FC = () => {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    let checkInterval: NodeJS.Timeout | undefined;
+    let timeoutId: NodeJS.Timeout | undefined;
+    
     const game = GameManager.initializeGame(containerRef.current);
     
     if (GameManager.isReady()) {
@@ -170,31 +173,45 @@ const ModulesPage: React.FC = () => {
       if (GameManager.areAssetsLoaded()) {
         setAssetsLoaded(true);
       } else {
-        const checkInterval = setInterval(() => {
+        checkInterval = setInterval(() => {
           const game = GameManager.getGame();
           if (game?.registry.get('assetsLoaded')) {
             setAssetsLoaded(true);
-            clearInterval(checkInterval);
+            if (checkInterval) clearInterval(checkInterval);
           }
         }, 50);
         
-        setTimeout(() => clearInterval(checkInterval), 10000);
+        timeoutId = setTimeout(() => {
+          if (checkInterval) clearInterval(checkInterval);
+        }, 10000);
       }
     } else {
       game.events.once('ready', () => {
         setIsPhaserReady(true);
         
-        const checkInterval = setInterval(() => {
+        checkInterval = setInterval(() => {
           const game = GameManager.getGame();
           if (game?.registry.get('assetsLoaded')) {
             setAssetsLoaded(true);
-            clearInterval(checkInterval);
+            if (checkInterval) clearInterval(checkInterval);
           }
         }, 50);
         
-        setTimeout(() => clearInterval(checkInterval), 10000);
+        timeoutId = setTimeout(() => {
+          if (checkInterval) clearInterval(checkInterval);
+        }, 10000);
       });
     }
+
+    // CLEANUP FUNCTION - prevents memory leaks
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   // Pause/resume game based on view
