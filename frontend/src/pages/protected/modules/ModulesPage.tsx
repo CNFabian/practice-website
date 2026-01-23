@@ -234,15 +234,11 @@ const ModulesPage: React.FC = () => {
         GameManager.transitionToMap();
         break;
 
-     case 'neighborhood':
-      GameManager.transitionToNeighborhood(navState.neighborhoodId, navState.currentHouseIndex);
-      break;
+      case 'neighborhood':
+        GameManager.transitionToNeighborhood(navState.neighborhoodId, navState.currentHouseIndex);
+        break;
 
       case 'house':
-        if (navState.moduleBackendId && !GameManager.hasLessonsData(navState.moduleBackendId)) {
-          return;
-        }
-        
         GameManager.transitionToHouse(
           navState.houseId,
           navState.moduleId,

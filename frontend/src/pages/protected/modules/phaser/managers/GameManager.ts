@@ -278,11 +278,6 @@ updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
   transitionToNeighborhood(neighborhoodId: string | null, savedHouseIndex?: number): void {
     if (!this.game) return;
 
-    if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
-    if (this.game.scene.isActive('HouseScene')) this.game.scene.sleep('HouseScene');
-    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
-    
-    // Use saved index if provided, otherwise get from registry, otherwise default to 0
     let currentHouseIndex = 0;
     if (savedHouseIndex !== undefined) {
       currentHouseIndex = savedHouseIndex;
@@ -290,6 +285,11 @@ updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
       const scenes = this.game.scene.getScenes(false);
       currentHouseIndex = scenes.length > 0 ? (scenes[0].registry.get('currentHouseIndex') ?? 0) : 0;
     }
+
+    // Now stop/sleep scenes
+    if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
+    if (this.game.scene.isActive('HouseScene')) this.game.scene.sleep('HouseScene');
+    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
     
     this.game.scene.start('NeighborhoodScene', {
       neighborhoodId: neighborhoodId,
@@ -305,10 +305,8 @@ updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
     if (!this.game) return;
 
     if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
-    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.sleep('NeighborhoodScene');
+    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');  // ✅ FIX: STOP instead of SLEEP
     if (this.game.scene.isActive('HouseScene')) this.game.scene.stop('HouseScene');
-    
-    console.log('✅ Lessons loaded, starting HouseScene with data:', this.moduleLessonsData[moduleBackendId!]);
     
     this.game.scene.start('HouseScene', {
       houseId: houseId,

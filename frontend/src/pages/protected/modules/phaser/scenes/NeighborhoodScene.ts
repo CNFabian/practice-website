@@ -415,6 +415,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     this.bird.setIsAnimating(true);
     this.previousHouseIndex = this.currentHouseIndex;
+    this.currentHouseIndex = targetHouseIndex;
 
     const { width, height } = this.scale;
     const targetHouse = this.houses[targetHouseIndex];
@@ -426,18 +427,16 @@ export default class NeighborhoodScene extends BaseScene {
     const targetY = (targetHouse.y / 100) * height + birdOffsetY;
 
     // Calculate distance
-    const houseDistance = Math.abs(targetHouseIndex - this.currentHouseIndex);
+    const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
     if (houseDistance > 1) {
       // Glide animation for long distances
       this.bird.glideToPosition(targetX, targetY, houseDistance, () => {
-        this.currentHouseIndex = targetHouseIndex;
         this.handleHouseClick(targetHouse);
       });
     } else {
       // Hop animation for short distances
       this.bird.hopToPosition(targetX, targetY, () => {
-        this.currentHouseIndex = targetHouseIndex;
         this.handleHouseClick(targetHouse);
       });
     }
