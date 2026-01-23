@@ -12,6 +12,8 @@ class GameManager {
   private savedNavState: any = null;
   private housesData: Record<string, HousePosition[]> = { downtown: [] };
   private moduleLessonsData: Record<string, ModuleLessonsData> = {};
+  private currentSidebarOffset: number = 192;
+  private resizeDebounceTimer: NodeJS.Timeout | null = null;
 
   private constructor() {}
 
@@ -49,7 +51,9 @@ class GameManager {
   /**
    * Initialize or retrieve existing game instance
    */
-  initializeGame(container: HTMLElement): Phaser.Game {
+  initializeGame(container: HTMLElement, sidebarOffset: number = 192): Phaser.Game {
+    this.currentSidebarOffset = sidebarOffset;
+
     // If game already exists, reattach to new container
     if (this.game) {
       console.log('=== USING EXISTING PHASER GAME INSTANCE ===');
@@ -71,7 +75,7 @@ class GameManager {
       
       // Trigger a resize to ensure proper scaling
       const dpr = window.devicePixelRatio || 1;
-      const newWidth = (window.innerWidth - 192) * dpr;
+      const newWidth = (window.innerWidth - this.currentSidebarOffset) * dpr;
       const newHeight = window.innerHeight * dpr;
       this.game.scale.resize(newWidth, newHeight);
       
@@ -80,7 +84,7 @@ class GameManager {
 
     // Create new game instance
     console.log('=== CREATING NEW PHASER GAME INSTANCE ===');
-    const config = createGameConfig(container);
+    const config = createGameConfig(container, sidebarOffset);
     this.game = new Phaser.Game(config);
 
     this.game.events.once('ready', () => {
@@ -118,6 +122,42 @@ class GameManager {
   }
 
   /**
+   * Update sidebar offset and resize game
+   * Debounced to prevent too many resize calls during animation
+   */
+  updateSidebarOffset(sidebarOffset: number): void {
+    if (!this.game || this.currentSidebarOffset === sidebarOffset) return;
+
+    console.log(`=== UPDATING SIDEBAR OFFSET: ${this.currentSidebarOffset} → ${sidebarOffset} ===`);
+    this.currentSidebarOffset = sidebarOffset;
+
+    // Clear any existing debounce timer
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+
+    // Debounce resize calls to smooth out animation
+    this.resizeDebounceTimer = setTimeout(() => {
+      if (this.game) {
+        const dpr = window.devicePixelRatio || 1;
+        const newWidth = (window.innerWidth - sidebarOffset) * dpr;
+        const newHeight = window.innerHeight * dpr;
+        
+        console.log(`=== RESIZING GAME: ${newWidth / dpr}x${newHeight / dpr} ===`);
+        this.game.scale.resize(newWidth, newHeight);
+      }
+      this.resizeDebounceTimer = null;
+    }, 100); // 100ms debounce - allows animation to finish smoothly
+  }
+
+  /**
+   * Get current sidebar offset
+   */
+  getCurrentSidebarOffset(): number {
+    return this.currentSidebarOffset;
+  }
+
+  /**
    * Get current game instance
    */
   getGame(): Phaser.Game | null {
@@ -144,10 +184,18 @@ class GameManager {
   destroy(): void {
     if (this.game) {
       console.log('=== DESTROYING PHASER GAME INSTANCE ===');
+      
+      // Clear any pending debounce timer
+      if (this.resizeDebounceTimer) {
+        clearTimeout(this.resizeDebounceTimer);
+        this.resizeDebounceTimer = null;
+      }
+
       this.game.destroy(true);
       this.game = null;
       this.assetsLoaded = false;
       this.isPhaserReady = false;
+      this.currentSidebarOffset = 192;
     }
   }
 
@@ -187,7 +235,7 @@ class GameManager {
     handleMinigameSelect: () => void;
     handleBackToMap: () => void;
     handleBackToNeighborhood: () => void;
-    handlePrefetchLessons?: (moduleBackendId: string) => void; // ADD THIS LINE
+    handlePrefetchLessons?: (moduleBackendId: string) => void;
   }): void {
     if (!this.game) return;
 
@@ -200,7 +248,7 @@ class GameManager {
       scene.registry.set('handleMinigameSelect', handlers.handleMinigameSelect);
       scene.registry.set('handleBackToMap', handlers.handleBackToMap);
       scene.registry.set('handleBackToNeighborhood', handlers.handleBackToNeighborhood);
-      scene.registry.set('handlePrefetchLessons', handlers.handlePrefetchLessons); // ADD THIS LINE
+      scene.registry.set('handlePrefetchLessons', handlers.handlePrefetchLessons);
       
       console.log('✅ Navigation handlers set in registry');
     }
@@ -223,38 +271,38 @@ class GameManager {
   }
 
   /**
- * Update lessons data for a specific module
- */
-updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
-  // Wait for houses data to be available
-  if (!this.housesData['downtown'] || this.housesData['downtown'].length === 0) {
-    console.warn(`⚠️ Houses data not ready yet, skipping lessons update for ${moduleBackendId}`);
-    return;
+   * Update lessons data for a specific module
+   */
+  updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
+    // Wait for houses data to be available
+    if (!this.housesData['downtown'] || this.housesData['downtown'].length === 0) {
+      console.warn(`⚠️ Houses data not ready yet, skipping lessons update for ${moduleBackendId}`);
+      return;
+    }
+
+    const house = this.housesData['downtown'].find(h => h.moduleBackendId === moduleBackendId);
+    if (!house) {
+      console.warn(`⚠️ House not found for module ${moduleBackendId}`);
+      return;
+    }
+
+    const transformedLessons = transformBackendLessonsToFrontend(
+      lessonsData,
+      house.moduleId!,
+      house.name
+    );
+
+    this.moduleLessonsData[moduleBackendId] = transformedLessons;
+
+    if (!this.game) return;
+
+    const scenes = this.game.scene.getScenes(false);
+    if (scenes.length > 0) {
+      const scene = scenes[0];
+      scene.registry.set('moduleLessonsData', this.moduleLessonsData);
+      console.log('✅ Set module lessons data in registry:', this.moduleLessonsData);
+    }
   }
-
-  const house = this.housesData['downtown'].find(h => h.moduleBackendId === moduleBackendId);
-  if (!house) {
-    console.warn(`⚠️ House not found for module ${moduleBackendId}`);
-    return;
-  }
-
-  const transformedLessons = transformBackendLessonsToFrontend(
-    lessonsData,
-    house.moduleId!,
-    house.name
-  );
-
-  this.moduleLessonsData[moduleBackendId] = transformedLessons;
-
-  if (!this.game) return;
-
-  const scenes = this.game.scene.getScenes(false);
-  if (scenes.length > 0) {
-    const scene = scenes[0];
-    scene.registry.set('moduleLessonsData', this.moduleLessonsData);
-    console.log('✅ Set module lessons data in registry:', this.moduleLessonsData);
-  }
-}
 
   /**
    * Check if lessons data exists for a module
@@ -307,7 +355,7 @@ updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
     if (!this.game) return;
 
     if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
-    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');  // ✅ FIX: STOP instead of SLEEP
+    if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
     if (this.game.scene.isActive('HouseScene')) this.game.scene.stop('HouseScene');
     
     this.game.scene.start('HouseScene', {

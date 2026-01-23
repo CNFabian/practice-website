@@ -8,6 +8,7 @@ import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { getModuleLessons } from '../../../services/learningAPI';
+import { useSidebar } from '../../../contexts/SidebarContext';
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
@@ -26,6 +27,10 @@ const ModulesPage: React.FC = () => {
   const { data: coinBalanceData } = useCoinBalance();
   const totalCoins = coinBalanceData?.current_balance || 0;
   const queryClient = useQueryClient();
+  const { isCollapsed } = useSidebar();
+
+  // Calculate sidebar offset based on collapsed state
+  const sidebarOffset = isCollapsed ? 80 : 192;
 
   const [navState, setNavState] = useState<NavState>(() => {
     const saved = localStorage.getItem('moduleNavState');
@@ -103,7 +108,7 @@ const ModulesPage: React.FC = () => {
       queryFn: () => getModuleLessons(moduleBackendId),
       staleTime: 10 * 60 * 1000, // Cache for 10 minutes
     });
-  }, []);
+  }, [queryClient]);
 
   const handleLessonSelect = useCallback((lessonId: number) => {
     setNavState(prev => ({
@@ -165,7 +170,7 @@ const ModulesPage: React.FC = () => {
     let checkInterval: NodeJS.Timeout | undefined;
     let timeoutId: NodeJS.Timeout | undefined;
     
-    const game = GameManager.initializeGame(containerRef.current);
+    const game = GameManager.initializeGame(containerRef.current, sidebarOffset);
     
     if (GameManager.isReady()) {
       setIsPhaserReady(true);
@@ -212,7 +217,15 @@ const ModulesPage: React.FC = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, []);
+  }, []); // Keep empty dependency array - only initialize once
+
+  // Update Phaser game size when sidebar collapses/expands
+  useEffect(() => {
+    if (!isPhaserReady || !assetsLoaded) return;
+    
+    const offset = isCollapsed ? 80 : 192;
+    GameManager.updateSidebarOffset(offset);
+  }, [isCollapsed, isPhaserReady, assetsLoaded]);
 
   // Pause/resume game based on view
   useEffect(() => {
@@ -266,6 +279,7 @@ const ModulesPage: React.FC = () => {
     handleBackToNeighborhood,
     handlePrefetchLessons
   ]);
+
   // Sync lessons data with GameManager
   useEffect(() => {
     if (!navState.moduleBackendId || !lessonsData || isLoadingLessons) return;
@@ -308,7 +322,8 @@ const ModulesPage: React.FC = () => {
       if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
       
       const dpr = window.devicePixelRatio || 1;
-      const newWidth = (window.innerWidth - 192) * dpr;
+      const currentOffset = GameManager.getCurrentSidebarOffset();
+      const newWidth = (window.innerWidth - currentOffset) * dpr;
       const newHeight = window.innerHeight * dpr;
       
       game.scale.resize(newWidth, newHeight);

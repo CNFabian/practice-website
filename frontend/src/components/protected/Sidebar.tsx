@@ -16,10 +16,12 @@ import {
   Logo
 } from '../../assets';
 import OnBoardingPage from './onboarding/OnBoardingPage';
+import { useSidebar } from '../../contexts/SidebarContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const { isCollapsed, toggleCollapsed } = useSidebar();
 
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app', icon: HomeIcon },
@@ -66,10 +68,20 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="w-44 fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50" style={{ backgroundColor: '#EFF2FF' }}>
+      <aside 
+        className={`fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50 transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'w-16' : 'w-44'
+        }`}
+        style={{ background: 'linear-gradient(180deg, #EDF0FF 0%, #DDE3FF 100%)' }}
+      >
         {/* Logo at the top */}
         <div className="px-4 pt-4 flex items-center justify-center border-b border-white/20">
-          <img src={Logo} alt="Nest Navigate" className="w-16 h-16" />
+          <button 
+            onClick={toggleCollapsed}
+            className="transition-transform duration-200 hover:scale-110"
+          >
+            <img src={Logo} alt="Nest Navigate" className="w-16 h-16" />
+          </button>
         </div>
 
         {/* Main Navigation */}
@@ -80,75 +92,101 @@ const Sidebar: React.FC = () => {
                 key={item.id}
                 to={item.path}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+                  flex items-center rounded-2xl transition-all duration-200
                   ${isActive(item.path) 
                     ? 'font-medium shadow-sm' 
                     : 'hover:bg-white/50'
                   } text-gray-700 hover:text-gray-900
+                  ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
                 style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
               >
                 {/* Icon */}
-                <img src={item.icon} alt={item.label} className="w-5 h-5" />
-                <span className="text-sm">{item.label}</span>
+                <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
+                <span 
+                  className={`text-sm whitespace-nowrap transition-all duration-300 ${
+                    isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                  }`}
+                >
+                  {item.label}
+                </span>
               </Link>
             ))}
 
             {/* Materials Dropdown */}
-            <Disclosure defaultOpen={location.pathname.startsWith('/app/materials')}>
-              {({ open }) => (
-                <>
-                  <Disclosure.Button
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
-                      ${location.pathname.startsWith('/app/materials')
-                        ? 'font-medium shadow-sm' 
-                        : 'hover:bg-white/50'
-                      } text-gray-700 hover:text-gray-900
-                    `}
-                    style={location.pathname.startsWith('/app/materials') ? { backgroundColor: '#D7DEFF' } : {}}
-                  >
-                    <img src={SavedIcon} alt="Materials" className="w-5 h-5" />
-                    <span className="text-sm flex-1 text-left">Materials</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            {!isCollapsed && (
+              <Disclosure defaultOpen={location.pathname.startsWith('/app/materials')}>
+                {({ open }) => (
+                  <>
+                    <Disclosure.Button
+                      className={`
+                        w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+                        ${location.pathname.startsWith('/app/materials')
+                          ? 'font-medium shadow-sm' 
+                          : 'hover:bg-white/50'
+                        } text-gray-700 hover:text-gray-900
+                      `}
+                      style={location.pathname.startsWith('/app/materials') ? { backgroundColor: '#D7DEFF' } : {}}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </Disclosure.Button>
-                  <Transition
-                    enter="transition duration-200 ease-out"
-                    enterFrom="transform scale-95 opacity-0 max-h-0"
-                    enterTo="transform scale-100 opacity-100 max-h-96"
-                    leave="transition duration-150 ease-in"
-                    leaveFrom="transform scale-100 opacity-100 max-h-96"
-                    leaveTo="transform scale-95 opacity-0 max-h-0"
-                  >
-                    <Disclosure.Panel className="space-y-1 mt-1 overflow-hidden">
-                      {materialSubItems.map((subItem) => (
-                        <Link
-                          key={subItem.id}
-                          to={subItem.path}
-                          className={`
-                            flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200
-                            ${isActive(subItem.path)
-                              ? 'font-medium bg-white/60'
-                              : 'hover:bg-white/40'
-                            } text-gray-700 hover:text-gray-900
-                          `}
-                        >
-                          <img src={subItem.icon} alt={subItem.label} className="w-4 h-4" />
-                          {subItem.label}
-                        </Link>
-                      ))}
-                    </Disclosure.Panel>
-                  </Transition>
-                </>
-              )}
-            </Disclosure>
+                      <img src={SavedIcon} alt="Materials" className="w-5 h-5 flex-shrink-0" />
+                      <span className="text-sm flex-1 text-left">Materials</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Disclosure.Button>
+                    <Transition
+                      enter="transition duration-200 ease-out"
+                      enterFrom="transform scale-95 opacity-0 max-h-0"
+                      enterTo="transform scale-100 opacity-100 max-h-96"
+                      leave="transition duration-150 ease-in"
+                      leaveFrom="transform scale-100 opacity-100 max-h-96"
+                      leaveTo="transform scale-95 opacity-0 max-h-0"
+                    >
+                      <Disclosure.Panel className="space-y-1 mt-1 overflow-hidden">
+                        {materialSubItems.map((subItem) => (
+                          <Link
+                            key={subItem.id}
+                            to={subItem.path}
+                            className={`
+                              flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200
+                              ${isActive(subItem.path)
+                                ? 'font-medium bg-white/60'
+                                : 'hover:bg-white/40'
+                              } text-gray-700 hover:text-gray-900
+                            `}
+                          >
+                            <img src={subItem.icon} alt={subItem.label} className="w-4 h-4" />
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </Disclosure.Panel>
+                    </Transition>
+                  </>
+                )}
+              </Disclosure>
+            )}
+
+            {/* Collapsed Materials Icon Only */}
+            {isCollapsed && (
+              <Link
+                to="/app/materials"
+                className={`
+                  flex items-center justify-center rounded-2xl transition-all duration-200 px-2 py-3
+                  ${location.pathname.startsWith('/app/materials')
+                    ? 'font-medium shadow-sm' 
+                    : 'hover:bg-white/50'
+                  } text-gray-700 hover:text-gray-900
+                `}
+                style={location.pathname.startsWith('/app/materials') ? { backgroundColor: '#D7DEFF' } : {}}
+              >
+                <img src={SavedIcon} alt="Materials" className="w-5 h-5" />
+              </Link>
+            )}
           </div>
         </nav>
 
@@ -156,29 +194,38 @@ const Sidebar: React.FC = () => {
         <div className="border-t border-white/20 px-3 py-3">
           <div className="space-y-1">
             {/* TEMPORARY TESTING BUTTON */}
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 bg-red-500 hover:bg-red-600 text-white font-medium"
-            >
-              <span className="text-sm">🧪 Test Onboarding</span>
-            </button>
+            {!isCollapsed && (
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 bg-red-500 hover:bg-red-600 text-white font-medium"
+              >
+                <span className="text-sm">🧪 Test Onboarding</span>
+              </button>
+            )}
 
             {bottomMenuItems.map((item) => (
               <Link
                 key={item.id}
                 to={item.path}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+                  flex items-center rounded-2xl transition-all duration-200
                   ${isActive(item.path) 
                     ? 'font-medium shadow-sm' 
                     : 'hover:bg-white/50'
                   } text-gray-700 hover:text-gray-900
+                  ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
                 style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
               >
                 {/* Icon */}
-                <img src={item.icon} alt={item.label} className="w-5 h-5" />
-                <span className="text-sm">{item.label}</span>
+                <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
+                <span 
+                  className={`text-sm whitespace-nowrap transition-all duration-300 ${
+                    isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                  }`}
+                >
+                  {item.label}
+                </span>
               </Link>
             ))}
           </div>

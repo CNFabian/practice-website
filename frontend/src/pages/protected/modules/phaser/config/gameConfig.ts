@@ -5,9 +5,12 @@ import NeighborhoodScene from '../scenes/NeighborhoodScene';
 import HouseScene from '../scenes/HouseScene';
 import GrowYourNestMinigame from '../scenes/minigames/GrowYourNestMinigame';
 
-export const createGameConfig = (parent: HTMLElement): Phaser.Types.Core.GameConfig => {
+export const createGameConfig = (
+  parent: HTMLElement,
+  sidebarOffset: number = 192
+): Phaser.Types.Core.GameConfig => {
   const dpr = window.devicePixelRatio || 1;
-  const baseWidth = window.innerWidth - 192;
+  const baseWidth = window.innerWidth - sidebarOffset;
   const baseHeight = window.innerHeight;
 
   return {
