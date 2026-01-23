@@ -80,6 +80,7 @@ export default class NeighborhoodScene extends BaseScene {
     super.create();
     this.createUI();
     this.setupEventListeners();
+    this.prefetchAllHouseLessons(); 
   }
 
   shutdown() {
@@ -103,6 +104,29 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.bird) {
       this.bird.destroy();
       this.bird = undefined;
+    }
+  }
+
+  private prefetchAllHouseLessons(): void {
+    if (this.houses.length === 0) {
+      console.log('⏭️ No houses to prefetch');
+      return;
+    }
+
+    console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
+
+    // Get the prefetch handler from registry
+    const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
+
+    if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
+      this.houses.forEach(house => {
+        if (house.moduleBackendId) {
+          console.log(`🔄 Prefetching lessons for house: ${house.name} (${house.moduleBackendId})`);
+          handlePrefetchLessons(house.moduleBackendId);
+        }
+      });
+    } else {
+      console.warn('⚠️ Prefetch handler not found in registry');
     }
   }
 

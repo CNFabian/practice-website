@@ -187,6 +187,7 @@ class GameManager {
     handleMinigameSelect: () => void;
     handleBackToMap: () => void;
     handleBackToNeighborhood: () => void;
+    handlePrefetchLessons?: (moduleBackendId: string) => void; // ADD THIS LINE
   }): void {
     if (!this.game) return;
 
@@ -199,6 +200,7 @@ class GameManager {
       scene.registry.set('handleMinigameSelect', handlers.handleMinigameSelect);
       scene.registry.set('handleBackToMap', handlers.handleBackToMap);
       scene.registry.set('handleBackToNeighborhood', handlers.handleBackToNeighborhood);
+      scene.registry.set('handlePrefetchLessons', handlers.handlePrefetchLessons); // ADD THIS LINE
       
       console.log('✅ Navigation handlers set in registry');
     }

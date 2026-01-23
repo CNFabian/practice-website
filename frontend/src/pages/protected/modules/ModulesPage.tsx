@@ -3,9 +3,11 @@ import { HouseBackground } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
-import type { Module, Lesson } from '../../../types/modules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
+import { getModuleLessons } from '../../../services/learningAPI';
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
@@ -23,6 +25,7 @@ const ModulesPage: React.FC = () => {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const { data: coinBalanceData } = useCoinBalance();
   const totalCoins = coinBalanceData?.current_balance || 0;
+  const queryClient = useQueryClient();
 
   const [navState, setNavState] = useState<NavState>(() => {
     const saved = localStorage.getItem('moduleNavState');
@@ -87,6 +90,19 @@ const ModulesPage: React.FC = () => {
       lessonId: null,
       currentHouseIndex,
     }));
+  }, []);
+
+  const handlePrefetchLessons = useCallback((moduleBackendId: string) => {
+    if (!moduleBackendId) return;
+    
+    console.log(`🔄 Prefetching lessons for module: ${moduleBackendId}`);
+    
+    // Use queryClient to prefetch and cache the data
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.learning.moduleLessons(moduleBackendId),
+      queryFn: () => getModuleLessons(moduleBackendId),
+      staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    });
   }, []);
 
   const handleLessonSelect = useCallback((lessonId: number) => {
@@ -205,7 +221,8 @@ const ModulesPage: React.FC = () => {
       handleLessonSelect,
       handleMinigameSelect,
       handleBackToMap,
-      handleBackToNeighborhood
+      handleBackToNeighborhood,
+      handlePrefetchLessons
     });
 
     if (modulesData) {
@@ -216,8 +233,22 @@ const ModulesPage: React.FC = () => {
         GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
       }
     }
-  }, [isPhaserReady, assetsLoaded, isLoadingModules, modulesData, navState.moduleBackendId, lessonsData, isLoadingLessons, handleNeighborhoodSelect, handleHouseSelect, handleLessonSelect, handleMinigameSelect, handleBackToMap, handleBackToNeighborhood]);
-
+  }, [
+    isPhaserReady, 
+    assetsLoaded, 
+    isLoadingModules, 
+    modulesData, 
+    navState.moduleBackendId, 
+    lessonsData, 
+    isLoadingLessons, 
+    handleNeighborhoodSelect, 
+    handleHouseSelect, 
+    handleLessonSelect, 
+    handleMinigameSelect, 
+    handleBackToMap, 
+    handleBackToNeighborhood,
+    handlePrefetchLessons
+  ]);
   // Sync lessons data with GameManager
   useEffect(() => {
     if (!navState.moduleBackendId || !lessonsData || isLoadingLessons) return;
