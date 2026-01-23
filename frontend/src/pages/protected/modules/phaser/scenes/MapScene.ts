@@ -117,7 +117,7 @@ export default class MapScene extends BaseScene {
   }
 
   private cleanupEventListeners(): void {
-    this.scale.off('resize', this.handleResize, this);
+    this.scale.off('resize', this.handleResizeDebounced, this);
   }
 
   // ═══════════════════════════════════════════════════════════

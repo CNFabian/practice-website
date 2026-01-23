@@ -16,6 +16,9 @@ export const ASSET_KEYS = {
   // Characters
   BIRD_IDLE: 'bird_idle',
   BIRD_FLY: 'bird_fly',
+  
+  // UI
+  COIN_ICON: 'coinIcon',
 } as const;
 
 // Type for asset keys

@@ -9,7 +9,8 @@ import {
   Road1, 
   Platform1, 
   BirdIdle, 
-  BirdFly 
+  BirdFly,
+  CoinCounterIcon,
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
@@ -35,7 +36,8 @@ export default class PreloaderScene extends Phaser.Scene {
       this.textures.exists('road1') &&
       this.textures.exists('platform1') &&
       this.textures.exists('bird_idle') &&
-      this.textures.exists('bird_fly');
+      this.textures.exists('bird_fly') &&
+      this.textures.exists('coin_counter');
     
     this.shouldLoad = !texturesExist;
     
@@ -100,6 +102,7 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image('platform1', Platform1);
     this.load.image('bird_idle', BirdIdle);
     this.load.image('bird_fly', BirdFly);
+    this.load.image('coinIcon', CoinCounterIcon);
   }
 
   create() {

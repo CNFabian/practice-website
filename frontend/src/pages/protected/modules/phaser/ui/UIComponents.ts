@@ -14,26 +14,31 @@ export class UIComponents {
     const container = scene.add.container(0, 0);
     container.setDepth(100); // High depth to stay on top
 
-    // Background
-    const background = scene.add.rectangle(0, 0, scale(120), scale(40), 0xFFFFFF, 0.95); // Changed opacity to match BaseScene
-    background.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    // Background - fully rounded with solid color #DDE3FF
+    const bgWidth = scale(120);
+    const bgHeight = scale(40);
+    
+    // Create fully rounded background using graphics
+    const background = scene.add.graphics();
+    background.fillStyle(0xDDE3FF, 1); // Solid color #DDE3FF
+    background.fillRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, bgHeight/2);
     container.add(background);
 
-    // Coin text
-    const coinText = scene.add.text(-scale(15), 0, coins.toString(), { // Changed position to match BaseScene
-      fontSize: scaleFontSize(20), // Changed size to match BaseScene
+    // Coin icon (on the left) - using image instead of emoji
+    const coinIcon = scene.add.image(-scale(30), 0, 'coinIcon');
+    coinIcon.setDisplaySize(scale(28), scale(28));
+    coinIcon.setOrigin(0.5);
+    container.add(coinIcon);
+
+    // Coin text (on the right)
+    const coinText = scene.add.text(scale(15), 0, coins.toString(), {
+      fontSize: scaleFontSize(20),
       fontFamily: 'Fredoka, sans-serif',
       color: '#000000',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    coinText.setName('coinText'); // ADD THIS LINE - so BaseScene can find it
+    coinText.setName('coinText'); // so BaseScene can find it
     container.add(coinText);
-
-    // Coin icon
-    const coinIcon = scene.add.text(scale(30), 0, '🪙', { // Changed position to match BaseScene
-      fontSize: scaleFontSize(28), // Changed size to match BaseScene
-    }).setOrigin(0.5);
-    container.add(coinIcon);
 
     return container;
   }
