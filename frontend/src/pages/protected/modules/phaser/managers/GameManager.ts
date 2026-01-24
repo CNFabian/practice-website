@@ -137,10 +137,14 @@ class GameManager {
       clearTimeout(this.resizeDebounceTimer);
     }
 
+    // Perform immediate resize
+    this.performCanvasResize();
+
+    // Also schedule a debounced resize for safety
     this.resizeDebounceTimer = setTimeout(() => {
       this.performCanvasResize();
       this.resizeDebounceTimer = null;
-    }, 100);
+    }, 150);
   }
 
   /**
@@ -174,6 +178,10 @@ class GameManager {
     // Update Phaser internals
     this.game.scale.setZoom(1 / dpr);
     this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+    
+    // CRITICAL FIX: Manually emit resize event to ensure scenes update
+    const gameSize = { width: baseWidth * dpr, height: baseHeight * dpr };
+    this.game.scale.emit('resize', gameSize);
   }
 
   /**
@@ -187,9 +195,16 @@ class GameManager {
     
     this.dpiChangeHandler = () => {
       console.log('=== GAME MANAGER: DPI CHANGE DETECTED ===');
+      
+      // Immediate resize
       setTimeout(() => {
         this.performCanvasResize();
       }, 50);
+      
+      // Follow-up resize after DPI stabilizes
+      setTimeout(() => {
+        this.performCanvasResize();
+      }, 200);
     };
 
     this.dpiMediaQuery.addEventListener('change', this.dpiChangeHandler);

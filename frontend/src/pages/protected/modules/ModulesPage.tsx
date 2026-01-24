@@ -317,7 +317,10 @@ const ModulesPage: React.FC = () => {
 
   // Handle window resize
   useEffect(() => {
-    const handleResize = () => {
+    let resizeDebounceTimer: NodeJS.Timeout | null = null;
+    let finalResizeTimer: NodeJS.Timeout | null = null;
+
+    const performResize = () => {
       const game = GameManager.getGame();
       if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
       
@@ -340,13 +343,77 @@ const ModulesPage: React.FC = () => {
       // Update Phaser internals
       game.scale.setZoom(1 / dpr);
       game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+      
+      // CRITICAL: Manually emit resize event to ensure scenes update
+      const gameSize = { width: baseWidth * dpr, height: baseHeight * dpr };
+      game.scale.emit('resize', gameSize);
+    };
+
+    const handleResize = () => {
+      // Clear any existing debounce timers
+      if (resizeDebounceTimer) {
+        clearTimeout(resizeDebounceTimer);
+      }
+      if (finalResizeTimer) {
+        clearTimeout(finalResizeTimer);
+      }
+
+      // Perform immediate resize
+      performResize();
+
+      // Debounce subsequent resizes during rapid changes
+      resizeDebounceTimer = setTimeout(() => {
+        performResize();
+        resizeDebounceTimer = null;
+      }, 100);
+
+      // Force a final resize after everything settles
+      finalResizeTimer = setTimeout(() => {
+        performResize();
+        finalResizeTimer = null;
+      }, 300);
+    };
+
+    // CRITICAL FIX: Handle fullscreen changes separately
+    const handleFullscreenChange = () => {
+      console.log('=== FULLSCREEN CHANGE DETECTED ===');
+      console.log('Is fullscreen:', document.fullscreenElement !== null);
+      
+      // Clear any existing timers
+      if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+      if (finalResizeTimer) clearTimeout(finalResizeTimer);
+      
+      // Wait for browser to update dimensions after fullscreen change
+      setTimeout(() => {
+        console.log('=== FULLSCREEN RESIZE - PASS 1 ===');
+        performResize();
+      }, 100);
+      
+      // Second pass after dimensions stabilize
+      setTimeout(() => {
+        console.log('=== FULLSCREEN RESIZE - PASS 2 ===');
+        performResize();
+      }, 250);
+      
+      // Final pass to ensure everything is correct
+      setTimeout(() => {
+        console.log('=== FULLSCREEN RESIZE - FINAL ===');
+        performResize();
+      }, 500);
     };
 
     // Listen for window resize
     window.addEventListener('resize', handleResize);
 
-    // CRITICAL: Listen for DPI changes (monitor switches)
-    const mediaQueryList = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    // CRITICAL: Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange); // Firefox
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange); // IE/Edge
+
+    // Listen for DPI changes (monitor switches)
+    const currentDPR = window.devicePixelRatio || 1;
+    const mediaQueryList = window.matchMedia(`(resolution: ${currentDPR}dppx)`);
     
     const handleDPIChange = () => {
       console.log('=== DPI CHANGE DETECTED ===');
@@ -359,7 +426,13 @@ const ModulesPage: React.FC = () => {
     mediaQueryList.addEventListener('change', handleDPIChange);
 
     return () => {
+      if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+      if (finalResizeTimer) clearTimeout(finalResizeTimer);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
       mediaQueryList.removeEventListener('change', handleDPIChange);
     };
   }, [isPhaserReady, assetsLoaded]);
