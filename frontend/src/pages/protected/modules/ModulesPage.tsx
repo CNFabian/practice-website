@@ -318,17 +318,27 @@ const ModulesPage: React.FC = () => {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      const game = GameManager.getGame();
-      if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
-      
-      const dpr = window.devicePixelRatio || 1;
-      const currentOffset = GameManager.getCurrentSidebarOffset();
-      const newWidth = (window.innerWidth - currentOffset) * dpr;
-      const newHeight = window.innerHeight * dpr;
-      
-      game.scale.resize(newWidth, newHeight);
-    };
-
+    const game = GameManager.getGame();
+    if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
+    
+    const canvas = game.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const currentOffset = GameManager.getCurrentSidebarOffset();
+    const baseWidth = window.innerWidth - currentOffset;
+    const baseHeight = window.innerHeight;
+    
+    // Update canvas element pixel buffer
+    canvas.width = baseWidth * dpr;
+    canvas.height = baseHeight * dpr;
+    
+    // Update canvas CSS display size
+    canvas.style.width = `${baseWidth}px`;
+    canvas.style.height = `${baseHeight}px`;
+    
+    // Update Phaser internals
+    game.scale.setZoom(1 / dpr);
+    game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+  };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isPhaserReady, assetsLoaded]);

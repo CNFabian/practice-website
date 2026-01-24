@@ -77,7 +77,9 @@ class GameManager {
       const dpr = window.devicePixelRatio || 1;
       const newWidth = (window.innerWidth - this.currentSidebarOffset) * dpr;
       const newHeight = window.innerHeight * dpr;
+      this.game.scale.setZoom(1 / dpr);
       this.game.scale.resize(newWidth, newHeight);
+      this.game.scale.refresh();
       
       return this.game;
     }
@@ -131,23 +133,31 @@ class GameManager {
     console.log(`=== UPDATING SIDEBAR OFFSET: ${this.currentSidebarOffset} → ${sidebarOffset} ===`);
     this.currentSidebarOffset = sidebarOffset;
 
-    // Clear any existing debounce timer
     if (this.resizeDebounceTimer) {
       clearTimeout(this.resizeDebounceTimer);
     }
 
-    // Debounce resize calls to smooth out animation
     this.resizeDebounceTimer = setTimeout(() => {
       if (this.game) {
+        const canvas = this.game.canvas;
         const dpr = window.devicePixelRatio || 1;
-        const newWidth = (window.innerWidth - sidebarOffset) * dpr;
-        const newHeight = window.innerHeight * dpr;
-        
-        console.log(`=== RESIZING GAME: ${newWidth / dpr}x${newHeight / dpr} ===`);
-        this.game.scale.resize(newWidth, newHeight);
+        const baseWidth = window.innerWidth - this.currentSidebarOffset;
+        const baseHeight = window.innerHeight;
+
+        // Update canvas element pixel buffer
+        canvas.width = baseWidth * dpr;
+        canvas.height = baseHeight * dpr;
+
+        // Update canvas CSS display size
+        canvas.style.width = `${baseWidth}px`;
+        canvas.style.height = `${baseHeight}px`;
+
+        // Update Phaser internals
+        this.game.scale.setZoom(1 / dpr);
+        this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
       }
       this.resizeDebounceTimer = null;
-    }, 100); // 100ms debounce - allows animation to finish smoothly
+    }, 100);
   }
 
   /**
