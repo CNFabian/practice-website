@@ -20,13 +20,13 @@ export class UIComponents {
     
     // Create fully rounded background using graphics
     const background = scene.add.graphics();
-    background.fillStyle(0xDDE3FF, 1); // Solid color #DDE3FF
+    background.fillStyle(0x6B85F5, 1); // Solid color #DDE3FF
     background.fillRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, bgHeight/2);
     container.add(background);
 
     // Coin icon (on the left) - using image instead of emoji
     const coinIcon = scene.add.image(-scale(30), 0, 'coinIcon');
-    coinIcon.setDisplaySize(scale(28), scale(28));
+    coinIcon.setDisplaySize(scale(30), scale(30));
     coinIcon.setOrigin(0.5);
     container.add(coinIcon);
 
@@ -34,7 +34,7 @@ export class UIComponents {
     const coinText = scene.add.text(scale(15), 0, coins.toString(), {
       fontSize: scaleFontSize(20),
       fontFamily: 'Fredoka, sans-serif',
-      color: '#000000',
+      color: '#FFFFFF',
       fontStyle: 'bold',
     }).setOrigin(0.5);
     coinText.setName('coinText'); // so BaseScene can find it

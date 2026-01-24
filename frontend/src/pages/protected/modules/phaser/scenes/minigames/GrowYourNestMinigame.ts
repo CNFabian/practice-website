@@ -140,7 +140,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   }
 
   private createBackButton(): void {
-    this.backButton = this.add.container(60, 48); // Assign to class property
+    this.backButton = this.add.container(60, 48);
     const arrow = this.add.text(0, 0, '←', { fontSize: '48px', color: '#6b7280' });
     arrow.setOrigin(0.5);
     const text = this.add.text(40, 0, 'Module 1', { fontSize: '36px', fontFamily: 'Arial, sans-serif', color: '#1f2937' });
@@ -156,7 +156,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   }
 
   private createHeader(width: number): void {
-    this.headerTitle = this.add.text(width / 2, 48, 'Grow Your Nest', { // Assign to class property
+    this.headerTitle = this.add.text(width / 2, 48, 'Grow Your Nest', {
       fontSize: '42px',
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
@@ -178,8 +178,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.leftPanel = this.add.container(x, y);
     this.leftPanel.setDepth(5);
 
-    const panelBg = this.add.rectangle(panelWidth / 2, panelHeight / 2, panelWidth, panelHeight, 0xffffff, 1);
-    panelBg.setStrokeStyle(2, 0xe5e7eb);
+    // Use graphics instead of rectangle for rounded corners
+    const panelBg = this.add.graphics();
+    panelBg.fillStyle(0xffffff, 1);
+    panelBg.lineStyle(2, 0xe5e7eb);
+    const cornerRadius = 16;
+    panelBg.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
+    panelBg.strokeRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     this.leftPanel.add(panelBg);
 
     const title = this.add.text(panelWidth / 2, 40, 'Growth', {
@@ -194,27 +199,38 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.plantGraphics = this.add.container(panelWidth / 2, panelHeight / 2 + 20);
     this.leftPanel.add(this.plantGraphics);
 
-    this.stageText = this.add.text(panelWidth / 2, panelHeight - 60, 'Stage 1', {
-      fontSize: '24px',
+    // Bottom section - stage text and progress bar on same line
+    const bottomY = panelHeight - 40;
+    const leftMargin = 30;
+    const rightMargin = 30;
+    
+    // Stage text on the left
+    this.stageText = this.add.text(leftMargin, bottomY, 'Stage 1', {
+      fontSize: '20px',
       fontFamily: 'Arial, sans-serif',
-      color: '#6b7280'
+      color: '#6b7280',
+      fontStyle: 'bold'
     });
-    this.stageText.setOrigin(0.5, 0);
+    this.stageText.setOrigin(0, 0.5);
     this.leftPanel.add(this.stageText);
 
-    const progressBarWidth = panelWidth - 60;
-    const progressBarBg = this.add.rectangle(panelWidth / 2, panelHeight - 30, progressBarWidth, 12, 0xe5e7eb);
+    // Progress bar on the right (after stage text)
+    const progressBarStartX = leftMargin + 80;
+    const progressBarWidth = panelWidth - progressBarStartX - rightMargin;
+    
+    const progressBarBg = this.add.rectangle(progressBarStartX + progressBarWidth / 2, bottomY, progressBarWidth, 12, 0xe5e7eb);
     progressBarBg.setStrokeStyle(1, 0xd1d5db);
     this.leftPanel.add(progressBarBg);
 
-    const progressBarFill = this.add.rectangle((panelWidth / 2) - (progressBarWidth / 2), panelHeight - 30, 0, 12, 0x22c55e);
+    const progressBarFill = this.add.rectangle(progressBarStartX, bottomY, 0, 12, 0x22c55e);
     progressBarFill.setOrigin(0, 0.5);
     this.leftPanel.add(progressBarFill);
     this.leftPanel.setData('progressBar', progressBarFill);
     this.leftPanel.setData('progressBarWidth', progressBarWidth);
 
-    this.progressText = this.add.text(panelWidth - 30, panelHeight - 30, '0 / 100', {
-      fontSize: '20px',
+    // Progress text on top of the progress bar (right aligned)
+    this.progressText = this.add.text(panelWidth - rightMargin, bottomY, '0 / 100', {
+      fontSize: '16px',
       fontFamily: 'Arial, sans-serif',
       color: '#6b7280'
     });
@@ -227,9 +243,16 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private createRightPanel(x: number, y: number, panelWidth: number, panelHeight: number): void {
     this.rightPanel = this.add.container(x, y);
     this.rightPanel.setDepth(5);
-    const panelBg = this.add.rectangle(panelWidth / 2, panelHeight / 2, panelWidth, panelHeight, 0xffffff, 1);
-    panelBg.setStrokeStyle(2, 0xe5e7eb);
+    
+    // Use graphics instead of rectangle for rounded corners
+    const panelBg = this.add.graphics();
+    panelBg.fillStyle(0xffffff, 1);
+    panelBg.lineStyle(2, 0xe5e7eb);
+    const cornerRadius = 16;
+    panelBg.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
+    panelBg.strokeRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     this.rightPanel.add(panelBg);
+    
     const title = this.add.text(panelWidth / 2, 40, 'Question Cards', {
       fontSize: '36px',
       fontFamily: 'Arial, sans-serif',
@@ -244,33 +267,53 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   }
 
   private updatePlantGrowth(): void {
+    // Clear existing plant graphics
     this.plantGraphics.removeAll(true);
-    const stage = Math.floor((this.score / this.questions.length) * 5) + 1;
-    const growth = (this.score / this.questions.length) * 100;
-    const soil = this.add.ellipse(0, 40, 120, 40, 0x8B4513);
-    this.plantGraphics.add(soil);
-    if (growth > 0) {
-      const stemHeight = Math.min(growth * 1.5, 120);
-      const stem = this.add.rectangle(0, 40 - stemHeight / 2, 8, stemHeight, 0x2d5016);
-      this.plantGraphics.add(stem);
+    
+    // Calculate which stage we're on (1-7 based on progress)
+    const totalQuestions = this.questions.length;
+    const questionsAnswered = this.currentQuestionIndex;
+    
+    // Map progress to 7 stages
+    let stage: number;
+    if (questionsAnswered === 0) {
+      stage = 1;
+    } else if (questionsAnswered === totalQuestions) {
+      stage = 7; // Final stage when all questions completed
+    } else {
+      // Stages 2-6 for questions in progress
+      const progressPercent = questionsAnswered / totalQuestions;
+      stage = Math.floor(progressPercent * 5) + 2; // Maps to stages 2-6
+      stage = Math.min(stage, 6); // Cap at stage 6 until completion
     }
-    if (stage >= 2) {
-      const leftLeaf = this.add.ellipse(-25, 0, 40, 60, 0x4ade80);
-      leftLeaf.setRotation(-0.5);
-      this.plantGraphics.add(leftLeaf);
-      const rightLeaf = this.add.ellipse(25, 0, 40, 60, 0x4ade80);
-      rightLeaf.setRotation(0.5);
-      this.plantGraphics.add(rightLeaf);
+    
+    // Display the appropriate tree stage image
+    const treeImage = this.add.image(0, 0, `tree_stage_${stage}`);
+    
+    // Scale the tree to fit nicely in the panel
+    const maxTreeHeight = 250;
+    const maxTreeWidth = 200;
+    
+    const scaleX = maxTreeWidth / treeImage.width;
+    const scaleY = maxTreeHeight / treeImage.height;
+    const scale = Math.min(scaleX, scaleY);
+    
+    treeImage.setScale(scale);
+    this.plantGraphics.add(treeImage);
+    
+    // Update stage text
+    this.stageText.setText(`Stage ${stage}`);
+  }
+
+  private updateProgress(): void {
+    const totalQuestions = this.questions.length;
+    const progress = (this.score / totalQuestions) * 100;
+    this.progressText.setText(`${Math.round(progress)} / 100`);
+    const progressBar = this.leftPanel.getData('progressBar') as Phaser.GameObjects.Rectangle;
+    const progressBarWidth = this.leftPanel.getData('progressBarWidth') as number;
+    if (progressBar) {
+      progressBar.width = (progress / 100) * progressBarWidth;
     }
-    if (stage >= 4) {
-      const leftLeaf2 = this.add.ellipse(-35, -30, 35, 55, 0x22c55e);
-      leftLeaf2.setRotation(-0.6);
-      this.plantGraphics.add(leftLeaf2);
-      const rightLeaf2 = this.add.ellipse(35, -30, 35, 55, 0x22c55e);
-      rightLeaf2.setRotation(0.6);
-      this.plantGraphics.add(rightLeaf2);
-    }
-    this.stageText.setText(`Stage ${Math.min(stage, 5)}`);
   }
 
   private updateQuestion(): void {
@@ -357,15 +400,11 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       this.rightPanel.add(optionContainer);
     });
 
-    // ========================================
-    // CREATE NEXT BUTTON
-    // ========================================
     const nextButtonX = panelWidth - horizontalPadding - (panelWidth * 0.13);
     const nextButtonY = panelHeight - nextButtonMargin;
     this.createNextButton(nextButtonX, nextButtonY, panelWidth);
     this.rightPanel.add(this.nextButton);
 
-    // Update progress
     this.updateProgress();
   }
 
@@ -408,14 +447,26 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     buttonHitArea.on('pointerover', () => {
       if (this.selectedAnswer !== option.letter) {
         buttonBg.clear();
-        buttonBg.fillStyle(0xe0e7ff, 1);
-        buttonBg.lineStyle(2, 0xe5e7eb);
+        buttonBg.fillStyle(0xbfdbfe, 1);
+        buttonBg.lineStyle(2, 0x93c5fd);
         buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       }
     });
     buttonHitArea.on('pointerout', () => {
-      if (this.selectedAnswer !== option.letter) {
+      if (this.selectedAnswer === option.letter) {
+        buttonBg.clear();
+        buttonBg.fillStyle(0xdbeafe, 1);
+        buttonBg.lineStyle(2, 0x3b82f6);
+        buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+        buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+      } else if (this.selectedAnswer !== null) {
+        buttonBg.clear();
+        buttonBg.fillStyle(0xf3f4f6, 1);
+        buttonBg.lineStyle(2, 0xe5e7eb);
+        buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+        buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+      } else {
         buttonBg.clear();
         buttonBg.fillStyle(0xdbeafe, 1);
         buttonBg.lineStyle(2, 0xe5e7eb);
@@ -528,67 +579,164 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.updateQuestion();
   }
 
-  private updateProgress(): void {
-    const totalQuestions = this.questions.length;
-    const progress = (this.score / totalQuestions) * 100;
-    this.progressText.setText(`${Math.round(progress)} / 100`);
-    const progressBar = this.leftPanel.getData('progressBar') as Phaser.GameObjects.Rectangle;
-    const progressBarWidth = this.leftPanel.getData('progressBarWidth') as number;
-    if (progressBar) {
-      progressBar.width = (progress / 100) * progressBarWidth;
-    }
-  }
-
   private showCompletion(): void {
-     this.leftPanel.setVisible(false);
-    this.rightPanel.setVisible(false);
+    const panelWidth = this.rightPanel.getData('panelWidth') as number;
+    const panelHeight = this.rightPanel.getData('panelHeight') as number;
     
-    const { width, height } = this.cameras.main;
-    const centerX = width / 2;
-    const centerY = height / 2;
-
-    const completionText = this.add.text(centerX, centerY - 80, 'Minigame Complete! 🎉', {
-      fontSize: '48px',
+    const children = this.rightPanel.getAll();
+    children.slice(1).forEach(child => child.destroy());
+    
+    const HORIZONTAL_PADDING_PERCENT = 0.08;
+    const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
+    const contentWidth = panelWidth - (horizontalPadding * 2);
+    
+    const titleFontSize = Math.round(panelWidth * 0.068);
+    const completionTextFontSize = Math.round(panelWidth * 0.06);
+    const boxTitleFontSize = Math.round(panelWidth * 0.03);
+    const boxValueFontSize = Math.round(panelWidth * 0.026);
+    const coinButtonFontSize = Math.round(panelWidth * 0.03);
+    const moduleButtonFontSize = Math.round(panelWidth * 0.034);
+    
+    const title = this.add.text(panelWidth / 2, 40, 'Question Cards', {
+      fontSize: `${titleFontSize}px`,
       fontFamily: 'Arial, sans-serif',
       color: '#1f2937',
       fontStyle: 'bold'
     });
-
-    completionText.setOrigin(0.5, 0.5);
-    completionText.setDepth(20);
-  
-    const finalScoreText = this.add.text(centerX, centerY, `Final Score: ${this.score}/${this.questions.length}`, {
-      fontSize: '32px',
+    title.setOrigin(0.5, 0);
+    this.rightPanel.add(title);
+    
+    const birdSize = panelWidth * 0.3;
+    const birdY = panelHeight * 0.32;
+    const bird = this.add.image(panelWidth / 2, birdY, 'bird_celebration');
+    bird.setDisplaySize(birdSize, birdSize);
+    this.rightPanel.add(bird);
+    
+    const completionTextY = birdY + (panelHeight * 0.14);
+    const completionText = this.add.text(panelWidth / 2, completionTextY, 'Questions Completed!', {
+      fontSize: `${completionTextFontSize}px`,
       fontFamily: 'Arial, sans-serif',
-      color: '#3b82f6',
+      color: '#1f2937',
       fontStyle: 'bold'
     });
-
-    finalScoreText.setOrigin(0.5, 0.5);
-    finalScoreText.setDepth(20);
-
-    this.completionReturnButton = this.add.container(centerX, centerY + 100);
-    this.completionReturnButton.setDepth(20);
+    completionText.setOrigin(0.5, 0.5);
+    this.rightPanel.add(completionText);
     
-    const returnBg = this.add.graphics();
-    returnBg.fillStyle(0x3b82f6);
-    returnBg.fillRoundedRect(-130, -35, 260, 70, 35);
+    const boxY = completionTextY + (panelHeight * 0.12);
+    const boxSpacing = panelWidth * 0.02;
+    const boxWidth = (contentWidth - boxSpacing) / 2;
+    const boxHeight = panelHeight * 0.12;
+    const boxRadius = panelHeight * 0.018;
     
-    const returnText = this.add.text(0, 0, 'Return to House', {
-      fontSize: '22px',
+    const leftBoxX = horizontalPadding;
+    const leftBoxBg = this.add.graphics();
+    leftBoxBg.lineStyle(2, 0x60a5fa);
+    leftBoxBg.strokeRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
+    this.rightPanel.add(leftBoxBg);
+    
+    const waterText = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.32, 'Growth Earned', {
+      fontSize: `${boxTitleFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#60a5fa',
+      fontStyle: 'bold'
+    });
+    waterText.setOrigin(0.5, 0.5);
+    this.rightPanel.add(waterText);
+    
+    const waterValue = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.68, 'Water +6\nFertilizer +2', {
+      fontSize: `${boxValueFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#60a5fa',
+      align: 'center',
+      lineSpacing: 2
+    });
+    waterValue.setOrigin(0.5, 0.5);
+    this.rightPanel.add(waterValue);
+    
+    const rightBoxX = leftBoxX + boxWidth + boxSpacing;
+    const rightBoxBg = this.add.graphics();
+    rightBoxBg.lineStyle(2, 0x60a5fa);
+    rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
+    this.rightPanel.add(rightBoxBg);
+    
+    const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, 'Amazing!', {
+      fontSize: `${boxTitleFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#60a5fa',
+      fontStyle: 'bold'
+    });
+    accuracyText.setOrigin(0.5, 0.5);
+    this.rightPanel.add(accuracyText);
+    
+    const accuracy = Math.round((this.score / this.questions.length) * 100);
+    const accuracyValue = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`, {
+      fontSize: `${boxValueFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#60a5fa',
+      fontStyle: 'bold'
+    });
+    accuracyValue.setOrigin(0.5, 0.5);
+    this.rightPanel.add(accuracyValue);
+    
+    const coinButtonY = boxY + boxHeight + (panelHeight * 0.045);
+    const coinButtonWidth = contentWidth * 0.65;
+    const coinButtonHeight = panelHeight * 0.08;
+    const coinButtonRadius = coinButtonHeight / 2;
+    const coinButton = this.add.graphics();
+    coinButton.fillStyle(0x60a5fa);
+    coinButton.fillRoundedRect(panelWidth / 2 - coinButtonWidth / 2, coinButtonY, coinButtonWidth, coinButtonHeight, coinButtonRadius);
+    this.rightPanel.add(coinButton);
+    
+    const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, 'You earned 15\nNest Coins!', {
+      fontSize: `${coinButtonFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      align: 'center',
+      lineSpacing: 2
+    });
+    coinText.setOrigin(0.5, 0.5);
+    this.rightPanel.add(coinText);
+    
+    const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
+    const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
+    const moduleButtonX = panelWidth - horizontalPadding - (panelWidth * 0.13);
+    const moduleButtonY = panelHeight - nextButtonMargin;
+    const moduleButtonWidth = panelWidth * 0.24;
+    const moduleButtonHeight = panelWidth * 0.08;
+    const moduleButtonRadius = moduleButtonHeight / 2;
+    
+    this.completionReturnButton = this.add.container(moduleButtonX, moduleButtonY);
+    
+    const moduleButtonBg = this.add.graphics();
+    moduleButtonBg.fillStyle(0x3b82f6);
+    moduleButtonBg.fillRoundedRect(-moduleButtonWidth / 2, -moduleButtonHeight / 2, moduleButtonWidth, moduleButtonHeight, moduleButtonRadius);
+    
+    const moduleButtonText = this.add.text(-moduleButtonWidth * 0.12, 0, 'MODULE', {
+      fontSize: `${moduleButtonFontSize}px`,
       fontFamily: 'Arial, sans-serif',
       color: '#ffffff',
       fontStyle: 'bold'
     });
-    returnText.setOrigin(0.5, 0.5);
+    moduleButtonText.setOrigin(0.5, 0.5);
     
-    this.completionReturnButton.add([returnBg, returnText]);
+    const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
+    const arrow = this.add.text(moduleButtonWidth * 0.22, 0, '→', {
+      fontSize: `${arrowFontSize}px`,
+      fontFamily: 'Arial, sans-serif',
+      color: '#ffffff'
+    });
+    arrow.setOrigin(0.5, 0.5);
     
-    const hitArea = this.add.rectangle(0, 0, 260, 70, 0x000000, 0);
+    this.completionReturnButton.add([moduleButtonBg, moduleButtonText, arrow]);
+    
+    const hitArea = this.add.rectangle(0, 0, moduleButtonWidth, moduleButtonHeight, 0x000000, 0);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => this.scene.stop());
     this.completionReturnButton.add(hitArea);
     this.completionReturnButton.sendToBack(hitArea);
+    
+    this.rightPanel.add(this.completionReturnButton);
   }
 
   private getDefaultQuestions(): QuizQuestion[] {

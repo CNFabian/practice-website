@@ -10,7 +10,15 @@ import {
   Platform1, 
   BirdIdle, 
   BirdFly,
+  BirdCelebration,
   CoinCounterIcon,
+  stage1Tree,
+  stage2Tree,
+  stage3Tree,
+  stage4Tree,
+  stage5Tree,
+  stage6Tree,
+  stage7Tree,
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
@@ -25,7 +33,6 @@ export default class PreloaderScene extends Phaser.Scene {
   }
 
   init() {
-    // This runs BEFORE preload() - check if textures already exist
     const texturesExist = 
       this.textures.exists('suburbanBackground') &&
       this.textures.exists('lessonHouse') &&
@@ -37,7 +44,15 @@ export default class PreloaderScene extends Phaser.Scene {
       this.textures.exists('platform1') &&
       this.textures.exists('bird_idle') &&
       this.textures.exists('bird_fly') &&
-      this.textures.exists('coin_counter');
+      this.textures.exists('coin_counter') &&
+      this.textures.exists('bird_celebration') &&
+      this.textures.exists('tree_stage_1') &&
+      this.textures.exists('tree_stage_2') &&
+      this.textures.exists('tree_stage_3') &&
+      this.textures.exists('tree_stage_4') &&
+      this.textures.exists('tree_stage_5') &&
+      this.textures.exists('tree_stage_6') &&
+      this.textures.exists('tree_stage_7');
     
     this.shouldLoad = !texturesExist;
     
@@ -103,6 +118,14 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image('bird_idle', BirdIdle);
     this.load.image('bird_fly', BirdFly);
     this.load.image('coinIcon', CoinCounterIcon);
+    this.load.svg('bird_celebration', BirdCelebration, { width: 200, height: 200 });
+    this.load.image('tree_stage_1', stage1Tree);
+    this.load.image('tree_stage_2', stage2Tree);
+    this.load.image('tree_stage_3', stage3Tree);
+    this.load.image('tree_stage_4', stage4Tree);
+    this.load.image('tree_stage_5', stage5Tree);
+    this.load.image('tree_stage_6', stage6Tree);
+    this.load.image('tree_stage_7', stage7Tree);
   }
 
   create() {
