@@ -318,38 +318,59 @@ const ModulesPage: React.FC = () => {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-    const game = GameManager.getGame();
-    if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
-    
-    const canvas = game.canvas;
-    const dpr = window.devicePixelRatio || 1;
-    const currentOffset = GameManager.getCurrentSidebarOffset();
-    const baseWidth = window.innerWidth - currentOffset;
-    const baseHeight = window.innerHeight;
-    
-    // Update canvas element pixel buffer
-    canvas.width = baseWidth * dpr;
-    canvas.height = baseHeight * dpr;
-    
-    // Update canvas CSS display size
-    canvas.style.width = `${baseWidth}px`;
-    canvas.style.height = `${baseHeight}px`;
-    
-    // Update Phaser internals
-    game.scale.setZoom(1 / dpr);
-    game.scale.resize(baseWidth * dpr, baseHeight * dpr);
-  };
+      const game = GameManager.getGame();
+      if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
+      
+      const canvas = game.canvas;
+      const dpr = window.devicePixelRatio || 1;
+      const currentOffset = GameManager.getCurrentSidebarOffset();
+      const baseWidth = window.innerWidth - currentOffset;
+      const baseHeight = window.innerHeight;
+      
+      console.log(`=== RESIZE EVENT: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
+      
+      // Update canvas element pixel buffer
+      canvas.width = baseWidth * dpr;
+      canvas.height = baseHeight * dpr;
+      
+      // Update canvas CSS display size
+      canvas.style.width = `${baseWidth}px`;
+      canvas.style.height = `${baseHeight}px`;
+      
+      // Update Phaser internals
+      game.scale.setZoom(1 / dpr);
+      game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+    };
+
+    // Listen for window resize
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    // CRITICAL: Listen for DPI changes (monitor switches)
+    const mediaQueryList = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    
+    const handleDPIChange = () => {
+      console.log('=== DPI CHANGE DETECTED ===');
+      // Small delay to ensure browser has updated devicePixelRatio
+      setTimeout(() => {
+        handleResize();
+      }, 50);
+    };
+
+    mediaQueryList.addEventListener('change', handleDPIChange);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      mediaQueryList.removeEventListener('change', handleDPIChange);
+    };
   }, [isPhaserReady, assetsLoaded]);
 
-  // Sync total coins with game registry
-  useEffect(() => {
-    const game = GameManager.getGame();
-    if (game) {
-      game.registry.set('totalCoins', totalCoins);
-    }
-  }, [totalCoins]);
+    // Sync total coins with game registry
+    useEffect(() => {
+      const game = GameManager.getGame();
+      if (game) {
+        game.registry.set('totalCoins', totalCoins);
+      }
+    }, [totalCoins]);
 
   // Get current module and lesson from GameManager
   const currentModule = useMemo(() => {

@@ -14,6 +14,8 @@ class GameManager {
   private moduleLessonsData: Record<string, ModuleLessonsData> = {};
   private currentSidebarOffset: number = 192;
   private resizeDebounceTimer: NodeJS.Timeout | null = null;
+  private dpiMediaQuery: MediaQueryList | null = null;
+  private dpiChangeHandler: (() => void) | null = null;
 
   private constructor() {}
 
@@ -74,12 +76,7 @@ class GameManager {
       }
       
       // Trigger a resize to ensure proper scaling
-      const dpr = window.devicePixelRatio || 1;
-      const newWidth = (window.innerWidth - this.currentSidebarOffset) * dpr;
-      const newHeight = window.innerHeight * dpr;
-      this.game.scale.setZoom(1 / dpr);
-      this.game.scale.resize(newWidth, newHeight);
-      this.game.scale.refresh();
+      this.performCanvasResize();
       
       return this.game;
     }
@@ -92,6 +89,9 @@ class GameManager {
     this.game.events.once('ready', () => {
       console.log('=== PHASER GAME READY ===');
       this.isPhaserReady = true;
+      
+      // Set up DPI change monitoring
+      this.setupDPIMonitoring();
       
       // Only start PreloaderScene if assets haven't been loaded yet
       if (!this.assetsLoaded && this.game) {
@@ -138,24 +138,7 @@ class GameManager {
     }
 
     this.resizeDebounceTimer = setTimeout(() => {
-      if (this.game) {
-        const canvas = this.game.canvas;
-        const dpr = window.devicePixelRatio || 1;
-        const baseWidth = window.innerWidth - this.currentSidebarOffset;
-        const baseHeight = window.innerHeight;
-
-        // Update canvas element pixel buffer
-        canvas.width = baseWidth * dpr;
-        canvas.height = baseHeight * dpr;
-
-        // Update canvas CSS display size
-        canvas.style.width = `${baseWidth}px`;
-        canvas.style.height = `${baseHeight}px`;
-
-        // Update Phaser internals
-        this.game.scale.setZoom(1 / dpr);
-        this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
-      }
+      this.performCanvasResize();
       this.resizeDebounceTimer = null;
     }, 100);
   }
@@ -165,6 +148,62 @@ class GameManager {
    */
   getCurrentSidebarOffset(): number {
     return this.currentSidebarOffset;
+  }
+
+  /**
+   * Perform canvas resize with current DPI
+   */
+  private performCanvasResize(): void {
+    if (!this.game) return;
+
+    const canvas = this.game.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const baseWidth = window.innerWidth - this.currentSidebarOffset;
+    const baseHeight = window.innerHeight;
+    
+    console.log(`=== CANVAS RESIZE: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
+    
+    // Update canvas element pixel buffer
+    canvas.width = baseWidth * dpr;
+    canvas.height = baseHeight * dpr;
+    
+    // Update canvas CSS display size
+    canvas.style.width = `${baseWidth}px`;
+    canvas.style.height = `${baseHeight}px`;
+    
+    // Update Phaser internals
+    this.game.scale.setZoom(1 / dpr);
+    this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+  }
+
+  /**
+   * Set up DPI change monitoring for monitor switches
+   */
+  private setupDPIMonitoring(): void {
+    if (this.dpiMediaQuery) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    this.dpiMediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`);
+    
+    this.dpiChangeHandler = () => {
+      console.log('=== GAME MANAGER: DPI CHANGE DETECTED ===');
+      setTimeout(() => {
+        this.performCanvasResize();
+      }, 50);
+    };
+
+    this.dpiMediaQuery.addEventListener('change', this.dpiChangeHandler);
+  }
+
+  /**
+   * Clean up DPI monitoring
+   */
+  private cleanupDPIMonitoring(): void {
+    if (!this.dpiMediaQuery || !this.dpiChangeHandler) return;
+
+    this.dpiMediaQuery.removeEventListener('change', this.dpiChangeHandler);
+    this.dpiMediaQuery = null;
+    this.dpiChangeHandler = null;
   }
 
   /**
@@ -194,6 +233,9 @@ class GameManager {
   destroy(): void {
     if (this.game) {
       console.log('=== DESTROYING PHASER GAME INSTANCE ===');
+      
+      // Clean up DPI monitoring
+      this.cleanupDPIMonitoring();
       
       // Clear any pending debounce timer
       if (this.resizeDebounceTimer) {
