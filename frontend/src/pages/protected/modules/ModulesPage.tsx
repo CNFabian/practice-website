@@ -465,7 +465,10 @@ const ModulesPage: React.FC = () => {
   switch (navState.currentView) {
     case 'map':
       return {
-        backgroundImage: `url(${NeighborhoodMap})`,
+        backgroundImage: `
+          linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
+          url(${NeighborhoodMap})
+        `,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

@@ -106,8 +106,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'home-buying-knowledge',
         name: 'Home-Buying Knowledge',
-        x: width * 0.3,
-        y: height * 0.45,
+        x: width * 0.2,
+        y: height * 0.65,
         color: COLORS.BLUE_500,
         isLocked: false,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_1,
@@ -115,7 +115,7 @@ export default class MapScene extends BaseScene {
       {
         id: 'locked-neighborhood',
         name: 'Locked Neighborhood',
-        x: width * 0.55,
+        x: width * 0.4,
         y: height * 0.3,
         color: COLORS.GRAY_400,
         isLocked: true,
@@ -124,8 +124,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'construction-zone',
         name: 'Construction Zone',
-        x: width * 0.7,
-        y: height * 0.55,
+        x: width * 0.65,
+        y: height * 0.6,
         color: COLORS.ORANGE_500,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
@@ -232,7 +232,16 @@ export default class MapScene extends BaseScene {
 
     // Use actual neighborhood image from preloaded assets
     const neighborhoodImage = this.add.image(0, 0, neighborhood.assetKey);
-    neighborhoodImage.setDisplaySize(scale(180), scale(180));
+    
+    // Scale each neighborhood independently while maintaining aspect ratio
+    if (neighborhood.id === 'home-buying-knowledge') {
+      neighborhoodImage.setScale(scale(0.8));
+    } else if (neighborhood.id === 'locked-neighborhood') {
+      neighborhoodImage.setScale(scale(0.5));
+    } else if (neighborhood.id === 'construction-zone') {
+      neighborhoodImage.setScale(scale(1));
+    }
+    
     container.add(neighborhoodImage);
 
     // Neighborhood name label
