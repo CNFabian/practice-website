@@ -178,10 +178,7 @@ class GameManager {
     // Update Phaser internals
     this.game.scale.setZoom(1 / dpr);
     this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
-    
-    // CRITICAL FIX: Manually emit resize event to ensure scenes update
-    const gameSize = { width: baseWidth * dpr, height: baseHeight * dpr };
-    this.game.scale.emit('resize', gameSize);
+  
   }
 
   /**

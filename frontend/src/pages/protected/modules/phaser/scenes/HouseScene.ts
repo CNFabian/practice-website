@@ -13,8 +13,8 @@ interface Lesson {
   type: string;
   completed: boolean;
   locked: boolean;
-  x?: number; // Position as percentage of viewport width
-  y?: number; // Position as percentage of viewport height
+  x?: number;
+  y?: number;
 }
 
 interface Module {
@@ -52,11 +52,12 @@ export default class HouseScene extends BaseScene {
   private minigameButton?: Phaser.GameObjects.Container;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
   private minigameShutdownHandler?: () => void;
+  private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
   
- // Bird character
+  // Bird character
   private bird?: BirdCharacter;
 
   // ═══════════════════════════════════════════════════════════
@@ -74,19 +75,15 @@ export default class HouseScene extends BaseScene {
     this.lessonContainers = [];
     this.moduleBackendId = data.moduleBackendId;
     
-    // Get module lessons data from registry
     const moduleLessonsData: Record<string, ModuleLessonsData> = this.registry.get('moduleLessonsData') || {};
     
     console.log('🏠 HouseScene init - moduleBackendId:', this.moduleBackendId);
-    console.log('🏠 HouseScene init - available module lessons data:', moduleLessonsData);
     
-    // Find the module data for this backend ID
     if (this.moduleBackendId && moduleLessonsData[this.moduleBackendId]) {
       this.module = moduleLessonsData[this.moduleBackendId];
       console.log('✅ Loaded module from backend:', this.module);
     } else {
       console.warn('⚠️ No module data found for backend ID:', this.moduleBackendId);
-      // Fallback to empty module
       this.module = {
         id: data.moduleId || 0,
         title: 'Loading...',
@@ -111,7 +108,6 @@ export default class HouseScene extends BaseScene {
   shutdown() {
     super.shutdown();
     
-    // Clean up minigame event listener
     if (this.minigameShutdownHandler) {
       const minigameScene = this.scene.get('GrowYourNestMinigame');
       if (minigameScene) {
@@ -120,7 +116,6 @@ export default class HouseScene extends BaseScene {
       this.minigameShutdownHandler = undefined;
     }
     
-    // Clean up back button
     if (this.backButton) {
       const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
       if (buttonBg && buttonBg.input) {
@@ -129,7 +124,6 @@ export default class HouseScene extends BaseScene {
       }
     }
     
-    // Clean up minigame button
     if (this.minigameButton) {
       const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
       if (buttonBg && buttonBg.input) {
@@ -138,7 +132,6 @@ export default class HouseScene extends BaseScene {
       }
     }
     
-    // Clean up all lesson card event listeners
     this.lessonContainers.forEach(container => {
       const cardBackground = container.list[0] as Phaser.GameObjects.Rectangle;
       if (cardBackground && cardBackground.input) {
@@ -147,9 +140,7 @@ export default class HouseScene extends BaseScene {
       }
     });
     
-    // Kill all tweens
     this.tweens.killAll();
-    
     this.cleanupEventListeners();
     this.cleanupBird();
     this.lessonContainers = [];
@@ -158,14 +149,17 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   // SETUP METHODS
   // ═══════════════════════════════════════════════════════════
- 
-
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResize, this);
   }
 
   private cleanupEventListeners(): void {
     this.scale.off('resize', this.handleResize, this);
+    
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+      this.resizeDebounceTimer = undefined;
+    }
   }
 
   private cleanupBird(): void {
@@ -181,7 +175,6 @@ export default class HouseScene extends BaseScene {
   private createEnvironment(): void {
     const { width, height } = this.scale;
 
-    // Single house image - responsive scaling
     this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
     this.lessonHouse.setDepth(1);
     const houseScale = Math.min(width, height) * 0.00121;
@@ -196,7 +189,6 @@ export default class HouseScene extends BaseScene {
     this.createMinigameButton();
     
     if (this.module && this.module.lessons.length > 0) {
-      // this.createHeaderCard(); // COMMENTED OUT
       this.createLessonCards();
     } else {
       this.createLoadingPlaceholder();
@@ -222,11 +214,10 @@ export default class HouseScene extends BaseScene {
   private createBackButton(): void {
     const { width, height } = this.scale;
     
-    // Make button position and size responsive
-    const buttonX = width * 0.08; // 8% from left
-    const buttonY = height * 0.05; // 5% from top
-    const buttonWidth = width * 0.1; // 10% of width
-    const buttonHeight = height * 0.05; // 5% of height
+    const buttonX = width * 0.08;
+    const buttonY = height * 0.05;
+    const buttonWidth = width * 0.1;
+    const buttonHeight = height * 0.05;
     
     this.backButton = ButtonBuilder.createIconButton({
       scene: this,
@@ -236,8 +227,8 @@ export default class HouseScene extends BaseScene {
       height: buttonHeight,
       text: 'Back',
       icon: '←',
-      iconSize: Math.min(width, height) * 0.025, // Responsive icon size
-      fontSize: Math.min(width, height) * 0.016, // Responsive font size
+      iconSize: Math.min(width, height) * 0.025,
+      fontSize: Math.min(width, height) * 0.016,
       backgroundColor: COLORS.GRAY_700,
       hoverColor: COLORS.GRAY_800,
       onClick: () => this.handleBackToNeighborhood(),
@@ -248,11 +239,10 @@ export default class HouseScene extends BaseScene {
   private createMinigameButton(): void {
     const { width, height } = this.scale;
 
-    // Make button position and size responsive
-    const buttonWidth = width * 0.12; // 12% of width
-    const buttonHeight = height * 0.05; // 5% of height
-    const buttonX = width - (width * 0.08); // 8% from right
-    const buttonY = height - (height * 0.05); // 5% from bottom (CHANGED)
+    const buttonWidth = width * 0.12;
+    const buttonHeight = height * 0.05;
+    const buttonX = width - (width * 0.08);
+    const buttonY = height - (height * 0.05);
     
     this.minigameButton = ButtonBuilder.createButton({
       scene: this,
@@ -269,52 +259,6 @@ export default class HouseScene extends BaseScene {
     this.minigameButton.setDepth(10);
   }
 
-  // COMMENTED OUT - Header Card
-  // private createHeaderCard(): void {
-  //   if (!this.module) return;
-
-  //   const { width, height } = this.scale;
-
-  //   this.headerCard = this.add.container(width / 2, height * 0.15);
-  //   this.headerCard.setDepth(10);
-
-  //   // Card background - responsive sizing
-  //   const cardWidth = width * 0.6; // 60% of viewport width
-  //   const cardHeight = height * 0.15; // 15% of viewport height
-  //   const card = this.add.rectangle(0, 0, cardWidth, cardHeight, COLORS.WHITE, OPACITY.HIGH);
-  //   const strokeWidth = Math.max(2, width * 0.002); // Responsive stroke
-  //   card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
-  //   this.headerCard.add(card);
-
-  //   // Module title - responsive sizing
-  //   const titleSize = Math.min(width, height) * 0.032; // Responsive title size
-  //   const titleOffsetY = -cardHeight * 0.15; // Position relative to card height
-  //   const title = this.add.text(0, titleOffsetY, this.module.title, {
-  //     fontSize: `${titleSize}px`,
-  //     fontFamily: 'Arial, sans-serif',
-  //     color: COLORS.TEXT_PRIMARY,
-  //     fontStyle: 'bold',
-  //   }).setOrigin(0.5);
-  //   this.headerCard.add(title);
-
-  //   // Progress text - responsive sizing
-  //   const completedCount = this.module.lessons.filter(l => l.completed).length;
-  //   const totalCount = this.module.lessons.length;
-  //   const progressSize = Math.min(width, height) * 0.018; // Responsive progress size
-  //   const progressOffsetY = cardHeight * 0.2; // Position relative to card height
-  //   const progressText = this.add.text(
-  //     0,
-  //     progressOffsetY,
-  //     `${completedCount}/${totalCount} Rooms Completed`,
-  //     {
-  //       fontSize: `${progressSize}px`,
-  //       fontFamily: 'Arial, sans-serif',
-  //       color: COLORS.TEXT_SECONDARY,
-  //     }
-  //   ).setOrigin(0.5);
-  //   this.headerCard.add(progressText);
-  // }
-
   private createLessonCards(): void {
     if (!this.module) return;
 
@@ -326,38 +270,32 @@ export default class HouseScene extends BaseScene {
   private createLessonCard(lesson: Lesson, index: number): void {
     const { width, height } = this.scale;
 
-    // Default positions based on index (2x2 grid pattern)
     const defaultPositions = [
-      { x: 26, y: 31 },  // Top-left
-      { x: 77, y: 31 },  // Top-right
-      { x: 31, y: 74 },  // Bottom-left
-      { x: 63, y: 72 },  // Bottom-right
+      { x: 26, y: 31 },
+      { x: 77, y: 31 },
+      { x: 31, y: 74 },
+      { x: 63, y: 72 },
     ];
 
-    // Get default position for this lesson index, or use center if index exceeds defaults
     const defaultPos = defaultPositions[index] || { x: 50, y: 50 };
 
-    // Calculate position based on percentage (use lesson's x/y if provided, otherwise use defaults)
     const x = lesson.x !== undefined ? (lesson.x / 100) * width : (defaultPos.x / 100) * width;
     const y = lesson.y !== undefined ? (lesson.y / 100) * height : (defaultPos.y / 100) * height;
 
-    // Card dimensions - responsive sizing (reduced by 25%)
-    const cardWidth = width * 0.1875; // 18.75% of viewport width (was 25%)
-    const cardHeight = height * 0.1875; // 18.75% of viewport height (was 25%)
+    const cardWidth = width * 0.1875;
+    const cardHeight = height * 0.1875;
 
     const lessonContainer = this.add.container(x, y);
     lessonContainer.setDepth(10);
     this.lessonContainers.push(lessonContainer);
 
-    // Card background - responsive positioning and stroke
-    const cardOffsetY = -cardHeight * 0.1; // Position relative to card height
+    const cardOffsetY = -cardHeight * 0.1;
     const card = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.WHITE, 0.7);
-    const strokeWidth = Math.max(2, this.scale.width * 0.002);
+    const strokeWidth = Math.max(2, width * 0.002);
     card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
     lessonContainer.add(card);
 
-    // Lesson title - responsive sizing and positioning
-    const titleSize = Math.min(this.scale.width, this.scale.height) * 0.022;
+    const titleSize = Math.min(width, height) * 0.022;
     const titleOffsetY = -cardHeight * 0.3;
     const titleText = this.add.text(0, titleOffsetY, lesson.title, {
       fontSize: `${titleSize}px`,
@@ -365,12 +303,11 @@ export default class HouseScene extends BaseScene {
       color: COLORS.TEXT_PRIMARY,
       fontStyle: 'bold',
       align: 'center',
-      wordWrap: { width: cardWidth * 0.9 }, // 90% of card width
+      wordWrap: { width: cardWidth * 0.9 },
     }).setOrigin(0.5);
     lessonContainer.add(titleText);
 
-    // Lesson type - responsive sizing and positioning
-    const typeSize = Math.min(this.scale.width, this.scale.height) * 0.016;
+    const typeSize = Math.min(width, height) * 0.016;
     const typeOffsetY = -cardHeight * 0.1;
     const typeText = this.add.text(0, typeOffsetY, lesson.type, {
       fontSize: `${typeSize}px`,
@@ -380,16 +317,12 @@ export default class HouseScene extends BaseScene {
     }).setOrigin(0.5);
     lessonContainer.add(typeText);
 
-    // Lock overlay for locked lessons
     if (lesson.locked) {
       const lockOverlay = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.GRAY_200, 0.5);
       lessonContainer.add(lockOverlay);
     }
 
-    // Status badge (non-clickable visual component)
     this.createStatusBadge(lessonContainer, lesson, cardWidth, cardHeight);
-
-    // Make the entire container interactive (clickable)
     this.makeCardInteractive(lessonContainer, card, lesson);
   }
 
@@ -399,13 +332,14 @@ export default class HouseScene extends BaseScene {
     cardWidth: number,
     cardHeight: number
   ): void {
-    const badgeY = cardHeight * 0.3; // Position relative to card height
-    const badgeWidth = cardWidth * 0.6; // 60% of card width
-    const badgeHeight = cardHeight * 0.25; // 25% of card height
-    const fontSize = Math.min(this.scale.width, this.scale.height) * 0.016;
-    const borderRadius = badgeHeight * 0.3; // Rounded corners
+    const { width, height } = this.scale;
+    
+    const badgeY = cardHeight * 0.3;
+    const badgeWidth = cardWidth * 0.6;
+    const badgeHeight = cardHeight * 0.25;
+    const fontSize = Math.min(width, height) * 0.016;
+    const borderRadius = badgeHeight * 0.3;
 
-    // Determine badge color and text based on lesson state
     let backgroundColor: number;
     let text: string;
 
@@ -420,7 +354,6 @@ export default class HouseScene extends BaseScene {
       text = 'Start';
     }
 
-    // Create rounded rectangle for badge background
     const badgeGraphics = this.add.graphics();
     badgeGraphics.fillStyle(backgroundColor, 1);
     badgeGraphics.fillRoundedRect(
@@ -432,7 +365,6 @@ export default class HouseScene extends BaseScene {
     );
     container.add(badgeGraphics);
 
-    // Badge text
     const badgeText = this.add.text(0, badgeY, text, {
       fontSize: `${fontSize}px`,
       fontFamily: 'Arial, sans-serif',
@@ -447,15 +379,12 @@ export default class HouseScene extends BaseScene {
     cardBackground: Phaser.GameObjects.Rectangle,
     lesson: Lesson
   ): void {
-    // Make the card background interactive
     cardBackground.setInteractive({ useHandCursor: !lesson.locked });
 
-    // Store original scale for hover effect
     const originalScaleX = container.scaleX;
     const originalScaleY = container.scaleY;
 
     if (!lesson.locked) {
-      // Store references to the handlers so we can remove them later
       const handlePointerOver = () => {
         this.tweens.add({
           targets: container,
@@ -498,28 +427,23 @@ export default class HouseScene extends BaseScene {
     const finalX = width / 2;
     const finalY = height * 0.85;
 
-    // Initialize bird character
     this.bird = new BirdCharacter(this);
 
     if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
-      // No entrance animation - just create static bird
       this.bird.createStatic(finalX, finalY);
       this.bird.startIdleAnimation();
       this.registry.set('returningFromLesson', false);
       return;
     }
 
-    // Determine animation type based on travel distance
     const distance = Math.abs(travelInfo.currentHouseIndex - travelInfo.previousHouseIndex);
     const comingFromLeft = travelInfo.currentHouseIndex > travelInfo.previousHouseIndex;
 
     if (distance > 1) {
-      // Long distance - flying entrance
       this.bird.createWithFlyingEntrance(finalX, finalY, comingFromLeft, () => {
         this.bird!.startIdleAnimation();
       });
     } else {
-      // Short distance - hopping entrance
       this.bird.createWithHoppingEntrance(finalX, finalY, comingFromLeft, () => {
         this.bird!.startIdleAnimation();
       });
@@ -565,7 +489,6 @@ export default class HouseScene extends BaseScene {
     
     this.scene.pause();
     
-    // Store reference to handler for cleanup
     this.minigameShutdownHandler = () => {
       this.scene.resume();
     };
@@ -580,28 +503,74 @@ export default class HouseScene extends BaseScene {
     return undefined;
   }
 
-  private handleResize(): void {
-    // Destroy existing elements
-    if (this.lessonHouse) this.lessonHouse.destroy();
-    if (this.backButton) this.backButton.destroy();
-    if (this.minigameButton) this.minigameButton.destroy();
-    this.lessonContainers.forEach(container => container.destroy());
+  // ═══════════════════════════════════════════════════════════
+  // RESIZE HANDLING
+  // ═══════════════════════════════════════════════════════════
+  private handleResize(gameSize: Phaser.Structs.Size): void {
+    // Debounce to prevent rapid successive resizes
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+      this.resizeDebounceTimer = undefined;
+    }
+    
+    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
+      this.performResize();
+      this.resizeDebounceTimer = undefined;
+    });
+  }
+
+  private performResize(): void {
+    const { width, height } = this.scale;
+    
+    console.log(`🔄 HouseScene performResize: ${width}x${height}`);
+    
+    // Kill all tweens FIRST
+    this.tweens.killAll();
+    
+    // Clean up interactive elements before destroying
+    if (this.backButton) {
+      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+      this.backButton.destroy();
+      this.backButton = undefined;
+    }
+    
+    if (this.minigameButton) {
+      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg && buttonBg.input) {
+        buttonBg.removeAllListeners();
+        buttonBg.disableInteractive();
+      }
+      this.minigameButton.destroy();
+      this.minigameButton = undefined;
+    }
+    
+    this.lessonContainers.forEach(container => {
+      const cardBackground = container.list[0] as Phaser.GameObjects.Rectangle;
+      if (cardBackground && cardBackground.input) {
+        cardBackground.removeAllListeners();
+        cardBackground.disableInteractive();
+      }
+      container.destroy();
+    });
     this.lessonContainers = [];
+    
+    if (this.lessonHouse) {
+      this.lessonHouse.destroy();
+      this.lessonHouse = undefined;
+    }
 
     this.handleCoinCounterResize();
     
-    // Handle bird resize
     if (this.bird) {
-      const position = this.bird.getPosition();
-      if (position) {
-        // Recalculate position based on new viewport
-        const { width, height } = this.scale;
-        this.bird.setPosition(width / 2, height * 0.85);
-        this.bird.handleResize();
-      }
+      this.bird.setPosition(width / 2, height * 0.85);
+      this.bird.handleResize();
     }
     
-    // Recreate everything with new dimensions
+    // Recreate with new dimensions (this.scale is now correct)
     this.createEnvironment();
     this.createUI();
   }

@@ -332,21 +332,20 @@ const ModulesPage: React.FC = () => {
       
       console.log(`=== RESIZE EVENT: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
       
-      // Update canvas element pixel buffer
-      canvas.width = baseWidth * dpr;
-      canvas.height = baseHeight * dpr;
-      
-      // Update canvas CSS display size
-      canvas.style.width = `${baseWidth}px`;
-      canvas.style.height = `${baseHeight}px`;
-      
-      // Update Phaser internals
+      // Update Phaser's zoom first (this affects how resize is interpreted)
       game.scale.setZoom(1 / dpr);
+      
+      // Let Phaser handle the resize - this will:
+      // 1. Update the canvas dimensions
+      // 2. Update the CSS styles
+      // 3. Emit the resize event with proper Phaser.Structs.Size object
+      // 4. Notify the WebGLRenderer
       game.scale.resize(baseWidth * dpr, baseHeight * dpr);
       
-      // CRITICAL: Manually emit resize event to ensure scenes update
-      const gameSize = { width: baseWidth * dpr, height: baseHeight * dpr };
-      game.scale.emit('resize', gameSize);
+      // DO NOT manually emit resize - Phaser's resize() already does this
+      // The manual emit was passing a plain object which caused:
+      // "Cannot read properties of undefined (reading 'width')"
+      // in WebGLRenderer.onResize
     };
 
     const handleResize = () => {
