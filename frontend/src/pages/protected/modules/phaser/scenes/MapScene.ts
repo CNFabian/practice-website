@@ -2,9 +2,8 @@ import Phaser from 'phaser';
 import { BaseScene } from './BaseScene';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
+import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
-import { CardBuilder } from '../ui/CardBuilder';
-import { UIComponents } from '../ui/UIComponents';
 
 interface NeighborhoodData {
   id: string;
@@ -13,6 +12,7 @@ interface NeighborhoodData {
   y: number;
   color: number;
   isLocked: boolean;
+  assetKey: string; // Reference to ASSET_KEYS
 }
 
 export default class MapScene extends BaseScene {
@@ -22,7 +22,8 @@ export default class MapScene extends BaseScene {
   private neighborhoods: NeighborhoodData[] = [];
   private isTransitioning: boolean = false;
   private centerContainer!: Phaser.GameObjects.Container;
-  private neighborhoodButtons: Phaser.GameObjects.Container[] = [];
+  private neighborhoodContainers: Map<string, Phaser.GameObjects.Container> = new Map();
+  private roads: Phaser.GameObjects.Graphics[] = [];
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
 
   // ═══════════════════════════════════════════════════════════
@@ -37,11 +38,33 @@ export default class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   init() {
     this.isTransitioning = false;
-    this.neighborhoodButtons = []; // Reset button array
+    this.neighborhoodContainers.clear();
+    this.roads = [];
   }
 
   create() {
     super.create();
+    
+    // Set background image on DOM element (extends under sidebar)
+    console.log('🗺️ MapScene: Setting background image');
+    console.log('🗺️ Available textures:', this.textures.list);
+    console.log('🗺️ Looking for texture key:', ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
+    
+    // Check if texture exists
+    if (this.textures.exists(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND)) {
+      console.log('✅ Texture exists, setting background');
+      this.setBackgroundImage(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
+    } else {
+      console.error('❌ Texture not found:', ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
+      console.log('Available texture keys:', Object.keys(this.textures.list));
+      
+      // Fallback: Set a solid color background
+      const bgElement = document.getElementById('section-background');
+      if (bgElement) {
+        bgElement.style.setProperty('background', 'linear-gradient(180deg, #E0E7FF 0%, #C7D2FE 100%)', 'important');
+      }
+    }
+    
     this.setupNeighborhoodData();
     this.createUI();
     this.setupEventListeners();
@@ -50,26 +73,25 @@ export default class MapScene extends BaseScene {
   shutdown() {
     super.shutdown();
     
-    // Clean up debounce timer
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
       this.resizeDebounceTimer = undefined;
     }
     
-    // Clean up neighborhood button listeners
-    this.neighborhoodButtons.forEach(button => {
-      const buttonBg = button.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg && buttonBg.input) {
-        buttonBg.removeAllListeners();
-        buttonBg.disableInteractive();
-      }
+    this.neighborhoodContainers.forEach(container => {
+      container.list.forEach(child => {
+        if (child instanceof Phaser.GameObjects.Image && child.input) {
+          child.removeAllListeners();
+          child.disableInteractive();
+        }
+      });
     });
     
-    this.neighborhoodButtons = [];
+    this.neighborhoodContainers.clear();
+    this.roads.forEach(road => road.destroy());
+    this.roads = [];
     
-    // Kill all tweens
     this.tweens.killAll();
-    
     this.cleanupEventListeners();
   }
 
@@ -79,22 +101,34 @@ export default class MapScene extends BaseScene {
   private setupNeighborhoodData(): void {
     const { width, height } = this.scale;
 
+    // Three neighborhoods positioned in a circular/triangular layout
     this.neighborhoods = [
       {
-        id: 'downtown',
-        name: 'Downtown',
-        x: width * 0.35,
-        y: height * 0.5,
+        id: 'home-buying-knowledge',
+        name: 'Home-Buying Knowledge',
+        x: width * 0.3,
+        y: height * 0.45,
         color: COLORS.BLUE_500,
         isLocked: false,
+        assetKey: ASSET_KEYS.NEIGHBORHOOD_1,
       },
       {
-        id: 'suburbs',
-        name: 'Suburbs',
-        x: width * 0.65,
-        y: height * 0.5,
-        color: COLORS.GREEN_500,
-        isLocked: false,
+        id: 'locked-neighborhood',
+        name: 'Locked Neighborhood',
+        x: width * 0.55,
+        y: height * 0.3,
+        color: COLORS.GRAY_400,
+        isLocked: true,
+        assetKey: ASSET_KEYS.NEIGHBORHOOD_2,
+      },
+      {
+        id: 'construction-zone',
+        name: 'Construction Zone',
+        x: width * 0.7,
+        y: height * 0.55,
+        color: COLORS.ORANGE_500,
+        isLocked: true,
+        assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
       },
     ];
   }
@@ -104,12 +138,10 @@ export default class MapScene extends BaseScene {
   }
 
   private handleResizeDebounced(): void {
-    // Clear existing debounce timer
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
     }
     
-    // Set new debounce timer (wait 100ms after last resize)
     this.resizeDebounceTimer = this.time.delayedCall(100, () => {
       this.handleResize();
       this.resizeDebounceTimer = undefined;
@@ -129,183 +161,133 @@ export default class MapScene extends BaseScene {
     // Create center container
     this.centerContainer = this.add.container(width / 2, height / 2);
 
-    // Create main card
-    this.createMainCard();
+    // Draw connecting roads
+    this.createRoads();
 
-    // Create neighborhood buttons
-    this.createNeighborhoodButtons();
+    // Create neighborhood displays
+    this.createNeighborhoodDisplays();
   }
 
-  private createMainCard(): void {
-    // Create card with header using CardBuilder
-    const headerCard = CardBuilder.createHeaderCard({
-      scene: this,
-      width: scale(400),
-      height: scale(500),
-      iconText: '🗺️',
-      titleText: 'Map View',
-      subtitleText: 'Interactive map with learning\nneighborhoods coming soon!',
-      iconCircleColor: COLORS.BLUE_500,
-    });
-
-    this.centerContainer.add(headerCard);
-
-    // Add features section
-    this.createFeaturesSection();
-
-    // Add preview title
-    this.createPreviewTitle();
+  private createRoads(): void {
+    const graphics = this.add.graphics();
+    
+    // Road from neighborhood 1 to 2
+    this.drawRoad(graphics, this.neighborhoods[0], this.neighborhoods[1]);
+    
+    // Road from neighborhood 2 to 3
+    this.drawRoad(graphics, this.neighborhoods[1], this.neighborhoods[2]);
+    
+    // Road from neighborhood 1 to 3
+    this.drawRoad(graphics, this.neighborhoods[0], this.neighborhoods[2]);
+    
+    this.roads.push(graphics);
   }
 
-  private createFeaturesSection(): void {
-    // Features title
-    const featuresTitle = UIComponents.createSubtitle(
-      this,
-      'Features:',
-      16,
-      COLORS.TEXT_PRIMARY,
-      'left'
-    );
-    featuresTitle.setPosition(scale(-160), scale(-20));
-    featuresTitle.setOrigin(0, 0.5);
-    featuresTitle.setFontStyle('bold');
-    this.centerContainer.add(featuresTitle);
-
-    // Features list
-    const features = [
-      '• Navigate learning neighborhoods',
-      '• Track progress across regions',
-      '• Unlock new areas',
-      '• Visual progress indicators',
-    ];
-
-    features.forEach((feature, index) => {
-      const featureText = this.add.text(
-        scale(-160),
-        scale(10 + index * 25),
-        feature,
-        {
-          fontSize: scaleFontSize(14),
-          fontFamily: 'Arial, sans-serif',
-          color: COLORS.TEXT_SECONDARY,
-        }
-      ).setOrigin(0, 0.5);
-      this.centerContainer.add(featureText);
-    });
-  }
-
-  private createPreviewTitle(): void {
-    const previewTitle = UIComponents.createSubtitle(
-      this,
-      'Preview Neighborhoods:',
-      16,
-      COLORS.TEXT_PRIMARY
-    );
-    previewTitle.setPosition(0, scale(140));
-    previewTitle.setFontStyle('bold');
-    this.centerContainer.add(previewTitle);
-  }
-
-  private createNeighborhoodButtons(): void {
-    // Downtown button
-    this.createNeighborhoodButton(
-      'downtown',
-      'Downtown',
-      scale(-80),
-      scale(190),
-      COLORS.BLUE_500,
-      0xdbeafe // Light blue hover
-    );
-
-    // Suburbs button
-    this.createNeighborhoodButton(
-      'suburbs',
-      'Suburbs',
-      scale(80),
-      scale(190),
-      COLORS.GREEN_500,
-      0xd1fae5 // Light green hover
-    );
-  }
-
-  private createNeighborhoodButton(
-    id: string,
-    label: string,
-    x: number,
-    y: number,
-    bgColor: number,
-    hoverColor: number
+  private drawRoad(
+    graphics: Phaser.GameObjects.Graphics,
+    from: NeighborhoodData,
+    to: NeighborhoodData
   ): void {
-    const buttonWidth = scale(140);
-    const buttonHeight = scale(40);
+    graphics.lineStyle(scale(8), 0xdcdcdc, 0.6);
+    
+    // Draw dashed line
+    const points = this.getLinePoints(from.x, from.y, to.x, to.y, 20);
+    
+    for (let i = 0; i < points.length - 1; i += 2) {
+      graphics.beginPath();
+      graphics.moveTo(points[i].x, points[i].y);
+      if (points[i + 1]) {
+        graphics.lineTo(points[i + 1].x, points[i + 1].y);
+      }
+      graphics.strokePath();
+    }
+  }
 
-    // Create button container
-    const buttonContainer = this.add.container(x, y);
-    this.centerContainer.add(buttonContainer);
+  private getLinePoints(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    segments: number
+  ): Array<{ x: number; y: number }> {
+    const points = [];
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      points.push({
+        x: x1 + (x2 - x1) * t,
+        y: y1 + (y2 - y1) * t,
+      });
+    }
+    return points;
+  }
 
-    // Button background
-    const buttonBg = this.add.rectangle(
-      0,
-      0,
-      buttonWidth,
-      buttonHeight,
-      bgColor,
-      0.2
-    );
-    buttonBg.setStrokeStyle(scale(1), bgColor, 0.3);
-    buttonContainer.add(buttonBg);
+  private createNeighborhoodDisplays(): void {
+    this.neighborhoods.forEach((neighborhood) => {
+      this.createNeighborhoodDisplay(neighborhood);
+    });
+  }
 
-    // Button text
-    const buttonText = this.add.text(0, 0, label, {
-      fontSize: scaleFontSize(14),
+  private createNeighborhoodDisplay(neighborhood: NeighborhoodData): void {
+    const container = this.add.container(neighborhood.x, neighborhood.y);
+
+    // Use actual neighborhood image from preloaded assets
+    const neighborhoodImage = this.add.image(0, 0, neighborhood.assetKey);
+    neighborhoodImage.setDisplaySize(scale(180), scale(180));
+    container.add(neighborhoodImage);
+
+    // Neighborhood name label
+    const nameLabel = this.add.text(0, scale(100), neighborhood.name, {
+      fontSize: scaleFontSize(16),
       fontFamily: 'Arial, sans-serif',
-      color: Phaser.Display.Color.IntegerToColor(bgColor).rgba,
-    }).setOrigin(0.5);
-    buttonContainer.add(buttonText);
+      color: COLORS.TEXT_PRIMARY,
+      fontStyle: 'bold',
+      align: 'center',
+      wordWrap: { width: scale(180) },
+    });
+    nameLabel.setOrigin(0.5);
+    container.add(nameLabel);
 
-    // Make interactive
-    this.makeButtonInteractive(buttonContainer, buttonBg, id, bgColor, hoverColor);
-  }
+    // Lock icon if locked
+    if (neighborhood.isLocked) {
+      const lockIcon = this.add.text(0, scale(-70), '🔒', {
+        fontSize: scaleFontSize(40),
+      });
+      lockIcon.setOrigin(0.5);
+      container.add(lockIcon);
+    }
 
-  private makeButtonInteractive(
-    container: Phaser.GameObjects.Container,
-    background: Phaser.GameObjects.Rectangle,
-    id: string,
-    bgColor: number,
-    hoverColor: number
-  ): void {
-    background.setInteractive({ useHandCursor: true });
-    
-    // Store the container for cleanup
-    this.neighborhoodButtons.push(container);
-    
-    background.on('pointerover', () => {
-      if (!this.isTransitioning) {
-        background.setFillStyle(hoverColor, 0.3);
+    // Make interactive if not locked
+    if (!neighborhood.isLocked) {
+      neighborhoodImage.setInteractive({ useHandCursor: true });
+
+      neighborhoodImage.on('pointerover', () => {
+        neighborhoodImage.setTint(0xdddddd); // Slight tint on hover
         this.tweens.add({
           targets: container,
           scale: 1.05,
           duration: 150,
           ease: 'Power2',
         });
-      }
-    });
-    
-    background.on('pointerout', () => {
-      background.setFillStyle(bgColor, 0.2);
-      this.tweens.add({
-        targets: container,
-        scale: 1,
-        duration: 150,
-        ease: 'Power2',
       });
-    });
-    
-    background.on('pointerdown', () => {
-      if (!this.isTransitioning) {
-        this.handleNeighborhoodClick(id);
-      }
-    });
+
+      neighborhoodImage.on('pointerout', () => {
+        neighborhoodImage.clearTint();
+        this.tweens.add({
+          targets: container,
+          scale: 1,
+          duration: 150,
+          ease: 'Power2',
+        });
+      });
+
+      neighborhoodImage.on('pointerdown', () => {
+        if (!this.isTransitioning) {
+          this.handleNeighborhoodClick(neighborhood.id);
+        }
+      });
+    }
+
+    this.neighborhoodContainers.set(neighborhood.id, container);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -316,11 +298,9 @@ export default class MapScene extends BaseScene {
 
     this.isTransitioning = true;
 
-    // Get the navigation handler from registry
     const handleNeighborhoodSelect = this.registry.get('handleNeighborhoodSelect');
 
     if (handleNeighborhoodSelect && typeof handleNeighborhoodSelect === 'function') {
-      // Add transition effect before switching scenes
       this.transitionToNeighborhood(() => {
         handleNeighborhoodSelect(neighborhoodId);
         this.isTransitioning = false;
@@ -331,21 +311,35 @@ export default class MapScene extends BaseScene {
   private handleResize(): void {
     const { width, height } = this.scale;
 
-    // Kill all active tweens before repositioning
     this.tweens.killAll();
-
     this.handleCoinCounterResize();
 
-    // Reposition center container
     if (this.centerContainer) {
       this.centerContainer.setPosition(width / 2, height / 2);
     }
 
     // Update neighborhood positions
-    this.neighborhoods.forEach((neighborhood, index) => {
-      neighborhood.x = width * (0.35 + index * 0.3);
-      neighborhood.y = height * 0.5;
+    this.neighborhoods[0].x = width * 0.3;
+    this.neighborhoods[0].y = height * 0.45;
+    
+    this.neighborhoods[1].x = width * 0.55;
+    this.neighborhoods[1].y = height * 0.3;
+    
+    this.neighborhoods[2].x = width * 0.7;
+    this.neighborhoods[2].y = height * 0.55;
+
+    // Update container positions
+    this.neighborhoods.forEach((neighborhood) => {
+      const container = this.neighborhoodContainers.get(neighborhood.id);
+      if (container) {
+        container.setPosition(neighborhood.x, neighborhood.y);
+      }
     });
+
+    // Redraw roads
+    this.roads.forEach(road => road.destroy());
+    this.roads = [];
+    this.createRoads();
   }
 
   // ═══════════════════════════════════════════════════════════

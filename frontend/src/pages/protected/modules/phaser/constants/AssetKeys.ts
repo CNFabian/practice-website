@@ -1,6 +1,13 @@
 export const ASSET_KEYS = {
   // Backgrounds
   SUBURBAN_BACKGROUND: 'suburbanBackground',
+  NEIGHBORHOOD_MAP_BACKGROUND: 'neighborhoodMapBackground',
+
+
+  // Neighborhoods
+  NEIGHBORHOOD_1: 'neighborhood1',
+  NEIGHBORHOOD_2: 'neighborhood2',
+  NEIGHBORHOOD_3: 'neighborhood3',
   
   // House Assets
   LESSON_HOUSE: 'lessonHouse',

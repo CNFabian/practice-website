@@ -1,14 +1,16 @@
 import Phaser from 'phaser';
-import { 
-  HouseBackground, 
-  LessonHouse, 
-  House1, 
-  House2, 
-  House3, 
-  House4, 
-  Road1, 
-  Platform1, 
-  BirdIdle, 
+import { SCENE_KEYS } from '../constants/SceneKeys';
+import { ASSET_KEYS } from '../constants/AssetKeys';
+import {
+  HouseBackground,
+  LessonHouse,
+  House1,
+  House2,
+  House3,
+  House4,
+  Road1,
+  Platform1,
+  BirdIdle,
   BirdFly,
   BirdCelebration,
   CoinCounterIcon,
@@ -19,58 +21,40 @@ import {
   stage5Tree,
   stage6Tree,
   stage7Tree,
+  Neighborhood1,
+  Neighborhood2,
+  Neighborhood3,
+  NeighborhoodMap,
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
-  private shouldLoad: boolean = false;
   private progressBar?: Phaser.GameObjects.Graphics;
   private progressBox?: Phaser.GameObjects.Graphics;
   private loadingText?: Phaser.GameObjects.Text;
   private percentText?: Phaser.GameObjects.Text;
+  private shouldLoad: boolean = true;
 
   constructor() {
-    super({ key: 'PreloaderScene' });
+    super({ key: SCENE_KEYS.PRELOADER });
   }
 
   init() {
-    const texturesExist = 
-      this.textures.exists('suburbanBackground') &&
-      this.textures.exists('lessonHouse') &&
-      this.textures.exists('house1') &&
-      this.textures.exists('house2') &&
-      this.textures.exists('house3') &&
-      this.textures.exists('house4') &&
-      this.textures.exists('road1') &&
-      this.textures.exists('platform1') &&
-      this.textures.exists('bird_idle') &&
-      this.textures.exists('bird_fly') &&
-      this.textures.exists('coin_counter') &&
-      this.textures.exists('bird_celebration') &&
-      this.textures.exists('tree_stage_1') &&
-      this.textures.exists('tree_stage_2') &&
-      this.textures.exists('tree_stage_3') &&
-      this.textures.exists('tree_stage_4') &&
-      this.textures.exists('tree_stage_5') &&
-      this.textures.exists('tree_stage_6') &&
-      this.textures.exists('tree_stage_7');
+    // Check if assets are already loaded
+    const assetsLoaded = this.registry.get('assetsLoaded');
+    this.shouldLoad = !assetsLoaded;
     
-    this.shouldLoad = !texturesExist;
-    
-    if (!this.shouldLoad) {
-      console.log('✓ PreloaderScene: Textures already cached, will skip loading');
-    } else {
-      console.log('→ PreloaderScene: Loading textures for first time');
-    }
+    console.log('PreloaderScene.init: shouldLoad =', this.shouldLoad);
   }
 
   preload() {
     if (!this.shouldLoad) {
-      console.log('✓ PreloaderScene.preload: Skipped (textures cached)');
+      console.log('PreloaderScene.preload: Skipping asset loading (already loaded)');
       return;
     }
 
-    console.log('→ PreloaderScene.preload: Creating loading bar and loading assets');
+    console.log('PreloaderScene.preload: Starting asset load');
 
+    // Create loading UI
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     
@@ -107,18 +91,35 @@ export default class PreloaderScene extends Phaser.Scene {
     });
 
     // Load all assets
-    this.load.image('houseBackground', HouseBackground);
-    this.load.image('lessonHouse', LessonHouse);
-    this.load.image('house1', House1);
-    this.load.image('house2', House2);
-    this.load.image('house3', House3);
-    this.load.image('house4', House4);
-    this.load.image('road1', Road1);
-    this.load.image('platform1', Platform1);
-    this.load.image('bird_idle', BirdIdle);
-    this.load.image('bird_fly', BirdFly);
-    this.load.image('coinIcon', CoinCounterIcon);
-    this.load.svg('bird_celebration', BirdCelebration, { width: 200, height: 200 });
+    // Backgrounds
+    this.load.image(ASSET_KEYS.SUBURBAN_BACKGROUND, HouseBackground);
+    this.load.image(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND, NeighborhoodMap);
+    
+    // Neighborhoods
+    this.load.image(ASSET_KEYS.NEIGHBORHOOD_1, Neighborhood1);
+    this.load.image(ASSET_KEYS.NEIGHBORHOOD_2, Neighborhood2);
+    this.load.image(ASSET_KEYS.NEIGHBORHOOD_3, Neighborhood3);
+    
+    // Houses
+    this.load.image(ASSET_KEYS.LESSON_HOUSE, LessonHouse);
+    this.load.image(ASSET_KEYS.HOUSE_1, House1);
+    this.load.image(ASSET_KEYS.HOUSE_2, House2);
+    this.load.image(ASSET_KEYS.HOUSE_3, House3);
+    this.load.image(ASSET_KEYS.HOUSE_4, House4);
+    
+    // Environment
+    this.load.image(ASSET_KEYS.ROAD_1, Road1);
+    this.load.image(ASSET_KEYS.PLATFORM_1, Platform1);
+    
+    // Characters
+    this.load.image(ASSET_KEYS.BIRD_IDLE, BirdIdle);
+    this.load.image(ASSET_KEYS.BIRD_FLY, BirdFly);
+    this.load.svg(ASSET_KEYS.BIRD_CELEBRATION, BirdCelebration, { width: 200, height: 200 });
+    
+    // UI
+    this.load.image(ASSET_KEYS.COIN_ICON, CoinCounterIcon);
+    
+    // Trees
     this.load.image('tree_stage_1', stage1Tree);
     this.load.image('tree_stage_2', stage2Tree);
     this.load.image('tree_stage_3', stage3Tree);

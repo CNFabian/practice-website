@@ -86,6 +86,15 @@ export { default as House4 } from './images/phaser/house4.svg'
 export { default as HouseBackground } from './images/phaser/house_background1.png'
 export { default as LessonHouse } from './images/phaser/House.png'
 
+// Suburban Neighborhood Background for Phaser Scenes
+export { default as Neighborhood1 } from './images/phaser/neighborhoods/neighborhood_1.png'
+export { default as Neighborhood2 } from './images/phaser/neighborhoods/neighborhood_2.png'
+export { default as Neighborhood3 } from './images/phaser/neighborhoods/neighborhood_3.png'
+export { default as NeighborhoodMap } from './images/phaser/neighborhoods/neighborhood_map.png'
+export { default as NeighborhoodBackground } from './images/phaser/neighborhoods/neighborhood_background.png'
+
+
+
 // Neighborhood Images for Phaser Scenes
 export { default as Road1 } from './images/phaser/road1.png'
 export { default as Platform1 } from './images/phaser/platform1.png'

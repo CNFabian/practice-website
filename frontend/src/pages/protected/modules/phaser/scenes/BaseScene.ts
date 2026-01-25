@@ -1,4 +1,4 @@
-// BaseScene.ts - UPDATED VERSION
+// BaseScene.ts - UPDATED VERSION with Background Image Support
 
 import Phaser from 'phaser';
 import { UIComponents } from '../ui/UIComponents';
@@ -15,6 +15,7 @@ export class BaseScene extends Phaser.Scene {
 
   shutdown(): void {
     this.cleanupCoinCounter();
+    this.clearBackgroundImage();
   }
 
   protected createCoinCounter(): void {
@@ -84,6 +85,80 @@ export class BaseScene extends Phaser.Scene {
       
       this.coinCounter.destroy();
       this.createCoinCounter();
+    }
+  }
+
+  /**
+   * Set background image on DOM element (extends under sidebar like HouseScene)
+   * @param assetKey - The asset key from ASSET_KEYS
+   */
+  protected setBackgroundImage(assetKey: string): void {
+    console.log('🎨 BaseScene.setBackgroundImage called with key:', assetKey);
+    
+    const bgElement = document.getElementById('section-background');
+    if (!bgElement) {
+      console.error('❌ section-background element not found in DOM');
+      return;
+    }
+    
+    console.log('✅ Found section-background element');
+    
+    // Get the texture from Phaser's texture manager
+    const texture = this.textures.get(assetKey);
+    if (!texture) {
+      console.error('❌ Texture not found in Phaser cache:', assetKey);
+      return;
+    }
+    
+    console.log('✅ Found texture:', texture);
+    
+    // Get the texture's source data which contains the original image path
+    const textureSource = texture.source[0];
+    console.log('📷 Texture source:', textureSource);
+    
+    if (textureSource && textureSource.source) {
+      const image = textureSource.source as HTMLImageElement;
+      console.log('🖼️ Image element:', image);
+      console.log('🔗 Image src:', image.src);
+      
+      // For Vite, we need to get the actual imported path, not the blob
+      // The texture was loaded with the imported path, so we need to extract it
+      // from the texture key in the registry or use a different approach
+      
+      // Alternative: Create a canvas and export as data URL
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        ctx.drawImage(image, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        console.log('✅ Setting background with data URL');
+        bgElement.style.setProperty('background', `url(${dataUrl})`, 'important');
+        bgElement.style.backgroundSize = 'cover';
+        bgElement.style.backgroundPosition = 'center';
+        bgElement.style.backgroundRepeat = 'no-repeat';
+        console.log('✅ Background image set successfully');
+      } else {
+        console.error('❌ Could not get canvas context');
+      }
+    } else {
+      console.error('❌ Texture source not available');
+    }
+  }
+
+  /**
+   * Clear the background image from DOM element
+   */
+  protected clearBackgroundImage(): void {
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.style.setProperty('background', '', 'important');
+      bgElement.style.backgroundSize = '';
+      bgElement.style.backgroundPosition = '';
+      bgElement.style.backgroundRepeat = '';
     }
   }
 }

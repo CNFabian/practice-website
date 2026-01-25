@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { HouseBackground } from '../../../assets';
+import { 
+  HouseBackground,
+  NeighborhoodMap,
+  NeighborhoodBackground
+} from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
@@ -458,22 +462,32 @@ const ModulesPage: React.FC = () => {
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
   const getBackgroundStyle = () => {
-    switch (navState.currentView) {
-      case 'map':
-        return { backgroundColor: '#38bdf8' };
-      case 'neighborhood':
-        return { backgroundColor: '#fed7aa' };
-      case 'house':
-        return {
-          backgroundImage: `url(${HouseBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        };
-      default:
-        return { backgroundColor: '#ffffff' };
-    }
-  };
+  switch (navState.currentView) {
+    case 'map':
+      return {
+        backgroundImage: `url(${NeighborhoodMap})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      };
+    case 'neighborhood':
+      // Option 1: If you have a neighborhood background image
+      return {
+        backgroundImage: `url(${NeighborhoodBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      };
+    case 'house':
+      return {
+        backgroundImage: `url(${HouseBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    default:
+      return {};
+  }
+};
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
