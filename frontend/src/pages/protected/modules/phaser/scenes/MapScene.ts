@@ -101,8 +101,11 @@ export default class MapScene extends BaseScene {
   private setupNeighborhoodData(): void {
     const { width, height } = this.scale;
 
-    // Three neighborhoods positioned in a circular/triangular layout
-    this.neighborhoods = [
+    // Get backend neighborhood data from registry (if available)
+    const backendNeighborhoods = this.registry.get('neighborhoodsData');
+
+    // Frontend defaults for positioning and assets
+    const defaultNeighborhoods = [
       {
         id: 'home-buying-knowledge',
         name: 'Home-Buying Knowledge',
@@ -131,6 +134,18 @@ export default class MapScene extends BaseScene {
         assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
       },
     ];
+
+    // Merge backend data with frontend defaults
+    this.neighborhoods = defaultNeighborhoods.map((defaultNeighborhood, index) => {
+      const backendData = backendNeighborhoods?.[index];
+      return {
+        ...defaultNeighborhood,
+        // Use backend name if available, otherwise use frontend default
+        name: backendData?.name || defaultNeighborhood.name,
+        // Use backend lock status if available, otherwise use frontend default
+        isLocked: backendData?.isLocked !== undefined ? backendData.isLocked : defaultNeighborhood.isLocked,
+      };
+    });
   }
 
   private setupEventListeners(): void {
@@ -265,30 +280,31 @@ export default class MapScene extends BaseScene {
       container.add(lockIcon);
     }
 
-    // Make interactive if not locked
+    // Make all neighborhoods interactive with hover effects
+    neighborhoodImage.setInteractive({ useHandCursor: true });
+
+    neighborhoodImage.on('pointerover', () => {
+      neighborhoodImage.setTint(0xdddddd); // Slight tint on hover
+      this.tweens.add({
+        targets: container,
+        scale: 1.05,
+        duration: 150,
+        ease: 'Power2',
+      });
+    });
+
+    neighborhoodImage.on('pointerout', () => {
+      neighborhoodImage.clearTint();
+      this.tweens.add({
+        targets: container,
+        scale: 1,
+        duration: 150,
+        ease: 'Power2',
+      });
+    });
+
+    // Only allow clicking on unlocked neighborhoods
     if (!neighborhood.isLocked) {
-      neighborhoodImage.setInteractive({ useHandCursor: true });
-
-      neighborhoodImage.on('pointerover', () => {
-        neighborhoodImage.setTint(0xdddddd); // Slight tint on hover
-        this.tweens.add({
-          targets: container,
-          scale: 1.05,
-          duration: 150,
-          ease: 'Power2',
-        });
-      });
-
-      neighborhoodImage.on('pointerout', () => {
-        neighborhoodImage.clearTint();
-        this.tweens.add({
-          targets: container,
-          scale: 1,
-          duration: 150,
-          ease: 'Power2',
-        });
-      });
-
       neighborhoodImage.on('pointerdown', () => {
         if (!this.isTransitioning) {
           this.handleNeighborhoodClick(neighborhood.id);
@@ -327,15 +343,15 @@ export default class MapScene extends BaseScene {
       this.centerContainer.setPosition(width / 2, height / 2);
     }
 
-    // Update neighborhood positions
-    this.neighborhoods[0].x = width * 0.3;
-    this.neighborhoods[0].y = height * 0.45;
+    // Update neighborhood positions using same defaults as setupNeighborhoodData
+    this.neighborhoods[0].x = width * 0.2;
+    this.neighborhoods[0].y = height * 0.65;
     
-    this.neighborhoods[1].x = width * 0.55;
+    this.neighborhoods[1].x = width * 0.4;
     this.neighborhoods[1].y = height * 0.3;
     
-    this.neighborhoods[2].x = width * 0.7;
-    this.neighborhoods[2].y = height * 0.55;
+    this.neighborhoods[2].x = width * 0.65;
+    this.neighborhoods[2].y = height * 0.6;
 
     // Update container positions
     this.neighborhoods.forEach((neighborhood) => {
