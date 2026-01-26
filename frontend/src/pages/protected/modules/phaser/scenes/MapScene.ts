@@ -281,8 +281,12 @@ export default class MapScene extends BaseScene {
     }
 
     // Make all neighborhoods interactive with hover effects
-    neighborhoodImage.setInteractive({ useHandCursor: true });
-
+    neighborhoodImage.setInteractive({ 
+      useHandCursor: true,
+      pixelPerfect: true,
+      alphaTolerance: 1
+    });
+    
     neighborhoodImage.on('pointerover', () => {
       neighborhoodImage.setTint(0xdddddd); // Slight tint on hover
       this.tweens.add({

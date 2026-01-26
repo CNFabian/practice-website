@@ -3,22 +3,22 @@ export const ASSET_KEYS = {
   SUBURBAN_BACKGROUND: 'suburbanBackground',
   NEIGHBORHOOD_MAP_BACKGROUND: 'neighborhoodMapBackground',
 
-
   // Neighborhoods
   NEIGHBORHOOD_1: 'neighborhood1',
   NEIGHBORHOOD_2: 'neighborhood2',
   NEIGHBORHOOD_3: 'neighborhood3',
   
-  // House Assets
+  // OLD House Assets (keep for backwards compatibility if needed)
   LESSON_HOUSE: 'lessonHouse',
   HOUSE_1: 'house1',
   HOUSE_2: 'house2',
   HOUSE_3: 'house3',
   HOUSE_4: 'house4',
+  HOUSE_5: 'house5',
   
-  // Environment
+  // Environment (keeping ROAD_1, removing PLATFORM_1)
   ROAD_1: 'road1',
-  PLATFORM_1: 'platform1',
+  // PLATFORM_1 removed - no longer needed
   
   // Characters
   BIRD_IDLE: 'bird_idle',

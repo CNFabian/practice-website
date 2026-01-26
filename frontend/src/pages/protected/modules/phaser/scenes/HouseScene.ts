@@ -506,7 +506,7 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   // RESIZE HANDLING
   // ═══════════════════════════════════════════════════════════
-  private handleResize(gameSize: Phaser.Structs.Size): void {
+  private handleResize(): void {
     // Debounce to prevent rapid successive resizes
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();

@@ -12,8 +12,8 @@ import { BirdCharacter } from '../characters/BirdCharacter';
 interface HousePosition {
   id: string;
   name: string;
-  x: number;
-  y: number;
+  x?: number; // Optional - backend provided
+  y?: number; // Optional - backend provided
   isLocked?: boolean;
   houseType?: string;
   moduleId?: number;
@@ -38,8 +38,8 @@ export default class NeighborhoodScene extends BaseScene {
   private houseSprites: Map<string, Phaser.GameObjects.Container> = new Map();
   private backButton?: Phaser.GameObjects.Container;
   private placeholderCard?: Phaser.GameObjects.Container;
-  private platform?: Phaser.GameObjects.Image;
-  private roads: Phaser.GameObjects.Image[] = [];
+  // REMOVED: private platform?: Phaser.GameObjects.Image;
+  private roads: Phaser.GameObjects.Graphics[] = []; // Changed from Image[] to Graphics[]
   private idleAnimationTimer?: Phaser.Time.TimerEvent;
   private houseImages: Phaser.GameObjects.Image[] = [];
   private isShuttingDown: boolean = false;
@@ -62,17 +62,30 @@ export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   init(data: NeighborhoodSceneData) {
     this.neighborhoodId = data.neighborhoodId;
-    this.houses = data.houses || [];
+    
+    // Always ensure we have exactly 5 houses
+    if (!data.houses || data.houses.length === 0) {
+      console.log('⚠️ No houses data provided, using 5 mock houses');
+      this.houses = this.createMockHouses();
+    } else if (data.houses.length < 5) {
+      console.log(`⚠️ Only ${data.houses.length} houses provided, filling to 5 with mock data`);
+      this.houses = this.fillToFiveHouses(data.houses);
+    } else {
+      console.log(`✅ Using ${data.houses.length} houses from backend`);
+      this.houses = data.houses.slice(0, 5); // Take only first 5 if more provided
+    }
+    
     this.isTransitioning = false;
     this.isShuttingDown = false;
     this.currentHouseIndex = data.currentHouseIndex ?? 0;
     this.previousHouseIndex = this.currentHouseIndex;
     
     console.log('🏘️ NeighborhoodScene init with houses:', this.houses);
+    console.log(`📊 Total houses: ${this.houses.length}`);
     
     // Clear existing data
     this.houseSprites.clear();
-    this.houseImages = []; // Reset house images array
+    this.houseImages = [];
     this.roads = [];
     
     // Cleanup existing bird
@@ -88,26 +101,153 @@ export default class NeighborhoodScene extends BaseScene {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // MOCK DATA METHODS
+  // ═══════════════════════════════════════════════════════════
+  private fillToFiveHouses(existingHouses: HousePosition[]): HousePosition[] {
+    const mockHouses = this.createMockHouses();
+    const result = [...existingHouses];
+    
+    // Add mock houses to fill up to 5
+    let mockIndex = 0;
+    while (result.length < 5 && mockIndex < mockHouses.length) {
+      // Modify mock house ID to avoid conflicts
+      const mockHouse = {
+        ...mockHouses[mockIndex],
+        id: `filler-house-${result.length + 1}`,
+        name: `Module ${result.length + 1}`,
+      };
+      result.push(mockHouse);
+      mockIndex++;
+    }
+    
+    return result;
+  }
+
+  private createMockHouses(): HousePosition[] {
+    return [
+      {
+        id: 'mock-house-1',
+        name: 'Home-buying Foundations',
+        houseType: ASSET_KEYS.HOUSE_1,
+        isLocked: false,
+        moduleId: 1,
+        moduleBackendId: 'mock-module-1',
+        description: 'Learn the basics of home buying',
+        coinReward: 100,
+      },
+      {
+        id: 'mock-house-2',
+        name: 'Financial Planning',
+        houseType: ASSET_KEYS.HOUSE_2,
+        isLocked: false,
+        moduleId: 2,
+        moduleBackendId: 'mock-module-2',
+        description: 'Master your finances for home ownership',
+        coinReward: 150,
+      },
+      {
+        id: 'mock-house-3',
+        name: 'Property Search',
+        houseType: ASSET_KEYS.HOUSE_3,
+        isLocked: false,
+        moduleId: 3,
+        moduleBackendId: 'mock-module-3',
+        description: 'Find your perfect home',
+        coinReward: 200,
+      },
+      {
+        id: 'mock-house-4',
+        name: 'Making an Offer',
+        houseType: ASSET_KEYS.HOUSE_4,
+        isLocked: false,
+        moduleId: 4,
+        moduleBackendId: 'mock-module-4',
+        description: 'Negotiate and secure your home',
+        coinReward: 250,
+      },
+      {
+        id: 'mock-house-5',
+        name: 'Closing Process',
+        houseType: ASSET_KEYS.HOUSE_1, // Reuse house type
+        isLocked: false,
+        moduleId: 5,
+        moduleBackendId: 'mock-module-5',
+        description: 'Complete your home purchase',
+        coinReward: 300,
+      },
+    ];
+  }
+
   create() {
     super.create();
+    
+    // Setup camera for horizontal scrolling
+    this.setupCamera();
+    
     this.createUI();
     this.setupEventListeners();
     this.prefetchAllHouseLessons(); 
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // CAMERA SETUP FOR SCROLLING
+  // ═══════════════════════════════════════════════════════════
+  private setupCamera(): void {
+    const { width, height } = this.scale;
+    
+    // Calculate world width based on houses spread
+    // Last house at ~165% of screen width (top row house at index 4)
+    const worldWidth = width * 2.5; // Extended world for 5 houses with wide spacing
+    const worldHeight = height;
+    
+    // Set world bounds
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    
+    // Enable camera drag scrolling
+    this.cameras.main.setScroll(0, 0); // Start at leftmost position
+    
+    // Setup mouse/touch drag controls for horizontal scrolling
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.isDown && !this.isTransitioning) {
+        // Drag camera horizontally only
+        const dragSpeedX = pointer.velocity.x * 0.1;
+        const newScrollX = this.cameras.main.scrollX - dragSpeedX;
+        
+        // Clamp scroll within bounds
+        const maxScrollX = worldWidth - width;
+        const clampedScrollX = Phaser.Math.Clamp(newScrollX, 0, maxScrollX);
+        
+        this.cameras.main.setScroll(clampedScrollX, 0);
+      }
+    });
+    
+    // Add mouse wheel scrolling (horizontal)
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number) => {
+      if (!this.isTransitioning) {
+        const scrollSpeed = 50;
+        const newScrollX = this.cameras.main.scrollX + (deltaY * scrollSpeed / 100);
+        
+        const maxScrollX = worldWidth - width;
+        const clampedScrollX = Phaser.Math.Clamp(newScrollX, 0, maxScrollX);
+        
+        this.cameras.main.setScroll(clampedScrollX, 0);
+      }
+    });
+    
+    console.log(`📷 Camera setup: World ${worldWidth}x${worldHeight}, Viewport ${width}x${height}`);
+  }
+
   shutdown() {
     super.shutdown();
     
-    // Set shutdown flag to prevent timer callbacks
     this.isShuttingDown = true;
     
-    // Clean up resize debounce timer
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
       this.resizeDebounceTimer = undefined;
     }
     
-    // Clean up house sprite listeners
     this.houseImages.forEach(image => {
       if (image && image.input) {
         image.removeAllListeners();
@@ -117,7 +257,6 @@ export default class NeighborhoodScene extends BaseScene {
     
     this.houseImages = [];
     
-    // Clean up back button
     if (this.backButton) {
       const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
       if (buttonBg && buttonBg.input) {
@@ -126,15 +265,12 @@ export default class NeighborhoodScene extends BaseScene {
       }
     }
     
-    // Clean up idle animation timer
     if (this.idleAnimationTimer) {
       this.idleAnimationTimer.remove();
       this.idleAnimationTimer = undefined;
     }
     
-    // Kill all tweens
     this.tweens.killAll();
-    
     this.cleanupEventListeners();
     this.cleanupBird();
   }
@@ -165,7 +301,6 @@ export default class NeighborhoodScene extends BaseScene {
 
     console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
 
-    // Get the prefetch handler from registry
     const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
 
     if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
@@ -204,57 +339,184 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createEnvironment(): void {
-    this.createPlatform();
-    this.createRoads();
+    // Platform removed - no longer needed
+    this.createDottedPaths();
   }
 
-  private createPlatform(): void {
-    const { width, height } = this.scale;
-    
-    this.platform = this.add.image(width / 2, height / 2, ASSET_KEYS.PLATFORM_1);
-    // Use percentage of height instead of fixed scale value
-    this.platform.setDisplaySize(width * 0.9, height * 0.4);
-    this.platform.setAlpha(0.8);
-    this.platform.setDepth(0);
-  }
+  // REMOVED: createPlatform() method - no longer needed
 
-  private createRoads(): void {
+  private createDottedPaths(): void {
     const { width, height } = this.scale;
     
     for (let i = 0; i < this.houses.length - 1; i++) {
       const house1 = this.houses[i];
       const house2 = this.houses[i + 1];
       
-      const x1 = (house1.x / 100) * width;
-      const y1 = (house1.y / 100) * height;
-      const x2 = (house2.x / 100) * width;
-      const y2 = (house2.y / 100) * height;
+      // Calculate positions for houses in 2-row format
+      const pos1 = this.calculateHousePosition(i, width, height, house1);
+      const pos2 = this.calculateHousePosition(i + 1, width, height, house2);
       
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2;
-      const angle = Phaser.Math.Angle.Between(x1, y1, x2, y2);
-      const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
-      
-      const road = this.add.image(midX, midY, ASSET_KEYS.ROAD_1);
-      // Make road width responsive - use percentage of screen height
-      const roadWidth = Math.min(height * 0.05, 50); // 5% of height, max 50px
-      road.setDisplaySize(distance, roadWidth);
-      road.setRotation(angle);
-      road.setAlpha(0.7);
-      road.setDepth(1);
-      
-      this.roads.push(road);
+      // Create dotted path - pass the starting house index
+      this.createDottedLine(pos1.x, pos1.y, pos2.x, pos2.y, i);
     }
   }
 
-  private createHouses(): void {
-    this.houses.forEach(house => this.createHouse(house));
+  private createDottedLine(
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number,
+    startHouseIndex: number
+  ): void {
+    const graphics = this.add.graphics();
+    graphics.setDepth(1);
+    
+    // Line styling
+    const lineColor = 0x93c5fd; // Light blue color for path
+    const dotSpacing = 15; // Space between dots
+    const dotSize = 8; // Size of each dot
+    
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // CONTINUOUS SINE WAVE PATTERN:
+    // The wave alternates between U and n shapes every 2 houses
+    // But we need to handle transitions smoothly
+    //
+    // H0→H1→H2: U shape (curve DOWN)
+    // H2→H3→H4: n shape (curve UP) - but H3→H4 needs to transition DOWN
+    // H4→H5: U shape continues
+    
+    // Determine which section we're in based on starting house
+    const sectionIndex = Math.floor(startHouseIndex / 2);
+    const isUShapeSection = sectionIndex % 2 === 0;
+    
+    // Check if this is a transition path (last path of a section going to next section)
+    // Transition paths are: H1→H2, H3→H4, H5→H6, etc. (odd index paths)
+    const isTransitionPath = startHouseIndex % 2 === 1;
+    
+    let controlX: number;
+    let controlY: number;
+    
+    const curveDepth = distance * 0.25;
+    controlX = midX;
+    
+    if (isUShapeSection) {
+      // U shape section: curve DOWN
+      controlY = midY + curveDepth;
+    } else {
+      // n shape section: curve UP
+      // BUT if this is the transition path (e.g., H3→H4), we need to curve DOWN
+      // to smoothly connect to the next U section
+      if (isTransitionPath) {
+        controlY = midY + curveDepth; // Transition: curve DOWN
+      } else {
+        controlY = midY - curveDepth; // Normal n shape: curve UP
+      }
+    }
+    
+    // Calculate approximate number of dots along the curve
+    const curveLength = this.estimateCurveLength(x1, y1, controlX, controlY, x2, y2);
+    const numDots = Math.floor(curveLength / dotSpacing);
+    
+    // Draw dots along the curved path
+    graphics.fillStyle(lineColor, 0.7);
+    
+    for (let i = 0; i <= numDots; i++) {
+      const t = i / numDots;
+      
+      // Quadratic Bezier curve formula: B(t) = (1-t)²P0 + 2(1-t)tP1 + t²P2
+      const x = Math.pow(1 - t, 2) * x1 + 2 * (1 - t) * t * controlX + Math.pow(t, 2) * x2;
+      const y = Math.pow(1 - t, 2) * y1 + 2 * (1 - t) * t * controlY + Math.pow(t, 2) * y2;
+      
+      // Draw circular dot
+      graphics.fillCircle(x, y, dotSize / 2);
+    }
+    
+    this.roads.push(graphics as any); // Store for cleanup
   }
 
-  private createHouse(house: HousePosition): void {
+  // Helper method to estimate curve length
+  private estimateCurveLength(
+    x1: number, y1: number,
+    cx: number, cy: number,
+    x2: number, y2: number
+  ): number {
+    // Use line segments to approximate curve length
+    let length = 0;
+    let prevX = x1;
+    let prevY = y1;
+    const steps = 20;
+    
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const x = Math.pow(1 - t, 2) * x1 + 2 * (1 - t) * t * cx + Math.pow(t, 2) * x2;
+      const y = Math.pow(1 - t, 2) * y1 + 2 * (1 - t) * t * cy + Math.pow(t, 2) * y2;
+      
+      const dx = x - prevX;
+      const dy = y - prevY;
+      length += Math.sqrt(dx * dx + dy * dy);
+      
+      prevX = x;
+      prevY = y;
+    }
+    
+    return length;
+  }
+
+  private calculateHousePosition(index: number, width: number, height: number, house: HousePosition): { x: number; y: number } {
+    // Alternating: top row (index 0, 2, 4...), bottom row (index 1, 3, 5...)
+    const isTopRow = index % 2 === 0;
+    const columnIndex = Math.floor(index / 2);
+    
+    // WIDER SPACING FOR HORIZONTAL SCROLL
+    const startX = 15; // Start at 15% from left edge
+    const horizontalSpacing = 50; // 50% spacing between houses (MUCH WIDER)
+    const bottomRowOffset = 25; // Bottom row shifted to the right by 25%
+    const topRowY = 30; // Top row at 30% from top
+    const bottomRowY = 65; // Bottom row at 65% from top (35% vertical gap)
+    
+    // Calculate X position with offset for bottom row
+    // Top row (0, 2, 4...): stays in columns
+    // Bottom row (1, 3, 5...): offset to the right, but stays in same column group
+    const defaultX = isTopRow 
+      ? startX + (columnIndex * horizontalSpacing)  // Top row: 15%, 65%, 115%...
+      : startX + (columnIndex * horizontalSpacing) + bottomRowOffset;  // Bottom row: 40%, 90%, 140%...
+    
+    const defaultY = isTopRow ? topRowY : bottomRowY;  // Always top or bottom, no progression
+    
+    // DEBUG: Log what we're calculating vs what backend provides
+    console.log(`🏠 House ${index} (${house.name}):`);
+    console.log(`  - Calculated: ${defaultX}%, ${defaultY}%`);
+    console.log(`  - Backend: x=${house.x}, y=${house.y}`);
+    console.log(`  - Row: ${isTopRow ? 'TOP' : 'BOTTOM'}, Column: ${columnIndex}`);
+    
+    // TEMPORARY FIX: Force using calculated positions (ignore backend x/y)
+    // Remove this after confirming the layout works, then update backend data
+    const x = (defaultX / 100) * width;
+    const y = (defaultY / 100) * height;
+    
+    // ORIGINAL CODE (use backend if available):
+    // const x = house.x !== undefined ? (house.x / 100) * width : (defaultX / 100) * width;
+    // const y = house.y !== undefined ? (house.y / 100) * height : (defaultY / 100) * height;
+    
+    console.log(`  - Final position: ${x}px, ${y}px (screen: ${width}x${height})`);
+    
+    return { x, y };
+  }
+
+  private createHouses(): void {
+    this.houses.forEach((house, index) => this.createHouse(house, index));
+  }
+
+  private createHouse(house: HousePosition, index: number): void {
     const { width, height } = this.scale;
-    const x = (house.x / 100) * width;
-    const y = (house.y / 100) * height;
+    
+    const { x, y } = this.calculateHousePosition(index, width, height, house);
 
     const houseContainer = this.add.container(x, y);
     houseContainer.setDepth(2);
@@ -284,7 +546,6 @@ export default class NeighborhoodScene extends BaseScene {
     if (!house.isLocked) {
       this.makeHouseInteractive(houseContainer, house);
     } else {
-      // Show locked state
       houseContainer.setAlpha(OPACITY.MEDIUM);
       this.createLockIcon(houseContainer);
     }
@@ -300,7 +561,6 @@ export default class NeighborhoodScene extends BaseScene {
     const houseImage = this.add.image(0, 0, houseType);
     houseImage.setDisplaySize(scale(150), scale(150));
     
-    // Add a slight tint to locked houses
     if (isLocked) {
       houseImage.setTint(0x999999);
     }
@@ -309,12 +569,10 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createCoinBadge(container: Phaser.GameObjects.Container, coinReward: number): void {
-    // Create coin badge background
     const badgeBg = this.add.circle(scale(50), scale(-50), scale(20), 0xFFD700);
     badgeBg.setStrokeStyle(scale(2), 0xFFA500);
     container.add(badgeBg);
 
-    // Create coin text
     const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`, {
       fontSize: scaleFontSize(12),
       fontFamily: 'Fredoka, sans-serif',
@@ -325,12 +583,10 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createLockIcon(container: Phaser.GameObjects.Container): void {
-    // Create lock icon background
     const lockBg = this.add.circle(scale(-50), scale(-50), scale(18), 0xFF6B6B);
     lockBg.setStrokeStyle(scale(2), 0xCC0000);
     container.add(lockBg);
 
-    // Create lock emoji/icon
     const lockIcon = this.add.text(scale(-50), scale(-50), '🔒', {
       fontSize: scaleFontSize(20),
     }).setOrigin(0.5);
@@ -346,15 +602,12 @@ export default class NeighborhoodScene extends BaseScene {
     if (background) {
       background.setInteractive({ useHandCursor: true });
       
-      // Store the house image for cleanup
       this.houseImages.push(background);
       
-      // Store original size
       const originalWidth = background.displayWidth;
       const originalHeight = background.displayHeight;
       
       background.on('pointerover', () => {
-        // Hover effect - slightly scale up using display size
         this.tweens.add({
           targets: background,
           displayWidth: originalWidth * 1.1,
@@ -365,7 +618,6 @@ export default class NeighborhoodScene extends BaseScene {
       });
 
       background.on('pointerout', () => {
-        // Remove hover effect - return to original size
         this.tweens.add({
           targets: background,
           displayWidth: originalWidth,
@@ -396,7 +648,6 @@ export default class NeighborhoodScene extends BaseScene {
   private createPlaceholder(): void {
     const { width, height } = this.scale;
 
-    // Create placeholder card using CardBuilder
     this.placeholderCard = CardBuilder.createHeaderCard({
       scene: this,
       x: width / 2,
@@ -411,7 +662,6 @@ export default class NeighborhoodScene extends BaseScene {
       iconCircleColor: COLORS.ORANGE_500,
     });
 
-    // Add description
     const description = UIComponents.createSubtitle(
       this,
       'Houses and learning modules\nwill appear here once configured.',
@@ -421,7 +671,6 @@ export default class NeighborhoodScene extends BaseScene {
     description.setPosition(0, scale(-60));
     this.placeholderCard.add(description);
 
-    // Add features
     const featuresText = UIComponents.createSubtitle(
       this,
       'Coming soon:\n• Multiple houses per neighborhood\n• Character navigation\n• Progress tracking\n• Interactive learning paths',
@@ -441,13 +690,14 @@ export default class NeighborhoodScene extends BaseScene {
     const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
     
+    const { x: houseX, y: houseY } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
+    
     const birdOffsetX = width * 0.04;
     const birdOffsetY = height * 0.025;
     
-    const birdX = (currentHouse.x / 100) * width + birdOffsetX;
-    const birdY = (currentHouse.y / 100) * height + birdOffsetY;
+    const birdX = houseX + birdOffsetX;
+    const birdY = houseY + birdOffsetY;
 
-    // Initialize bird character
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
   }
@@ -479,14 +729,15 @@ export default class NeighborhoodScene extends BaseScene {
   private playBirdIdleHop(): void {
     if (!this.bird || this.bird.getIsAnimating() || this.houses.length === 0) return;
 
-    const { width } = this.scale;
+    const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
     
+    const { x: houseX } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
+    
     const birdOffsetX = width * 0.04;
-    const houseCenterX = (currentHouse.x / 100) * width + birdOffsetX;
+    const houseCenterX = houseX + birdOffsetX;
     const houseAreaRadius = width * 0.05;
 
-    // Use bird's idle hop method with boundary constraints
     this.bird.playIdleHopWithBoundary(houseCenterX, houseAreaRadius);
   }
 
@@ -500,23 +751,24 @@ export default class NeighborhoodScene extends BaseScene {
     const { width, height } = this.scale;
     const targetHouse = this.houses[targetHouseIndex];
     
+    const { x: targetX, y: targetY } = this.calculateHousePosition(targetHouseIndex, width, height, targetHouse);
+    
     const birdOffsetX = width * 0.04;
     const birdOffsetY = height * 0.025;
     
-    const targetX = (targetHouse.x / 100) * width + birdOffsetX;
-    const targetY = (targetHouse.y / 100) * height + birdOffsetY;
+    const finalX = targetX + birdOffsetX;
+    const finalY = targetY + birdOffsetY;
 
-    // Calculate distance
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
     if (houseDistance > 1) {
-      this.bird.glideToPosition(targetX, targetY, houseDistance, () => {
+      this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
         if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
           this.handleHouseClick(targetHouse);
         }
       });
     } else {
-      this.bird.hopToPosition(targetX, targetY, () => {
+      this.bird.hopToPosition(finalX, finalY, () => {
         if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
           this.handleHouseClick(targetHouse);
         }
@@ -532,9 +784,6 @@ export default class NeighborhoodScene extends BaseScene {
 
     this.isTransitioning = true;
 
-    console.log('🏠 House clicked:', house.name, 'Module ID:', house.moduleId);
-
-    // Store bird travel info for HouseScene
     this.registry.set('currentHouseIndex', this.currentHouseIndex);
     this.registry.set('birdTravelInfo', {
       previousHouseIndex: this.previousHouseIndex,
@@ -542,19 +791,11 @@ export default class NeighborhoodScene extends BaseScene {
       traveled: this.previousHouseIndex !== this.currentHouseIndex,
     });
 
-    // Store module backend ID for HouseScene to use
-    if (house.moduleBackendId) {
-      this.registry.set('currentModuleUUID', house.moduleBackendId);
-      this.registry.set('currentModuleTitle', house.name);
-      console.log('✅ Stored module UUID in registry:', house.moduleBackendId);
-    }
-
-    // Get navigation handler
     const handleHouseSelect = this.registry.get('handleHouseSelect');
 
     if (handleHouseSelect && typeof handleHouseSelect === 'function') {
       this.transitionToHouse(() => {
-        handleHouseSelect(house.id, house.moduleId || 0, house.moduleBackendId);
+        handleHouseSelect(house.id);
         this.isTransitioning = false;
       });
     }
@@ -576,7 +817,6 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private handleResize(): void {
-    // Debounce rapid resize events
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
     }
@@ -588,37 +828,45 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private performResize(): void {
-    // Kill all tweens FIRST
     this.tweens.killAll();
     
-    // Clean up house images array
     this.houseImages = [];
     
-    // Destroy existing elements
     if (this.backButton) this.backButton.destroy();
     this.roads.forEach(road => road.destroy());
     this.roads = [];
-    if (this.platform) this.platform.destroy();
+    // REMOVED: if (this.platform) this.platform.destroy();
     this.houseSprites.forEach(sprite => sprite.destroy());
     this.houseSprites.clear();
     if (this.placeholderCard) this.placeholderCard.destroy();
 
     this.handleCoinCounterResize();
     
-    // Handle bird resize
+    // Recalculate camera bounds for new size
+    const { width, height } = this.scale;
+    const worldWidth = width * 2.5;
+    const worldHeight = height;
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    
+    // Reset camera scroll if it's out of new bounds
+    const maxScrollX = Math.max(0, worldWidth - width);
+    const currentScrollX = this.cameras.main.scrollX;
+    if (currentScrollX > maxScrollX) {
+      this.cameras.main.setScroll(maxScrollX, 0);
+    }
+    
     if (this.bird && this.houses.length > 0) {
-      const { width, height } = this.scale;
       const currentHouse = this.houses[this.currentHouseIndex];
+      const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
       const birdOffsetX = width * 0.04;
       const birdOffsetY = height * 0.025;
-      const birdX = (currentHouse.x / 100) * width + birdOffsetX;
-      const birdY = (currentHouse.y / 100) * height + birdOffsetY;
+      const birdX = x + birdOffsetX;
+      const birdY = y + birdOffsetY;
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
     }
     
-    // Recreate everything with new dimensions
     this.createBackButton();
     
     if (this.houses.length > 0) {

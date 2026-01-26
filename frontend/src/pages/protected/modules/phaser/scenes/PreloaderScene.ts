@@ -8,8 +8,7 @@ import {
   House2,
   House3,
   House4,
-  Road1,
-  Platform1,
+  House5,
   BirdIdle,
   BirdFly,
   BirdCelebration,
@@ -39,10 +38,8 @@ export default class PreloaderScene extends Phaser.Scene {
   }
 
   init() {
-    // Check if assets are already loaded
     const assetsLoaded = this.registry.get('assetsLoaded');
     this.shouldLoad = !assetsLoaded;
-    
     console.log('PreloaderScene.init: shouldLoad =', this.shouldLoad);
   }
 
@@ -100,16 +97,13 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_2, Neighborhood2);
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_3, Neighborhood3);
     
-    // Houses
+    // OLD Houses (keep for backwards compatibility)
     this.load.image(ASSET_KEYS.LESSON_HOUSE, LessonHouse);
     this.load.image(ASSET_KEYS.HOUSE_1, House1);
     this.load.image(ASSET_KEYS.HOUSE_2, House2);
     this.load.image(ASSET_KEYS.HOUSE_3, House3);
     this.load.image(ASSET_KEYS.HOUSE_4, House4);
-    
-    // Environment
-    this.load.image(ASSET_KEYS.ROAD_1, Road1);
-    this.load.image(ASSET_KEYS.PLATFORM_1, Platform1);
+    this.load.image(ASSET_KEYS.HOUSE_5, House5);
     
     // Characters
     this.load.image(ASSET_KEYS.BIRD_IDLE, BirdIdle);

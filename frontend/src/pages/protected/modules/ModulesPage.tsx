@@ -328,7 +328,6 @@ const ModulesPage: React.FC = () => {
       const game = GameManager.getGame();
       if (!game?.scale?.resize || !isPhaserReady || !assetsLoaded) return;
       
-      const canvas = game.canvas;
       const dpr = window.devicePixelRatio || 1;
       const currentOffset = GameManager.getCurrentSidebarOffset();
       const baseWidth = window.innerWidth - currentOffset;
