@@ -298,26 +298,27 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private prefetchAllHouseLessons(): void {
-    if (this.houses.length === 0) {
-      console.log('⏭️ No houses to prefetch');
-      return;
-    }
-
-    console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
-
-    const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
-
-    if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
-      this.houses.forEach(house => {
-        if (house.moduleBackendId) {
-          console.log(`🔄 Prefetching lessons for house: ${house.name} (${house.moduleBackendId})`);
-          handlePrefetchLessons(house.moduleBackendId);
-        }
-      });
-    } else {
-      console.warn('⚠️ Prefetch handler not found in registry');
-    }
+  if (this.houses.length === 0) {
+    console.log('⏭️ No houses to prefetch');
+    return;
   }
+
+  console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
+
+  const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
+
+  if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
+    this.houses.forEach(house => {
+      // Skip mock modules - only prefetch real modules with valid UUIDs
+      if (house.moduleBackendId && !house.moduleBackendId.startsWith('mock-')) {
+        console.log(`🔄 Prefetching lessons for house: ${house.name} (${house.moduleBackendId})`);
+        handlePrefetchLessons(house.moduleBackendId);
+      }
+    });
+  } else {
+    console.warn('⚠️ Prefetch handler not found in registry');
+  }
+}
 
   // ═══════════════════════════════════════════════════════════
   // UI CREATION METHODS
