@@ -8,6 +8,7 @@ import { CardBuilder } from '../ui/CardBuilder';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
 import { BirdCharacter } from '../characters/BirdCharacter';
+import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 
 interface HousePosition {
   id: string;
@@ -38,13 +39,13 @@ export default class NeighborhoodScene extends BaseScene {
   private houseSprites: Map<string, Phaser.GameObjects.Container> = new Map();
   private backButton?: Phaser.GameObjects.Container;
   private placeholderCard?: Phaser.GameObjects.Container;
-  // REMOVED: private platform?: Phaser.GameObjects.Image;
   private roads: Phaser.GameObjects.Graphics[] = []; // Changed from Image[] to Graphics[]
   private idleAnimationTimer?: Phaser.Time.TimerEvent;
   private houseImages: Phaser.GameObjects.Image[] = [];
   private isShuttingDown: boolean = false;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private cloudOverlays: Phaser.GameObjects.Image[] = []; // Track cloud overlays separately
+  private transitionManager: SceneTransitionManager;
 
 
   // Bird character properties
@@ -57,6 +58,7 @@ export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   constructor() {
     super({ key: SCENE_KEYS.NEIGHBORHOOD });
+    this.transitionManager = new SceneTransitionManager(this);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -183,6 +185,8 @@ export default class NeighborhoodScene extends BaseScene {
 
   create() {
     super.create();
+    this.transitionManager = new SceneTransitionManager(this);
+    this.transitionManager.enterNeighborhood();
     
     // Setup camera for horizontal scrolling
     this.setupCamera();
@@ -242,6 +246,7 @@ export default class NeighborhoodScene extends BaseScene {
 
   shutdown() {
     super.shutdown();
+    this.transitionManager.cleanup();
     
     this.isShuttingDown = true;
     
@@ -940,10 +945,10 @@ export default class NeighborhoodScene extends BaseScene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToHouse(callback: () => void): void {
-    callback();
+    this.transitionManager.toHouse(callback); // Use manager
   }
 
   private transitionToMap(callback: () => void): void {
-    callback();
+    this.transitionManager.backToMap(callback); // Use manager
   }
 }

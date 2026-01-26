@@ -31,6 +31,7 @@ export class BaseScene extends Phaser.Scene {
     // USE UIComponents instead of duplicate code
     this.coinCounter = UIComponents.createCoinCounter(this, totalCoins);
     this.coinCounter.setPosition(counterX, counterY);
+    this.coinCounter.setScrollFactor(0);
   }
 
   protected updateCoinCounter(): void {

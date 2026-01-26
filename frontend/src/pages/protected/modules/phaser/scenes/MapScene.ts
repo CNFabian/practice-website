@@ -118,8 +118,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'locked-neighborhood',
         name: 'Locked Neighborhood',
-        x: width * 0.4,
-        y: height * 0.3,
+        x: width * 0.45,
+        y: height * 0.25,
         color: COLORS.GRAY_400,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_2,
@@ -127,8 +127,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'construction-zone',
         name: 'Construction Zone',
-        x: width * 0.65,
-        y: height * 0.6,
+        x: width * 0.7,
+        y: height * 0.65,
         color: COLORS.ORANGE_500,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
@@ -252,9 +252,9 @@ export default class MapScene extends BaseScene {
     if (neighborhood.id === 'home-buying-knowledge') {
       neighborhoodImage.setScale(scale(0.8));
     } else if (neighborhood.id === 'locked-neighborhood') {
-      neighborhoodImage.setScale(scale(0.5));
+      neighborhoodImage.setScale(scale(0.45));
     } else if (neighborhood.id === 'construction-zone') {
-      neighborhoodImage.setScale(scale(1));
+      neighborhoodImage.setScale(scale(0.9));
     }
     
     container.add(neighborhoodImage);
@@ -351,12 +351,12 @@ export default class MapScene extends BaseScene {
     this.neighborhoods[0].x = width * 0.2;
     this.neighborhoods[0].y = height * 0.65;
     
-    this.neighborhoods[1].x = width * 0.4;
-    this.neighborhoods[1].y = height * 0.3;
+    this.neighborhoods[1].x = width * 0.45;
+    this.neighborhoods[1].y = height * 0.25;
     
-    this.neighborhoods[2].x = width * 0.65;
-    this.neighborhoods[2].y = height * 0.6;
-
+    this.neighborhoods[2].x = width * 0.7;
+    this.neighborhoods[2].y = height * 0.65;
+    
     // Update container positions
     this.neighborhoods.forEach((neighborhood) => {
       const container = this.neighborhoodContainers.get(neighborhood.id);
