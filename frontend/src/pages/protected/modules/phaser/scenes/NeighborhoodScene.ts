@@ -44,6 +44,8 @@ export default class NeighborhoodScene extends BaseScene {
   private houseImages: Phaser.GameObjects.Image[] = [];
   private isShuttingDown: boolean = false;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
+  private cloudOverlays: Phaser.GameObjects.Image[] = []; // Track cloud overlays separately
+
 
   // Bird character properties
   private bird?: BirdCharacter;
@@ -223,7 +225,7 @@ export default class NeighborhoodScene extends BaseScene {
     });
     
     // Add mouse wheel scrolling (horizontal)
-    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number) => {
+    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number) => {
       if (!this.isTransitioning) {
         const scrollSpeed = 50;
         const newScrollX = this.cameras.main.scrollX + (deltaY * scrollSpeed / 100);
@@ -258,6 +260,8 @@ export default class NeighborhoodScene extends BaseScene {
     this.houseImages = [];
     
     if (this.backButton) {
+      this.cloudOverlays.forEach(cloud => cloud.destroy());
+      this.cloudOverlays = [];
       const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
       if (buttonBg && buttonBg.input) {
         buttonBg.removeAllListeners();
@@ -373,8 +377,8 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Line styling
     const lineColor = 0x93c5fd; // Light blue color for path
-    const dotSpacing = 15; // Space between dots
-    const dotSize = 8; // Size of each dot
+    const dotSpacing = 48; // Space between dots (increased from 15)
+    const dotSize = 18; // Size of each dot (increased from 8)
     
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
@@ -402,7 +406,7 @@ export default class NeighborhoodScene extends BaseScene {
     let controlX: number;
     let controlY: number;
     
-    const curveDepth = distance * 0.25;
+    const curveDepth = distance * 0.4;
     controlX = midX;
     
     if (isUShapeSection) {
@@ -425,16 +429,51 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Draw dots along the curved path
     graphics.fillStyle(lineColor, 0.7);
-    
-    for (let i = 0; i <= numDots; i++) {
-      const t = i / numDots;
-      
-      // Quadratic Bezier curve formula: B(t) = (1-t)²P0 + 2(1-t)tP1 + t²P2
+
+    let currentLength = 0;
+    let prevX = x1;
+    let prevY = y1;
+    const steps = 200; // High precision for arc length calculation
+
+    // First, build an array of points with their cumulative arc lengths
+    const arcLengthPoints: Array<{ t: number; x: number; y: number; length: number }> = [];
+    arcLengthPoints.push({ t: 0, x: x1, y: y1, length: 0 });
+
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
       const x = Math.pow(1 - t, 2) * x1 + 2 * (1 - t) * t * controlX + Math.pow(t, 2) * x2;
       const y = Math.pow(1 - t, 2) * y1 + 2 * (1 - t) * t * controlY + Math.pow(t, 2) * y2;
       
-      // Draw circular dot
-      graphics.fillCircle(x, y, dotSize / 2);
+      const dx = x - prevX;
+      const dy = y - prevY;
+      currentLength += Math.sqrt(dx * dx + dy * dy);
+      
+      arcLengthPoints.push({ t, x, y, length: currentLength });
+      
+      prevX = x;
+      prevY = y;
+    }
+
+    const totalLength = currentLength;
+    
+    // Now place dots at equal arc-length intervals
+    for (let i = 0; i <= numDots; i++) {
+      const targetLength = (i / numDots) * totalLength;
+      
+      // Find the closest point in our arc-length array
+      let closestPoint = arcLengthPoints[0];
+      let minDiff = Math.abs(arcLengthPoints[0].length - targetLength);
+      
+      for (const point of arcLengthPoints) {
+        const diff = Math.abs(point.length - targetLength);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestPoint = point;
+        }
+      }
+      
+      // Draw circular dot at the found position
+      graphics.fillCircle(closestPoint.x, closestPoint.y, dotSize / 2);
     }
     
     this.roads.push(graphics as any); // Store for cleanup
@@ -521,9 +560,21 @@ export default class NeighborhoodScene extends BaseScene {
     const houseContainer = this.add.container(x, y);
     houseContainer.setDepth(2);
 
-    // Create house icon
+    // Determine if house has backend data
+    const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
+
+    // Create house icon (without cloud - cloud added separately below)
     if (house.houseType) {
       this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
+    }
+
+    // Add cloud overlay OUTSIDE container if no backend data (prevents clipping)
+    if (!hasBackendData && house.houseType) {
+      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      cloudOverlay.setDisplaySize(scale(700), scale(700));
+      cloudOverlay.setAlpha(0.9);
+      cloudOverlay.setDepth(10);
+      this.cloudOverlays.push(cloudOverlay); // Track for cleanup
     }
 
     // Create house name label (module title from backend)
@@ -559,7 +610,7 @@ export default class NeighborhoodScene extends BaseScene {
     isLocked?: boolean
   ): void {
     const houseImage = this.add.image(0, 0, houseType);
-    houseImage.setDisplaySize(scale(150), scale(150));
+    houseImage.setDisplaySize(scale(250), scale(250));
     
     if (isLocked) {
       houseImage.setTint(0x999999);
@@ -600,7 +651,11 @@ export default class NeighborhoodScene extends BaseScene {
     const background = container.list[0] as Phaser.GameObjects.Image;
     
     if (background) {
-      background.setInteractive({ useHandCursor: true });
+      background.setInteractive({
+        useHandCursor: true,
+        pixelPerfect: true,
+        alphaTolerance: 1
+      });
       
       this.houseImages.push(background);
       
@@ -839,6 +894,8 @@ export default class NeighborhoodScene extends BaseScene {
     this.houseSprites.forEach(sprite => sprite.destroy());
     this.houseSprites.clear();
     if (this.placeholderCard) this.placeholderCard.destroy();
+    this.cloudOverlays.forEach(cloud => cloud.destroy());
+    this.cloudOverlays = [];
 
     this.handleCoinCounterResize();
     

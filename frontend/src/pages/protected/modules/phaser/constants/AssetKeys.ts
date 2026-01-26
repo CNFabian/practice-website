@@ -15,6 +15,7 @@ export const ASSET_KEYS = {
   HOUSE_3: 'house3',
   HOUSE_4: 'house4',
   HOUSE_5: 'house5',
+  HOUSE_CLOUD: 'houseCloud',
   
   // Environment (keeping ROAD_1, removing PLATFORM_1)
   ROAD_1: 'road1',

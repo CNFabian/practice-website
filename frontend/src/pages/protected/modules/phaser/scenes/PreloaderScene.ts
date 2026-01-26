@@ -9,6 +9,7 @@ import {
   House3,
   House4,
   House5,
+  HouseCloud,
   BirdIdle,
   BirdFly,
   BirdCelebration,
@@ -104,6 +105,7 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.HOUSE_3, House3);
     this.load.image(ASSET_KEYS.HOUSE_4, House4);
     this.load.image(ASSET_KEYS.HOUSE_5, House5);
+    this.load.image(ASSET_KEYS.HOUSE_CLOUD, HouseCloud);
     
     // Characters
     this.load.image(ASSET_KEYS.BIRD_IDLE, BirdIdle);

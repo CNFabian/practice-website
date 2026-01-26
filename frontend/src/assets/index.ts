@@ -91,6 +91,7 @@ export { default as House2 } from './images/phaser/houses/house2.png'
 export { default as House3 } from './images/phaser/houses/house3.png'
 export { default as House4 } from './images/phaser/houses/house4.png'
 export { default as House5 } from './images/phaser/houses/house5.png'
+export { default as HouseCloud } from './images/phaser/houses/house_cloud.png'
 
 // CutHouse Images for Phaser Scenes
 export { default as HouseBackground } from './images/phaser/house_background1.png'
