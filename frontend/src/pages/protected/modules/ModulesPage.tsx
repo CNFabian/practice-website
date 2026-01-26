@@ -86,16 +86,16 @@ const ModulesPage: React.FC = () => {
     }));
   }, []);
 
-  const handleHouseSelect = useCallback((houseId: string, moduleId: number, moduleBackendId: string) => {
+  const handleHouseSelect = useCallback((houseId: string, moduleBackendId?: string) => {
     const game = GameManager.getGame();
     const currentHouseIndex = game?.registry.get('currentHouseIndex') ?? 0;
-  
+
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
       houseId,
-      moduleId,
-      moduleBackendId,
+      moduleId: null,
+      moduleBackendId: moduleBackendId || null,  // Convert undefined to null
       lessonId: null,
       currentHouseIndex,
     }));
@@ -307,7 +307,6 @@ const ModulesPage: React.FC = () => {
       case 'house':
         GameManager.transitionToHouse(
           navState.houseId,
-          navState.moduleId,
           navState.moduleBackendId
         );
         break;

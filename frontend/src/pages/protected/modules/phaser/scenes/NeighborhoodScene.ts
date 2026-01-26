@@ -455,7 +455,7 @@ export default class NeighborhoodScene extends BaseScene {
     }
 
     const totalLength = currentLength;
-    
+
     // Now place dots at equal arc-length intervals
     for (let i = 0; i <= numDots; i++) {
       const targetLength = (i / numDots) * totalLength;
@@ -850,7 +850,8 @@ export default class NeighborhoodScene extends BaseScene {
 
     if (handleHouseSelect && typeof handleHouseSelect === 'function') {
       this.transitionToHouse(() => {
-        handleHouseSelect(house.id);
+        // Pass both house.id AND house.moduleBackendId
+        handleHouseSelect(house.id, house.moduleBackendId);
         this.isTransitioning = false;
       });
     }

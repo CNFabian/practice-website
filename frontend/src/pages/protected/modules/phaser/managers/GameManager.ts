@@ -294,7 +294,7 @@ class GameManager {
    */
   setNavigationHandlers(handlers: {
     handleNeighborhoodSelect: (neighborhoodId: string) => void;
-    handleHouseSelect: (houseId: string, moduleId: number, moduleBackendId: string) => void;
+    handleHouseSelect: (houseId: string, moduleBackendId?: string) => void; // CHANGED: removed moduleId, made moduleBackendId optional
     handleLessonSelect: (lessonId: number) => void;
     handleMinigameSelect: () => void;
     handleBackToMap: () => void;
@@ -338,6 +338,8 @@ class GameManager {
    * Update lessons data for a specific module
    */
   updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
+    console.log(`📚 Updating lessons data for module: ${moduleBackendId}`);
+    
     // Wait for houses data to be available
     if (!this.housesData['downtown'] || this.housesData['downtown'].length === 0) {
       console.warn(`⚠️ Houses data not ready yet, skipping lessons update for ${moduleBackendId}`);
@@ -357,17 +359,18 @@ class GameManager {
     );
 
     this.moduleLessonsData[moduleBackendId] = transformedLessons;
+    console.log(`✅ Transformed lessons for ${house.name}:`, transformedLessons);
 
+    // Update the registry IMMEDIATELY
     if (!this.game) return;
 
     const scenes = this.game.scene.getScenes(false);
     if (scenes.length > 0) {
       const scene = scenes[0];
-      scene.registry.set('moduleLessonsData', this.moduleLessonsData);
-      console.log('✅ Set module lessons data in registry:', this.moduleLessonsData);
+      scene.registry.set('moduleLessonsData', { ...this.moduleLessonsData });
+      console.log(`✅ Updated registry with lessons for ${moduleBackendId}`);
     }
   }
-
   /**
    * Check if lessons data exists for a module
    */
@@ -415,8 +418,12 @@ class GameManager {
   /**
    * Transition to house scene
    */
-  transitionToHouse(houseId: string | null, moduleId: number | null, moduleBackendId: string | null): void {
+  transitionToHouse(houseId: string | null, moduleBackendId: string | null): void {
     if (!this.game) return;
+
+    // Find the house to get the moduleId
+    const house = this.housesData['downtown']?.find(h => h.id === houseId);
+    const moduleId = house?.moduleId || null;
 
     if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
     if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
