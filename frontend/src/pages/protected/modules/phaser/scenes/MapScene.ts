@@ -346,8 +346,7 @@ export default class MapScene extends BaseScene {
     if (this.centerContainer) {
       this.centerContainer.setPosition(width / 2, height / 2);
     }
-
-    // Update neighborhood positions using same defaults as setupNeighborhoodData
+    
     this.neighborhoods[0].x = width * 0.2;
     this.neighborhoods[0].y = height * 0.65;
     

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 import { TabNavigation, FAQSection, ContactForm } from './components';
 
 const HelpPage: React.FC = () => {
@@ -17,12 +17,12 @@ const HelpPage: React.FC = () => {
   return (
     <div className="p-6 max-w-8xl mx-auto h-full overflow-y-auto">
       <div className="mb-8">
-        <RobotoFont as="h1" weight={700} className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
           Help Center
-        </RobotoFont>
-        <RobotoFont as="p" weight={400} className="text-base text-gray-600 leading-relaxed">
+        </OnestFont>
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 leading-relaxed">
           Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
-        </RobotoFont>
+        </OnestFont>
       </div>
 
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />

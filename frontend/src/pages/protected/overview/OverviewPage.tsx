@@ -4,7 +4,7 @@ import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
 import OnBoardingPage from '../../../components/protected/onboarding/OnBoardingPage';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
-import { RobotoFont } from "../../../assets";
+import { OnestFont } from "../../../assets";
 import {
   WelcomeCard,
   LessonCard,
@@ -99,7 +99,6 @@ const generateMockLeaderboard = (): LeaderboardEntry[] => {
   ];
 };
 
-// ✅ Mock data with imported images
 const MOCK_TASKS: Task[] = [
   {
     id: "1",
@@ -276,9 +275,9 @@ const OverviewPage: React.FC = () => {
         {onboardingModal}
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <RobotoFont weight={500} className="text-gray-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-lg mb-2">
               Loading your dashboard...
-            </RobotoFont>
+            </OnestFont>
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
@@ -293,19 +292,19 @@ const OverviewPage: React.FC = () => {
         {onboardingModal}
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md p-6">
-            <RobotoFont weight={500} className="text-red-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-red-600 text-lg mb-2">
               Oops! Something went wrong
-            </RobotoFont>
-            <RobotoFont weight={400} className="text-gray-600 mb-4">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 mb-4">
               {error instanceof Error ? error.message : 'Failed to load dashboard data'}
-            </RobotoFont>
+            </OnestFont>
             <button
               onClick={() => window.location.reload()}
               className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
             >
-              <RobotoFont weight={500} className="text-sm">
+              <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                 Retry
-              </RobotoFont>
+              </OnestFont>
             </button>
           </div>
         </div>
@@ -325,9 +324,9 @@ const OverviewPage: React.FC = () => {
             isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
-          <RobotoFont as="h1" weight={500} className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
+          <OnestFont as="h1" weight={500} lineHeight="relaxed" className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
             Onboarding Checklist
-          </RobotoFont>
+          </OnestFont>
 
           <div className="grid grid-cols-1 2xl:grid-cols-[1fr_500px] gap-4 lg:gap-6 w-full">
             {/* Left Column */}
@@ -341,13 +340,14 @@ const OverviewPage: React.FC = () => {
               {/* Continue Lesson Section */}
               {continueLesson && (
                 <div>
-                  <RobotoFont
+                  <OnestFont
                     as="h2"
                     weight={500}
+                    lineHeight="relaxed"
                     className="text-gray-900 mb-4 text-base sm:text-lg font-medium"
                   >
                     Continue Lesson
-                  </RobotoFont>
+                  </OnestFont>
                   <LessonCard
                     lesson={continueLesson}
                     onAction={handleLessonAction}
@@ -360,9 +360,10 @@ const OverviewPage: React.FC = () => {
               {learningModules.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4 gap-2">
-                    <RobotoFont
+                    <OnestFont
                       as="h2"
                       weight={500}
+                      lineHeight="relaxed"
                       className="text-gray-900 text-base sm:text-lg flex-1 min-w-0"
                       style={{ 
                         wordBreak: 'break-word',
@@ -370,14 +371,14 @@ const OverviewPage: React.FC = () => {
                       }}
                     >
                       Learning Modules
-                    </RobotoFont>
+                    </OnestFont>
                     <button
                       className="text-black hover:text-blue-700 flex-shrink-0"
                       onClick={handleSeeAllModules}
                     >
-                      <RobotoFont weight={500} className="text-sm whitespace-nowrap">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm whitespace-nowrap">
                         See all
-                      </RobotoFont>
+                      </OnestFont>
                     </button>
                   </div>
 
@@ -397,33 +398,36 @@ const OverviewPage: React.FC = () => {
 
             {/* Right Column */}
             <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
-              {/* Learn Earn Rewards Card - ✅ UPDATED with imported images */}
+              {/* Learn Earn Rewards Card */}
               <div
                 className="relative overflow-hidden bg-[#D7DEFF] rounded-xl flex flex-col justify-between p-4 sm:p-6"
                 style={{ height: "12.5rem" }}
               >
                 <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
-                  <RobotoFont
+                  <OnestFont
                     as="h2"
                     weight={500}
+                    lineHeight="tight"
                     className="text-gray-900 text-2xl sm:text-3xl font-medium leading-tight"
                   >
                     Learn. Earn.
-                  </RobotoFont>
-                  <RobotoFont
+                  </OnestFont>
+                  <OnestFont
                     as="h2"
                     weight={500}
+                    lineHeight="tight"
                     className="text-gray-900 mb-3 text-2xl sm:text-3xl font-medium leading-tight"
                   >
                     Get Rewards.
-                  </RobotoFont>
-                  <RobotoFont
+                  </OnestFont>
+                  <OnestFont
                     as="p"
-                    weight={400}
+                    weight={300}
+                    lineHeight="relaxed"
                     className="text-gray-700 max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
                   >
                     Redeem NestCoins for prizes to help you towards Homeownership.
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
 
                 <div className="absolute bottom-3 right-4 sm:right-6 z-20">
@@ -431,13 +435,12 @@ const OverviewPage: React.FC = () => {
                     className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
                     onClick={handleRewardsShop}
                   >
-                    <RobotoFont weight={500} className="text-sm">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                       Rewards Shop
-                    </RobotoFont>
+                    </OnestFont>
                   </button>
                 </div>
 
-                {/* ✅ Updated background images */}
                 <img
                   src={Images.NestCoins}
                   alt="Nest Coins"

@@ -11,7 +11,6 @@ interface LessonViewProps {
   onBack: () => void;
 }
 
-// Updated interface with is_correct field
 interface BackendQuizAnswer {
   id: string;
   question_id: string;
@@ -60,7 +59,6 @@ const MOCK_QUIZ_QUESTIONS = [
   }
 ];
 
-// Improved transform function with better error handling
 const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
   if (!backendQuestions || !Array.isArray(backendQuestions)) {
     console.warn('⚠️ Invalid quiz questions data');

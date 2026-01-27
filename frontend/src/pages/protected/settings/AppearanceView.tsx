@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 
 const AppearanceView: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
@@ -20,16 +20,16 @@ const AppearanceView: React.FC = () => {
       <div>
         {/* Language Selection */}
         <div>
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Language Selection
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             Select the language that Nest Navigate content will appear in
-          </RobotoFont>
+          </OnestFont>
           
           <div className="max-w-md">
             <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Language</RobotoFont>
+              <OnestFont weight={500} lineHeight="relaxed">Language</OnestFont>
             </label>
             <div className="relative">
               <select
@@ -56,18 +56,18 @@ const AppearanceView: React.FC = () => {
       {/* Save Button */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
-          <RobotoFont className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             Last edited 2 minutes ago
-          </RobotoFont>
+          </OnestFont>
         </div>
         <button
           onClick={handleSaveSettings}
           className="px-6 py-3 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#6B73FF' }}
         >
-          <RobotoFont weight={600}>
+          <OnestFont weight={700} lineHeight="relaxed">
             Save Settings
-          </RobotoFont>
+          </OnestFont>
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 import { ProfilePictureModal } from '../../../components';
 
 const AccountView: React.FC = () => {
@@ -36,12 +36,12 @@ const AccountView: React.FC = () => {
               </svg>
             </div>
             <div className="flex-1">
-              <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-1">
+              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-1">
                 Profile Picture/Select Avatar
-              </RobotoFont>
-              <RobotoFont className="text-sm text-gray-600">
+              </OnestFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                 PNG, JPEG under 15 MB
-              </RobotoFont>
+              </OnestFont>
             </div>
             <div className="flex gap-3">
               <button
@@ -49,17 +49,17 @@ const AccountView: React.FC = () => {
                 className="px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: '#6B73FF' }}
               >
-                <RobotoFont weight={500}>
+                <OnestFont weight={500} lineHeight="relaxed">
                   Upload New Picture
-                </RobotoFont>
+                </OnestFont>
               </button>
               <button
                 onClick={handleDeletePicture}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
-                <RobotoFont weight={500}>
+                <OnestFont weight={500} lineHeight="relaxed">
                   Delete
-                </RobotoFont>
+                </OnestFont>
               </button>
             </div>
           </div>
@@ -67,13 +67,13 @@ const AccountView: React.FC = () => {
 
         {/* Full Name */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-4">
             Full Name
-          </RobotoFont>
+          </OnestFont>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>First Name</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">First Name</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -90,7 +90,7 @@ const AccountView: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>Last Name</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">Last Name</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -110,13 +110,13 @@ const AccountView: React.FC = () => {
 
         {/* Password */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-4">
             Password
-          </RobotoFont>
+          </OnestFont>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>Current Password</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">Current Password</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -134,7 +134,7 @@ const AccountView: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>New Password</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">New Password</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -154,13 +154,13 @@ const AccountView: React.FC = () => {
 
         {/* Phone Number */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-4">
             Phone Number
-          </RobotoFont>
+          </OnestFont>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>Current Phone Number</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">Current Phone Number</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -177,7 +177,7 @@ const AccountView: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-2">
-                <RobotoFont weight={500}>New Phone Number</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">New Phone Number</OnestFont>
               </label>
               <div className="relative">
                 <input
@@ -197,12 +197,12 @@ const AccountView: React.FC = () => {
 
         {/* Email */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-4">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-4">
             Email
-          </RobotoFont>
+          </OnestFont>
           <div>
             <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Current Email</RobotoFont>
+              <OnestFont weight={500} lineHeight="relaxed">Current Email</OnestFont>
             </label>
             <div className="max-w-md">
               <input
@@ -219,18 +219,18 @@ const AccountView: React.FC = () => {
       {/* Save Button */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
-          <RobotoFont className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             Last edited 2 minutes ago
-          </RobotoFont>
+          </OnestFont>
         </div>
         <button
           onClick={handleSaveSettings}
           className="px-6 py-3 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#6B73FF' }}
         >
-          <RobotoFont weight={600}>
+          <OnestFont weight={700} lineHeight="relaxed">
             Save Settings
-          </RobotoFont>
+          </OnestFont>
         </button>
       </div>
 

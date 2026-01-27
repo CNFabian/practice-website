@@ -1,5 +1,3 @@
-// BaseScene.ts - UPDATED VERSION with Background Image Support
-
 import Phaser from 'phaser';
 import { UIComponents } from '../ui/UIComponents';
 
@@ -28,7 +26,6 @@ export class BaseScene extends Phaser.Scene {
     const counterX = width - (width * 0.08); // 8% from right
     const counterY = height * 0.05; // 5% from top
     
-    // USE UIComponents instead of duplicate code
     this.coinCounter = UIComponents.createCoinCounter(this, totalCoins);
     this.coinCounter.setPosition(counterX, counterY);
     this.coinCounter.setScrollFactor(0);
@@ -121,10 +118,6 @@ export class BaseScene extends Phaser.Scene {
       const image = textureSource.source as HTMLImageElement;
       console.log('🖼️ Image element:', image);
       console.log('🔗 Image src:', image.src);
-      
-      // For Vite, we need to get the actual imported path, not the blob
-      // The texture was loaded with the imported path, so we need to extract it
-      // from the texture key in the registry or use a different approach
       
       // Alternative: Create a canvas and export as data URL
       const canvas = document.createElement('canvas');

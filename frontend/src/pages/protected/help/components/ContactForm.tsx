@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../../assets';
+import { OnestFont } from '../../../../assets';
 import { useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
 import { useSubmitSupportTicket } from '../../../../hooks/mutations/useSubmitSupportTicket';
 import type { SupportTicketRequest } from '../../../../types/help.types';
@@ -100,12 +100,12 @@ const ContactForm: React.FC = () => {
 
   return (
     <div>
-      <RobotoFont as="h2" weight={600} className="text-xl text-gray-900 mb-3">
+      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 mb-3">
         Send Us a message
-      </RobotoFont>
-      <RobotoFont as="p" weight={400} className="text-base text-gray-600 leading-relaxed mb-8">
+      </OnestFont>
+      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 mb-8">
         Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
-      </RobotoFont>
+      </OnestFont>
 
       {/* Success Message */}
       {submitSuccess && (
@@ -114,9 +114,9 @@ const ContactForm: React.FC = () => {
             <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <RobotoFont as="p" weight={500} className="text-green-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-green-800">
               Your message has been sent successfully! We'll get back to you soon.
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
       )}
@@ -128,9 +128,9 @@ const ContactForm: React.FC = () => {
             <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <RobotoFont as="p" weight={500} className="text-red-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-red-800">
               {submitError}
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
       )}
@@ -139,9 +139,9 @@ const ContactForm: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="firstName" className="block mb-2">
-              <RobotoFont as="span" weight={500} className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
                 First Name *
-              </RobotoFont>
+              </OnestFont>
             </label>
             <input
               type="text"
@@ -157,9 +157,9 @@ const ContactForm: React.FC = () => {
           </div>
           <div>
             <label htmlFor="lastName" className="block mb-2">
-              <RobotoFont as="span" weight={500} className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
                 Last Name
-              </RobotoFont>
+              </OnestFont>
             </label>
             <input
               type="text"
@@ -177,9 +177,9 @@ const ContactForm: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="phone" className="block mb-2">
-              <RobotoFont as="span" weight={500} className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
                 Phone Number
-              </RobotoFont>
+              </OnestFont>
             </label>
             <input
               type="tel"
@@ -194,9 +194,9 @@ const ContactForm: React.FC = () => {
           </div>
           <div>
             <label htmlFor="email" className="block mb-2">
-              <RobotoFont as="span" weight={500} className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
                 Email *
-              </RobotoFont>
+              </OnestFont>
             </label>
             <input
               type="email"
@@ -214,9 +214,9 @@ const ContactForm: React.FC = () => {
 
         <div>
           <label htmlFor="category" className="block mb-2">
-            <RobotoFont as="span" weight={500} className="text-gray-700">
+            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
               Category *
-            </RobotoFont>
+            </OnestFont>
           </label>
           <select
             id="category"
@@ -240,9 +240,9 @@ const ContactForm: React.FC = () => {
 
         <div>
           <label htmlFor="message" className="block mb-2">
-            <RobotoFont as="span" weight={500} className="text-gray-700">
+            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
               Message *
-            </RobotoFont>
+            </OnestFont>
           </label>
           <textarea
             id="message"
@@ -261,11 +261,11 @@ const ContactForm: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
           >
-            <RobotoFont as="span" weight={500}>
+            <OnestFont as="span" weight={500} lineHeight="relaxed">
               {isSubmitting ? 'Sending...' : 'Send Message'}
-            </RobotoFont>
+            </OnestFont>
           </button>
         </div>
       </form>

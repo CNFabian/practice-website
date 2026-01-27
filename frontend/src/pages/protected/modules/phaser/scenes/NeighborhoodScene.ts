@@ -39,7 +39,7 @@ export default class NeighborhoodScene extends BaseScene {
   private houseSprites: Map<string, Phaser.GameObjects.Container> = new Map();
   private backButton?: Phaser.GameObjects.Container;
   private placeholderCard?: Phaser.GameObjects.Container;
-  private roads: Phaser.GameObjects.Graphics[] = []; // Changed from Image[] to Graphics[]
+  private roads: Phaser.GameObjects.Graphics[] = [];
   private idleAnimationTimer?: Phaser.Time.TimerEvent;
   private houseImages: Phaser.GameObjects.Image[] = [];
   private isShuttingDown: boolean = false;
@@ -173,7 +173,7 @@ export default class NeighborhoodScene extends BaseScene {
       {
         id: 'mock-house-5',
         name: 'Closing Process',
-        houseType: ASSET_KEYS.HOUSE_1, // Reuse house type
+        houseType: ASSET_KEYS.HOUSE_5,
         isLocked: false,
         moduleId: 5,
         moduleBackendId: 'mock-module-5',
@@ -201,10 +201,7 @@ export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private setupCamera(): void {
     const { width, height } = this.scale;
-    
-    // Calculate world width based on houses spread
-    // Last house at ~165% of screen width (top row house at index 4)
-    const worldWidth = width * 2.5; // Extended world for 5 houses with wide spacing
+    const worldWidth = width * 1.5;
     const worldHeight = height;
     
     // Set world bounds
@@ -349,11 +346,8 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createEnvironment(): void {
-    // Platform removed - no longer needed
     this.createDottedPaths();
   }
-
-  // REMOVED: createPlatform() method - no longer needed
 
   private createDottedPaths(): void {
     const { width, height } = this.scale;
@@ -393,20 +387,9 @@ export default class NeighborhoodScene extends BaseScene {
     const dy = y2 - y1;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // CONTINUOUS SINE WAVE PATTERN:
-    // The wave alternates between U and n shapes every 2 houses
-    // But we need to handle transitions smoothly
-    //
-    // H0→H1→H2: U shape (curve DOWN)
-    // H2→H3→H4: n shape (curve UP) - but H3→H4 needs to transition DOWN
-    // H4→H5: U shape continues
-    
     // Determine which section we're in based on starting house
     const sectionIndex = Math.floor(startHouseIndex / 2);
     const isUShapeSection = sectionIndex % 2 === 0;
-    
-    // Check if this is a transition path (last path of a section going to next section)
-    // Transition paths are: H1→H2, H3→H4, H5→H6, etc. (odd index paths)
     const isTransitionPath = startHouseIndex % 2 === 1;
     
     let controlX: number;
@@ -416,16 +399,12 @@ export default class NeighborhoodScene extends BaseScene {
     controlX = midX;
     
     if (isUShapeSection) {
-      // U shape section: curve DOWN
       controlY = midY + curveDepth;
     } else {
-      // n shape section: curve UP
-      // BUT if this is the transition path (e.g., H3→H4), we need to curve DOWN
-      // to smoothly connect to the next U section
       if (isTransitionPath) {
-        controlY = midY + curveDepth; // Transition: curve DOWN
+        controlY = midY + curveDepth;
       } else {
-        controlY = midY - curveDepth; // Normal n shape: curve UP
+        controlY = midY - curveDepth;
       }
     }
     
@@ -513,35 +492,24 @@ export default class NeighborhoodScene extends BaseScene {
     return length;
   }
 
-  private calculateHousePosition(index: number, width: number, height: number, house: HousePosition): { x: number; y: number } {
-    // Alternating: top row (index 0, 2, 4...), bottom row (index 1, 3, 5...)
+  private calculateHousePosition(index: number, width: number, height: number, _house: HousePosition): { x: number; y: number } {
     const isTopRow = index % 2 === 0;
     const columnIndex = Math.floor(index / 2);
     
-    // WIDER SPACING FOR HORIZONTAL SCROLL
     const startX = 15; // Start at 15% from left edge
-    const horizontalSpacing = 50; // 50% spacing between houses (MUCH WIDER)
+    const horizontalSpacing = 50; // 50% spacing between houses
     const bottomRowOffset = 25; // Bottom row shifted to the right by 25%
     const topRowY = 30; // Top row at 30% from top
     const bottomRowY = 65; // Bottom row at 65% from top (35% vertical gap)
     
     // Calculate X position with offset for bottom row
-    // Top row (0, 2, 4...): stays in columns
-    // Bottom row (1, 3, 5...): offset to the right, but stays in same column group
     const defaultX = isTopRow 
       ? startX + (columnIndex * horizontalSpacing)  // Top row: 15%, 65%, 115%...
       : startX + (columnIndex * horizontalSpacing) + bottomRowOffset;  // Bottom row: 40%, 90%, 140%...
     
     const defaultY = isTopRow ? topRowY : bottomRowY;  // Always top or bottom, no progression
     
-    // DEBUG: Log what we're calculating vs what backend provides
-    console.log(`🏠 House ${index} (${house.name}):`);
-    console.log(`  - Calculated: ${defaultX}%, ${defaultY}%`);
-    console.log(`  - Backend: x=${house.x}, y=${house.y}`);
-    console.log(`  - Row: ${isTopRow ? 'TOP' : 'BOTTOM'}, Column: ${columnIndex}`);
-    
-    // TEMPORARY FIX: Force using calculated positions (ignore backend x/y)
-    // Remove this after confirming the layout works, then update backend data
+   
     const x = (defaultX / 100) * width;
     const y = (defaultY / 100) * height;
     
@@ -569,18 +537,18 @@ export default class NeighborhoodScene extends BaseScene {
     // Determine if house has backend data
     const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
 
-    // Create house icon (without cloud - cloud added separately below)
+    // Create house icon
     if (house.houseType) {
       this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
     }
 
-    // Add cloud overlay OUTSIDE container if no backend data (prevents clipping)
+    // Add cloud overlay
     if (!hasBackendData && house.houseType) {
       const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
       cloudOverlay.setDisplaySize(scale(700), scale(700));
       cloudOverlay.setAlpha(0.9);
       cloudOverlay.setDepth(10);
-      this.cloudOverlays.push(cloudOverlay); // Track for cleanup
+      this.cloudOverlays.push(cloudOverlay);
     }
 
     // Create house name label (module title from backend)
@@ -897,7 +865,6 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.backButton) this.backButton.destroy();
     this.roads.forEach(road => road.destroy());
     this.roads = [];
-    // REMOVED: if (this.platform) this.platform.destroy();
     this.houseSprites.forEach(sprite => sprite.destroy());
     this.houseSprites.clear();
     if (this.placeholderCard) this.placeholderCard.destroy();

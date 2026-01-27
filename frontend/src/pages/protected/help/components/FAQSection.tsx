@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RobotoFont } from '../../../../assets';
+import { OnestFont } from '../../../../assets';
 import { useFAQs, useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
 import type { FAQ } from '../../../../types/help.types';
 
@@ -77,12 +77,12 @@ const FAQSection: React.FC = () => {
 
   return (
     <div>
-      <RobotoFont as="h2" weight={600} className="text-xl text-gray-900 mb-3">
+      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 mb-3">
         Frequently Asked Questions
-      </RobotoFont>
-      <RobotoFont as="p" weight={400} className="text-base text-gray-600 leading-relaxed mb-8">
+      </OnestFont>
+      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 mb-8">
         Find quick answers to common questions about our platform and services.
-      </RobotoFont>
+      </OnestFont>
 
       {/* Search Bar */}
       <div className="mb-6">
@@ -117,30 +117,30 @@ const FAQSection: React.FC = () => {
 
       {/* Category Filters */}
       <div className="mb-8">
-        <RobotoFont as="h3" weight={500} className="text-sm text-gray-700 mb-3">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-sm text-gray-700 mb-3">
           Filter by Category
-        </RobotoFont>
+        </OnestFont>
         <div className="flex flex-wrap gap-2">
           {isLoadingCategories ? (
             <div className="px-4 py-2 bg-gray-100 rounded-full">
-              <RobotoFont as="span" weight={400} className="text-sm text-gray-500">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-sm text-gray-500">
                 Loading categories...
-              </RobotoFont>
+              </OnestFont>
             </div>
           ) : (
             categories.map((category) => (
               <button
                 key={category}
                 onClick={() => handleCategoryChange(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-full text-sm transition-all ${
                   selectedCategory === category
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <RobotoFont as="span" weight={selectedCategory === category ? 500 : 400}>
+                <OnestFont as="span" weight={selectedCategory === category ? 500 : 300} lineHeight="relaxed">
                   {category}
-                </RobotoFont>
+                </OnestFont>
               </button>
             ))
           )}
@@ -151,9 +151,9 @@ const FAQSection: React.FC = () => {
       {(isLoadingFAQs || isSearching) && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <RobotoFont as="p" weight={400} className="text-gray-600">
+          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-600">
             {isSearching ? 'Searching...' : 'Loading FAQs...'}
-          </RobotoFont>
+          </OnestFont>
         </div>
       )}
 
@@ -164,9 +164,9 @@ const FAQSection: React.FC = () => {
             <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <RobotoFont as="p" weight={500} className="text-red-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-red-800">
               Failed to load FAQs. Using fallback data.
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
       )}
@@ -185,13 +185,13 @@ const FAQSection: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <RobotoFont as="h3" weight={500} className="text-gray-900 text-base">
+                    <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-gray-900 text-base">
                       {faq.question}
-                    </RobotoFont>
+                    </OnestFont>
                     {faq.category && (
-                      <RobotoFont as="span" weight={400} className="text-sm text-blue-600 mt-1 inline-block">
+                      <OnestFont as="span" weight={300} lineHeight="relaxed" className="text-sm text-blue-600 mt-1 inline-block">
                         {faq.category}
-                      </RobotoFont>
+                      </OnestFont>
                     )}
                   </div>
                   <svg
@@ -209,9 +209,9 @@ const FAQSection: React.FC = () => {
               
               {expandedFAQ === faq.id && (
                 <div className="px-6 pb-4 bg-gray-50 border-t border-gray-200">
-                  <RobotoFont as="p" weight={400} className="text-gray-700 leading-relaxed pt-3">
+                  <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-gray-700 pt-3">
                     {faq.answer}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
               )}
             </div>
@@ -225,12 +225,12 @@ const FAQSection: React.FC = () => {
           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <RobotoFont as="p" weight={500} className="text-gray-500 mb-2">
+          <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-gray-500 mb-2">
             No FAQs found
-          </RobotoFont>
-          <RobotoFont as="p" weight={400} className="text-gray-400 text-sm">
+          </OnestFont>
+          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-400 text-sm">
             {searchTerm ? 'Try adjusting your search terms' : 'No FAQs available for this category'}
-          </RobotoFont>
+          </OnestFont>
         </div>
       )}
     </div>

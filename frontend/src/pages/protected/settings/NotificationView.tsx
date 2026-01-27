@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 
 const NotificationsView: React.FC = () => {
   const [newsAndUpdates, setNewsAndUpdates] = useState(true);
@@ -40,23 +40,23 @@ const NotificationsView: React.FC = () => {
       <div>
         {/* Notifications From Us */}
         <div className="pb-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Notifications From Us
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             Receive the latest news and updates from Nest Navigate
-          </RobotoFont>
+          </OnestFont>
           
           <div className="space-y-6">
             {/* News and Updates */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   News and Updates
-                </RobotoFont>
-                <RobotoFont className="text-sm text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                   Receive updates on the latest educational content and rewards offered by Nest Navigate
-                </RobotoFont>
+                </OnestFont>
               </div>
               <Toggle enabled={newsAndUpdates} onChange={setNewsAndUpdates} />
             </div>
@@ -64,12 +64,12 @@ const NotificationsView: React.FC = () => {
             {/* Tips and Tutorials */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   Tips and Tutorials
-                </RobotoFont>
-                <RobotoFont className="text-sm text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                   Learn how to use Nest Navigate and make the most of the resources we provide
-                </RobotoFont>
+                </OnestFont>
               </div>
               <Toggle enabled={tipsAndTutorials} onChange={setTipsAndTutorials} />
             </div>
@@ -77,12 +77,12 @@ const NotificationsView: React.FC = () => {
             {/* User Research */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   User Research
-                </RobotoFont>
-                <RobotoFont className="text-sm text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                   Provide feedback on Nest Navigate and help us improve the product
-                </RobotoFont>
+                </OnestFont>
               </div>
               <Toggle enabled={userResearch} onChange={setUserResearch} />
             </div>
@@ -91,23 +91,23 @@ const NotificationsView: React.FC = () => {
 
         {/* Reminders */}
         <div className="border-t border-gray-200 pt-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Reminders
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             Set reminders to help you stay on track
-          </RobotoFont>
+          </OnestFont>
           
           <div className="space-y-6">
             {/* Expert Seminars */}
             <div className="flex items-start justify-between">
               <div className="flex-1 mt-6">
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   Expert Seminars
-                </RobotoFont>
-                <RobotoFont className="text-sm text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                   Get reminders about seminars hosted by experts
-                </RobotoFont>
+                </OnestFont>
               </div>
               <div className="relative mt-6">
                 <select
@@ -133,12 +133,12 @@ const NotificationsView: React.FC = () => {
             {/* Lesson Reminders */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   Lesson Reminders
-                </RobotoFont>
-                <RobotoFont className="text-sm text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                   Receive reminders about incomplete lessons and modules that are in progress
-                </RobotoFont>
+                </OnestFont>
               </div>
               <div className="relative">
                 <select
@@ -166,18 +166,18 @@ const NotificationsView: React.FC = () => {
       {/* Save Button */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
-          <RobotoFont className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             Last edited 2 minutes ago
-          </RobotoFont>
+          </OnestFont>
         </div>
         <button
           onClick={handleSaveSettings}
           className="px-6 py-3 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#6B73FF' }}
         >
-          <RobotoFont weight={600}>
+          <OnestFont weight={700} lineHeight="relaxed">
             Save Settings
-          </RobotoFont>
+          </OnestFont>
         </button>
       </div>
     </div>

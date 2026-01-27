@@ -1,6 +1,4 @@
-// Grid layout component - displays badges in responsive grid with empty state
-
-import { RobotoFont } from '../../../../assets';
+import { OnestFont } from '../../../../assets';
 import type { Badge } from '../../../../services';
 import { BadgeCard } from './BadgeCard';
 
@@ -17,12 +15,12 @@ export const BadgeGrid = ({ badges }: BadgeGridProps) => {
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
         </div>
-        <RobotoFont as="h3" weight={500} className="text-lg text-gray-500 mb-2">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-gray-500 mb-2">
           No badges found
-        </RobotoFont>
-        <RobotoFont as="p" weight={400} className="text-gray-400">
+        </OnestFont>
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-400">
           Try adjusting your filter selection
-        </RobotoFont>
+        </OnestFont>
       </div>
     );
   }

@@ -1,6 +1,4 @@
-// Filter buttons component - handles badge filtering by category/status
-
-import { RobotoFont } from '../../../../assets';
+import { OnestFont } from '../../../../assets';
 import { FILTER_BUTTONS } from '../constants';
 
 interface BadgeFiltersProps {
@@ -21,9 +19,9 @@ export const BadgeFilters = ({ activeFilter, onFilterChange }: BadgeFiltersProps
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          <RobotoFont weight={500}>
+          <OnestFont weight={500} lineHeight="relaxed">
             {button.label}
-          </RobotoFont>
+          </OnestFont>
         </button>
       ))}
     </div>

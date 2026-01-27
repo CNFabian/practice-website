@@ -1,7 +1,4 @@
-// Individual badge card component - displays badge info with rarity-based styling
-// Handles earned/locked states and shows badge requirements
-
-import { RobotoFont } from '../../../../assets';
+import { OnestFont } from '../../../../assets';
 import type { Badge } from '../../../../services';
 import { 
   BADGE_ICONS, 
@@ -120,43 +117,47 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
       {/* Badge information */}
       <div className="text-center flex flex-col justify-between flex-grow min-h-0">
         <div className="flex-grow">
-          <RobotoFont 
+          <OnestFont 
             as="h3" 
             weight={700} 
+            lineHeight="tight"
             className={`text-base sm:text-lg mb-2 leading-tight break-words ${badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 'text-white' : badge.rarity === 'common' ? 'text-black' : !badge.isEarned ? 'text-gray-600' : ''}`}
             style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
           >
             {badge.name}
-          </RobotoFont>
-          <RobotoFont 
+          </OnestFont>
+          <OnestFont 
             as="p" 
-            weight={400} 
+            weight={badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 500 : 300}
+            lineHeight="relaxed"
             className={`text-xs sm:text-sm mb-3 leading-tight break-words ${badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 'text-white text-opacity-90' : badge.rarity === 'common' ? 'text-gray-800' : !badge.isEarned ? 'text-gray-500' : 'text-white text-opacity-90'}`}
             style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
           >
             {badge.description}
-          </RobotoFont>
+          </OnestFont>
         </div>
 
         {/* Badge tags and requirements */}
         <div className="space-y-2 flex-shrink-0 mt-auto">
           <div className="flex justify-center gap-1 sm:gap-2 flex-wrap">
-            <RobotoFont 
+            <OnestFont 
               as="span" 
               weight={700} 
+              lineHeight="relaxed"
               className={`px-2 sm:px-3 py-1 rounded-full text-xs uppercase tracking-wide ${getTypeColor(badge.type)}`} 
               style={getTypeStyle(badge.type)}
             >
               {badge.type}
-            </RobotoFont>
-            <RobotoFont 
+            </OnestFont>
+            <OnestFont 
               as="span" 
               weight={700} 
+              lineHeight="relaxed"
               className={`px-2 sm:px-3 py-1 rounded-full text-xs uppercase tracking-wide ${getRarityColor(badge.rarity)}`} 
               style={getRarityTagStyle(badge.rarity)}
             >
               {badge.rarity}
-            </RobotoFont>
+            </OnestFont>
           </div>
           
           <div className={`text-xs ${badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 'text-white text-opacity-80' : badge.rarity === 'common' ? 'text-gray-700' : badge.isEarned ? 'text-white text-opacity-80' : 'text-gray-600'}`}>
@@ -164,23 +165,24 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
-              <RobotoFont 
+              <OnestFont 
                 as="span" 
-                weight={400} 
+                weight={badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 500 : 300}
+                lineHeight="relaxed"
                 className="leading-tight break-words flex-1"
                 style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
               >
                 {badge.requirement}
-              </RobotoFont>
+              </OnestFont>
             </div>
             {badge.earnedDate && (
               <div className={`flex items-center justify-center gap-1 flex-wrap ${badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 'text-white text-opacity-70' : badge.rarity === 'common' ? 'text-gray-600' : 'text-gray-500'}`}>
                 <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <RobotoFont as="span" weight={400} className="break-words" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                <OnestFont as="span" weight={badge.rarity === 'rare' || badge.rarity === 'legendary' || badge.rarity === 'uncommon' ? 500 : 300} lineHeight="relaxed" className="break-words" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                   Earned on {badge.earnedDate}
-                </RobotoFont>
+                </OnestFont>
               </div>
             )}
           </div>

@@ -8,7 +8,7 @@ export const ASSET_KEYS = {
   NEIGHBORHOOD_2: 'neighborhood2',
   NEIGHBORHOOD_3: 'neighborhood3',
   
-  // OLD House Assets (keep for backwards compatibility if needed)
+  // Houses
   LESSON_HOUSE: 'lessonHouse',
   HOUSE_1: 'house1',
   HOUSE_2: 'house2',
@@ -16,11 +16,7 @@ export const ASSET_KEYS = {
   HOUSE_4: 'house4',
   HOUSE_5: 'house5',
   HOUSE_CLOUD: 'houseCloud',
-  
-  // Environment (keeping ROAD_1, removing PLATFORM_1)
-  ROAD_1: 'road1',
-  // PLATFORM_1 removed - no longer needed
-  
+    
   // Characters
   BIRD_IDLE: 'bird_idle',
   BIRD_FLY: 'bird_fly',

@@ -1,5 +1,5 @@
 import React from "react";
-import { RobotoFont } from "../../../../assets";
+import { OnestFont } from "../../../../assets";
 import { LeaderboardEntry } from "../types/overview.types";
 
 interface LeaderboardCardProps {
@@ -15,9 +15,10 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
     <div className="bg-[#EFF2FF] rounded-xl overflow-hidden">
       {/* Header section */}
       <div className="flex items-center justify-between h-16 sm:h-20 px-4 py-2 gap-2">
-        <RobotoFont 
+        <OnestFont 
           as="h2" 
-          weight={500} 
+          weight={700} 
+          lineHeight="tight"
           className="text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold flex-1 min-w-0"
           style={{ 
             wordBreak: 'break-word',
@@ -25,7 +26,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
           }}
         >
           Weekly Leaderboard
-        </RobotoFont>
+        </OnestFont>
         <button 
           className="text-gray-600 hover:text-gray-800 flex-shrink-0"
           onClick={onMenuClick}
@@ -58,19 +59,21 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
                   className="w-5 h-5 sm:w-6 sm:h-6"
                 />
               </div>
-              <RobotoFont 
-                weight={400} 
+              <OnestFont 
+                weight={300} 
+                lineHeight="relaxed"
                 className="text-gray-900 text-sm sm:text-base font-medium truncate"
               >
                 {entry.name}
-              </RobotoFont>
+              </OnestFont>
             </div>
-            <RobotoFont 
+            <OnestFont 
               weight={500} 
+              lineHeight="relaxed"
               className="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0"
             >
               {entry.coins} Coins
-            </RobotoFont>
+            </OnestFont>
           </div>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 import AccountView from './AccountView';
 import ProfileView from './ProfileView';
 import AppearanceView from './AppearanceView';
@@ -43,9 +43,9 @@ const SettingsPage: React.FC = () => {
         <div className="max-w-5xl mx-auto py-6">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
-            <RobotoFont as="h1" weight={600} className="text-2xl text-gray-900">
+            <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-gray-900">
               Settings
-            </RobotoFont>
+            </OnestFont>
             
             {/* Temporary Button */}
             <button
@@ -70,9 +70,9 @@ const SettingsPage: React.FC = () => {
                   }`}
                   style={activeTab === tab ? { backgroundColor: '#D7DEFF' } : {}}
                 >
-                  <RobotoFont weight={activeTab === tab ? 600 : 500}>
+                  <OnestFont weight={activeTab === tab ? 700 : 500} lineHeight="relaxed">
                     {tab}
-                  </RobotoFont>
+                  </OnestFont>
                 </button>
               ))}
             </div>

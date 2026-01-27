@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { RobotoFont } from "../../../../assets";
+import { OnestFont } from "../../../../assets";
 import { Lesson } from "../types/overview.types";
 import { Icons } from '../images';  // ✅ Import Icons
 
@@ -67,19 +67,21 @@ const LessonCard: React.FC<LessonCardProps> = ({
         <div className="-mt-2">
           <div className="flex items-start gap-3 mb-2">
             <div className="w-8 h-8 2xl:w-10 2xl:h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#D7DEFF]">
-              <RobotoFont
+              <OnestFont
                 weight={700}
+                lineHeight="relaxed"
                 className="text-blue-700 text-base 2xl:text-lg font-bold"
               >
                 {lesson.moduleNumber}
-              </RobotoFont>
+              </OnestFont>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                 <div className="min-w-0">
-                  <RobotoFont
+                  <OnestFont
                     as="h3"
-                    weight={500}
+                    weight={700}
+                    lineHeight="relaxed"
                     className="text-gray-900 text-base sm:text-lg font-medium leading-tight"
                     style={{
                       wordBreak: "break-word",
@@ -87,19 +89,20 @@ const LessonCard: React.FC<LessonCardProps> = ({
                     }}
                   >
                     {lesson.title}
-                  </RobotoFont>
-                  <RobotoFont weight={400} className="text-gray-600 text-xs">
+                  </OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-xs">
                     {lesson.duration || `${lesson.lessonsCount} lessons`}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
                 {/* Coin display - ✅ UPDATED */}
                 <div className="flex items-center gap-1 flex-shrink-0 md:-mt-2">
-                  <RobotoFont
+                  <OnestFont
                     weight={500}
+                    lineHeight="relaxed"
                     className="text-gray-900 text-base 2xl:text-lg font-bold"
                   >
                     +{lesson.points}
-                  </RobotoFont>
+                  </OnestFont>
                   <img
                     src={Icons.NestCoin} 
                     alt="Nest Coin"
@@ -109,9 +112,10 @@ const LessonCard: React.FC<LessonCardProps> = ({
               </div>
             </div>
           </div>
-          <RobotoFont
+          <OnestFont
             as="p"
-            weight={500}
+            weight={300}
+            lineHeight="relaxed"
             className="text-gray-600 mb-3 text-sm sm:text-base max-w-[360px] pb-16 md:pb-12 2xl:pb-0"
             style={{
               wordBreak: "break-word",
@@ -119,7 +123,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
             }}
           >
             {getTruncatedDescription(lesson.description)}
-          </RobotoFont>
+          </OnestFont>
         </div>
 
         {/* Bottom section with absolute positioning for precise spacing */}
@@ -137,9 +141,10 @@ const LessonCard: React.FC<LessonCardProps> = ({
                 ))}
               </div>
             ) : (
-              <RobotoFont
+              <OnestFont
                 as="p"
-                weight={400}
+                weight={300}
+                lineHeight="relaxed"
                 className="text-gray-500 text-xs sm:text-sm"
                 style={{
                   wordBreak: "break-word",
@@ -147,7 +152,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
                 }}
               >
                 {lesson.moduleTitle}
-              </RobotoFont>
+              </OnestFont>
             )}
 
             {/* Action Button */}
@@ -160,9 +165,9 @@ const LessonCard: React.FC<LessonCardProps> = ({
               onClick={() => lesson.status !== "locked" && onAction(lesson.id)}
               disabled={lesson.status === "locked"}
             >
-              <RobotoFont weight={500} className="text-sm">
+              <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                 {getButtonText()}
-              </RobotoFont>
+              </OnestFont>
             </button>
           </div>
         </div>

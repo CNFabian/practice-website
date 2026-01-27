@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../assets/fonts';
+import { OnestFont } from '../../../assets';
 import { MaterialHomeIcon } from '../../../assets';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
@@ -82,20 +82,20 @@ const MortgageCalculator: React.FC = () => {
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
-            <RobotoFont as="h2" weight={700} className="text-xl text-gray-900 text-center mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 text-center mb-2">
               Mortgage Calculator
-            </RobotoFont>
-            <RobotoFont className="text-gray-600 text-center text-sm">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-center text-sm">
               Calculate your estimated monthly mortgage payments
-            </RobotoFont>
+            </OnestFont>
           </div>
 
           <div className="space-y-4">
             {/* Home Price */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Home Price
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -112,9 +112,9 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Down Payment */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Down Payment
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -127,16 +127,16 @@ const MortgageCalculator: React.FC = () => {
                   placeholder="100000"
                 />
               </div>
-              <RobotoFont className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
                 {((downPayment / homePrice) * 100).toFixed(1)}% of home price
-              </RobotoFont>
+              </OnestFont>
             </div>
 
             {/* Loan Term */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Loan Term (Years)
-              </RobotoFont>
+              </OnestFont>
               <select
                 value={loanTerm}
                 onChange={(e) => setLoanTerm(parseInt(e.target.value))}
@@ -151,9 +151,9 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Interest Rate */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Interest Rate
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <input
                   type="number"
@@ -171,9 +171,9 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Property Tax */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Monthly Property Tax
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -190,9 +190,9 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Home Insurance */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Monthly Home Insurance
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -209,9 +209,9 @@ const MortgageCalculator: React.FC = () => {
 
             {/* PMI */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Monthly PMI
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
@@ -224,9 +224,9 @@ const MortgageCalculator: React.FC = () => {
                   placeholder="0"
                 />
               </div>
-              <RobotoFont className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
                 Required if down payment is less than 20%
-              </RobotoFont>
+              </OnestFont>
             </div>
           </div>
         </div>
@@ -235,47 +235,47 @@ const MortgageCalculator: React.FC = () => {
         <div className="space-y-6">
           {/* Monthly Payment Card */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 mb-4">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
               Monthly Payment Breakdown
-            </RobotoFont>
+            </OnestFont>
             
             <div className="space-y-4">
               <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                 <div className="flex justify-between items-center">
-                  <RobotoFont className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
                     Principal & Interest
-                  </RobotoFont>
-                  <RobotoFont weight={600} className="text-gray-900">
+                  </OnestFont>
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                     {formatCurrency(principalAndInterest)}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <RobotoFont className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
                     Property Tax
-                  </RobotoFont>
-                  <RobotoFont weight={600} className="text-gray-900">
+                  </OnestFont>
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                     {formatCurrency(propertyTax)}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <RobotoFont className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
                     Home Insurance
-                  </RobotoFont>
-                  <RobotoFont weight={600} className="text-gray-900">
+                  </OnestFont>
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                     {formatCurrency(homeInsurance)}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
 
                 {pmi > 0 && (
                   <div className="flex justify-between items-center">
-                    <RobotoFont className="text-gray-600">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
                       PMI
-                    </RobotoFont>
-                    <RobotoFont weight={600} className="text-gray-900">
+                    </OnestFont>
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                       {formatCurrency(pmi)}
-                    </RobotoFont>
+                    </OnestFont>
                   </div>
                 )}
               </div>
@@ -284,57 +284,57 @@ const MortgageCalculator: React.FC = () => {
 
           {/* Loan Summary Card */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 mb-4">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
               Loan Summary
-            </RobotoFont>
+            </OnestFont>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <RobotoFont className="text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
                   Loan Amount
-                </RobotoFont>
-                <RobotoFont weight={600} className="text-gray-900">
+                </OnestFont>
+                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                   {formatCurrency(principalAmount)}
-                </RobotoFont>
+                </OnestFont>
               </div>
 
               <div className="flex justify-between items-center">
-                <RobotoFont className="text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
                   Total Interest Paid
-                </RobotoFont>
-                <RobotoFont weight={600} className="text-gray-900">
+                </OnestFont>
+                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                   {formatCurrency(totalInterest)}
-                </RobotoFont>
+                </OnestFont>
               </div>
 
               <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                <RobotoFont weight={500} className="text-gray-900">
+                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
                   Total Amount Paid
-                </RobotoFont>
-                <RobotoFont weight={700} className="text-xl text-gray-900">
+                </OnestFont>
+                <OnestFont weight={700} lineHeight="relaxed" className="text-xl text-gray-900">
                   {formatCurrency(totalPayment)}
-                </RobotoFont>
+                </OnestFont>
               </div>
             </div>
           </div>
 
           {/* Tips Card */}
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-            <RobotoFont as="h3" weight={600} className="text-lg text-blue-900 mb-3">
+            <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-blue-900 mb-3">
               💡 Money-Saving Tips
-            </RobotoFont>
+            </OnestFont>
             <ul className="space-y-2 text-sm text-blue-800">
               <li>
-                <RobotoFont>• A larger down payment reduces PMI and monthly payments</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">• A larger down payment reduces PMI and monthly payments</OnestFont>
               </li>
               <li>
-                <RobotoFont>• Shorter loan terms mean higher monthly payments but less total interest</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">• Shorter loan terms mean higher monthly payments but less total interest</OnestFont>
               </li>
               <li>
-                <RobotoFont>• Shop around for the best interest rates from multiple lenders</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">• Shop around for the best interest rates from multiple lenders</OnestFont>
               </li>
               <li>
-                <RobotoFont>• Consider making extra principal payments to reduce total interest</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">• Consider making extra principal payments to reduce total interest</OnestFont>
               </li>
             </ul>
           </div>

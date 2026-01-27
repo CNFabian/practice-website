@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
+import { OnestFont } from '../../../assets';
 
 interface InfoModalProps {
   isOpen: boolean;
@@ -53,15 +54,19 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div>
-                    <DialogTitle
-                      as="h3"
-                      className="text-2xl font-bold text-gray-900 mb-2"
-                    >
-                      {title}
+                    <DialogTitle as="div">
+                      <OnestFont 
+                        as="h3"
+                        weight={700}
+                        lineHeight="tight"
+                        className="text-2xl text-gray-900 mb-2"
+                      >
+                        {title}
+                      </OnestFont>
                     </DialogTitle>
-                    <p className="text-gray-600">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
                       {description}
-                    </p>
+                    </OnestFont>
                   </div>
                   <button
                     type="button"
@@ -77,18 +82,20 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 <div className="space-y-6">
                   {/* How to Use Section */}
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-3 flex items-center gap-2">
                       <span className="text-blue-600">📋</span>
                       {howToUseTitle}
-                    </h4>
+                    </OnestFont>
                     <div className="bg-blue-50 rounded-xl p-4">
                       <ol className="space-y-2">
                         {howToUse.map((step, index) => (
                           <li key={index} className="flex items-start gap-3 text-sm text-gray-700">
-                            <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-medium flex items-center justify-center mt-0.5">
+                            <OnestFont weight={500} lineHeight="relaxed" className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mt-0.5">
                               {index + 1}
-                            </span>
-                            <span>{step}</span>
+                            </OnestFont>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-gray-700">
+                              {step}
+                            </OnestFont>
                           </li>
                         ))}
                       </ol>
@@ -97,20 +104,20 @@ const InfoModal: React.FC<InfoModalProps> = ({
 
                   {/* Terms & Definitions Section */}
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-3 flex items-center gap-2">
                       <span className="text-green-600">📖</span>
                       Terms & Definitions
-                    </h4>
+                    </OnestFont>
                     <div className="bg-gray-50 rounded-xl p-4">
                       <div className="space-y-4">
                         {terms.map((term, index) => (
                           <div key={index} className="border-b border-gray-200 last:border-b-0 pb-3 last:pb-0">
-                            <dt className="text-sm font-semibold text-gray-900 mb-1">
+                            <OnestFont as="div" weight={500} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                               {term.term}
-                            </dt>
-                            <dd className="text-sm text-gray-600">
+                            </OnestFont>
+                            <OnestFont as="div" weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                               {term.definition}
-                            </dd>
+                            </OnestFont>
                           </div>
                         ))}
                       </div>
@@ -122,10 +129,12 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 <div className="mt-6 flex justify-end">
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-lg border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
+                    className="inline-flex justify-center rounded-lg border border-transparent bg-blue-600 px-6 py-2 text-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
                     onClick={onClose}
                   >
-                    Got it!
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-white">
+                      Got it!
+                    </OnestFont>
                   </button>
                 </div>
               </DialogPanel>

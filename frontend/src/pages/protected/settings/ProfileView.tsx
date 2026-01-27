@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 
 const ProfileView: React.FC = () => {
   const [timelineValue, setTimelineValue] = useState(24); // 2 years = 24 months
@@ -103,17 +103,17 @@ const ProfileView: React.FC = () => {
       <div>
         {/* Desired Homeownership Timeline */}
         <div className="pb-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Desired Homeownership Timeline
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             This helps us customize your learning path and set realistic goals
-          </RobotoFont>
+          </OnestFont>
           
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="px-3 py-1 rounded-full text-sm font-medium text-white" style={{ backgroundColor: '#6B73FF' }}>
-                <RobotoFont weight={500}>{getTimelineText()}</RobotoFont>
+                <OnestFont weight={500} lineHeight="relaxed">{getTimelineText()}</OnestFont>
               </div>
             </div>
             
@@ -130,21 +130,20 @@ const ProfileView: React.FC = () => {
                 }}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <span><RobotoFont>6 months</RobotoFont></span>
-                <span><RobotoFont>5 years</RobotoFont></span>
+                <span><OnestFont weight={300} lineHeight="relaxed">6 months</OnestFont></span>
+                <span><OnestFont weight={300} lineHeight="relaxed">5 years</OnestFont></span>
               </div>
             </div>
           </div>
         </div>
-
         {/* Learning Preferences */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Learning Preferences
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             We'll personalize your experience based on your learning preferences
-          </RobotoFont>
+          </OnestFont>
           
           <div className="grid grid-cols-5 gap-4">
             {learningPreferences.map((preference) => (
@@ -158,12 +157,12 @@ const ProfileView: React.FC = () => {
                 }`}
               >
                 <div className="text-2xl mb-2">{preference.icon}</div>
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   {preference.title}
-                </RobotoFont>
-                <RobotoFont className="text-xs text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-600">
                   {preference.description}
-                </RobotoFont>
+                </OnestFont>
               </div>
             ))}
           </div>
@@ -171,12 +170,12 @@ const ProfileView: React.FC = () => {
 
         {/* Working with Realtor */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Are you currently working with a realtor?
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-4">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-4">
             A realtor can help you navigate the home buying process
-          </RobotoFont>
+          </OnestFont>
           
           <div className="flex gap-6 mt-2">
             <label className="flex items-center cursor-pointer">
@@ -188,7 +187,7 @@ const ProfileView: React.FC = () => {
                 onChange={(e) => setWorkingWithRealtor(e.target.value)}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
               />
-              <RobotoFont className="ml-2 text-sm text-gray-700">Yes</RobotoFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="ml-2 text-sm text-gray-700">Yes</OnestFont>
             </label>
             <label className="flex items-center cursor-pointer">
               <input
@@ -199,19 +198,19 @@ const ProfileView: React.FC = () => {
                 onChange={(e) => setWorkingWithRealtor(e.target.value)}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
               />
-              <RobotoFont className="ml-2 text-sm text-gray-700">No</RobotoFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="ml-2 text-sm text-gray-700">No</OnestFont>
             </label>
           </div>
         </div>
 
         {/* Working with Loan Officer */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Are you currently working with a loan officer?
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             A realtor can help you navigate the financial processes of home ownership
-          </RobotoFont>
+          </OnestFont>
           
           <div className="flex gap-6 mt-2">
             <label className="flex items-center cursor-pointer">
@@ -223,7 +222,7 @@ const ProfileView: React.FC = () => {
                 onChange={(e) => setWorkingWithLoanOfficer(e.target.value)}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
               />
-              <RobotoFont className="ml-2 text-sm text-gray-700">Yes</RobotoFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="ml-2 text-sm text-gray-700">Yes</OnestFont>
             </label>
             <label className="flex items-center cursor-pointer">
               <input
@@ -234,19 +233,18 @@ const ProfileView: React.FC = () => {
                 onChange={(e) => setWorkingWithLoanOfficer(e.target.value)}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
               />
-              <RobotoFont className="ml-2 text-sm text-gray-700">No</RobotoFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="ml-2 text-sm text-gray-700">No</OnestFont>
             </label>
           </div>
         </div>
-
         {/* Reward Preference */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Reward Preference
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             We'll customize your reward experience based on your preferences
-          </RobotoFont>
+          </OnestFont>
           
           <div className="grid grid-cols-3 gap-4">
             {rewardPreferences.map((preference) => (
@@ -260,12 +258,12 @@ const ProfileView: React.FC = () => {
                 }`}
               >
                 <div className="text-2xl mb-2">{preference.icon}</div>
-                <RobotoFont as="h4" weight={600} className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
                   {preference.title}
-                </RobotoFont>
-                <RobotoFont className="text-xs text-gray-600">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-600">
                   {preference.description}
-                </RobotoFont>
+                </OnestFont>
               </div>
             ))}
           </div>
@@ -273,16 +271,16 @@ const ProfileView: React.FC = () => {
 
         {/* Financial Information */}
         <div className="border-t border-gray-200 py-6">
-          <RobotoFont as="h3" weight={600} className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
             Financial Information
-          </RobotoFont>
-          <RobotoFont className="text-sm text-gray-600 mb-6">
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
             This is optional, but will help us offer you personalized financial advice
-          </RobotoFont>
+          </OnestFont>
           
           <div className="max-w-md">
             <label className="block text-sm text-gray-600 mb-2">
-              <RobotoFont weight={500}>Credit Score</RobotoFont>
+              <OnestFont weight={500} lineHeight="relaxed">Credit Score</OnestFont>
             </label>
             <div className="relative">
               <input
@@ -305,18 +303,18 @@ const ProfileView: React.FC = () => {
       {/* Save Button */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
-          <RobotoFont className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
             Last edited 2 minutes ago
-          </RobotoFont>
+          </OnestFont>
         </div>
         <button
           onClick={handleSaveSettings}
           className="px-6 py-3 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#6B73FF' }}
         >
-          <RobotoFont weight={600}>
+          <OnestFont weight={700} lineHeight="relaxed">
             Save Settings
-          </RobotoFont>
+          </OnestFont>
         </button>
       </div>
     </div>

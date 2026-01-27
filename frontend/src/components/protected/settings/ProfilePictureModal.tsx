@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 
 interface ProfilePictureModalProps {
   isOpen: boolean;
@@ -119,10 +119,10 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
         <DialogPanel className="mx-auto max-w-lg w-full rounded-xl bg-white p-6 shadow-lg">
           {/* Header with close button */}
           <div className="flex items-center justify-between mb-6">
-            <DialogTitle className="text-lg font-semibold text-gray-900">
-              <RobotoFont weight={600}>
+            <DialogTitle className="text-lg text-gray-900">
+              <OnestFont weight={700} lineHeight="relaxed">
                 Choose Profile Picture
-              </RobotoFont>
+              </OnestFont>
             </DialogTitle>
             <button
               onClick={onClose}
@@ -138,27 +138,27 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
           <div className="flex mb-6">
             <button
               onClick={() => setActiveTab('upload')}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+              className={`flex-1 py-3 px-4 text-sm rounded-lg transition-colors ${
                 activeTab === 'upload'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <RobotoFont weight={500}>
+              <OnestFont weight={500} lineHeight="relaxed">
                 Upload Photo
-              </RobotoFont>
+              </OnestFont>
             </button>
             <button
               onClick={() => setActiveTab('avatar')}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ml-2 ${
+              className={`flex-1 py-3 px-4 text-sm rounded-lg transition-colors ml-2 ${
                 activeTab === 'avatar'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <RobotoFont weight={500}>
+              <OnestFont weight={500} lineHeight="relaxed">
                 Choose Avatar
-              </RobotoFont>
+              </OnestFont>
             </button>
           </div>
 
@@ -168,9 +168,9 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               <>
                 {/* Avatar Selection */}
                 <div className="text-center mb-4">
-                  <RobotoFont className="text-sm text-gray-600">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                     Select one of our preset avatars
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
                 <div className="grid gap-2 grid-cols-2">
                   {avatarOptions.map((avatar) => {
@@ -186,12 +186,12 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                         }`}
                       >
                         <div className="text-2xl mb-2">{avatar.icon}</div>
-                        <RobotoFont weight={600} className="text-xs text-gray-900 leading-tight block">
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-xs text-gray-900 leading-tight block">
                           {avatar.label}
-                        </RobotoFont>
-                        <RobotoFont className="text-xs text-gray-500 leading-tight block mt-1">
+                        </OnestFont>
+                        <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 leading-tight block mt-1">
                           {avatar.description}
-                        </RobotoFont>
+                        </OnestFont>
                       </div>
                     );
                   })}
@@ -229,13 +229,13 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                     </svg>
                   </div>
                   
-                  <RobotoFont weight={500} className="text-base text-gray-900 mb-1">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-base text-gray-900 mb-1">
                     Click to upload or drag and drop
-                  </RobotoFont>
+                  </OnestFont>
                   
-                  <RobotoFont className="text-sm text-gray-500">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
                     PNG, JPEG under 15 MB
-                  </RobotoFont>
+                  </OnestFont>
                   
                   {/* Hidden file input */}
                   <input
@@ -254,21 +254,21 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-6 py-3 rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 rounded-lg text-sm text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
             >
-              <RobotoFont weight={500}>
+              <OnestFont weight={500} lineHeight="relaxed">
                 Cancel
-              </RobotoFont>
+              </OnestFont>
             </button>
             {(canSave || activeTab === 'upload') && (
               <button
                 onClick={handleSaveChanges}
                 disabled={!canSave && activeTab === 'avatar'}
-                className="px-6 py-3 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-3 rounded-lg text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <RobotoFont weight={500}>
+                <OnestFont weight={500} lineHeight="relaxed">
                   Save Changes
-                </RobotoFont>
+                </OnestFont>
               </button>
             )}
           </div>

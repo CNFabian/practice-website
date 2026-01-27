@@ -1,3 +1,7 @@
+// Onest typography components
+export { default as OnestFont } from '../components/common/OnestFont';
+export { default as Typography } from '../components/common/Typography';
+
 // Icons
 export { default as Logo } from './images/icons/nest-logo.svg'
 export { default as CoinIcon } from './images/icons/nest-coin.svg'

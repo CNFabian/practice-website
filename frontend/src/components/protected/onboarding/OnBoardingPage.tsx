@@ -37,7 +37,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [onboardingOptions, setOnboardingOptions] = useState<OnboardingOptions | null>(null);
 
-  // Form data state - NO PRESELECTED VALUES
+  // Form data state
   const [formData, setFormData] = useState({
     has_realtor: null as boolean | null,
     has_loan_officer: null as boolean | null,

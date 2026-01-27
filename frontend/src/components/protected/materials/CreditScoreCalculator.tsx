@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../assets/fonts';
+import { OnestFont } from '../../../assets';
 import { ChartIcon } from '../../../assets';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
@@ -157,20 +157,20 @@ const CreditScoreCalculator: React.FC = () => {
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
-            <RobotoFont as="h2" weight={700} className="text-xl text-gray-900 text-center mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 text-center mb-2">
               Credit Score Calculator
-            </RobotoFont>
-            <RobotoFont className="text-gray-600 text-center text-sm">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-center text-sm">
               Estimate your credit score based on key factors
-            </RobotoFont>
+            </OnestFont>
           </div>
 
           <div className="space-y-6">
             {/* Payment History */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Payment History (35% weight)
-              </RobotoFont>
+              </OnestFont>
               <select
                 value={factors[0].value}
                 onChange={(e) => updateFactor('payment', 'value', e.target.value)}
@@ -185,9 +185,9 @@ const CreditScoreCalculator: React.FC = () => {
 
             {/* Credit Utilization */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Credit Utilization (30% weight)
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <input
                   type="number"
@@ -200,16 +200,16 @@ const CreditScoreCalculator: React.FC = () => {
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
               </div>
-              <RobotoFont className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
                 Percentage of available credit you're using
-              </RobotoFont>
+              </OnestFont>
             </div>
 
             {/* Credit History Length */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Credit History Length (15% weight)
-              </RobotoFont>
+              </OnestFont>
               <div className="relative">
                 <input
                   type="number"
@@ -222,16 +222,16 @@ const CreditScoreCalculator: React.FC = () => {
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">years</span>
               </div>
-              <RobotoFont className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
                 How long you've had credit accounts
-              </RobotoFont>
+              </OnestFont>
             </div>
 
             {/* Credit Mix */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Credit Mix (10% weight)
-              </RobotoFont>
+              </OnestFont>
               <select
                 value={factors[3].value}
                 onChange={(e) => updateFactor('mix', 'value', e.target.value)}
@@ -246,9 +246,9 @@ const CreditScoreCalculator: React.FC = () => {
 
             {/* New Credit Inquiries */}
             <div>
-              <RobotoFont as="label" weight={500} className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
                 Hard Inquiries (10% weight)
-              </RobotoFont>
+              </OnestFont>
               <input
                 type="number"
                 min="0"
@@ -258,9 +258,9 @@ const CreditScoreCalculator: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="2"
               />
-              <RobotoFont className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
                 Number of hard inquiries in the past 2 years
-              </RobotoFont>
+              </OnestFont>
             </div>
           </div>
         </div>
@@ -270,26 +270,26 @@ const CreditScoreCalculator: React.FC = () => {
           {/* Estimated Score Display */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-6">
-              <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 text-center mb-4">
+              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 text-center mb-4">
                 Estimated Credit Score
-              </RobotoFont>
+              </OnestFont>
               <div className="text-center mb-4">
-                <RobotoFont className="text-sm text-gray-500 mb-2">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500 mb-2">
                   Based on your credit profile
-                </RobotoFont>
+                </OnestFont>
               </div>
             </div>
 
             <div className={`rounded-xl p-6 border-2 ${currentCategory.color} text-center mb-6`}>
-              <RobotoFont weight={700} className="text-5xl mb-2">
+              <OnestFont weight={700} lineHeight="tight" className="text-5xl mb-2">
                 {estimatedScore}
-              </RobotoFont>
-              <RobotoFont weight={600} className="text-lg mb-1">
+              </OnestFont>
+              <OnestFont weight={700} lineHeight="relaxed" className="text-lg mb-1">
                 {currentCategory.level}
-              </RobotoFont>
-              <RobotoFont className="text-sm opacity-75">
+              </OnestFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-sm opacity-75">
                 {currentCategory.range}
-              </RobotoFont>
+              </OnestFont>
             </div>
 
             {/* Score Range Visualization */}
@@ -307,30 +307,30 @@ const CreditScoreCalculator: React.FC = () => {
                   ></div>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <RobotoFont>300</RobotoFont>
-                  <RobotoFont>580</RobotoFont>
-                  <RobotoFont>670</RobotoFont>
-                  <RobotoFont>740</RobotoFont>
-                  <RobotoFont>800</RobotoFont>
-                  <RobotoFont>850</RobotoFont>
+                  <OnestFont weight={300} lineHeight="relaxed">300</OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed">580</OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed">670</OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed">740</OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed">800</OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed">850</OnestFont>
                 </div>
               </div>
             </div>
 
             {/* Factor Breakdown */}
             <div className="space-y-3">
-              <RobotoFont as="h4" weight={600} className="text-gray-900">
+              <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-gray-900">
                 Credit Score Factors
-              </RobotoFont>
+              </OnestFont>
               {factors.map((factor) => (
                 <div key={factor.id} className="flex justify-between items-center">
-                  <RobotoFont className="text-sm text-gray-600">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
                     {factor.label}
-                  </RobotoFont>
+                  </OnestFont>
                   <div className="flex items-center gap-2">
-                    <RobotoFont weight={500} className="text-sm">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                       {factor.weight}%
-                    </RobotoFont>
+                    </OnestFont>
                     <div className={`w-3 h-3 rounded-full ${
                       factor.id === 'payment' ? 'bg-red-400' :
                       factor.id === 'utilization' ? 'bg-orange-400' :
@@ -347,25 +347,25 @@ const CreditScoreCalculator: React.FC = () => {
 
           {/* General Tips */}
           <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
-            <RobotoFont as="h3" weight={600} className="text-lg text-green-900 mb-3">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-green-900 mb-3">
               💡 General Credit Tips
-            </RobotoFont>
+            </OnestFont>
             <div className="space-y-3 text-sm text-green-800">
               <div className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">✓</span>
-                <RobotoFont>Monitor your credit report regularly for errors</RobotoFont>
+                <OnestFont weight={300} lineHeight="relaxed">Monitor your credit report regularly for errors</OnestFont>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">✓</span>
-                <RobotoFont>Keep credit card balances low</RobotoFont>
+                <OnestFont weight={300} lineHeight="relaxed">Keep credit card balances low</OnestFont>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">✓</span>
-                <RobotoFont>Don't close old credit accounts</RobotoFont>
+                <OnestFont weight={300} lineHeight="relaxed">Don't close old credit accounts</OnestFont>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">✓</span>
-                <RobotoFont>Limit new credit applications</RobotoFont>
+                <OnestFont weight={300} lineHeight="relaxed">Limit new credit applications</OnestFont>
               </div>
             </div>
           </div>
@@ -374,9 +374,9 @@ const CreditScoreCalculator: React.FC = () => {
 
       {/* Score Interpretation */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 mb-6">
+        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-6">
           What Your Score Means
-        </RobotoFont>
+        </OnestFont>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {[
             { range: '300-579', level: 'Poor', color: 'bg-red-100 text-red-800 border border-red-200', description: 'Difficulty obtaining credit' },
@@ -386,23 +386,23 @@ const CreditScoreCalculator: React.FC = () => {
             { range: '800-850', level: 'Exceptional', color: 'bg-green-100 text-green-800 border border-green-200', description: 'Best rates and terms' }
           ].map((category) => (
             <div key={category.range} className={`p-3 rounded-xl ${category.color}`}>
-              <RobotoFont weight={600} className="text-sm mb-1">
+              <OnestFont weight={700} lineHeight="relaxed" className="text-sm mb-1">
                 {category.level}
-              </RobotoFont>
-              <RobotoFont weight={500} className="text-xs mb-2 block">
+              </OnestFont>
+              <OnestFont weight={500} lineHeight="relaxed" className="text-xs mb-2 block">
                 {category.range}
-              </RobotoFont>
-              <RobotoFont className="text-xs">
+              </OnestFont>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs">
                 {category.description}
-              </RobotoFont>
+              </OnestFont>
             </div>
           ))}
         </div>
         {currentCategory.level !== 'Exceptional' && (
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <RobotoFont className="text-sm text-blue-800">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-blue-800">
               <span className="font-semibold">Keep improving!</span> Continue monitoring and enhancing your credit habits to reach the next level and unlock better rates and terms.
-            </RobotoFont>
+            </OnestFont>
           </div>
         )}
       </div>

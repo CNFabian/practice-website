@@ -1,5 +1,5 @@
 import React from "react";
-import { RobotoFont } from "../../../../assets";
+import { OnestFont } from "../../../../assets";
 import { Task } from "../types/overview.types";
 import TaskItem from "./TaskItem";
 
@@ -18,9 +18,10 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
     <div className="bg-[#EFF2FF] rounded-xl p-4 transition-all duration-300 ease-in-out">
       {/* Header with dropdown arrow */}
       <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
-        <RobotoFont 
+        <OnestFont 
           as="h2" 
-          weight={500} 
+          weight={700} 
+          lineHeight="tight"
           className="text-gray-900 text-lg sm:text-xl lg:text-2xl flex-1 min-w-0"
           style={{ 
             wordBreak: 'break-word',
@@ -28,7 +29,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           }}
         >
           Welcome to Nest Navigate!
-        </RobotoFont>
+        </OnestFont>
         <button 
           onClick={onToggleExpand}
           className="p-1 hover:bg-white/50 rounded transition-colors flex-shrink-0"
@@ -53,9 +54,10 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       </div>
 
       {/* Description - Always visible */}
-      <RobotoFont 
+      <OnestFont 
         as="p" 
-        weight={400} 
+        weight={300} 
+        lineHeight="relaxed"
         className="text-gray-600 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base leading-relaxed"
         style={{ 
           wordBreak: 'break-word',
@@ -67,7 +69,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         complete your first lesson. Test your knowledge by completing
         quizzes. Spend your coins on rewards. Battle against other players
         for coins.
-      </RobotoFont>
+      </OnestFont>
 
       {/* Collapsible Task Items Container */}
       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${

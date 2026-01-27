@@ -1,0 +1,26 @@
+/* Onest Light - 300 */
+@font-face {
+  font-family: 'Onest';
+  src: url('../assets/fonts/onest/Onest-Light.ttf') format('ttf');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Onest Medium - 500 */
+@font-face {
+  font-family: 'Onest';
+  src: url('../assets/fonts/onest/Onest-Medium.ttf') format('ttf');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Onest Bold - 700 */
+@font-face {
+  font-family: 'Onest';
+  src: url('../assets/fonts/onest/Onest-Bold.ttf') format('ttf');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

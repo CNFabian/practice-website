@@ -1,5 +1,5 @@
 import React from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 
 interface ProfileCompletionModalProps {
   onClose: () => void;
@@ -35,12 +35,12 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
           {/* Header with celebration emoji */}
           <div className="text-center mb-6">
             <div className="text-5xl mb-4">🎉</div>
-            <RobotoFont as="h1" weight={700} className="text-xl text-gray-900 mb-2">
+            <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-gray-900 mb-2">
               Congratulations on completing your profile!
-            </RobotoFont>
-            <RobotoFont className="text-gray-600 text-sm">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-sm">
               You've taken the first important step toward homeownership
-            </RobotoFont>
+            </OnestFont>
           </div>
 
           {/* Rewards Section */}
@@ -51,12 +51,12 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
                 <div className="text-4xl">💰</div>
               </div>
               
-              <RobotoFont as="h2" weight={700} className="text-lg text-gray-900 mb-2">
+              <OnestFont as="h2" weight={500} lineHeight="relaxed" className="text-lg text-gray-900 mb-2">
                 +25 Nest Coins Earned!
-              </RobotoFont>
-              <RobotoFont className="text-gray-600 text-sm">
+              </OnestFont>
+              <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-sm">
                 Great job completing your profile setup
-              </RobotoFont>
+              </OnestFont>
             </div>
           </div>
 
@@ -64,30 +64,30 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
           <div className="flex gap-3 mb-4">
             <button
               onClick={handleUpgradeToPremium}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <span className="text-base">👑</span>
-              <RobotoFont weight={600} className="text-sm">
+              <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                 Upgrade to Premium
-              </RobotoFont>
+              </OnestFont>
             </button>
             
             <button
               onClick={handleGoToDashboard}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <span className="text-base">🏠</span>
-              <RobotoFont weight={600} className="text-sm">
+              <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                 Go to Dashboard
-              </RobotoFont>
+              </OnestFont>
             </button>
           </div>
 
           {/* Bottom Text */}
           <div className="text-center">
-            <RobotoFont className="text-xs text-gray-500">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500">
               Ready to start your homeownership journey? Explore our lessons and earn more rewards!
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import RobotoFont from '../../assets/fonts';
+import { OnestFont } from '../../assets';
 import { 
   MortgageCalculator, 
   DebtToIncomeCalculator, 
@@ -385,12 +385,12 @@ const MaterialsPage: React.FC = () => {
   const HeaderSection = () => (
     <div className="flex justify-between items-center mb-8">
       <div>
-        <RobotoFont as="h1" weight={700} className="text-2xl text-gray-900 mb-2">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-gray-900 mb-2">
           Materials
-        </RobotoFont>
-        <RobotoFont className="text-gray-600 text-sm">
+        </OnestFont>
+        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-sm">
           Financial tools and resources to help with your homeownership journey
-        </RobotoFont>
+        </OnestFont>
         
         {/* Backend Error Banner */}
         {backendError && (
@@ -402,9 +402,9 @@ const MaterialsPage: React.FC = () => {
                 </svg>
               </div>
               <div className="ml-2">
-                <RobotoFont className="text-xs text-yellow-800">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-yellow-800">
                   Backend unavailable - using offline materials
-                </RobotoFont>
+                </OnestFont>
               </div>
             </div>
           </div>
@@ -483,9 +483,9 @@ const MaterialsPage: React.FC = () => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <RobotoFont as="h3" weight={600} className="text-sm text-gray-900 truncate">
+                  <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 truncate">
                     {category.title}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
               </div>
 
@@ -493,9 +493,9 @@ const MaterialsPage: React.FC = () => {
               {hoveredCategory === category.id && (
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
                   <div className="bg-gray-100 border border-gray-200 text-gray-700 text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
-                    <RobotoFont className="text-gray-700">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-gray-700">
                       {category.description}
-                    </RobotoFont>
+                    </OnestFont>
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-100"></div>
                   </div>
                 </div>
@@ -560,12 +560,12 @@ const MaterialCard = ({
               style={{ filter: 'brightness(0) invert(1)' }}
             />
         </div>
-        <RobotoFont as="h3" weight={600} className="text-lg xl:text-xl text-gray-900 mb-3">
+        <OnestFont as="h3" weight={700} lineHeight="tight" className="text-lg xl:text-xl text-gray-900 mb-3">
           {item.title}
-        </RobotoFont>
-        <RobotoFont className="text-gray-600 text-sm leading-relaxed">
+        </OnestFont>
+        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-sm leading-relaxed">
           {item.description}
-        </RobotoFont>
+        </OnestFont>
       </div>
       
       {secondaryAction ? (
@@ -575,18 +575,18 @@ const MaterialCard = ({
             className={`flex-1 ${colorClass.replace('bg-', 'bg-')} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('bg-', 'bg-').replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
           >
             {actionIcon}
-            <RobotoFont as="span" weight={500}>
+            <OnestFont as="span" weight={500} lineHeight="relaxed">
               {actionText}
-            </RobotoFont>
+            </OnestFont>
           </button>
           <button 
             onClick={() => secondaryAction.onClick(item.id)}
             className={`flex-1 bg-white text-${colorClass.replace('bg-', '').replace('600', '600')} py-3 px-6 rounded-xl font-medium border border-${colorClass.replace('bg-', '').replace('600', '600')} hover:bg-${colorClass.replace('bg-', '').replace('600', '50')} transition-colors flex items-center justify-center gap-2`}
           >
             {secondaryAction.icon}
-            <RobotoFont as="span" weight={500}>
+            <OnestFont as="span" weight={500} lineHeight="relaxed">
               {secondaryAction.text}
-            </RobotoFont>
+            </OnestFont>
           </button>
         </div>
       ) : (
@@ -595,9 +595,9 @@ const MaterialCard = ({
           className={`w-full ${colorClass} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
         >
           {actionIcon}
-          <RobotoFont as="span" weight={500}>
+          <OnestFont as="span" weight={500} lineHeight="relaxed">
             {actionText}
-          </RobotoFont>
+          </OnestFont>
         </button>
       )}
     </div>
@@ -758,9 +758,9 @@ const MaterialCard = ({
             {/* Minigames */}
             {activeCategory === 'Minigames' && (
               <div className="col-span-full text-center py-12">
-                <RobotoFont className="text-gray-500 text-lg">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-500 text-lg">
                   Minigames coming soon!
-                </RobotoFont>
+                </OnestFont>
               </div>
             )}
           </div>

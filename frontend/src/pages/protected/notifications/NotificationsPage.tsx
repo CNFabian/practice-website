@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RobotoFont } from '../../../assets';
+import { OnestFont } from '../../../assets';
 import { useNotifications } from '../../../hooks/queries/useNotifications';
 import { useUpdateNotification } from '../../../hooks/mutations/useUpdateNotification';
 import { useMarkAllNotificationsRead } from '../../../hooks/mutations/useMarkAllNotificationsRead';
@@ -88,12 +88,12 @@ const NotificationsPage: React.FC = () => {
     <div className="p-6 max-w-8xl mx-auto h-full overflow-y-auto">
       {/* Header */}
       <div className="mb-8">
-        <RobotoFont as="h1" weight={700} className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
           Notifications
-        </RobotoFont>
-        <RobotoFont as="p" weight={400} className="text-base text-gray-600 leading-relaxed">
+        </OnestFont>
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600">
           Stay updated with the latest news, reminders, and important information.
-        </RobotoFont>
+        </OnestFont>
       </div>
 
       {/* Filter and Actions Bar */}
@@ -102,29 +102,29 @@ const NotificationsPage: React.FC = () => {
         <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg w-fit">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md text-sm transition-colors ${
               filter === 'all'
                 ? 'text-blue-700 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
             style={filter === 'all' ? { backgroundColor: '#D7DEFF' } : {}}
           >
-            <RobotoFont weight={filter === 'all' ? 600 : 400}>
+            <OnestFont weight={filter === 'all' ? 500 : 300} lineHeight="relaxed">
               All ({notifications.length})
-            </RobotoFont>
+            </OnestFont>
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md text-sm transition-colors ${
               filter === 'unread'
                 ? 'text-blue-700 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
             style={filter === 'unread' ? { backgroundColor: '#D7DEFF' } : {}}
           >
-            <RobotoFont weight={filter === 'unread' ? 600 : 400}>
+            <OnestFont weight={filter === 'unread' ? 500 : 300} lineHeight="relaxed">
               Unread ({unreadCount})
-            </RobotoFont>
+            </OnestFont>
           </button>
         </div>
 
@@ -132,9 +132,9 @@ const NotificationsPage: React.FC = () => {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
           >
-            <RobotoFont weight={500}>Mark all as read</RobotoFont>
+            <OnestFont weight={500} lineHeight="relaxed">Mark all as read</OnestFont>
           </button>
         )}
       </div>
@@ -144,20 +144,20 @@ const NotificationsPage: React.FC = () => {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
-            <RobotoFont className="text-gray-600">Loading notifications...</RobotoFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">Loading notifications...</OnestFont>
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <RobotoFont className="text-red-600 mb-4">{error}</RobotoFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-red-600 mb-4">{error}</OnestFont>
             <button
               onClick={() => {
                 queryClient.invalidateQueries({
                   queryKey: queryKeys.notifications.list(),
                 });
               }}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-600 hover:text-blue-700"
             >
-              <RobotoFont weight={500}>Try again</RobotoFont>
+              <OnestFont weight={500} lineHeight="relaxed">Try again</OnestFont>
             </button>
           </div>
         ) : notifications.length === 0 ? (
@@ -175,12 +175,12 @@ const NotificationsPage: React.FC = () => {
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
-            <RobotoFont weight={500} className="text-gray-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-lg mb-2">
               No notifications
-            </RobotoFont>
-            <RobotoFont className="text-gray-500 text-sm">
+            </OnestFont>
+            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-500 text-sm">
               You're all caught up! Check back later for updates.
-            </RobotoFont>
+            </OnestFont>
           </div>
         ) : (
           notifications.map((notification) => (
@@ -202,16 +202,17 @@ const NotificationsPage: React.FC = () => {
                     )}
                     
                     {/* Title */}
-                    <RobotoFont
-                      weight={notification.is_read ? 500 : 600}
+                    <OnestFont
+                      weight={notification.is_read ? 500 : 700}
+                      lineHeight="relaxed"
                       className="text-gray-900 truncate"
                     >
                       {notification.title}
-                    </RobotoFont>
+                    </OnestFont>
                     
                     {/* Priority Badge */}
                     <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${getPriorityColor(
+                      className={`px-2 py-0.5 rounded-full text-xs flex-shrink-0 ${getPriorityColor(
                         notification.priority
                       )}`}
                     >
@@ -220,9 +221,9 @@ const NotificationsPage: React.FC = () => {
                   </div>
 
                   {/* Message */}
-                  <RobotoFont className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-2 line-clamp-2">
                     {notification.message}
-                  </RobotoFont>
+                  </OnestFont>
 
                   {/* Metadata */}
                   <div className="flex items-center gap-3 text-xs text-gray-500">

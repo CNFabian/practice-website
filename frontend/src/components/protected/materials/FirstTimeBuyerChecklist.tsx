@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import RobotoFont from '../../../assets/fonts';
+import { OnestFont } from '../../../assets';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 
@@ -229,19 +229,19 @@ const FirstTimeBuyerChecklist: React.FC = () => {
   const Modal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <RobotoFont as="h3" weight={600} className="text-lg text-gray-900 mb-4">
+        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
           🎉 Congratulations!
-        </RobotoFont>
-        <RobotoFont className="text-gray-600 mb-6">
+        </OnestFont>
+        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 mb-6">
           You've completed all the essential steps for first-time homebuying! You're well-prepared for your homebuying journey.
-        </RobotoFont>
+        </OnestFont>
         <button
           onClick={() => setShowModal(false)}
           className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
         >
-          <RobotoFont weight={500}>
+          <OnestFont weight={500} lineHeight="relaxed">
             Awesome!
-          </RobotoFont>
+          </OnestFont>
         </button>
       </div>
     </div>
@@ -264,20 +264,20 @@ const FirstTimeBuyerChecklist: React.FC = () => {
 
         <div className="flex items-center justify-between mb-4 pr-12">
           <div>
-            <RobotoFont as="h2" weight={700} className="text-2xl text-gray-900 mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-2xl text-gray-900 mb-2">
               First-Time Homebuyer Checklist
-            </RobotoFont>
-            <RobotoFont className="text-gray-600">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
               Your complete guide to buying your first home
-            </RobotoFont>
+            </OnestFont>
           </div>
           <div className="text-right">
-            <RobotoFont weight={700} className="text-3xl text-purple-600">
+            <OnestFont weight={700} lineHeight="tight" className="text-3xl text-purple-600">
               {progress.percentage}%
-            </RobotoFont>
-            <RobotoFont className="text-sm text-gray-500">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
               Complete
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
         
@@ -288,9 +288,9 @@ const FirstTimeBuyerChecklist: React.FC = () => {
             style={{ width: `${progress.percentage}%` }}
           ></div>
         </div>
-        <RobotoFont className="text-sm text-gray-500 mt-2">
+        <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500 mt-2">
           {progress.completed} of {progress.total} tasks completed
-        </RobotoFont>
+        </OnestFont>
       </div>
 
       {/* Checklist Items by Category */}
@@ -301,22 +301,22 @@ const FirstTimeBuyerChecklist: React.FC = () => {
         return (
           <div key={category} className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <RobotoFont as="h3" weight={600} className="text-xl text-gray-900">
+              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-xl text-gray-900">
                 {category}
-              </RobotoFont>
+              </OnestFont>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                   categoryCompleted === categoryItems.length 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-purple-100 text-purple-700'
                 }`}>
-                  <RobotoFont weight={600}>
+                  <OnestFont weight={500} lineHeight="relaxed">
                     {categoryCompleted}
-                  </RobotoFont>
+                  </OnestFont>
                 </div>
-                <RobotoFont className="text-sm text-gray-500">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
                   / {categoryItems.length}
-                </RobotoFont>
+                </OnestFont>
               </div>
             </div>
             
@@ -345,24 +345,24 @@ const FirstTimeBuyerChecklist: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <RobotoFont weight={600} className={`text-sm ${
+                        <OnestFont weight={500} lineHeight="relaxed" className={`text-sm ${
                           item.completed ? 'text-green-800 line-through' : 'text-gray-900'
                         }`}>
                           {item.title}
-                        </RobotoFont>
+                        </OnestFont>
                         {item.optional && (
                           <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
-                            <RobotoFont weight={500}>
+                            <OnestFont weight={500} lineHeight="relaxed">
                               Optional
-                            </RobotoFont>
+                            </OnestFont>
                           </span>
                         )}
                       </div>
-                      <RobotoFont className={`text-sm mt-1 ${
+                      <OnestFont weight={300} lineHeight="relaxed" className={`text-sm mt-1 ${
                         item.completed ? 'text-green-700' : 'text-gray-600'
                       }`}>
                         {item.description}
-                      </RobotoFont>
+                      </OnestFont>
                     </div>
                   </div>
                 </div>
@@ -374,25 +374,25 @@ const FirstTimeBuyerChecklist: React.FC = () => {
 
       {/* Tips Section */}
       <div className="bg-purple-50 border border-purple-200 rounded-2xl p-6">
-        <RobotoFont as="h3" weight={600} className="text-lg text-purple-900 mb-3">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-purple-900 mb-3">
           💡 Pro Tips for Success
-        </RobotoFont>
+        </OnestFont>
         <div className="space-y-3 text-sm text-purple-800">
           <div className="flex items-start gap-2">
             <span className="text-purple-500 mt-1">•</span>
-            <RobotoFont>Start early - the homebuying process typically takes 30-60 days from offer to closing</RobotoFont>
+            <OnestFont weight={500} lineHeight="relaxed">Start early - the homebuying process typically takes 30-60 days from offer to closing</OnestFont>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-500 mt-1">•</span>
-            <RobotoFont>Keep all financial documents organized and easily accessible</RobotoFont>
+            <OnestFont weight={500} lineHeight="relaxed">Keep all financial documents organized and easily accessible</OnestFont>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-500 mt-1">•</span>
-            <RobotoFont>Don't make any major financial changes during the process (new loans, job changes, etc.)</RobotoFont>
+            <OnestFont weight={500} lineHeight="relaxed">Don't make any major financial changes during the process (new loans, job changes, etc.)</OnestFont>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-500 mt-1">•</span>
-            <RobotoFont>Ask questions! Your real estate agent and lender are there to help guide you</RobotoFont>
+            <OnestFont weight={500} lineHeight="relaxed">Ask questions! Your real estate agent and lender are there to help guide you</OnestFont>
           </div>
         </div>
       </div>

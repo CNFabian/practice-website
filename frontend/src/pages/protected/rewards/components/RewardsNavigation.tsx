@@ -1,5 +1,5 @@
 import React from 'react';
-import { RobotoFont } from '../../../../assets/index';
+import { OnestFont } from '../../../../assets/index';
 import { NavigationButton } from '../types/rewards.types';
 
 interface RewardsNavigationProps {
@@ -24,9 +24,9 @@ const RewardsNavigation: React.FC<RewardsNavigationProps> = ({ buttons }) => {
               : {}
           }
         >
-          <RobotoFont weight={600} className="text-lg">
+          <OnestFont weight={700} lineHeight="relaxed" className="text-lg">
             {button.label}
-          </RobotoFont>
+          </OnestFont>
         </button>
       ))}
     </div>

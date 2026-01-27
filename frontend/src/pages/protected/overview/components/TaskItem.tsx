@@ -1,5 +1,5 @@
 import React from "react";
-import { RobotoFont } from "../../../../assets";
+import { OnestFont } from "../../../../assets";
 import { Task } from "../types/overview.types";
 
 interface TaskItemProps {
@@ -18,8 +18,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
               className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10"
             />
           </div>
-          <RobotoFont 
-            weight={400} 
+          <OnestFont 
+            weight={300} 
+            lineHeight="relaxed"
             className={`text-sm sm:text-base lg:text-lg font-medium min-w-0 ${
               task.isWIP ? 'text-blue-600' : 'text-gray-900'
             }`}
@@ -30,12 +31,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
             }}
           >
             {task.title}
-          </RobotoFont>
+          </OnestFont>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3 flex-shrink-0">
-          <RobotoFont weight={500} className="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap">
+          <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap">
             {task.points}+
-          </RobotoFont>
+          </OnestFont>
           <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center ${
             task.completed ? 'bg-green-500' : 'bg-gray-400'
           }`}>

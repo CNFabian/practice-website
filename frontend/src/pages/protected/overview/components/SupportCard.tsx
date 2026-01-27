@@ -1,5 +1,5 @@
 import React from "react";
-import { RobotoFont } from "../../../../assets";
+import { OnestFont } from "../../../../assets";
 import { SupportCard as SupportCardType } from "../types/overview.types";
 
 interface SupportCardProps {
@@ -21,9 +21,10 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
           />
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
-          <RobotoFont 
+          <OnestFont 
             as="h3" 
-            weight={600} 
+            weight={700} 
+            lineHeight="relaxed"
             className="text-gray-900 text-base sm:text-lg font-semibold leading-tight"
             style={{ 
               wordBreak: 'break-word',
@@ -31,10 +32,11 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
             }}
           >
             {supportCard.title}
-          </RobotoFont>
-          <RobotoFont 
+          </OnestFont>
+          <OnestFont 
             as="p" 
-            weight={400} 
+            weight={300} 
+            lineHeight="relaxed"
             className="text-gray-600 text-xs sm:text-sm leading-tight mt-0.5"
             style={{ 
               wordBreak: 'break-word',
@@ -42,7 +44,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
             }}
           >
             {supportCard.subtitle}
-          </RobotoFont>
+          </OnestFont>
         </div>
       </div>
     </div>

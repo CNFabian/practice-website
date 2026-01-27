@@ -60,7 +60,6 @@ class GameManager {
     if (this.game) {
       console.log('=== USING EXISTING PHASER GAME INSTANCE ===');
       
-      // CRITICAL: Reattach the canvas to the new container
       const canvas = this.game.canvas;
       if (canvas && canvas.parentElement !== container) {
         console.log('=== REATTACHING CANVAS TO NEW CONTAINER ===');

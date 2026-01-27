@@ -1,5 +1,5 @@
 import React from 'react';
-import { CoinIcon, RobotoFont } from '../../../../assets/index';
+import { CoinIcon, OnestFont } from '../../../../assets/index';
 import { Coupon } from '../../../../services';
 
 interface RewardCardProps {
@@ -77,13 +77,14 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
       <div className="bg-white p-4 sm:p-5 md:p-6 relative rounded-b-3xl flex-1 flex flex-col">
         {/* Coin reward - positioned in top right of content area */}
         <div className="absolute top-2 right-2 sm:top-3 sm:right-3 md:top-4 md:right-4 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
-          <RobotoFont 
+          <OnestFont 
             as="span" 
-            weight={600} 
+            weight={700} 
+            lineHeight="relaxed"
             className="text-xs sm:text-sm font-semibold text-gray-900"
           >
             {coupon.cost_in_coins}
-          </RobotoFont>
+          </OnestFont>
           <img 
             src={CoinIcon} 
             alt="Coins" 
@@ -95,20 +96,22 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
         <div className="flex-1 flex flex-col">
           {/* Title and description container */}
           <div className="pr-12 sm:pr-16 md:pr-20 mb-3 sm:mb-4">
-            <RobotoFont 
+            <OnestFont 
               as="h3" 
               weight={700} 
+              lineHeight="tight"
               className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-1 sm:mb-2 line-clamp-2 break-words"
             >
               {coupon.title}
-            </RobotoFont>
-            <RobotoFont 
+            </OnestFont>
+            <OnestFont 
               as="p" 
-              weight={400} 
+              weight={300} 
+              lineHeight="relaxed"
               className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 break-words"
             >
               {coupon.description}
-            </RobotoFont>
+            </OnestFont>
           </div>
 
           {/* Spacer to push bottom elements down */}
@@ -116,20 +119,22 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
 
           {/* Bottom elements - vendor and discount */}
           <div className="flex justify-between items-center gap-2 mt-auto">
-            <RobotoFont 
+            <OnestFont 
               as="div" 
-              weight={600} 
+              weight={500} 
+              lineHeight="relaxed"
               className="text-xs sm:text-sm text-white bg-gradient-to-r from-blue-500 to-purple-600 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full truncate flex-shrink min-w-0 max-w-[60%] shadow-sm"
             >
               {coupon.partner_company}
-            </RobotoFont>
-            <RobotoFont 
+            </OnestFont>
+            <OnestFont 
               as="div" 
-              weight={600} 
+              weight={700} 
+              lineHeight="relaxed"
               className="text-xs sm:text-sm font-semibold text-blue-600 whitespace-nowrap flex-shrink-0"
             >
               {discount}
-            </RobotoFont>
+            </OnestFont>
           </div>
         </div>
       </div>

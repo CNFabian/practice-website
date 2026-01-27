@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { OnestFont } from '../../../assets';
 import InfoButton from './InfoButton';
 import InfoModal from './InfoModal';
 
@@ -340,13 +341,15 @@ const HomeInspectionChecklist: React.FC = () => {
       <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-6">
         <div className="text-center">
           <div className="text-4xl mb-4">🚧</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Feature Under Development</h3>
-          <p className="text-gray-600 mb-6">This feature is currently being developed and will be available soon.</p>
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-xl text-gray-900 mb-2">Feature Under Development</OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 mb-6">This feature is currently being developed and will be available soon.</OnestFont>
           <button 
             onClick={() => setShowModal(false)}
             className="w-full bg-purple-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-purple-600 transition-colors"
           >
-            Got it
+            <OnestFont weight={500} lineHeight="relaxed">
+              Got it
+            </OnestFont>
           </button>
         </div>
       </div>
@@ -362,21 +365,21 @@ const HomeInspectionChecklist: React.FC = () => {
           <InfoButton onClick={() => setIsInfoModalOpen(true)} category="purple" />
         </div>
         
-        <h1 className="text-3xl font-bold text-gray-900 mb-3 pr-12">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-3xl text-gray-900 mb-3 pr-12">
           Home Inspection Checklist
-        </h1>
-        <p className="text-gray-600 leading-relaxed">
+        </OnestFont>
+        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
           Use this comprehensive checklist during your home inspection to ensure you don't miss any critical areas. 
           Take notes and mark items as you inspect them.
-        </p>
+        </OnestFont>
         
         {/* Progress Bar */}
         <div className="mt-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Inspection Progress</span>
-            <span className="text-sm font-medium text-gray-700">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-gray-700">Inspection Progress</OnestFont>
+            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-gray-700">
               {completedItems}/{totalItems} items checked
-            </span>
+            </OnestFont>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
@@ -395,12 +398,12 @@ const HomeInspectionChecklist: React.FC = () => {
           return (
             <div key={group.name} className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <OnestFont as="h2" weight={700} lineHeight="relaxed" className="text-xl text-gray-900">
                   {group.name}
-                </h2>
-                <span className="text-sm text-gray-500">
+                </OnestFont>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
                   {categoryCompleted}/{group.items.length} completed
-                </span>
+                </OnestFont>
               </div>
               
               <div className="space-y-4">
@@ -428,26 +431,26 @@ const HomeInspectionChecklist: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className={`font-medium ${
+                          <OnestFont as="h3" weight={500} lineHeight="relaxed" className={`${
                             item.completed ? 'text-green-800 line-through' : 'text-gray-900'
                           }`}>
                             {item.title}
-                          </h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[item.priority]}`}>
+                          </OnestFont>
+                          <OnestFont weight={500} lineHeight="relaxed" className={`px-2 py-1 text-xs rounded-full border ${priorityColors[item.priority]}`}>
                             {item.priority}
-                          </span>
+                          </OnestFont>
                         </div>
-                        <p className={`text-sm mb-3 ${
+                        <OnestFont weight={300} lineHeight="relaxed" className={`text-sm mb-3 ${
                           item.completed ? 'text-green-700' : 'text-gray-600'
                         }`}>
                           {item.description}
-                        </p>
+                        </OnestFont>
                         
                         {/* Notes Section */}
                         <div className="mt-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-xs text-gray-600 mb-1">
                             Notes:
-                          </label>
+                          </OnestFont>
                           <textarea
                             value={notes[item.id] || ''}
                             onChange={(e) => updateNotes(item.id, e.target.value)}
@@ -470,44 +473,44 @@ const HomeInspectionChecklist: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         {/* Inspection Summary */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Inspection Summary</h3>
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">Inspection Summary</OnestFont>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Items Checked</span>
-              <span className="font-semibold text-gray-900">{completedItems}/{totalItems}</span>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">Total Items Checked</OnestFont>
+              <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">{completedItems}/{totalItems}</OnestFont>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">High Priority Items</span>
-              <span className="font-semibold text-gray-900">{completedHighPriority}/{highPriorityItems}</span>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">High Priority Items</OnestFont>
+              <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">{completedHighPriority}/{highPriorityItems}</OnestFont>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Overall Progress</span>
-              <span className="font-semibold text-gray-900">{Math.round(progressPercentage)}%</span>
+              <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">Overall Progress</OnestFont>
+              <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">{Math.round(progressPercentage)}%</OnestFont>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Resources</h3>
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">Additional Resources</OnestFont>
           <div className="space-y-3">
             <button 
               onClick={handleDownloadPDF}
-              className="w-full bg-purple-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-purple-500 text-white py-3 px-6 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Download PDF Checklist
+              <OnestFont weight={500} lineHeight="relaxed">Download PDF Checklist</OnestFont>
             </button>
             <button 
               onClick={handleShareProgress}
-              className="w-full bg-white text-purple-500 py-3 px-6 rounded-xl font-medium border border-purple-500 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-white text-purple-500 py-3 px-6 rounded-xl border border-purple-500 hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
               </svg>
-              Share Progress
+              <OnestFont weight={500} lineHeight="relaxed">Share Progress</OnestFont>
             </button>
           </div>
         </div>
@@ -515,37 +518,37 @@ const HomeInspectionChecklist: React.FC = () => {
 
       {/* Inspection Tips */}
       <div className="bg-purple-50 rounded-2xl border border-purple-200 p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-gray-900 mb-4 flex items-center gap-2">
           <span className="text-purple-500">💡</span>
           Inspection Tips
-        </h3>
+        </OnestFont>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Take photos of any issues you discover for documentation</span>
+              <OnestFont weight={500} lineHeight="relaxed">Take photos of any issues you discover for documentation</OnestFont>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Ask the inspector questions about anything you don't understand</span>
+              <OnestFont weight={500} lineHeight="relaxed">Ask the inspector questions about anything you don't understand</OnestFont>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Focus on high-priority items that could be safety hazards or expensive repairs</span>
+              <OnestFont weight={500} lineHeight="relaxed">Focus on high-priority items that could be safety hazards or expensive repairs</OnestFont>
             </div>
           </div>
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Bring a flashlight to check dark areas like basements and crawl spaces</span>
+              <OnestFont weight={500} lineHeight="relaxed">Bring a flashlight to check dark areas like basements and crawl spaces</OnestFont>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Test all switches, outlets, and faucets yourself during the inspection</span>
+              <OnestFont weight={500} lineHeight="relaxed">Test all switches, outlets, and faucets yourself during the inspection</OnestFont>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-purple-500 mt-1">•</span>
-              <span>Get a detailed written report with repair cost estimates for major issues</span>
+              <OnestFont weight={500} lineHeight="relaxed">Get a detailed written report with repair cost estimates for major issues</OnestFont>
             </div>
           </div>
         </div>
