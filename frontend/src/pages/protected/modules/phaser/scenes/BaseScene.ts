@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { UIComponents } from '../ui/UIComponents';
+// Add Typography import for future consistency (even though not directly used)
+import { createTextStyle } from '../constants/Typography';
 
 export class BaseScene extends Phaser.Scene {
   protected coinCounter?: Phaser.GameObjects.Container;
@@ -26,6 +28,7 @@ export class BaseScene extends Phaser.Scene {
     const counterX = width - (width * 0.08); // 8% from right
     const counterY = height * 0.05; // 5% from top
     
+    // Uses UIComponents which now implements Onest typography
     this.coinCounter = UIComponents.createCoinCounter(this, totalCoins);
     this.coinCounter.setPosition(counterX, counterY);
     this.coinCounter.setScrollFactor(0);
@@ -36,7 +39,7 @@ export class BaseScene extends Phaser.Scene {
     
     const totalCoins = this.registry.get('totalCoins') || 0;
     
-    // Find the text component by name
+    // Find the text component by name (now uses Onest font via UIComponents)
     const coinText = this.coinCounter.getByName('coinText') as Phaser.GameObjects.Text;
     if (coinText) {
       coinText.setText(totalCoins.toString());
@@ -154,5 +157,18 @@ export class BaseScene extends Phaser.Scene {
       bgElement.style.backgroundPosition = '';
       bgElement.style.backgroundRepeat = '';
     }
+  }
+
+  // Helper method for future direct text creation (following Onest pattern)
+  protected createStyledText(
+    x: number, 
+    y: number, 
+    text: string, 
+    stylePreset: string, 
+    color: string
+  ): Phaser.GameObjects.Text {
+    // Example of how to create text directly with Onest typography
+    // (BaseScene doesn't currently need this, but shows the pattern for other scenes)
+    return this.add.text(x, y, text, createTextStyle(stylePreset as any, color)).setOrigin(0.5);
   }
 }

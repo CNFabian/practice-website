@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { COLORS } from '../constants/Colors';
+import { FONT_FAMILY, createTextStyle } from '../constants/Typography';
 
 export class UIComponents {
 
@@ -30,13 +31,10 @@ export class UIComponents {
     coinIcon.setOrigin(0.5);
     container.add(coinIcon);
 
-    // Coin text (on the right)
-    const coinText = scene.add.text(scale(15), 0, coins.toString(), {
-      fontSize: scaleFontSize(20),
-      fontFamily: 'Fredoka, sans-serif',
-      color: '#FFFFFF',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    // Coin text (on the right) - UPDATED to use Onest
+    const coinText = scene.add.text(scale(15), 0, coins.toString(),
+      createTextStyle('H2', '#FFFFFF')
+    ).setOrigin(0.5);
     coinText.setName('coinText'); // so BaseScene can find it
     container.add(coinText);
 
@@ -59,20 +57,17 @@ export class UIComponents {
     badge.setStrokeStyle(scale(1), COLORS.WHITE);
     container.add(badge);
 
-    // Badge text
-    const badgeText = scene.add.text(0, 0, text, {
-      fontSize: scaleFontSize(12),
-      fontFamily: 'Arial, sans-serif',
-      color: textColor,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    // Badge text - UPDATED
+    const badgeText = scene.add.text(0, 0, text, 
+      createTextStyle('BADGE', textColor)
+    ).setOrigin(0.5);
     container.add(badgeText);
 
     return container;
   }
 
   /**
-   * Create a circular icon with background
+   * Create a circular icon container
    */
   static createIconCircle(
     scene: Phaser.Scene,
@@ -87,9 +82,10 @@ export class UIComponents {
     const circle = scene.add.circle(0, 0, scale(radius), backgroundColor);
     container.add(circle);
 
-    // Icon
+    // Icon - UPDATED (icons often need medium weight for clarity)
     const iconText = scene.add.text(0, 0, icon, {
-      fontSize: scaleFontSize(32),
+      fontSize: `${scaleFontSize(32)}px`,
+      fontFamily: FONT_FAMILY,
       color: iconColor,
     }).setOrigin(0.5);
     container.add(iconText);
@@ -98,7 +94,7 @@ export class UIComponents {
   }
 
   /**
-   * Create a title text with consistent styling
+   * Create a title text element
    */
   static createTitle(
     scene: Phaser.Scene,
@@ -106,30 +102,96 @@ export class UIComponents {
     fontSize: number = 28,
     color: string = COLORS.TEXT_PRIMARY
   ): Phaser.GameObjects.Text {
-    return scene.add.text(0, 0, text, {
-      fontSize: scaleFontSize(fontSize),
-      fontFamily: 'Arial, sans-serif',
+    // Determine which preset to use based on size
+    const styleKey = fontSize >= 45 ? 'H1' : fontSize >= 30 ? 'H2' : 'BODY_BOLD';
+    
+    return scene.add.text(0, 0, text, 
+      createTextStyle(styleKey, color, { fontSize: `${scaleFontSize(fontSize)}px` })
+    ).setOrigin(0.5);
+  }
+
+  /**
+   * Create a subtitle text element
+   */
+  static createSubtitle(
+    scene: Phaser.Scene,
+    text: string,
+    fontSize: number = 16,
+    color: string = COLORS.TEXT_SECONDARY
+  ): Phaser.GameObjects.Text {
+    return scene.add.text(0, 0, text, 
+      createTextStyle('BODY_LIGHT', color, { fontSize: `${scaleFontSize(fontSize)}px` })
+    ).setOrigin(0.5);
+  }
+
+  /**
+   * Create a lesson type tag (e.g., "Video", "Quiz", "Reading")
+   */
+  static createLessonTypeTag(
+    scene: Phaser.Scene,
+    type: string
+  ): Phaser.GameObjects.Container {
+    const container = scene.add.container(0, 0);
+
+    // Tag background
+    const tagBg = scene.add.rectangle(0, 0, scale(120), scale(24), COLORS.GRAY_200);
+    container.add(tagBg);
+
+    // Tag text - UPDATED
+    const tagText = scene.add.text(0, 0, type,
+      createTextStyle('TAG', COLORS.TEXT_SECONDARY)
+    ).setOrigin(0.5);
+    container.add(tagText);
+
+    return container;
+  }
+
+  /**
+   * Create a checkmark icon
+   */
+  static createCheckmark(
+    scene: Phaser.Scene,
+    size: number = 24,
+    color: string = COLORS.TEXT_SUCCESS
+  ): Phaser.GameObjects.Text {
+    return scene.add.text(0, 0, '✓', {
+      fontSize: `${scaleFontSize(size)}px`,
+      fontFamily: FONT_FAMILY,
       color: color,
-      fontStyle: 'bold',
     }).setOrigin(0.5);
   }
 
   /**
-   * Create a subtitle/description text
+   * Create a lock icon
    */
-  static createSubtitle(
+  static createLockIcon(
+    scene: Phaser.Scene,
+    size: number = 24,
+    color: string = COLORS.TEXT_SECONDARY
+  ): Phaser.GameObjects.Text {
+    return scene.add.text(0, 0, '🔒', {
+      fontSize: `${scaleFontSize(size)}px`,
+      fontFamily: FONT_FAMILY,
+      color: color,
+    }).setOrigin(0.5);
+  }
+
+  /**
+   * Create a subtitle text element with custom alignment
+   */
+  static createBodyText(
     scene: Phaser.Scene,
     text: string,
     fontSize: number = 16,
     color: string = COLORS.TEXT_SECONDARY,
     align: string = 'center'
   ): Phaser.GameObjects.Text {
-    return scene.add.text(0, 0, text, {
-      fontSize: scaleFontSize(fontSize),
-      fontFamily: 'Arial, sans-serif',
-      color: color,
-      align: align,
-    }).setOrigin(0.5);
+    return scene.add.text(0, 0, text, 
+      createTextStyle('BODY_LIGHT', color, { 
+        fontSize: `${scaleFontSize(fontSize)}px`,
+        align: align
+      })
+    ).setOrigin(0.5);
   }
 
   /**
@@ -154,11 +216,10 @@ export class UIComponents {
     // Progress bar (fill)
     const progressBar = scene.add.graphics();
 
-    // Percentage text
-    const percentText = scene.add.text(x, y, '0%', {
-      fontSize: scaleFontSize(18),
-      color: COLORS.TEXT_WHITE,
-    }).setOrigin(0.5);
+    // Percentage text - UPDATED
+    const percentText = scene.add.text(x, y, '0%',
+      createTextStyle('LABEL', COLORS.TEXT_WHITE)
+    ).setOrigin(0.5);
 
     return {
       box: progressBox,
@@ -186,99 +247,53 @@ export class UIComponents {
   }
 
   /**
-   * Create a divider line
+   * Create a coin counter display with animation support
    */
-  static createDivider(
+  static createAnimatedCoinCounter(
     scene: Phaser.Scene,
-    width: number,
-    color: number = COLORS.GRAY_200,
-    thickness: number = 2
-  ): Phaser.GameObjects.Rectangle {
-    return scene.add.rectangle(0, 0, scale(width), scale(thickness), color);
-  }
-
-  /**
-   * Create a lesson type tag (e.g., "Video/Reading", "Quiz")
-   */
-  static createLessonTypeTag(
-    scene: Phaser.Scene,
-    type: string
+    coins: number
   ): Phaser.GameObjects.Container {
-    const container = scene.add.container(0, 0);
-
-    // Tag background
-    const tagBg = scene.add.rectangle(0, 0, scale(120), scale(24), COLORS.GRAY_200);
-    container.add(tagBg);
-
-    // Tag text
-    const tagText = scene.add.text(0, 0, type, {
-      fontSize: scaleFontSize(12),
-      fontFamily: 'Arial, sans-serif',
-      color: COLORS.TEXT_SECONDARY,
-    }).setOrigin(0.5);
-    container.add(tagText);
+    const container = UIComponents.createCoinCounter(scene, coins);
+    
+    // Add entrance animation
+    container.setScale(0);
+    scene.tweens.add({
+      targets: container,
+      scale: 1,
+      duration: 500,
+      ease: 'Back.easeOut',
+    });
 
     return container;
   }
 
   /**
-   * Create a checkmark icon for completed items
+   * Create warning text
    */
-  static createCheckmark(
+  static createWarningText(
     scene: Phaser.Scene,
-    size: number = 24,
-    color: string = COLORS.TEXT_SUCCESS
+    text: string,
+    fontSize: number = 16
   ): Phaser.GameObjects.Text {
-    return scene.add.text(0, 0, '✓', {
-      fontSize: scaleFontSize(size),
-      color: color,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    return scene.add.text(0, 0, text,
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_WARNING, {
+        fontSize: `${scaleFontSize(fontSize)}px`
+      })
+    ).setOrigin(0.5);
   }
 
   /**
-   * Create a lock icon for locked items
+   * Create success text
    */
-  static createLockIcon(
+  static createSuccessText(
     scene: Phaser.Scene,
-    size: number = 20
+    text: string,
+    fontSize: number = 16
   ): Phaser.GameObjects.Text {
-    return scene.add.text(0, 0, '🔒', {
-      fontSize: scaleFontSize(size),
-    }).setOrigin(0.5);
-  }
-
-  /**
-   * Apply hover effect to a container
-   */
-  static applyHoverEffect(
-    scene: Phaser.Scene,
-    container: Phaser.GameObjects.Container,
-    onHover?: () => void,
-    onOut?: () => void
-  ): void {
-    const background = container.list[0] as Phaser.GameObjects.Rectangle;
-    
-    if (background && background.input) {
-      background.on('pointerover', () => {
-        scene.tweens.add({
-          targets: container,
-          scale: 1.05,
-          duration: 150,
-          ease: 'Power2',
-        });
-        if (onHover) onHover();
-      });
-
-      background.on('pointerout', () => {
-        scene.tweens.add({
-          targets: container,
-          scale: 1,
-          duration: 150,
-          ease: 'Power2',
-        });
-        if (onOut) onOut();
-      });
-    }
+    return scene.add.text(0, 0, text,
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
+        fontSize: `${scaleFontSize(fontSize)}px`
+      })
+    ).setOrigin(0.5);
   }
 }
