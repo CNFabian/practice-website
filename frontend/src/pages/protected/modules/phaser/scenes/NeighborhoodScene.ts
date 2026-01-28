@@ -187,12 +187,12 @@ export default class NeighborhoodScene extends BaseScene {
   create() {
     super.create();
     this.transitionManager = new SceneTransitionManager(this);
-    this.transitionManager.enterNeighborhood();
     
     // Setup camera for horizontal scrolling
     this.setupCamera();
     
     this.createUI();
+    this.fadeInScene();
     this.setupEventListeners();
     this.prefetchAllHouseLessons(); 
   }
@@ -327,17 +327,26 @@ export default class NeighborhoodScene extends BaseScene {
   // UI CREATION METHODS
   // ═══════════════════════════════════════════════════════════
   private createUI(): void {
-    this.createBackButton();
+  this.createBackButton();
 
-    if (this.houses.length > 0) {
-      this.createEnvironment();
-      this.createHouses();
-      this.createBird();
-      this.startBirdIdleAnimation();
-    } else {
-      this.createPlaceholder();
+  if (this.houses.length > 0) {
+    this.createEnvironment();
+    this.createHouses();
+    this.createBird();
+    
+    // Set all elements to alpha 0 initially
+    this.setAllElementsInvisible();
+    
+    this.startBirdIdleAnimation();
+  } else {
+    this.createPlaceholder();
+    
+    // Set placeholder invisible initially
+    if (this.placeholderCard) {
+      this.placeholderCard.setAlpha(0);
     }
   }
+}
 
   private createBackButton(): void {
     this.backButton = ButtonBuilder.createBackButton(
@@ -463,6 +472,41 @@ export default class NeighborhoodScene extends BaseScene {
     }
     
     this.roads.push(graphics as any); // Store for cleanup
+  }
+
+  private setAllElementsInvisible(): void {
+    // Set back button invisible
+    if (this.backButton) {
+      this.backButton.setAlpha(0);
+    }
+    
+    // Set all house sprites invisible
+    this.houseSprites.forEach(sprite => {
+      sprite.setAlpha(0);
+    });
+    
+    // Set all roads invisible
+    this.roads.forEach(road => {
+      road.setAlpha(0);
+    });
+    
+    // Set cloud overlays invisible
+    this.cloudOverlays.forEach(cloud => {
+      cloud.setAlpha(0);
+    });
+    
+    // Set bird invisible - use the proper getSprite() method
+    if (this.bird) {
+      const birdSprite = this.bird.getSprite();
+      if (birdSprite) {
+        birdSprite.setAlpha(0);
+      }
+    }
+    
+    // Set coin counter invisible (from BaseScene)
+    if (this.coinCounter) {
+      this.coinCounter.setAlpha(0);
+    }
   }
 
   // Helper method to estimate curve length
@@ -693,6 +737,90 @@ export default class NeighborhoodScene extends BaseScene {
     }
   }
 
+  private fadeInScene(): void {
+    const fadeDuration = 600;
+    const staggerDelay = 50;
+    
+    // Fade in back button
+    if (this.backButton) {
+      this.tweens.add({
+        targets: this.backButton,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    
+    // Fade in coin counter
+    if (this.coinCounter) {
+      this.tweens.add({
+        targets: this.coinCounter,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    
+    // Fade in roads first (background layer)
+    this.roads.forEach((road, index) => {
+      this.tweens.add({
+        targets: road,
+        alpha: 1,
+        duration: fadeDuration,
+        delay: index * staggerDelay,
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in house sprites (middle layer)
+    const houseSpritesArray = Array.from(this.houseSprites.values());
+    houseSpritesArray.forEach((sprite, index) => {
+      this.tweens.add({
+        targets: sprite,
+        alpha: 1,
+        duration: fadeDuration,
+        delay: 100 + (index * staggerDelay),
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in cloud overlays to 0.9 (NOT 1.0)
+    this.cloudOverlays.forEach((cloud, index) => {
+      this.tweens.add({
+        targets: cloud,
+        alpha: 0.9,  // CHANGED FROM 1 TO 0.9
+        duration: fadeDuration,
+        delay: 200 + (index * staggerDelay),
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in bird last (top layer)
+    if (this.bird) {
+      const birdSprite = this.bird.getSprite();
+      if (birdSprite) {
+        this.tweens.add({
+          targets: birdSprite,
+          alpha: 1,
+          duration: fadeDuration,
+          delay: 300,
+          ease: 'Cubic.easeOut'
+        });
+      }
+    }
+    
+    // Fade in placeholder if no houses
+    if (this.placeholderCard) {
+      this.tweens.add({
+        targets: this.placeholderCard,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+  }
+
+
   private createPlaceholder(): void {
     const { width, height } = this.scale;
 
@@ -922,6 +1050,12 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.houses.length > 0) {
       this.createEnvironment();
       this.createHouses();
+      
+      // ADD THESE TWO LINES:
+      // Set all elements invisible before fading them in
+      this.setAllElementsInvisible();
+      // Fade in all elements (including clouds)
+      this.fadeInScene();
     } else {
       this.createPlaceholder();
     }

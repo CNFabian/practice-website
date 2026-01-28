@@ -4,7 +4,7 @@ import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
-import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
+import { createTextStyle } from '../constants/Typography';
 
 interface NeighborhoodData {
   id: string;
@@ -26,6 +26,8 @@ export default class MapScene extends BaseScene {
   private neighborhoodContainers: Map<string, Phaser.GameObjects.Container> = new Map();
   private roads: Phaser.GameObjects.Graphics[] = [];
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
+  private lastClickedNeighborhoodId: string | null = null;
+
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -337,6 +339,7 @@ export default class MapScene extends BaseScene {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
+    this.lastClickedNeighborhoodId = neighborhoodId; // Store which neighborhood was clicked
 
     const handleNeighborhoodSelect = this.registry.get('handleNeighborhoodSelect');
 
@@ -385,6 +388,59 @@ export default class MapScene extends BaseScene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToNeighborhood(callback: () => void): void {
-    callback();
+    const clickedNeighborhoodId = this.lastClickedNeighborhoodId;
+    const clickedNeighborhood = this.neighborhoods.find(n => n.id === clickedNeighborhoodId);
+    
+    if (!clickedNeighborhood) {
+      callback();
+      return;
+    }
+
+    const container = this.neighborhoodContainers.get(clickedNeighborhood.id);
+    if (!container) {
+      callback();
+      return;
+    }
+
+    const neighborhoodImage = container.getAll().find(obj => obj.type === 'Image') as Phaser.GameObjects.Image;
+    if (!neighborhoodImage) {
+      callback();
+      return;
+    }
+
+    const { width, height } = this.scale;
+    const camera = this.cameras.main;
+
+    const imageWorldWidth = neighborhoodImage.displayWidth;
+    const imageWorldHeight = neighborhoodImage.displayHeight;
+    const zoomX = width / imageWorldWidth;
+    const zoomY = height / imageWorldHeight;
+    const targetZoom = Math.max(zoomX, zoomY) * 1.2;
+
+    const worldX = container.x;
+    const worldY = container.y;
+    const targetScrollX = worldX - width / 2;
+    const targetScrollY = worldY - height / 2;
+
+    // Fade the container to transparent
+    this.tweens.add({
+      targets: container,
+      alpha: 0,
+      duration: 800,
+      ease: 'Cubic.easeInOut'
+    });
+
+    // Animate camera zoom and pan
+    this.tweens.add({
+      targets: camera,
+      zoom: targetZoom,
+      scrollX: targetScrollX,
+      scrollY: targetScrollY,
+      duration: 800,
+      ease: 'Cubic.easeInOut',
+      onComplete: () => {
+        callback();
+      }
+    });
   }
 }
