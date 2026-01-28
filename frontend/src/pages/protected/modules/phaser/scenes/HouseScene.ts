@@ -6,6 +6,7 @@ import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { BirdCharacter } from '../characters/BirdCharacter';
+import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
 
 interface Lesson {
   id: number;
@@ -111,62 +112,14 @@ export default class HouseScene extends BaseScene {
     if (this.minigameShutdownHandler) {
       const minigameScene = this.scene.get('GrowYourNestMinigame');
       if (minigameScene) {
-        minigameScene.events.off('shutdown', this.minigameShutdownHandler);
-      }
-      this.minigameShutdownHandler = undefined;
-    }
-    
-    if (this.backButton) {
-      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg && buttonBg.input) {
-        buttonBg.removeAllListeners();
-        buttonBg.disableInteractive();
+        minigameScene.events.off('minigameCompleted', this.minigameShutdownHandler);
+        this.minigameShutdownHandler = undefined;
       }
     }
     
-    if (this.minigameButton) {
-      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg && buttonBg.input) {
-        buttonBg.removeAllListeners();
-        buttonBg.disableInteractive();
-      }
-    }
-    
-    this.lessonContainers.forEach(container => {
-      const cardBackground = container.list[0] as Phaser.GameObjects.Rectangle;
-      if (cardBackground && cardBackground.input) {
-        cardBackground.removeAllListeners();
-        cardBackground.disableInteractive();
-      }
-    });
-    
-    this.tweens.killAll();
-    this.cleanupEventListeners();
-    this.cleanupBird();
+    this.cleanupResizeHandler();
+    this.destroyBird();
     this.lessonContainers = [];
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // SETUP METHODS
-  // ═══════════════════════════════════════════════════════════
-  private setupEventListeners(): void {
-    this.scale.on('resize', this.handleResize, this);
-  }
-
-  private cleanupEventListeners(): void {
-    this.scale.off('resize', this.handleResize, this);
-    
-    if (this.resizeDebounceTimer) {
-      this.resizeDebounceTimer.remove();
-      this.resizeDebounceTimer = undefined;
-    }
-  }
-
-  private cleanupBird(): void {
-    if (this.bird) {
-      this.bird.destroy();
-      this.bird = undefined;
-    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -198,15 +151,26 @@ export default class HouseScene extends BaseScene {
   private createLoadingPlaceholder(): void {
     const { width, height } = this.scale;
     
+    // BEFORE (Arial):
+    // const loadingText = this.add.text(
+    //   width / 2,
+    //   height / 2,
+    //   'Loading lessons...',
+    //   {
+    //     fontSize: scaleFontSize(24),
+    //     fontFamily: 'Arial, sans-serif',
+    //     color: COLORS.TEXT_SECONDARY,
+    //   }
+    // ).setOrigin(0.5);
+    
+    // AFTER (Onest):
     const loadingText = this.add.text(
       width / 2,
       height / 2,
       'Loading lessons...',
-      {
-        fontSize: scaleFontSize(24),
-        fontFamily: 'Arial, sans-serif',
-        color: COLORS.TEXT_SECONDARY,
-      }
+      createTextStyle('H2', COLORS.TEXT_SECONDARY, { 
+        fontSize: scaleFontSize(24)
+      })
     ).setOrigin(0.5);
     loadingText.setDepth(10);
   }
@@ -297,24 +261,45 @@ export default class HouseScene extends BaseScene {
 
     const titleSize = Math.min(width, height) * 0.022;
     const titleOffsetY = -cardHeight * 0.3;
-    const titleText = this.add.text(0, titleOffsetY, lesson.title, {
-      fontSize: `${titleSize}px`,
-      fontFamily: 'Arial, sans-serif',
-      color: COLORS.TEXT_PRIMARY,
-      fontStyle: 'bold',
-      align: 'center',
-      wordWrap: { width: cardWidth * 0.9 },
-    }).setOrigin(0.5);
+    
+    // BEFORE (Arial):
+    // const titleText = this.add.text(0, titleOffsetY, lesson.title, {
+    //   fontSize: `${titleSize}px`,
+    //   fontFamily: 'Arial, sans-serif',
+    //   color: COLORS.TEXT_PRIMARY,
+    //   fontStyle: 'bold',
+    //   align: 'center',
+    //   wordWrap: { width: cardWidth * 0.9 },
+    // }).setOrigin(0.5);
+    
+    // AFTER (Onest):
+    const titleText = this.add.text(0, titleOffsetY, lesson.title,
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
+        fontSize: `${titleSize}px`,
+        align: 'center',
+        wordWrap: { width: cardWidth * 0.9 },
+      })
+    ).setOrigin(0.5);
     lessonContainer.add(titleText);
 
     const typeSize = Math.min(width, height) * 0.016;
     const typeOffsetY = -cardHeight * 0.1;
-    const typeText = this.add.text(0, typeOffsetY, lesson.type, {
-      fontSize: `${typeSize}px`,
-      fontFamily: 'Arial, sans-serif',
-      color: COLORS.TEXT_SECONDARY,
-      align: 'center',
-    }).setOrigin(0.5);
+    
+    // BEFORE (Arial):
+    // const typeText = this.add.text(0, typeOffsetY, lesson.type, {
+    //   fontSize: `${typeSize}px`,
+    //   fontFamily: 'Arial, sans-serif',
+    //   color: COLORS.TEXT_SECONDARY,
+    //   align: 'center',
+    // }).setOrigin(0.5);
+    
+    // AFTER (Onest):
+    const typeText = this.add.text(0, typeOffsetY, lesson.type,
+      createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
+        fontSize: `${typeSize}px`,
+        align: 'center',
+      })
+    ).setOrigin(0.5);
     lessonContainer.add(typeText);
 
     if (lesson.locked) {
@@ -334,85 +319,107 @@ export default class HouseScene extends BaseScene {
   ): void {
     const { width, height } = this.scale;
     
-    const badgeY = cardHeight * 0.3;
-    const badgeWidth = cardWidth * 0.6;
-    const badgeHeight = cardHeight * 0.25;
-    const fontSize = Math.min(width, height) * 0.016;
-    const borderRadius = badgeHeight * 0.3;
+    const badgeSize = Math.min(width, height) * 0.025;
+    const badgeX = cardWidth * 0.4;
+    const badgeY = -cardHeight * 0.35;
 
-    let backgroundColor: number;
-    let text: string;
-
-    if (lesson.locked) {
-      backgroundColor = COLORS.GRAY_400;
-      text = 'Locked';
-    } else if (lesson.completed) {
-      backgroundColor = COLORS.GREEN_500;
-      text = 'Review';
-    } else {
-      backgroundColor = COLORS.BLUE_500;
-      text = 'Start';
+    if (lesson.completed) {
+      // Completed badge (green circle with checkmark)
+      const completedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.GREEN_500);
+      container.add(completedBg);
+      
+      const checkmark = this.add.text(badgeX, badgeY, '✓',
+        createTextStyle('BADGE', COLORS.TEXT_WHITE, {
+          fontSize: `${badgeSize * 1.2}px`
+        })
+      ).setOrigin(0.5);
+      container.add(checkmark);
+    } else if (lesson.locked) {
+      // Locked badge (red circle with lock)
+      const lockedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.GRAY_400);
+      container.add(lockedBg);
+      
+      const lockIcon = this.add.text(badgeX, badgeY, '🔒',
+        createTextStyle('BADGE', COLORS.TEXT_WHITE, {
+          fontSize: `${badgeSize}px`
+        })
+      ).setOrigin(0.5);
+      container.add(lockIcon);
     }
-
-    const badgeGraphics = this.add.graphics();
-    badgeGraphics.fillStyle(backgroundColor, 1);
-    badgeGraphics.fillRoundedRect(
-      -badgeWidth / 2, 
-      badgeY - badgeHeight / 2, 
-      badgeWidth, 
-      badgeHeight, 
-      borderRadius
-    );
-    container.add(badgeGraphics);
-
-    const badgeText = this.add.text(0, badgeY, text, {
-      fontSize: `${fontSize}px`,
-      fontFamily: 'Arial, sans-serif',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-    container.add(badgeText);
   }
 
   private makeCardInteractive(
     container: Phaser.GameObjects.Container,
-    cardBackground: Phaser.GameObjects.Rectangle,
+    card: Phaser.GameObjects.Rectangle,
     lesson: Lesson
   ): void {
-    cardBackground.setInteractive({ useHandCursor: !lesson.locked });
+    if (lesson.locked) return;
 
-    const originalScaleX = container.scaleX;
-    const originalScaleY = container.scaleY;
+    card.setInteractive({ useHandCursor: true });
+    
+    card.on('pointerover', () => {
+      this.tweens.add({
+        targets: container,
+        scale: 1.05,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
 
-    if (!lesson.locked) {
-      const handlePointerOver = () => {
-        this.tweens.add({
-          targets: container,
-          scaleX: originalScaleX * 1.05,
-          scaleY: originalScaleY * 1.05,
-          duration: 200,
-          ease: 'Power2',
-        });
-      };
+    card.on('pointerout', () => {
+      this.tweens.add({
+        targets: container,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
 
-      const handlePointerOut = () => {
-        this.tweens.add({
-          targets: container,
-          scaleX: originalScaleX,
-          scaleY: originalScaleY,
-          duration: 200,
-          ease: 'Power2',
-        });
-      };
+    card.on('pointerdown', () => {
+      if (!this.isTransitioning) {
+        this.handleLessonSelect(lesson);
+      }
+    });
+  }
 
-      const handlePointerDown = () => {
-        this.handleLessonClick(lesson.id);
-      };
+  // ═══════════════════════════════════════════════════════════
+  // EVENT HANDLERS
+  // ═══════════════════════════════════════════════════════════
+  private handleBackToNeighborhood(): void {
+    if (this.isTransitioning) return;
 
-      cardBackground.on('pointerover', handlePointerOver);
-      cardBackground.on('pointerout', handlePointerOut);
-      cardBackground.on('pointerdown', handlePointerDown);
+    const handleNeighborhoodSelect = this.registry.get('handleNeighborhoodSelect');
+    if (handleNeighborhoodSelect) {
+      this.isTransitioning = true;
+      handleNeighborhoodSelect('downtown');
     }
+  }
+
+  private handleLessonSelect(lesson: Lesson): void {
+    if (this.isTransitioning) return;
+
+    const handleLessonSelect = this.registry.get('handleLessonSelect');
+    if (handleLessonSelect) {
+      this.isTransitioning = true;
+      handleLessonSelect(lesson.id, this.moduleBackendId || '');
+    }
+  }
+
+  private handleMinigameSelect(): void {
+    if (this.isTransitioning) return;
+
+    this.isTransitioning = true;
+
+    this.minigameShutdownHandler = () => {
+      this.isTransitioning = false;
+    };
+
+    const minigameScene = this.scene.get('GrowYourNestMinigame');
+    if (minigameScene) {
+      minigameScene.events.on('minigameCompleted', this.minigameShutdownHandler);
+    }
+
+    this.scene.start('GrowYourNestMinigame');
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -420,165 +427,105 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private createBirdWithEntrance(): void {
     const { width, height } = this.scale;
-
-    const travelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
+    const birdTravelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
     const returningFromLesson = this.registry.get('returningFromLesson');
 
-    const finalX = width / 2;
-    const finalY = height * 0.85;
+    const finalX = width * 0.2;
+    const finalY = height * 0.65;
 
     this.bird = new BirdCharacter(this);
 
-    if (!travelInfo || !travelInfo.traveled || returningFromLesson) {
+    if (!birdTravelInfo || !birdTravelInfo.traveled || returningFromLesson) {
+      // Static entrance - no travel animation needed
       this.bird.createStatic(finalX, finalY);
       this.bird.startIdleAnimation();
       this.registry.set('returningFromLesson', false);
       return;
     }
 
-    const distance = Math.abs(travelInfo.currentHouseIndex - travelInfo.previousHouseIndex);
-    const comingFromLeft = travelInfo.currentHouseIndex > travelInfo.previousHouseIndex;
+    // Determine travel type and direction based on distance
+    const distance = Math.abs(birdTravelInfo.currentHouseIndex - birdTravelInfo.previousHouseIndex);
+    const comingFromLeft = birdTravelInfo.currentHouseIndex > birdTravelInfo.previousHouseIndex;
 
     if (distance > 1) {
+      // Long distance - use flying entrance
       this.bird.createWithFlyingEntrance(finalX, finalY, comingFromLeft, () => {
         this.bird!.startIdleAnimation();
       });
     } else {
+      // Short distance - use hopping entrance
       this.bird.createWithHoppingEntrance(finalX, finalY, comingFromLeft, () => {
         this.bird!.startIdleAnimation();
       });
     }
+
+    // Clear travel info after use
+    this.registry.set('birdTravelInfo', undefined);
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // EVENT HANDLERS
-  // ═══════════════════════════════════════════════════════════
-  private handleLessonClick(lessonId: number): void {
-    if (this.isTransitioning) return;
-
-    this.isTransitioning = true;
-    this.registry.set('returningFromLesson', true);
-
-    const handleLessonSelect = this.registry.get('handleLessonSelect');
-
-    if (handleLessonSelect && typeof handleLessonSelect === 'function') {
-      handleLessonSelect(lessonId);
-      this.isTransitioning = false;
+  private destroyBird(): void {
+    if (this.bird) {
+      this.bird.destroy();
+      this.bird = undefined;
     }
   }
 
-  private handleBackToNeighborhood(): void {
-    if (this.isTransitioning) return;
-
-    this.isTransitioning = true;
-
-    const handleBackToNeighborhood = this.registry.get('handleBackToNeighborhood');
-
-    if (handleBackToNeighborhood && typeof handleBackToNeighborhood === 'function') {
-      this.transitionToNeighborhood(() => {
-        handleBackToNeighborhood();
-        this.isTransitioning = false;
-      });
-    }
+  // ═══════════════════════════════════════════════════════════
+  // RESIZE HANDLING  
+  // ═══════════════════════════════════════════════════════════
+  private setupEventListeners(): void {
+    this.scale.on('resize', this.handleResizeDebounced, this);
   }
 
-  private handleMinigameSelect(): void {
-    this.scene.launch('GrowYourNestMinigame', {
-      questions: this.getMinigameQuestions()
+  private handleResizeDebounced(): void {
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+    }
+    
+    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
+      this.handleResize();
+      this.resizeDebounceTimer = undefined;
     });
+  }
+
+  private handleResize(): void {
+    // Handle coin counter resize (inherited from BaseScene)
+    this.handleCoinCounterResize();
+
+    // Recreate lesson cards
+    this.lessonContainers.forEach(container => container.destroy());
+    this.lessonContainers = [];
     
-    this.scene.pause();
-    
-    this.minigameShutdownHandler = () => {
-      this.scene.resume();
-    };
-    
-    const minigameScene = this.scene.get('GrowYourNestMinigame');
-    if (minigameScene) {
-      minigameScene.events.once('shutdown', this.minigameShutdownHandler);
+    if (this.module && this.module.lessons.length > 0) {
+      this.createLessonCards();
+    }
+
+    // Reposition buttons
+    if (this.backButton) {
+      const { width, height } = this.scale;
+      this.backButton.setPosition(width * 0.08, height * 0.05);
+    }
+
+    if (this.minigameButton) {
+      const { width, height } = this.scale;
+      this.minigameButton.setPosition(width - (width * 0.08), height - (height * 0.05));
+    }
+
+    // Reposition environment
+    if (this.lessonHouse) {
+      const { width, height } = this.scale;
+      this.lessonHouse.setPosition(width / 2, height / 2);
+      const houseScale = Math.min(width, height) * 0.00121;
+      this.lessonHouse.setScale(houseScale);
     }
   }
 
-  private getMinigameQuestions() {
-    return undefined;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // RESIZE HANDLING
-  // ═══════════════════════════════════════════════════════════
-  private handleResize(): void {
-    // Debounce to prevent rapid successive resizes
+  private cleanupResizeHandler(): void {
+    this.scale.off('resize', this.handleResizeDebounced, this);
+    
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
       this.resizeDebounceTimer = undefined;
     }
-    
-    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
-      this.performResize();
-      this.resizeDebounceTimer = undefined;
-    });
-  }
-
-  private performResize(): void {
-    const { width, height } = this.scale;
-    
-    console.log(`🔄 HouseScene performResize: ${width}x${height}`);
-    
-    // Kill all tweens FIRST
-    this.tweens.killAll();
-    
-    // Clean up interactive elements before destroying
-    if (this.backButton) {
-      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg && buttonBg.input) {
-        buttonBg.removeAllListeners();
-        buttonBg.disableInteractive();
-      }
-      this.backButton.destroy();
-      this.backButton = undefined;
-    }
-    
-    if (this.minigameButton) {
-      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg && buttonBg.input) {
-        buttonBg.removeAllListeners();
-        buttonBg.disableInteractive();
-      }
-      this.minigameButton.destroy();
-      this.minigameButton = undefined;
-    }
-    
-    this.lessonContainers.forEach(container => {
-      const cardBackground = container.list[0] as Phaser.GameObjects.Rectangle;
-      if (cardBackground && cardBackground.input) {
-        cardBackground.removeAllListeners();
-        cardBackground.disableInteractive();
-      }
-      container.destroy();
-    });
-    this.lessonContainers = [];
-    
-    if (this.lessonHouse) {
-      this.lessonHouse.destroy();
-      this.lessonHouse = undefined;
-    }
-
-    this.handleCoinCounterResize();
-    
-    if (this.bird) {
-      this.bird.setPosition(width / 2, height * 0.85);
-      this.bird.handleResize();
-    }
-    
-    // Recreate with new dimensions (this.scale is now correct)
-    this.createEnvironment();
-    this.createUI();
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // TRANSITION METHODS
-  // ═══════════════════════════════════════════════════════════
-  private transitionToNeighborhood(callback: () => void): void {
-    callback();
   }
 }
