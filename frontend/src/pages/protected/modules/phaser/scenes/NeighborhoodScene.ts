@@ -9,6 +9,7 @@ import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
+import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
 
 interface HousePosition {
   id: string;
@@ -551,15 +552,25 @@ export default class NeighborhoodScene extends BaseScene {
       this.cloudOverlays.push(cloudOverlay);
     }
 
-    // Create house name label (module title from backend)
-    const nameLabel = this.add.text(0, scale(90), house.name, {
-      fontSize: scaleFontSize(14),
-      fontFamily: 'Fredoka, sans-serif',
-      color: COLORS.TEXT_PRIMARY,
-      fontStyle: 'bold',
-      backgroundColor: '#ffffff',
-      padding: { x: scale(8), y: scale(4) },
-    }).setOrigin(0.5);
+    // Create house name label (module title from backend) - UPDATED FOR ONEST
+    // BEFORE (Fredoka):
+    // const nameLabel = this.add.text(0, scale(90), house.name, {
+    //   fontSize: scaleFontSize(14),
+    //   fontFamily: 'Fredoka, sans-serif',
+    //   color: COLORS.TEXT_PRIMARY,
+    //   fontStyle: 'bold',
+    //   backgroundColor: '#ffffff',
+    //   padding: { x: scale(8), y: scale(4) },
+    // }).setOrigin(0.5);
+    
+    // AFTER (Onest):
+    const nameLabel = this.add.text(0, scale(90), house.name,
+      createTextStyle('CAPTION', COLORS.TEXT_PRIMARY, {
+        fontSize: scaleFontSize(14),
+        backgroundColor: '#ffffff',
+        padding: { x: scale(8), y: scale(4) },
+      })
+    ).setOrigin(0.5);
     houseContainer.add(nameLabel);
 
     // Add coin reward badge if available
@@ -598,12 +609,20 @@ export default class NeighborhoodScene extends BaseScene {
     badgeBg.setStrokeStyle(scale(2), 0xFFA500);
     container.add(badgeBg);
 
-    const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`, {
-      fontSize: scaleFontSize(12),
-      fontFamily: 'Fredoka, sans-serif',
-      color: '#000000',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    // BEFORE (Fredoka):
+    // const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`, {
+    //   fontSize: scaleFontSize(12),
+    //   fontFamily: 'Fredoka, sans-serif',
+    //   color: '#000000',
+    //   fontStyle: 'bold',
+    // }).setOrigin(0.5);
+    
+    // AFTER (Onest):
+    const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`,
+      createTextStyle('BADGE', '#000000', {
+        fontSize: scaleFontSize(12),
+      })
+    ).setOrigin(0.5);
     container.add(coinText);
   }
 

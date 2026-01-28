@@ -103,7 +103,8 @@ export default class HouseScene extends BaseScene {
     this.createEnvironment();
     this.createUI();
     this.createBirdWithEntrance();
-    this.setupEventListeners();
+    this.setupEventListeners()
+    this.checkForLessonsUpdate();
   }
 
   shutdown() {
@@ -475,6 +476,23 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResizeDebounced, this);
+  }
+
+  private checkForLessonsUpdate(): void {
+    // Check if lessons were loaded after init
+    if (this.moduleBackendId && (!this.module || this.module.lessons.length === 0)) {
+      const moduleLessonsData: Record<string, ModuleLessonsData> = this.registry.get('moduleLessonsData') || {};
+      
+      if (moduleLessonsData[this.moduleBackendId]) {
+        this.module = moduleLessonsData[this.moduleBackendId];
+        console.log('✅ Loaded delayed module data:', this.module);
+        
+        // Recreate UI with new lesson data
+        this.lessonContainers.forEach(container => container.destroy());
+        this.lessonContainers = [];
+        this.createLessonCards();
+      }
+    }
   }
 
   private handleResizeDebounced(): void {

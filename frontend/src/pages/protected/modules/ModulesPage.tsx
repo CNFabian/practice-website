@@ -114,13 +114,21 @@ const ModulesPage: React.FC = () => {
     });
   }, [queryClient]);
 
-  const handleLessonSelect = useCallback((lessonId: number) => {
+  const handleLessonSelect = useCallback((lessonId: number, moduleBackendId?: string) => {
+    // Get the houses data to derive moduleId
+    const game = GameManager.getGame();
+    const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
+    const backendId = moduleBackendId || navState.moduleBackendId;
+    const house = houses.find((h: any) => h.moduleBackendId === backendId);
+    
     setNavState(prev => ({
       ...prev,
       currentView: 'lesson',
       lessonId,
+      moduleBackendId: backendId || prev.moduleBackendId,
+      moduleId: house?.moduleId || prev.moduleId,
     }));
-  }, []);
+  }, [navState.moduleBackendId]);
 
   const handleMinigameSelect = useCallback(() => {
     setNavState(prev => ({
@@ -441,8 +449,18 @@ const ModulesPage: React.FC = () => {
   }, [navState.moduleId, navState.moduleBackendId]);
 
   const currentLesson = useMemo(() => {
+    console.log('🔍 Computing currentLesson:', {
+      lessonId: navState.lessonId,
+      moduleBackendId: navState.moduleBackendId,
+      hasLessonsData: GameManager.hasLessonsData(navState.moduleBackendId || '')
+    });
+    
     if (!navState.lessonId || !navState.moduleBackendId) return null;
-    return GameManager.getCurrentLesson(navState.moduleBackendId, navState.lessonId);
+    
+    const lesson = GameManager.getCurrentLesson(navState.moduleBackendId, navState.lessonId);
+    console.log('🔍 Found lesson:', lesson);
+    
+    return lesson;
   }, [navState.lessonId, navState.moduleBackendId]);
 
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
@@ -521,21 +539,29 @@ const ModulesPage: React.FC = () => {
       />
 
       {/* Lesson view */}
-      {navState.currentView === 'lesson' && (
-        <div className="absolute inset-0 bg-white z-20">
-          {currentLesson && currentModule ? (
-            <LessonView
-              lesson={currentLesson}
-              module={currentModule}
-              onBack={handleBackToHouse}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p>Lesson not found</p>
+     {navState.currentView === 'lesson' && (
+      <div className="absolute inset-0 bg-white z-20">
+        {currentLesson && currentModule ? (
+          <LessonView
+            lesson={currentLesson}
+            module={currentModule}
+            onBack={handleBackToHouse}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-8">
+            <p className="text-2xl font-bold text-red-600 mb-4">Lesson not found</p>
+            <div className="bg-gray-100 p-4 rounded text-left">
+              <p><strong>navState.lessonId:</strong> {navState.lessonId}</p>
+              <p><strong>navState.moduleId:</strong> {navState.moduleId}</p>
+              <p><strong>navState.moduleBackendId:</strong> {navState.moduleBackendId}</p>
+              <p><strong>currentLesson:</strong> {currentLesson ? 'EXISTS' : 'NULL'}</p>
+              <p><strong>currentModule:</strong> {currentModule ? 'EXISTS' : 'NULL'}</p>
+              <p><strong>GameManager has lessons data:</strong> {GameManager.hasLessonsData(navState.moduleBackendId || '') ? 'YES' : 'NO'}</p>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+    )}
 
       {/* Minigame view */}
       {navState.currentView === 'minigame' && (

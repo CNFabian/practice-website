@@ -4,6 +4,7 @@ import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
+import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
 
 interface NeighborhoodData {
   id: string;
@@ -259,15 +260,25 @@ export default class MapScene extends BaseScene {
     
     container.add(neighborhoodImage);
 
-    // Neighborhood name label
-    const nameLabel = this.add.text(0, scale(100), neighborhood.name, {
-      fontSize: scaleFontSize(16),
-      fontFamily: 'Arial, sans-serif',
-      color: COLORS.TEXT_PRIMARY,
-      fontStyle: 'bold',
-      align: 'center',
-      wordWrap: { width: scale(180) },
-    });
+    // Neighborhood name label - UPDATED FOR ONEST
+    // BEFORE (Arial):
+    // const nameLabel = this.add.text(0, scale(100), neighborhood.name, {
+    //   fontSize: scaleFontSize(16),
+    //   fontFamily: 'Arial, sans-serif',
+    //   color: COLORS.TEXT_PRIMARY,
+    //   fontStyle: 'bold',
+    //   align: 'center',
+    //   wordWrap: { width: scale(180) },
+    // });
+    
+    // AFTER (Onest):
+    const nameLabel = this.add.text(0, scale(100), neighborhood.name,
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
+        fontSize: scaleFontSize(16),
+        align: 'center',
+        wordWrap: { width: scale(180) },
+      })
+    );
     nameLabel.setOrigin(0.5);
     container.add(nameLabel);
 
