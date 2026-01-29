@@ -7,6 +7,10 @@ export const ASSET_KEYS = {
   NEIGHBORHOOD_1: 'neighborhood1',
   NEIGHBORHOOD_2: 'neighborhood2',
   NEIGHBORHOOD_3: 'neighborhood3',
+  NEIGHBORHOOD_SHADOW: 'neighborhoodShadow',
+  LOCK_ICON: 'lockIcon',
+  ROADBLOCK_ICON: 'roadblockIcon',
+  NOTICE_BIRD_ICON: 'noticeBirdIcon',
   
   // Houses
   LESSON_HOUSE: 'lessonHouse',

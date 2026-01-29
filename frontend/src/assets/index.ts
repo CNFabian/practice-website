@@ -88,6 +88,10 @@ export { default as Neighborhood2 } from './images/phaser/neighborhoods/neighbor
 export { default as Neighborhood3 } from './images/phaser/neighborhoods/neighborhood_3.png'
 export { default as NeighborhoodMap } from './images/phaser/neighborhoods/neighborhood_map.png'
 export { default as NeighborhoodBackground } from './images/phaser/neighborhoods/neighborhood_background.png'
+export { default as NeighborhoodShadow } from './images/phaser/neighborhoods/neighborhood_shadow.png'
+export { default as LockIcon } from './images/phaser/neighborhoods/Lock.png'
+export { default as RoadblockIcon } from './images/phaser/neighborhoods/Roadblock.png'
+export { default as NoticeBirdIcon } from './images/phaser/neighborhoods/notice_birdIcon.png'
 
 // House Images for Phaser Scenes
 export { default as House1 } from './images/phaser/houses/house1.png'

@@ -26,6 +26,10 @@ import {
   Neighborhood2,
   Neighborhood3,
   NeighborhoodMap,
+  NeighborhoodShadow,
+  LockIcon,
+  RoadblockIcon,
+  NoticeBirdIcon
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
@@ -100,13 +104,17 @@ export default class PreloaderScene extends Phaser.Scene {
     // Backgrounds
     this.load.image(ASSET_KEYS.SUBURBAN_BACKGROUND, HouseBackground);
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND, NeighborhoodMap);
+    this.load.image(ASSET_KEYS.NEIGHBORHOOD_SHADOW, NeighborhoodShadow);
+    this.load.image(ASSET_KEYS.LOCK_ICON, LockIcon);
+    this.load.image(ASSET_KEYS.ROADBLOCK_ICON, RoadblockIcon);
+    this.load.image(ASSET_KEYS.NOTICE_BIRD_ICON, NoticeBirdIcon);
     
     // Neighborhoods
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_1, Neighborhood1);
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_2, Neighborhood2);
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_3, Neighborhood3);
     
-    // OLD Houses (keep for backwards compatibility)
+    // Houses
     this.load.image(ASSET_KEYS.LESSON_HOUSE, LessonHouse);
     this.load.image(ASSET_KEYS.HOUSE_1, House1);
     this.load.image(ASSET_KEYS.HOUSE_2, House2);

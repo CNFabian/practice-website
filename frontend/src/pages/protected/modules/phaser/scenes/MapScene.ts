@@ -14,7 +14,16 @@ interface NeighborhoodData {
   y: number;
   color: number;
   isLocked: boolean;
-  assetKey: string; // Reference to ASSET_KEYS
+  assetKey: string;
+}
+
+interface NeighborhoodElements {
+  container: Phaser.GameObjects.Container;
+  shadowImage: Phaser.GameObjects.Image;
+  neighborhoodImage: Phaser.GameObjects.Image;
+  bgImage: Phaser.GameObjects.Image;
+  nameLabel: Phaser.GameObjects.Text;
+  lockIcon?: Phaser.GameObjects.Image;
 }
 
 export default class MapScene extends BaseScene {
@@ -24,8 +33,7 @@ export default class MapScene extends BaseScene {
   private neighborhoods: NeighborhoodData[] = [];
   private isTransitioning: boolean = false;
   private centerContainer!: Phaser.GameObjects.Container;
-  private neighborhoodContainers: Map<string, Phaser.GameObjects.Container> = new Map();
-  private roads: Phaser.GameObjects.Graphics[] = [];
+  private neighborhoodElements: Map<string, NeighborhoodElements> = new Map();
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private lastClickedNeighborhoodId: string | null = null;
   private transitionManager!: SceneTransitionManager;
@@ -42,8 +50,7 @@ export default class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   init() {
     this.isTransitioning = false;
-    this.neighborhoodContainers.clear();
-    this.roads = [];
+    this.neighborhoodElements.clear();
   }
 
   create() {
@@ -60,7 +67,7 @@ export default class MapScene extends BaseScene {
       }
     }
     
-    // ADD THIS: Initialize transition manager and fade in
+    // Initialize transition manager and fade in
     this.transitionManager = new SceneTransitionManager(this);
     this.transitionManager.enterMap();
     
@@ -77,18 +84,17 @@ export default class MapScene extends BaseScene {
       this.resizeDebounceTimer = undefined;
     }
     
-    this.neighborhoodContainers.forEach(container => {
-      container.list.forEach(child => {
-        if (child instanceof Phaser.GameObjects.Image && child.input) {
-          child.removeAllListeners();
-          child.disableInteractive();
-        }
-      });
+    // Clean up coming soon modal
+    this.hideComingSoonModal();
+    
+    this.neighborhoodElements.forEach(elements => {
+      if (elements.neighborhoodImage.input) {
+        elements.neighborhoodImage.removeAllListeners();
+        elements.neighborhoodImage.disableInteractive();
+      }
     });
     
-    this.neighborhoodContainers.clear();
-    this.roads.forEach(road => road.destroy());
-    this.roads = [];
+    this.neighborhoodElements.clear();
     
     this.tweens.killAll();
     this.cleanupEventListeners();
@@ -108,7 +114,7 @@ export default class MapScene extends BaseScene {
       {
         id: 'home-buying-knowledge',
         name: 'Home-Buying Knowledge',
-        x: width * 0.2,
+        x: width * 0.25, // Middle ground: was 0.2, then 0.3, now 0.25
         y: height * 0.65,
         color: COLORS.BLUE_500,
         isLocked: false,
@@ -117,7 +123,7 @@ export default class MapScene extends BaseScene {
       {
         id: 'locked-neighborhood',
         name: 'Locked Neighborhood',
-        x: width * 0.45,
+        x: width * 0.5,  // Middle ground: was 0.45, then 0.55, now 0.5
         y: height * 0.25,
         color: COLORS.GRAY_400,
         isLocked: true,
@@ -126,7 +132,7 @@ export default class MapScene extends BaseScene {
       {
         id: 'construction-zone',
         name: 'Construction Zone',
-        x: width * 0.7,
+        x: width * 0.75, // Middle ground: was 0.7, then 0.8, now 0.75
         y: height * 0.65,
         color: COLORS.ORANGE_500,
         isLocked: true,
@@ -139,9 +145,7 @@ export default class MapScene extends BaseScene {
       const backendData = backendNeighborhoods?.[index];
       return {
         ...defaultNeighborhood,
-        // Use backend name if available, otherwise use frontend default
         name: backendData?.name || defaultNeighborhood.name,
-        // Use backend lock status if available, otherwise use frontend default
         isLocked: backendData?.isLocked !== undefined ? backendData.isLocked : defaultNeighborhood.isLocked,
       };
     });
@@ -175,79 +179,84 @@ export default class MapScene extends BaseScene {
     // Create center container
     this.centerContainer = this.add.container(width / 2, height / 2);
 
-    // Draw connecting roads
-    this.createRoads();
-
-    // Create neighborhood displays
+    // Create neighborhood displays with proper layering
     this.createNeighborhoodDisplays();
   }
 
-  private createRoads(): void {
-    const graphics = this.add.graphics();
-    
-    // Road from neighborhood 1 to 2
-    this.drawRoad(graphics, this.neighborhoods[0], this.neighborhoods[1]);
-    
-    // Road from neighborhood 2 to 3
-    this.drawRoad(graphics, this.neighborhoods[1], this.neighborhoods[2]);
-    
-    // Road from neighborhood 1 to 3
-    this.drawRoad(graphics, this.neighborhoods[0], this.neighborhoods[2]);
-    
-    this.roads.push(graphics);
-  }
-
-  private drawRoad(
-    graphics: Phaser.GameObjects.Graphics,
-    from: NeighborhoodData,
-    to: NeighborhoodData
-  ): void {
-    graphics.lineStyle(scale(8), 0xdcdcdc, 0.6);
-    
-    // Draw dashed line
-    const points = this.getLinePoints(from.x, from.y, to.x, to.y, 20);
-    
-    for (let i = 0; i < points.length - 1; i += 2) {
-      graphics.beginPath();
-      graphics.moveTo(points[i].x, points[i].y);
-      if (points[i + 1]) {
-        graphics.lineTo(points[i + 1].x, points[i + 1].y);
-      }
-      graphics.strokePath();
-    }
-  }
-
-  private getLinePoints(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    segments: number
-  ): Array<{ x: number; y: number }> {
-    const points = [];
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      points.push({
-        x: x1 + (x2 - x1) * t,
-        y: y1 + (y2 - y1) * t,
-      });
-    }
-    return points;
-  }
-
   private createNeighborhoodDisplays(): void {
+    // LAYER 1: Create all shadows first (lowest layer)
     this.neighborhoods.forEach((neighborhood) => {
-      this.createNeighborhoodDisplay(neighborhood);
+      this.createShadow(neighborhood);
+    });
+
+    // LAYER 2: Create all neighborhood images (middle layer)
+    this.neighborhoods.forEach((neighborhood) => {
+      this.createNeighborhoodImage(neighborhood);
+    });
+
+    // LAYER 3: Create all UI elements (top layer - backgrounds, text, icons)
+    this.neighborhoods.forEach((neighborhood) => {
+      this.createNeighborhoodUI(neighborhood);
+    });
+
+    // Setup interactivity after all elements are created
+    this.neighborhoods.forEach((neighborhood) => {
+      this.setupNeighborhoodInteractivity(neighborhood);
     });
   }
 
-  private createNeighborhoodDisplay(neighborhood: NeighborhoodData): void {
+  private createShadow(neighborhood: NeighborhoodData): void {
     const container = this.add.container(neighborhood.x, neighborhood.y);
 
-    // Use actual neighborhood image from preloaded assets
+    // Create temporary neighborhood image to get dimensions
+    const tempImage = this.add.image(0, 0, neighborhood.assetKey);
+    
+    // Scale based on neighborhood ID
+    if (neighborhood.id === 'home-buying-knowledge') {
+      tempImage.setScale(scale(0.8));
+    } else if (neighborhood.id === 'locked-neighborhood') {
+      tempImage.setScale(scale(0.45));
+    } else if (neighborhood.id === 'construction-zone') {
+      tempImage.setScale(scale(0.9));
+    }
+
+    // Calculate shadow position and scale
+    let shadowYOffset = tempImage.displayHeight * 0.2;
+    let shadowScale = tempImage.scaleX;
+
+    // Adjust for locked neighborhood - move shadow higher
+    if (neighborhood.id === 'locked-neighborhood') {
+      shadowYOffset = tempImage.displayHeight * 0.1; // Higher position
+      shadowScale = tempImage.scaleX * 1.5;
+    } else if (neighborhood.id === 'construction-zone') {
+      shadowScale = tempImage.scaleX * 0.8;
+    }
+
+    // Create shadow image
+    const shadowImage = this.add.image(0, shadowYOffset, ASSET_KEYS.NEIGHBORHOOD_SHADOW);
+    shadowImage.setScale(shadowScale);
+    shadowImage.setOrigin(0.5);
+    shadowImage.setDepth(0); // Lowest depth
+    container.add(shadowImage);
+
+    // Store elements
+    const elements = this.neighborhoodElements.get(neighborhood.id) || {} as NeighborhoodElements;
+    elements.container = container;
+    elements.shadowImage = shadowImage;
+    this.neighborhoodElements.set(neighborhood.id, elements);
+
+    // Destroy temp image
+    tempImage.destroy();
+  }
+
+  private createNeighborhoodImage(neighborhood: NeighborhoodData): void {
+    const elements = this.neighborhoodElements.get(neighborhood.id)!;
+    const container = elements.container;
+
+    // Create neighborhood image
     const neighborhoodImage = this.add.image(0, 0, neighborhood.assetKey);
     
-    // Scale each neighborhood independently while maintaining aspect ratio
+    // Scale based on neighborhood ID
     if (neighborhood.id === 'home-buying-knowledge') {
       neighborhoodImage.setScale(scale(0.8));
     } else if (neighborhood.id === 'locked-neighborhood') {
@@ -255,77 +264,250 @@ export default class MapScene extends BaseScene {
     } else if (neighborhood.id === 'construction-zone') {
       neighborhoodImage.setScale(scale(0.9));
     }
-    
+
+    neighborhoodImage.setDepth(1); // Middle depth
     container.add(neighborhoodImage);
 
-    // Neighborhood name label - UPDATED FOR ONEST
-    // BEFORE (Arial):
-    // const nameLabel = this.add.text(0, scale(100), neighborhood.name, {
-    //   fontSize: scaleFontSize(16),
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: COLORS.TEXT_PRIMARY,
-    //   fontStyle: 'bold',
-    //   align: 'center',
-    //   wordWrap: { width: scale(180) },
-    // });
-    
-    // AFTER (Onest):
-    const nameLabel = this.add.text(0, scale(100), neighborhood.name,
-      createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
-        fontSize: scaleFontSize(16),
-        align: 'center',
-        wordWrap: { width: scale(180) },
-      })
-    );
-    nameLabel.setOrigin(0.5);
-    container.add(nameLabel);
+    // Update elements
+    elements.neighborhoodImage = neighborhoodImage;
+    this.neighborhoodElements.set(neighborhood.id, elements);
+  }
 
-    // Lock icon if locked
+  private createNeighborhoodUI(neighborhood: NeighborhoodData): void {
+    const elements = this.neighborhoodElements.get(neighborhood.id)!;
+    const container = elements.container;
+
+    // Only show title and background for unlocked neighborhoods
+    let bgImage: Phaser.GameObjects.Image;
+    let nameLabel: Phaser.GameObjects.Text;
+
+    if (!neighborhood.isLocked) {
+      // Background for neighborhood name with radial gradient glow effect
+      const bgWidth = scale(325);
+      const bgHeight = scale(75);
+
+      // Create a canvas element to draw the radial gradient
+      const canvas = document.createElement('canvas');
+      canvas.width = bgWidth;
+      canvas.height = bgHeight;
+      const ctx = canvas.getContext('2d')!;
+
+      // Create elliptical radial gradient (wider horizontally)
+      const centerX = bgWidth / 2;
+      const centerY = bgHeight / 2;
+
+      // Use transform to create elliptical gradient
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(1, bgHeight / bgWidth); // Flatten the gradient vertically
+
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, centerX);
+      gradient.addColorStop(0, 'rgba(54, 88, 236, 0.8)');
+      gradient.addColorStop(1, 'rgba(64, 85, 167, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, centerX, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Create texture from canvas
+      const textureKey = `gradient-${neighborhood.id}`;
+      if (!this.textures.exists(textureKey)) {
+        this.textures.addCanvas(textureKey, canvas);
+      }
+      bgImage = this.add.image(0, 0, textureKey);
+      bgImage.setOrigin(0.5);
+      bgImage.setDepth(2); // Top depth
+      container.add(bgImage);
+
+      // Neighborhood name label
+      nameLabel = this.add.text(0, 0, neighborhood.name,
+        createTextStyle('BODY_BOLD', COLORS.TEXT_WHITE, {
+          fontSize: scaleFontSize(16),
+          align: 'center',
+          wordWrap: { width: scale(246) },
+        })
+      );
+      nameLabel.setOrigin(0.5);
+      nameLabel.setDepth(3); // Highest depth
+      container.add(nameLabel);
+    }
+
+    // Lock/Roadblock icon for locked neighborhoods
+    let lockIcon: Phaser.GameObjects.Image | undefined;
     if (neighborhood.isLocked) {
-      const lockIcon = this.add.text(0, scale(-70), '🔒', {
-        fontSize: scaleFontSize(40),
-      });
+      // Use different icons based on neighborhood type
+      const iconAssetKey = neighborhood.id === 'construction-zone' 
+        ? ASSET_KEYS.ROADBLOCK_ICON 
+        : ASSET_KEYS.LOCK_ICON;
+      
+      lockIcon = this.add.image(0, 0, iconAssetKey);
       lockIcon.setOrigin(0.5);
+      lockIcon.setScale(scale(0.5)); // Adjust scale as needed
+      lockIcon.setDepth(3); // Highest depth
       container.add(lockIcon);
     }
 
-    // Make all neighborhoods interactive with hover effects
+    // Update elements
+    elements.bgImage = bgImage!;
+    elements.nameLabel = nameLabel!;
+    elements.lockIcon = lockIcon;
+    this.neighborhoodElements.set(neighborhood.id, elements);
+  }
+
+  private setupNeighborhoodInteractivity(neighborhood: NeighborhoodData): void {
+    const elements = this.neighborhoodElements.get(neighborhood.id)!;
+    const { neighborhoodImage, shadowImage, bgImage, nameLabel } = elements;
+
+    // Make neighborhood image interactive
     neighborhoodImage.setInteractive({ 
-      useHandCursor: true,
+      useHandCursor: !neighborhood.isLocked, // Only show hand cursor for unlocked
       pixelPerfect: true,
       alphaTolerance: 1
     });
-    
+
+    // If locked, show "Coming soon" modal on hover
+    if (neighborhood.isLocked) {
+      neighborhoodImage.on('pointerover', () => {
+        this.showComingSoonModal(neighborhood);
+      });
+      
+      neighborhoodImage.on('pointerout', () => {
+        this.hideComingSoonModal();
+      });
+      
+      return; // Skip hover animations and click handlers for locked neighborhoods
+    }
+
+    // Store original scale values for unlocked neighborhoods
+    const originalImageScaleX = neighborhoodImage.scaleX;
+    const originalImageScaleY = neighborhoodImage.scaleY;
+    const originalShadowScaleX = shadowImage.scaleX;
+    const originalShadowScaleY = shadowImage.scaleY;
+
     neighborhoodImage.on('pointerover', () => {
-      neighborhoodImage.setTint(0xdddddd); // Slight tint on hover
+      // Kill any existing tweens on these objects
+      this.tweens.killTweensOf([neighborhoodImage, shadowImage, bgImage, nameLabel]);
+      
       this.tweens.add({
-        targets: container,
-        scale: 1.05,
-        duration: 150,
-        ease: 'Power2',
+        targets: neighborhoodImage,
+        scaleX: originalImageScaleX * 1.1,
+        scaleY: originalImageScaleY * 1.1,
+        y: -20,
+        duration: 400,
+        ease: 'Cubic.easeOut',
+      });
+      
+      // Move text and background up with the image
+      this.tweens.add({
+        targets: [bgImage, nameLabel],
+        y: -20,
+        duration: 400,
+        ease: 'Cubic.easeOut',
+      });
+      
+      // Grow shadow
+      this.tweens.add({
+        targets: shadowImage,
+        scaleX: originalShadowScaleX * 1.3,
+        scaleY: originalShadowScaleY * 1.3,
+        alpha: 0.8,
+        duration: 400,
+        ease: 'Cubic.easeOut',
       });
     });
 
     neighborhoodImage.on('pointerout', () => {
-      neighborhoodImage.clearTint();
+      // Kill any existing tweens on these objects
+      this.tweens.killTweensOf([neighborhoodImage, shadowImage, bgImage, nameLabel]);
+      
       this.tweens.add({
-        targets: container,
-        scale: 1,
-        duration: 150,
-        ease: 'Power2',
+        targets: neighborhoodImage,
+        scaleX: originalImageScaleX,
+        scaleY: originalImageScaleY,
+        y: 0,
+        duration: 400,
+        ease: 'Cubic.easeOut',
+      });
+      
+      // Move text and background back down
+      this.tweens.add({
+        targets: [bgImage, nameLabel],
+        y: 0,
+        duration: 400,
+        ease: 'Cubic.easeOut',
+      });
+      
+      // Shrink shadow back
+      this.tweens.add({
+        targets: shadowImage,
+        scaleX: originalShadowScaleX,
+        scaleY: originalShadowScaleY,
+        alpha: 1,
+        duration: 400,
+        ease: 'Cubic.easeOut',
       });
     });
 
-    // Only allow clicking on unlocked neighborhoods
-    if (!neighborhood.isLocked) {
-      neighborhoodImage.on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          this.handleNeighborhoodClick(neighborhood.id);
-        }
-      });
-    }
+    // Click handler for unlocked neighborhoods
+    neighborhoodImage.on('pointerdown', () => {
+      if (!this.isTransitioning) {
+        this.handleNeighborhoodClick(neighborhood.id);
+      }
+    });
+  }
 
-    this.neighborhoodContainers.set(neighborhood.id, container);
+  // ═══════════════════════════════════════════════════════════
+  // COMING SOON MODAL
+  // ═══════════════════════════════════════════════════════════
+  private comingSoonModal?: Phaser.GameObjects.Container;
+
+  private showComingSoonModal(neighborhood: NeighborhoodData): void {
+    if (this.comingSoonModal) return; // Already showing
+
+    const elements = this.neighborhoodElements.get(neighborhood.id)!;
+    const container = elements.container;
+
+    // Create modal container positioned directly over the neighborhood
+    const modalContainer = this.add.container(
+      container.x,
+      container.y
+    );
+    modalContainer.setDepth(1000); // Very high depth to appear above everything
+
+    // Modal background - smaller to reduce whitespace
+    const modalWidth = scale(220);
+    const modalHeight = scale(70);
+    const modalBg = this.add.graphics();
+    modalBg.fillStyle(0xffffff, 1);
+    modalBg.fillRoundedRect(-modalWidth / 2, -modalHeight / 2, modalWidth, modalHeight, scale(12));
+    modalContainer.add(modalBg);
+
+    // Bird icon - positioned half outside the left border
+    const birdIcon = this.add.image(-modalWidth / 2, 0, ASSET_KEYS.NOTICE_BIRD_ICON);
+    birdIcon.setScale(scale(0.3));
+    birdIcon.setOrigin(0.5, 0.5); // Center the bird so it's half in, half out
+    modalContainer.add(birdIcon);
+
+    // "Coming soon!" text - centered in the modal box
+    const comingSoonText = this.add.text(0, 0, 'Coming soon!',
+      createTextStyle('H1', COLORS.TEXT_PRIMARY, {
+        fontSize: scaleFontSize(20),
+        align: 'center',
+      })
+    );
+    comingSoonText.setOrigin(0.5, 0.5);
+    modalContainer.add(comingSoonText);
+
+    this.comingSoonModal = modalContainer;
+  }
+
+  private hideComingSoonModal(): void {
+    if (this.comingSoonModal) {
+      this.comingSoonModal.destroy();
+      this.comingSoonModal = undefined;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -335,7 +517,7 @@ export default class MapScene extends BaseScene {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
-    this.lastClickedNeighborhoodId = neighborhoodId; // Store which neighborhood was clicked
+    this.lastClickedNeighborhoodId = neighborhoodId;
 
     const handleNeighborhoodSelect = this.registry.get('handleNeighborhoodSelect');
 
@@ -357,27 +539,22 @@ export default class MapScene extends BaseScene {
       this.centerContainer.setPosition(width / 2, height / 2);
     }
     
-    this.neighborhoods[0].x = width * 0.2;
+    this.neighborhoods[0].x = width * 0.25; // Middle ground position
     this.neighborhoods[0].y = height * 0.65;
     
-    this.neighborhoods[1].x = width * 0.45;
+    this.neighborhoods[1].x = width * 0.5;  // Middle ground position
     this.neighborhoods[1].y = height * 0.25;
     
-    this.neighborhoods[2].x = width * 0.7;
+    this.neighborhoods[2].x = width * 0.75; // Middle ground position
     this.neighborhoods[2].y = height * 0.65;
     
     // Update container positions
     this.neighborhoods.forEach((neighborhood) => {
-      const container = this.neighborhoodContainers.get(neighborhood.id);
-      if (container) {
-        container.setPosition(neighborhood.x, neighborhood.y);
+      const elements = this.neighborhoodElements.get(neighborhood.id);
+      if (elements) {
+        elements.container.setPosition(neighborhood.x, neighborhood.y);
       }
     });
-
-    // Redraw roads
-    this.roads.forEach(road => road.destroy());
-    this.roads = [];
-    this.createRoads();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -392,17 +569,13 @@ export default class MapScene extends BaseScene {
       return;
     }
 
-    const container = this.neighborhoodContainers.get(clickedNeighborhood.id);
-    if (!container) {
+    const elements = this.neighborhoodElements.get(clickedNeighborhood.id);
+    if (!elements) {
       callback();
       return;
     }
 
-    const neighborhoodImage = container.getAll().find(obj => obj.type === 'Image') as Phaser.GameObjects.Image;
-    if (!neighborhoodImage) {
-      callback();
-      return;
-    }
+    const { container, neighborhoodImage } = elements;
 
     const { width, height } = this.scale;
     const camera = this.cameras.main;
