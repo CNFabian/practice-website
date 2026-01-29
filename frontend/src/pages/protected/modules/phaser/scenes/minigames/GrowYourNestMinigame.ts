@@ -158,7 +158,16 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const hitArea = this.add.rectangle(-10, 0, 250, 70, 0x000000, 0);
     hitArea.setOrigin(0, 0.5);
     hitArea.setInteractive({ useHandCursor: true });
-    hitArea.on('pointerdown', () => this.scene.stop());
+    hitArea.on('pointerdown', () => {
+      // Stop the minigame completely and remove it from the scene manager
+      this.scene.stop();
+      
+      // Make sure HouseScene is visible and active
+      const houseScene = this.scene.get('HouseScene');
+      if (houseScene && !houseScene.scene.isActive()) {
+        this.scene.run('HouseScene');
+      }
+    });
     this.backButton.add(hitArea);
     this.backButton.sendToBack(hitArea);
   }
@@ -770,15 +779,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
     this.rightPanel.add(rightBoxBg);
     
-    // BEFORE (Arial):
-    // const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, 'Amazing!', {
-    //   fontSize: `${boxTitleFontSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: '#60a5fa',
-    //   fontStyle: 'bold'
-    // });
-    
-    // AFTER (Onest):
     const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, 'Amazing!',
       createTextStyle('BODY_BOLD', '#60a5fa', { fontSize: `${boxTitleFontSize}px` })
     );
@@ -787,15 +787,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     const accuracy = Math.round((this.score / this.questions.length) * 100);
     
-    // BEFORE (Arial):
-    // const accuracyValue = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`, {
-    //   fontSize: `${boxValueFontSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: '#60a5fa',
-    //   fontStyle: 'bold'
-    // });
-    
-    // AFTER (Onest):
     const accuracyValue = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`,
       createTextStyle('BODY_BOLD', '#60a5fa', { fontSize: `${boxValueFontSize}px` })
     );
@@ -811,17 +802,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     coinButton.fillRoundedRect(panelWidth / 2 - coinButtonWidth / 2, coinButtonY, coinButtonWidth, coinButtonHeight, coinButtonRadius);
     this.rightPanel.add(coinButton);
     
-    // BEFORE (Arial):
-    // const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, 'You earned 15\nNest Coins!', {
-    //   fontSize: `${coinButtonFontSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: '#ffffff',
-    //   fontStyle: 'bold',
-    //   align: 'center',
-    //   lineSpacing: 2
-    // });
-    
-    // AFTER (Onest):
     const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, 'You earned 15\nNest Coins!',
       createTextStyle('BODY_BOLD', '#ffffff', {
         fontSize: `${coinButtonFontSize}px`,
@@ -846,15 +826,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     moduleButtonBg.fillStyle(0x3b82f6);
     moduleButtonBg.fillRoundedRect(-moduleButtonWidth / 2, -moduleButtonHeight / 2, moduleButtonWidth, moduleButtonHeight, moduleButtonRadius);
     
-    // BEFORE (Arial):
-    // const moduleButtonText = this.add.text(-moduleButtonWidth * 0.12, 0, 'MODULE', {
-    //   fontSize: `${moduleButtonFontSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: '#ffffff',
-    //   fontStyle: 'bold'
-    // });
-    
-    // AFTER (Onest):
     const moduleButtonText = this.add.text(-moduleButtonWidth * 0.12, 0, 'MODULE',
       createTextStyle('BUTTON', '#ffffff', { fontSize: `${moduleButtonFontSize}px` })
     );
@@ -862,14 +833,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
     
-    // BEFORE (Arial):
-    // const arrow = this.add.text(moduleButtonWidth * 0.22, 0, '→', {
-    //   fontSize: `${arrowFontSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: '#ffffff'
-    // });
-    
-    // AFTER (Onest):
     const arrow = this.add.text(moduleButtonWidth * 0.22, 0, '→',
       createTextStyle('BUTTON', '#ffffff', { fontSize: `${arrowFontSize}px` })
     );
@@ -879,7 +842,15 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     const hitArea = this.add.rectangle(0, 0, moduleButtonWidth, moduleButtonHeight, 0x000000, 0);
     hitArea.setInteractive({ useHandCursor: true });
-    hitArea.on('pointerdown', () => this.scene.stop());
+    hitArea.on('pointerdown', () => {
+      this.scene.stop();
+      
+      // Make sure HouseScene is visible and active
+      const houseScene = this.scene.get('HouseScene');
+      if (houseScene && !houseScene.scene.isActive()) {
+        this.scene.run('HouseScene');
+      }
+    });
     this.completionReturnButton.add(hitArea);
     this.completionReturnButton.sendToBack(hitArea);
     

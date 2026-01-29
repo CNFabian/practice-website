@@ -5,6 +5,7 @@ import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
 import { createTextStyle } from '../constants/Typography';
+import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 
 interface NeighborhoodData {
   id: string;
@@ -27,7 +28,7 @@ export default class MapScene extends BaseScene {
   private roads: Phaser.GameObjects.Graphics[] = [];
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private lastClickedNeighborhoodId: string | null = null;
-
+  private transitionManager!: SceneTransitionManager;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -48,25 +49,20 @@ export default class MapScene extends BaseScene {
   create() {
     super.create();
     
-    // Set background image on DOM element (extends under sidebar)
-    console.log('🗺️ MapScene: Setting background image');
-    console.log('🗺️ Available textures:', this.textures.list);
-    console.log('🗺️ Looking for texture key:', ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
-    
     // Check if texture exists
     if (this.textures.exists(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND)) {
-      console.log('✅ Texture exists, setting background');
       this.setBackgroundImage(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
     } else {
-      console.error('❌ Texture not found:', ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
-      console.log('Available texture keys:', Object.keys(this.textures.list));
-      
       // Fallback: Set a solid color background
       const bgElement = document.getElementById('section-background');
       if (bgElement) {
         bgElement.style.setProperty('background', 'linear-gradient(180deg, #E0E7FF 0%, #C7D2FE 100%)', 'important');
       }
     }
+    
+    // ADD THIS: Initialize transition manager and fade in
+    this.transitionManager = new SceneTransitionManager(this);
+    this.transitionManager.enterMap();
     
     this.setupNeighborhoodData();
     this.createUI();

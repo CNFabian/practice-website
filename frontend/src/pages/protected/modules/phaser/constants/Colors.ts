@@ -43,9 +43,7 @@ export const COLORS = {
   TEXT_WARNING: '#f97316',
   
   // Background Colors (for camera fades)
-  FADE_BLACK: { r: 0, g: 0, b: 0 },
-  FADE_ORANGE: { r: 254, g: 215, b: 170 },
-  FADE_PEACH: { r: 254, g: 243, b: 199 },
+  FADE_WHITE: { r: 255, g: 255, b: 255}
 } as const;
 
 // Opacity values

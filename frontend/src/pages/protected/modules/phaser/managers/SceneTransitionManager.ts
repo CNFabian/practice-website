@@ -43,7 +43,7 @@ export class SceneTransitionManager {
   fadeIn(config: TransitionConfig = {}): void {
     const {
       duration = 300,
-      fadeColor = COLORS.FADE_BLACK,
+      fadeColor = COLORS.FADE_WHITE,
       onComplete,
     } = config;
 
@@ -60,7 +60,7 @@ export class SceneTransitionManager {
   fadeOut(config: TransitionConfig = {}): void {
     const {
       duration = 300,
-      fadeColor = COLORS.FADE_BLACK,
+      fadeColor = COLORS.FADE_WHITE,
       onComplete,
     } = config;
 
@@ -86,7 +86,7 @@ export class SceneTransitionManager {
   toNeighborhood(callback: () => void): void {
     this.fadeOut({
       duration: 300,
-      fadeColor: COLORS.FADE_BLACK,
+      fadeColor: COLORS.FADE_WHITE,
       onComplete: callback,
     });
   }
@@ -97,7 +97,7 @@ export class SceneTransitionManager {
   toHouse(callback: () => void): void {
     this.fadeOut({
       duration: 300,
-      fadeColor: COLORS.FADE_ORANGE,
+      fadeColor: COLORS.FADE_WHITE,
       onComplete: callback,
     });
   }
@@ -108,7 +108,7 @@ export class SceneTransitionManager {
   backToNeighborhood(callback: () => void): void {
     this.fadeOut({
       duration: 300,
-      fadeColor: COLORS.FADE_PEACH,
+      fadeColor: COLORS.FADE_WHITE,
       onComplete: callback,
     });
   }
@@ -119,7 +119,7 @@ export class SceneTransitionManager {
   backToMap(callback: () => void): void {
     this.fadeOut({
       duration: 300,
-      fadeColor: COLORS.FADE_ORANGE,
+      fadeColor: COLORS.FADE_WHITE,
       onComplete: callback,
     });
   }
@@ -134,7 +134,7 @@ export class SceneTransitionManager {
   enterMap(): void {
     this.fadeIn({
       duration: 300,
-      fadeColor: COLORS.FADE_BLACK,
+      fadeColor: COLORS.FADE_WHITE,
     });
   }
 
@@ -144,7 +144,7 @@ export class SceneTransitionManager {
   enterNeighborhood(): void {
     this.fadeIn({
       duration: 300,
-      fadeColor: COLORS.FADE_ORANGE,
+      fadeColor: COLORS.FADE_WHITE,
     });
   }
 
@@ -154,7 +154,7 @@ export class SceneTransitionManager {
   enterHouse(): void {
     this.fadeIn({
       duration: 300,
-      fadeColor: COLORS.FADE_PEACH,
+      fadeColor: COLORS.FADE_WHITE,
     });
   }
 

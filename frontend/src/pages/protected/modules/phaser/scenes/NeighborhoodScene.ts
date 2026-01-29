@@ -187,6 +187,7 @@ export default class NeighborhoodScene extends BaseScene {
   create() {
     super.create();
     this.transitionManager = new SceneTransitionManager(this);
+    this.transitionManager.enterNeighborhood();
     
     // Setup camera for horizontal scrolling
     this.setupCamera();

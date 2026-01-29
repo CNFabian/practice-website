@@ -6,7 +6,8 @@ import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { BirdCharacter } from '../characters/BirdCharacter';
-import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
+import { createTextStyle } from '../constants/Typography';
+import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 
 interface Lesson {
   id: number;
@@ -54,6 +55,7 @@ export default class HouseScene extends BaseScene {
   private lessonContainers: Phaser.GameObjects.Container[] = [];
   private minigameShutdownHandler?: () => void;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
+  private transitionManager!: SceneTransitionManager;
   
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
@@ -100,6 +102,8 @@ export default class HouseScene extends BaseScene {
 
   create() {
     super.create();
+    this.transitionManager = new SceneTransitionManager(this);
+    this.transitionManager.enterHouse();
     this.createEnvironment();
     this.createUI();
     this.createBirdWithEntrance();
@@ -109,6 +113,7 @@ export default class HouseScene extends BaseScene {
 
   shutdown() {
     super.shutdown();
+    this.transitionManager.cleanup();
     
     if (this.minigameShutdownHandler) {
       const minigameScene = this.scene.get('GrowYourNestMinigame');
@@ -129,8 +134,21 @@ export default class HouseScene extends BaseScene {
   private createEnvironment(): void {
     const { width, height } = this.scale;
 
+    // Layer 1 (depth 0): Gradient background
+    const gradient = this.add.graphics();
+    gradient.fillGradientStyle(0xEEF1FF, 0xEEF1FF, 0xFAFBFF, 0xFAFBFF, 1);
+    gradient.fillRect(0, 0, width, height);
+    gradient.setDepth(0);
+
+    // Layer 2 (depth 1): Scene background image with transparent background
+    const sceneBackground = this.add.image(width / 2, height / 2, ASSET_KEYS.SUBURBAN_BACKGROUND);
+    sceneBackground.setDepth(1);
+    const bgScale = Math.max(width / sceneBackground.width, height / sceneBackground.height);
+    sceneBackground.setScale(bgScale);
+
+    // Layer 3 (depth 2): Lesson house image with transparent background
     this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
-    this.lessonHouse.setDepth(1);
+    this.lessonHouse.setDepth(2);
     const houseScale = Math.min(width, height) * 0.00121;
     this.lessonHouse.setScale(houseScale);
   }
@@ -419,8 +437,9 @@ export default class HouseScene extends BaseScene {
     if (minigameScene) {
       minigameScene.events.on('minigameCompleted', this.minigameShutdownHandler);
     }
-
-    this.scene.start('GrowYourNestMinigame');
+    
+    this.scene.pause('HouseScene');
+    this.scene.launch('GrowYourNestMinigame');
   }
 
   // ═══════════════════════════════════════════════════════════
