@@ -38,7 +38,7 @@ export const COLORS = {
   // Text Colors (Hex strings for Phaser.GameObjects.Text)
   TEXT_PRIMARY: '#1f2937',
   TEXT_SECONDARY: '#6b7280',
-  TEXT_WHITE: '#ffffff',
+  TEXT_WHITE: '#F8FAFF',
   TEXT_SUCCESS: '#10b981',
   TEXT_WARNING: '#f97316',
   

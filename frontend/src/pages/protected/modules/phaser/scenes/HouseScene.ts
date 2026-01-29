@@ -495,6 +495,36 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResizeDebounced, this);
+    this.events.on('wake', this.reEnableButtons, this);
+    this.events.on('resume', this.reEnableButtons, this);
+  }
+
+  private reEnableButtons(): void {
+    // Re-enable button interactivity after resume from pause
+    if (this.backButton) {
+      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg) {
+        buttonBg.setInteractive({ useHandCursor: true });
+      }
+    }
+    
+    if (this.minigameButton) {
+      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
+      if (buttonBg) {
+        buttonBg.setInteractive({ useHandCursor: true });
+      }
+    }
+    
+    // Re-enable lesson card buttons
+    this.lessonContainers.forEach(container => {
+      const card = container.getAt(0) as Phaser.GameObjects.Rectangle;
+      if (card) {
+        card.setInteractive({ useHandCursor: true });
+      }
+    });
+    
+    // Reset transition flag
+    this.isTransitioning = false;
   }
 
   private checkForLessonsUpdate(): void {
@@ -559,6 +589,8 @@ export default class HouseScene extends BaseScene {
 
   private cleanupResizeHandler(): void {
     this.scale.off('resize', this.handleResizeDebounced, this);
+    this.events.off('wake', this.reEnableButtons, this);
+    this.events.off('resume', this.reEnableButtons, this);
     
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
