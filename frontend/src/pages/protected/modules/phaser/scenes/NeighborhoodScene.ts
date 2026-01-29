@@ -9,7 +9,7 @@ import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
-import { createTextStyle } from '../constants/Typography'; // ← ADDED: Onest typography
+import { createTextStyle } from '../constants/Typography';
 
 interface HousePosition {
   id: string;
@@ -202,7 +202,7 @@ export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private setupCamera(): void {
     const { width, height } = this.scale;
-    const worldWidth = width * 1.5;
+    const worldWidth = width * 2.5;
     const worldHeight = height;
     
     // Set world bounds
@@ -382,13 +382,10 @@ export default class NeighborhoodScene extends BaseScene {
     y2: number,
     startHouseIndex: number
   ): void {
-    const graphics = this.add.graphics();
-    graphics.setDepth(1);
-    
     // Line styling
-    const lineColor = 0x93c5fd; // Light blue color for path
-    const dotSpacing = 48; // Space between dots (increased from 15)
-    const dotSize = 18; // Size of each dot (increased from 8)
+    const lineColor = 0x5B9FE3; // Light blue color for path
+    const dotSpacing = 100; // Space between dots (increased from 15)
+    const dotSize = 48; // Size of each dot (increased from 8)
     
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
@@ -405,7 +402,7 @@ export default class NeighborhoodScene extends BaseScene {
     let controlX: number;
     let controlY: number;
     
-    const curveDepth = distance * 0.4;
+    const curveDepth = distance * 0.7;
     controlX = midX;
     
     if (isUShapeSection) {
@@ -421,9 +418,6 @@ export default class NeighborhoodScene extends BaseScene {
     // Calculate approximate number of dots along the curve
     const curveLength = this.estimateCurveLength(x1, y1, controlX, controlY, x2, y2);
     const numDots = Math.floor(curveLength / dotSpacing);
-    
-    // Draw dots along the curved path
-    graphics.fillStyle(lineColor, 0.7);
 
     let currentLength = 0;
     let prevX = x1;
@@ -451,7 +445,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     const totalLength = currentLength;
 
-    // Now place dots at equal arc-length intervals
+    // Create animated dots at equal arc-length intervals
     for (let i = 0; i <= numDots; i++) {
       const targetLength = (i / numDots) * totalLength;
       
@@ -467,11 +461,26 @@ export default class NeighborhoodScene extends BaseScene {
         }
       }
       
-      // Draw circular dot at the found position
-      graphics.fillCircle(closestPoint.x, closestPoint.y, dotSize / 2);
+      // Create a separate graphics object for each dot for individual animation
+      const dotGraphic = this.add.graphics();
+      dotGraphic.setDepth(1);
+      dotGraphic.fillStyle(lineColor, 0.4); // Start at low opacity
+      dotGraphic.fillCircle(closestPoint.x, closestPoint.y, dotSize / 2);
+      
+      // Animate this dot with a delay based on its position
+      this.tweens.add({
+        targets: dotGraphic,
+        alpha: { from: 0.4, to: 0.9 },
+        duration: 500,
+        delay: i * 120, // Stagger each dot by 120ms
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1, // Infinite loop
+        repeatDelay: (numDots * 120) // Wait for all dots to complete before restarting
+      });
+      
+      this.roads.push(dotGraphic as any);
     }
-    
-    this.roads.push(graphics as any); // Store for cleanup
   }
 
   private setAllElementsInvisible(): void {
@@ -542,10 +551,10 @@ export default class NeighborhoodScene extends BaseScene {
     const columnIndex = Math.floor(index / 2);
     
     const startX = 15; // Start at 15% from left edge
-    const horizontalSpacing = 50; // 50% spacing between houses
-    const bottomRowOffset = 25; // Bottom row shifted to the right by 25%
-    const topRowY = 30; // Top row at 30% from top
-    const bottomRowY = 65; // Bottom row at 65% from top (35% vertical gap)
+    const horizontalSpacing = 100; // 50% spacing between houses
+    const bottomRowOffset = 50; // Bottom row shifted to the right by 25%
+    const topRowY = 35; // Top row at 30% from top
+    const bottomRowY = 70; // Bottom row at 65% from top (35% vertical gap)
     
     // Calculate X position with offset for bottom row
     const defaultX = isTopRow 
@@ -639,7 +648,7 @@ export default class NeighborhoodScene extends BaseScene {
     isLocked?: boolean
   ): void {
     const houseImage = this.add.image(0, 0, houseType);
-    houseImage.setDisplaySize(scale(250), scale(250));
+    houseImage.setScale(scale(1));
     
     if (isLocked) {
       houseImage.setTint(0x999999);
