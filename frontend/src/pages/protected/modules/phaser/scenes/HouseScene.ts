@@ -195,29 +195,12 @@ export default class HouseScene extends BaseScene {
   }
 
   private createBackButton(): void {
-    const { width, height } = this.scale;
-    
-    const buttonX = width * 0.08;
-    const buttonY = height * 0.05;
-    const buttonWidth = width * 0.1;
-    const buttonHeight = height * 0.05;
-    
-    this.backButton = ButtonBuilder.createIconButton({
-      scene: this,
-      x: buttonX,
-      y: buttonY,
-      width: buttonWidth,
-      height: buttonHeight,
-      text: 'Back',
-      icon: '←',
-      iconSize: Math.min(width, height) * 0.025,
-      fontSize: Math.min(width, height) * 0.016,
-      backgroundColor: COLORS.GRAY_700,
-      hoverColor: COLORS.GRAY_800,
-      onClick: () => this.handleBackToNeighborhood(),
-    });
-    this.backButton.setDepth(10);
-  }
+  this.backButton = ButtonBuilder.createBackButton(
+    this,
+    () => this.handleBackToNeighborhood()
+  );
+  this.backButton.setDepth(10);
+}
 
   private createMinigameButton(): void {
     const { width, height } = this.scale;

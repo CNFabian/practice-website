@@ -214,10 +214,11 @@ export default class MapScene extends BaseScene {
     // Scale based on neighborhood ID
     if (neighborhood.id === 'home-buying-knowledge') {
       tempImage.setScale(scale(0.8));
+      container.setDepth(10);
     } else if (neighborhood.id === 'locked-neighborhood') {
       tempImage.setScale(scale(0.45));
     } else if (neighborhood.id === 'construction-zone') {
-      tempImage.setScale(scale(0.9));
+      tempImage.setScale(scale(0.65));
     }
 
     // Calculate shadow position and scale
@@ -255,6 +256,10 @@ export default class MapScene extends BaseScene {
 
     // Create neighborhood image
     const neighborhoodImage = this.add.image(0, 0, neighborhood.assetKey);
+
+    if (neighborhood.isLocked) {
+      neighborhoodImage.preFX?.addBlur(0, 1.25, 1.25);
+    }
     
     // Scale based on neighborhood ID
     if (neighborhood.id === 'home-buying-knowledge') {
@@ -262,7 +267,7 @@ export default class MapScene extends BaseScene {
     } else if (neighborhood.id === 'locked-neighborhood') {
       neighborhoodImage.setScale(scale(0.45));
     } else if (neighborhood.id === 'construction-zone') {
-      neighborhoodImage.setScale(scale(0.9));
+      neighborhoodImage.setScale(scale(0.4));
     }
 
     neighborhoodImage.setDepth(1); // Middle depth
@@ -347,6 +352,7 @@ export default class MapScene extends BaseScene {
       lockIcon.setScale(scale(0.5)); // Adjust scale as needed
       lockIcon.setDepth(3); // Highest depth
       container.add(lockIcon);
+      
     }
 
     // Update elements

@@ -10,6 +10,7 @@ import { UIComponents } from '../ui/UIComponents';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 import { createTextStyle } from '../constants/Typography';
+import { HouseProgressCard, HouseProgressData } from '../ui/HouseProgressCard';
 
 interface HousePosition {
   id: string;
@@ -47,6 +48,7 @@ export default class NeighborhoodScene extends BaseScene {
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private cloudOverlays: Phaser.GameObjects.Image[] = []; // Track cloud overlays separately
   private transitionManager: SceneTransitionManager;
+  private progressCards: Phaser.GameObjects.Container[] = [];
 
 
   // Bird character properties
@@ -279,6 +281,8 @@ export default class NeighborhoodScene extends BaseScene {
     }
     
     this.tweens.killAll();
+    this.progressCards.forEach(card => card.destroy());
+    this.progressCards = [];
     this.cleanupEventListeners();
     this.cleanupBird();
   }
@@ -517,6 +521,10 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.coinCounter) {
       this.coinCounter.setAlpha(0);
     }
+
+    this.progressCards.forEach(card => {
+      card.setAlpha(0);
+    });
   }
 
   // Helper method to estimate curve length
@@ -582,66 +590,94 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createHouse(house: HousePosition, index: number): void {
-    const { width, height } = this.scale;
-    
-    const { x, y } = this.calculateHousePosition(index, width, height, house);
+  const { width, height } = this.scale;
+  
+  const { x, y } = this.calculateHousePosition(index, width, height, house);
 
-    const houseContainer = this.add.container(x, y);
-    houseContainer.setDepth(2);
+  const houseContainer = this.add.container(x, y);
+  houseContainer.setDepth(2);
 
-    // Determine if house has backend data
-    const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
+  // Determine if house has backend data
+  const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
 
-    // Create house icon
-    if (house.houseType) {
-      this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
-    }
-
-    // Add cloud overlay
-    if (!hasBackendData && house.houseType) {
-      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
-      cloudOverlay.setDisplaySize(scale(700), scale(700));
-      cloudOverlay.setAlpha(0.9);
-      cloudOverlay.setDepth(10);
-      this.cloudOverlays.push(cloudOverlay);
-    }
-
-    // Create house name label (module title from backend) - UPDATED FOR ONEST
-    // BEFORE (Fredoka):
-    // const nameLabel = this.add.text(0, scale(90), house.name, {
-    //   fontSize: scaleFontSize(14),
-    //   fontFamily: 'Fredoka, sans-serif',
-    //   color: COLORS.TEXT_PRIMARY,
-    //   fontStyle: 'bold',
-    //   backgroundColor: '#ffffff',
-    //   padding: { x: scale(8), y: scale(4) },
-    // }).setOrigin(0.5);
-    
-    // AFTER (Onest):
-    const nameLabel = this.add.text(0, scale(90), house.name,
-      createTextStyle('CAPTION', COLORS.TEXT_PRIMARY, {
-        fontSize: scaleFontSize(14),
-        backgroundColor: '#ffffff',
-        padding: { x: scale(8), y: scale(4) },
-      })
-    ).setOrigin(0.5);
-    houseContainer.add(nameLabel);
-
-    // Add coin reward badge if available
-    if (house.coinReward && house.coinReward > 0) {
-      this.createCoinBadge(houseContainer, house.coinReward);
-    }
-
-    // Make interactive if not locked
-    if (!house.isLocked) {
-      this.makeHouseInteractive(houseContainer, house);
-    } else {
-      houseContainer.setAlpha(OPACITY.MEDIUM);
-      this.createLockIcon(houseContainer);
-    }
-
-    this.houseSprites.set(house.id, houseContainer);
+  // Create house icon
+  if (house.houseType) {
+    this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
   }
+
+  // Add cloud overlay
+  if (!hasBackendData && house.houseType) {
+    const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+    cloudOverlay.setDisplaySize(scale(700), scale(700));
+    cloudOverlay.setAlpha(0.9);
+    cloudOverlay.setDepth(10);
+    this.cloudOverlays.push(cloudOverlay);
+  }
+
+  // ADD PROGRESS CARD - positioned to the right-middle of the house
+  const progressCardX = x + scale(250); // Right side of house
+  const progressCardY = y; // Middle height
+
+  // Prepare progress data
+  const progressData: HouseProgressData = {
+    moduleNumber: index + 1,
+    moduleName: house.name,
+    duration: '12 min', // TODO: Get from backend or calculate
+    hasProgress: hasBackendData && house.coinReward ? house.coinReward > 0 : false,
+    progressPercent: hasBackendData ? 40 : 0, // TODO: Get actual progress from backend
+    lessonCount: 2, // TODO: Get from backend
+    quizCount: 1, // TODO: Get from backend
+    coinReward: house.coinReward,
+  };
+
+  const progressCard = HouseProgressCard.createProgressCard(
+    this,
+    progressCardX,
+    progressCardY,
+    progressData,
+    () => {
+      if (!house.isLocked) {
+        this.handleHouseClick(house);
+      }
+    }
+  );
+  progressCard.setAlpha(0); // Start invisible for fade-in
+  progressCard.setDepth(3); // Above houses
+  
+  // Store the progress card for fade-in animation
+  if (!this.progressCards) {
+    this.progressCards = [];
+  }
+  this.progressCards.push(progressCard);
+
+  // Note: nameLabel removed since module name is now in the progress card
+  // If you want to keep the nameLabel below the house, uncomment below:
+  /*
+  const nameLabel = this.add.text(0, scale(90), house.name,
+    createTextStyle('CAPTION', COLORS.TEXT_PRIMARY, {
+      fontSize: scaleFontSize(14),
+      backgroundColor: '#ffffff',
+      padding: { x: scale(8), y: scale(4) },
+    })
+  ).setOrigin(0.5);
+  houseContainer.add(nameLabel);
+  */
+
+  // Add coin reward badge if available
+  if (house.coinReward && house.coinReward > 0) {
+    this.createCoinBadge(houseContainer, house.coinReward);
+  }
+
+  // Make interactive if not locked
+  if (!house.isLocked) {
+    this.makeHouseInteractive(houseContainer, house);
+  } else {
+    houseContainer.setAlpha(OPACITY.MEDIUM);
+    this.createLockIcon(houseContainer);
+  }
+
+  this.houseSprites.set(house.id, houseContainer);
+}
 
   private createHouseIcon(
     container: Phaser.GameObjects.Container, 
@@ -760,6 +796,17 @@ export default class NeighborhoodScene extends BaseScene {
         ease: 'Cubic.easeOut'
       });
     }
+
+    // Fade in progress cards
+    this.progressCards.forEach((card, index) => {
+      this.tweens.add({
+        targets: card,
+        alpha: 1,
+        duration: fadeDuration,
+        delay: 150 + (index * staggerDelay),
+        ease: 'Cubic.easeOut'
+      });
+    });
     
     // Fade in coin counter
     if (this.coinCounter) {
@@ -1016,6 +1063,9 @@ export default class NeighborhoodScene extends BaseScene {
 
   private performResize(): void {
     this.tweens.killAll();
+    
+    this.progressCards.forEach(card => card.destroy());
+    this.progressCards = [];
     
     this.houseImages = [];
     

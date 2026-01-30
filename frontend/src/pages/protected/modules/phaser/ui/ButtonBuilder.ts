@@ -160,31 +160,59 @@ export class ButtonBuilder {
     return container;
   }
 
-  /**
-   * Create a back button (arrow + text)
-   */
-  static createBackButton(
-    scene: Phaser.Scene,
-    onClick: () => void,
-    x: number = scale(20),
-    y: number = scale(20)
-  ): Phaser.GameObjects.Container {
-    return ButtonBuilder.createIconButton({
-      scene,
-      x,
-      y,
-      width: scale(100),
-      height: scale(40),
-      text: 'Back',
-      icon: '←',
-      iconSize: 20,
-      fontSize: 14,
-      backgroundColor: COLORS.GRAY_500,
-      hoverColor: COLORS.GRAY_600,
-      textColor: COLORS.TEXT_WHITE,
-      onClick,
-    });
-  }
+/**
+ * Create a back button (arrow + text)
+ */
+static createBackButton(
+  scene: Phaser.Scene,
+  onClick: () => void,
+  x: number = scale(30),
+  y: number = scale(30)
+): Phaser.GameObjects.Container {
+  const container = scene.add.container(x, y);
+
+  // Create transparent rounded background that shows on hover
+  const hoverBg = scene.add.graphics();
+  hoverBg.fillStyle(0x000000, 0);
+  hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+  container.add(hoverBg);
+
+  // Create arrow icon - extra large
+  const arrow = scene.add.text(0, 0, '←', {
+    fontSize: '48px',  // Fixed size, not scaled
+    fontFamily: FONT_FAMILY,
+    color: '#000000',
+    fontStyle: 'bold',
+  }).setOrigin(0, 0.5);
+  container.add(arrow);
+
+  // Create "Back" text - extra large
+  const backText = scene.add.text(scale(55), 0, 'Back', {
+    fontSize: '32px',  // Fixed size, not scaled
+    fontFamily: FONT_FAMILY,
+    color: '#000000',
+    fontStyle: 'bold',
+  }).setOrigin(0, 0.5);
+  container.add(backText);
+
+  // Create interactive area for hover effects
+  const interactiveZone = scene.add.zone(scale(50), 0, scale(140), scale(50));
+  interactiveZone.setInteractive({ useHandCursor: true })
+    .on('pointerover', () => {
+      hoverBg.clear();
+      hoverBg.fillStyle(0x000000, 0.1); // Show transparent black on hover
+      hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+    })
+    .on('pointerout', () => {
+      hoverBg.clear();
+      hoverBg.fillStyle(0x000000, 0); // Hide background when not hovering
+      hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+    })
+    .on('pointerdown', onClick);
+  container.add(interactiveZone);
+
+  return container;
+}
 
   /**
    * Create a lesson button with completion states
