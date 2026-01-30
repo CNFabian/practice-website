@@ -20,6 +20,8 @@ export const ASSET_KEYS = {
   HOUSE_4: 'house4',
   HOUSE_5: 'house5',
   HOUSE_CLOUD: 'houseCloud',
+  VIDEO_PROGRESS_ICON: 'videoProgressIcon',
+  DOCUMENT_PROGRESS_ICON: 'documentProgressIcon',
     
   // Characters
   BIRD_IDLE: 'bird_idle',

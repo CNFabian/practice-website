@@ -623,7 +623,7 @@ export default class NeighborhoodScene extends BaseScene {
     moduleNumber: index + 1,
     moduleName: house.name,
     duration: '12 min', // TODO: Get from backend or calculate
-    hasProgress: hasBackendData && house.coinReward ? house.coinReward > 0 : false,
+    hasProgress: house.coinReward ? house.coinReward > 0 : true,
     progressPercent: hasBackendData ? 40 : 0, // TODO: Get actual progress from backend
     lessonCount: 2, // TODO: Get from backend
     quizCount: 1, // TODO: Get from backend
@@ -637,7 +637,7 @@ export default class NeighborhoodScene extends BaseScene {
     progressData,
     () => {
       if (!house.isLocked) {
-        this.handleHouseClick(house);
+        this.travelToHouse(index);
       }
     }
   );
@@ -668,10 +668,7 @@ export default class NeighborhoodScene extends BaseScene {
     this.createCoinBadge(houseContainer, house.coinReward);
   }
 
-  // Make interactive if not locked
-  if (!house.isLocked) {
-    this.makeHouseInteractive(houseContainer, house);
-  } else {
+  if (house.isLocked) {
     houseContainer.setAlpha(OPACITY.MEDIUM);
     this.createLockIcon(houseContainer);
   }
@@ -725,62 +722,6 @@ export default class NeighborhoodScene extends BaseScene {
       fontSize: scaleFontSize(20),
     }).setOrigin(0.5);
     container.add(lockIcon);
-  }
-
-  private makeHouseInteractive(
-    container: Phaser.GameObjects.Container,
-    house: HousePosition
-  ): void {
-    const background = container.list[0] as Phaser.GameObjects.Image;
-    
-    if (background) {
-      background.setInteractive({
-        useHandCursor: true,
-        pixelPerfect: true,
-        alphaTolerance: 1
-      });
-      
-      this.houseImages.push(background);
-      
-      const originalWidth = background.displayWidth;
-      const originalHeight = background.displayHeight;
-      
-      background.on('pointerover', () => {
-        this.tweens.add({
-          targets: background,
-          displayWidth: originalWidth * 1.1,
-          displayHeight: originalHeight * 1.1,
-          duration: 200,
-          ease: 'Power2',
-        });
-      });
-
-      background.on('pointerout', () => {
-        this.tweens.add({
-          targets: background,
-          displayWidth: originalWidth,
-          displayHeight: originalHeight,
-          duration: 200,
-          ease: 'Power2',
-        });
-      });
-      
-      background.on('pointerdown', () => {
-        if (!this.isTransitioning) {
-          const targetIndex = this.houses.findIndex(h => h.id === house.id);
-          
-          if (targetIndex !== -1 && targetIndex !== this.currentHouseIndex) {
-            this.travelToHouse(targetIndex);
-          } else if (targetIndex === this.currentHouseIndex) {
-            this.handleHouseClick(house);
-          }
-        }
-      });
-      
-      if (background.input) {
-        background.input.cursor = 'pointer';
-      }
-    }
   }
 
   private fadeInScene(): void {

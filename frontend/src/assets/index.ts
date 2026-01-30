@@ -100,6 +100,8 @@ export { default as House3 } from './images/phaser/houses/house3.png'
 export { default as House4 } from './images/phaser/houses/house4.png'
 export { default as House5 } from './images/phaser/houses/house5.png'
 export { default as HouseCloud } from './images/phaser/houses/house_cloud.png'
+export { default as VideoProgressIcon } from './images/phaser/houses/Video_ProgressCard.svg'
+export { default as DocumentProgressIcon } from './images/phaser/houses/Document_ProgressCard.svg'
 
 // CutHouse Images for Phaser Scenes
 export { default as HouseBackground } from './images/phaser/house_background1.png'
