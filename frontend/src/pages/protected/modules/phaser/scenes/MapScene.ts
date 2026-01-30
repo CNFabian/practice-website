@@ -71,8 +71,12 @@ export default class MapScene extends BaseScene {
     this.transitionManager = new SceneTransitionManager(this);
     this.transitionManager.enterMap();
     
-    this.setupNeighborhoodData();
-    this.createUI();
+    // Correct order of operations
+    this.setupNeighborhoodData();  // Setup neighborhood data first
+    this.createUI();               // Create UI elements
+    this.setAllElementsInvisible(); // Set alpha to 0
+    this.fadeInScene();            // Fade everything in
+    
     this.setupEventListeners();
   }
 
@@ -154,6 +158,43 @@ export default class MapScene extends BaseScene {
   private setupEventListeners(): void {
     this.scale.on('resize', this.handleResizeDebounced, this);
   }
+
+  private setAllElementsInvisible(): void {
+    // Set all neighborhood containers invisible
+    this.neighborhoodElements.forEach((elements) => {
+      elements.container.setAlpha(0);
+    });
+    
+    // Set coin counter invisible
+    if (this.coinCounter) {
+      this.coinCounter.setAlpha(0);
+    }
+  }
+
+  private fadeInScene(): void {
+    const fadeDuration = 600;
+    
+    // Fade in coin counter
+    if (this.coinCounter) {
+      this.tweens.add({
+        targets: this.coinCounter,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    
+    // Fade in all neighborhood containers simultaneously
+    this.neighborhoodElements.forEach((elements) => {
+      this.tweens.add({
+        targets: elements.container,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    });
+  }
+
 
   private handleResizeDebounced(): void {
     if (this.resizeDebounceTimer) {

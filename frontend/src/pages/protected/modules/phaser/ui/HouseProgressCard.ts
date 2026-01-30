@@ -346,7 +346,7 @@ export class HouseProgressCard {
           const birdSprite = bird.getSprite();
           if (birdSprite) {
             // Calculate target position (around progress bar area - 75% mark)
-            const targetBirdY = y + progressY;
+            const targetBirdY = y + scale(-30); 
             
             // Create hop up animation with arc
             scene.tweens.add({

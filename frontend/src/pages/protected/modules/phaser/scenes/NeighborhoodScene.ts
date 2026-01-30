@@ -351,8 +351,8 @@ export default class NeighborhoodScene extends BaseScene {
 
   if (this.houses.length > 0) {
     this.createEnvironment();
-    this.createHouses();
     this.createBird();
+    this.createHouses();
     
     // Set all elements to alpha 0 initially
     this.setAllElementsInvisible();
@@ -747,98 +747,92 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private fadeInScene(): void {
-    const fadeDuration = 600;
-    const staggerDelay = 50;
-    
-    // Fade in back button
-    if (this.backButton) {
-      this.tweens.add({
-        targets: this.backButton,
-        alpha: 1,
-        duration: fadeDuration,
-        ease: 'Cubic.easeOut'
-      });
-    }
+  const fadeDuration = 600;
+  
+  // Fade in back button
+  if (this.backButton) {
+    this.tweens.add({
+      targets: this.backButton,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
+    });
+  }
 
-    // Fade in progress cards
-    this.progressCards.forEach((card, index) => {
-      this.tweens.add({
-        targets: card,
-        alpha: 1,
-        duration: fadeDuration,
-        delay: 150 + (index * staggerDelay),
-        ease: 'Cubic.easeOut'
-      });
+  // Fade in coin counter
+  if (this.coinCounter) {
+    this.tweens.add({
+      targets: this.coinCounter,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
     });
-    
-    // Fade in coin counter
-    if (this.coinCounter) {
-      this.tweens.add({
-        targets: this.coinCounter,
-        alpha: 1,
-        duration: fadeDuration,
-        ease: 'Cubic.easeOut'
-      });
-    }
-    
-    // Fade in roads first (background layer)
-    this.roads.forEach((road, index) => {
-      this.tweens.add({
-        targets: road,
-        alpha: 1,
-        duration: fadeDuration,
-        delay: index * staggerDelay,
-        ease: 'Cubic.easeOut'
-      });
+  }
+  
+  // Fade in roads
+  this.roads.forEach((road) => {
+    this.tweens.add({
+      targets: road,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
     });
-    
-    // Fade in house sprites (middle layer)
-    const houseSpritesArray = Array.from(this.houseSprites.values());
-    houseSpritesArray.forEach((sprite, index) => {
-      this.tweens.add({
-        targets: sprite,
-        alpha: 1,
-        duration: fadeDuration,
-        delay: 100 + (index * staggerDelay),
-        ease: 'Cubic.easeOut'
-      });
+  });
+  
+  // Fade in house sprites
+  const houseSpritesArray = Array.from(this.houseSprites.values());
+  houseSpritesArray.forEach((sprite) => {
+    this.tweens.add({
+      targets: sprite,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
     });
-    
-    // Fade in cloud overlays to 0.9 (NOT 1.0)
-    this.cloudOverlays.forEach((cloud, index) => {
-      this.tweens.add({
-        targets: cloud,
-        alpha: 0.9,  // CHANGED FROM 1 TO 0.9
-        duration: fadeDuration,
-        delay: 200 + (index * staggerDelay),
-        ease: 'Cubic.easeOut'
-      });
+  });
+  
+  // Fade in progress cards
+  this.progressCards.forEach((card) => {
+    this.tweens.add({
+      targets: card,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
     });
-    
-    // Fade in bird last (top layer)
-    if (this.bird) {
-      const birdSprite = this.bird.getSprite();
-      if (birdSprite) {
-        this.tweens.add({
-          targets: birdSprite,
-          alpha: 1,
-          duration: fadeDuration,
-          delay: 300,
-          ease: 'Cubic.easeOut'
-        });
-      }
-    }
-    
-    // Fade in placeholder if no houses
-    if (this.placeholderCard) {
+  });
+  
+  // Fade in cloud overlays
+  this.cloudOverlays.forEach((cloud) => {
+    this.tweens.add({
+      targets: cloud,
+      alpha: 0.9,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
+    });
+  });
+  
+  // Fade in bird
+  if (this.bird) {
+    const birdSprite = this.bird.getSprite();
+    if (birdSprite) {
       this.tweens.add({
-        targets: this.placeholderCard,
+        targets: birdSprite,
         alpha: 1,
         duration: fadeDuration,
         ease: 'Cubic.easeOut'
       });
     }
   }
+  
+  // Fade in placeholder if no houses
+  if (this.placeholderCard) {
+    this.tweens.add({
+      targets: this.placeholderCard,
+      alpha: 1,
+      duration: fadeDuration,
+      ease: 'Cubic.easeOut'
+    });
+  }
+}
 
 
   private createPlaceholder(): void {
@@ -890,12 +884,12 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Position bird on the bottom blue line of the progress card
     // Progress card is at progressCardX = houseX + scale(250), progressCardY = houseY
-    const progressCardOffsetX = scale(250); // Right side of house
+    const progressCardOffsetX = scale(350); // Right side of house
     const collapsedHeight = scale(70); // Height of collapsed progress card
     
     // Bird should be at the BOTTOM of the progress card (on the blue line)
     const birdX = houseX + progressCardOffsetX;
-    const birdY = houseY + (collapsedHeight / 2); // Bottom of card
+    const birdY = houseY + (collapsedHeight - 145); // Bottom of card
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
