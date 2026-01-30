@@ -7,6 +7,7 @@ import {
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import Minigame from './Minigame';
+import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ const ModulesPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const { data: dashboardModules } = useDashboardModules();
   const { data: coinBalanceData } = useCoinBalance();
   const totalCoins = coinBalanceData?.current_balance || 0;
   const queryClient = useQueryClient();
@@ -253,7 +255,7 @@ const ModulesPage: React.FC = () => {
     }
   }, [navState.currentView, isPhaserReady]);
 
-  // Set navigation handlers and sync data with GameManager
+ // Set navigation handlers and sync data with GameManager
   useEffect(() => {
     if (!isPhaserReady || !assetsLoaded || isLoadingModules) return;
 
@@ -275,6 +277,14 @@ const ModulesPage: React.FC = () => {
         GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
       }
     }
+
+    if (dashboardModules) {
+      const game = GameManager.getGame();
+      if (game) {
+        game.registry.set('dashboardModules', dashboardModules);
+        console.log('✅ Passed dashboard modules to Phaser:', dashboardModules);
+      }
+    }
   }, [
     isPhaserReady, 
     assetsLoaded, 
@@ -289,7 +299,8 @@ const ModulesPage: React.FC = () => {
     handleMinigameSelect, 
     handleBackToMap, 
     handleBackToNeighborhood,
-    handlePrefetchLessons
+    handlePrefetchLessons,
+    dashboardModules
   ]);
 
   // Sync lessons data with GameManager

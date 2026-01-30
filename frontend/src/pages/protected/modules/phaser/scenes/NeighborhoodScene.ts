@@ -49,7 +49,7 @@ export default class NeighborhoodScene extends BaseScene {
   private cloudOverlays: Phaser.GameObjects.Image[] = []; // Track cloud overlays separately
   private transitionManager: SceneTransitionManager;
   private progressCards: Phaser.GameObjects.Container[] = [];
-
+  private moduleProgressMap?: Map<string, any>;
 
   // Bird character properties
   private bird?: BirdCharacter;
@@ -193,6 +193,21 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Setup camera for horizontal scrolling
     this.setupCamera();
+
+    const dashboardModules = this.registry.get('dashboardModules') || [];
+    
+    if (dashboardModules && dashboardModules.length > 0) {
+      // Create lookup map: moduleId (UUID) -> progress data
+      this.moduleProgressMap = new Map(
+        dashboardModules.map((dm: any) => [dm.module.id, dm])
+      );
+      console.log('📊 Module progress map created with', this.moduleProgressMap.size, 'modules');
+    } else {
+      console.warn('⚠️ No dashboard modules found in registry');
+    }
+    
+    // Now create houses with progress data
+    this.createHouses();
     
     this.createUI();
     this.fadeInScene();
@@ -560,8 +575,8 @@ export default class NeighborhoodScene extends BaseScene {
     const columnIndex = Math.floor(index / 2);
     
     const startX = 15; // Start at 15% from left edge
-    const horizontalSpacing = 100; // 50% spacing between houses
-    const bottomRowOffset = 50; // Bottom row shifted to the right by 25%
+    const horizontalSpacing = 80; // 50% spacing between houses
+    const bottomRowOffset = 40; // Bottom row shifted to the right by 25%
     const topRowY = 35; // Top row at 30% from top
     const bottomRowY = 70; // Bottom row at 65% from top (35% vertical gap)
     
@@ -618,15 +633,33 @@ export default class NeighborhoodScene extends BaseScene {
   const progressCardX = x + scale(250); // Right side of house
   const progressCardY = y; // Middle height
 
-  // Prepare progress data
+  // Get progress data from backend (if available)
+  const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
+
+  // Log what we found for debugging
+  if (house.moduleBackendId) {
+    console.log(`🏠 House "${house.name}":`, {
+      moduleBackendId: house.moduleBackendId,
+      hasProgressData: !!moduleProgress,
+      progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+      lessonCount: moduleProgress?.module.lesson_count || 0,
+    });
+  }
+
+  // Prepare progress data with REAL backend values
   const progressData: HouseProgressData = {
     moduleNumber: index + 1,
     moduleName: house.name,
-    duration: '12 min', // TODO: Get from backend or calculate
-    hasProgress: house.coinReward ? house.coinReward > 0 : true,
-    progressPercent: hasBackendData ? 40 : 0, // TODO: Get actual progress from backend
-    lessonCount: 2, // TODO: Get from backend
-    quizCount: 1, // TODO: Get from backend
+    // ✅ Real duration from backend
+    duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
+    // ✅ Real progress status
+    hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
+    // ✅ Real progress percentage (tree will grow based on this!)
+    progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+    // ✅ Real lesson count
+    lessonCount: moduleProgress?.module.lesson_count || 0,
+    // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
+    quizCount: moduleProgress?.module.lesson_count || 0,
     coinReward: house.coinReward,
   };
 
@@ -1052,7 +1085,6 @@ export default class NeighborhoodScene extends BaseScene {
       this.createEnvironment();
       this.createHouses();
       
-      // ADD THESE TWO LINES:
       // Set all elements invisible before fading them in
       this.setAllElementsInvisible();
       // Fade in all elements (including clouds)
@@ -1060,6 +1092,22 @@ export default class NeighborhoodScene extends BaseScene {
     } else {
       this.createPlaceholder();
     }
+  }
+
+  /**
+   * Format duration in minutes to readable string
+   */
+  private formatDuration(minutes: number): string {
+    if (!minutes || minutes === 0) return '0 min';
+    
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   }
 
   // ═══════════════════════════════════════════════════════════

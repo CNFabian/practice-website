@@ -163,32 +163,33 @@ export class HouseProgressCard {
       // Bottom section with icons and button
       const bottomY = progressY + scale(35);
 
-      // Lesson count (video icon) - REPLACED EMOJI WITH SVG
-      const videoIcon = scene.add.image(-cardWidth / 2 + scale(60), bottomY, 'videoProgressIcon');
+      // Move all icons MORE TO THE LEFT (changed from 60 to 40)
+      // Lesson count (video icon)
+      const videoIcon = scene.add.image(-cardWidth / 2 + scale(40), bottomY, 'videoProgressIcon');
       videoIcon.setDisplaySize(scale(24), scale(24));
       videoIcon.setOrigin(0.5);
       progressContainer.add(videoIcon);
 
-      const lessonCount = scene.add.text(-cardWidth / 2 + scale(90), bottomY, `${data.lessonCount || 0}`,
+      const lessonCount = scene.add.text(-cardWidth / 2 + scale(70), bottomY, `${data.lessonCount || 0}`,
         createTextStyle('BODY_BOLD', '#5B7FDB', { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(lessonCount);
 
-      // Quiz count (document icon) - REPLACED EMOJI WITH SVG
-      const documentIcon = scene.add.image(-cardWidth / 2 + scale(140), bottomY, 'documentProgressIcon');
+      // Quiz count (document icon) - keep relative spacing
+      const documentIcon = scene.add.image(-cardWidth / 2 + scale(120), bottomY, 'documentProgressIcon');
       documentIcon.setDisplaySize(scale(24), scale(24));
       documentIcon.setOrigin(0.5);
       progressContainer.add(documentIcon);
 
-      const quizCount = scene.add.text(-cardWidth / 2 + scale(170), bottomY, `${data.quizCount || 0}`,
+      const quizCount = scene.add.text(-cardWidth / 2 + scale(150), bottomY, `${data.quizCount || 0}`,
         createTextStyle('BODY_BOLD', '#5B7FDB', { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(quizCount);
 
-      // Circular progress bar with tree icon - NEW
-      const circleX = -cardWidth / 2 + scale(220);
+      // Tree icon
+      const circleX = -cardWidth / 2 + scale(200);
       const circleRadius = scale(16);
-      
+            
       // Draw circular progress background (gray circle)
       const progressCircleBg = scene.add.graphics();
       progressCircleBg.lineStyle(scale(3), 0xD1D5DB, 1);
@@ -210,11 +211,29 @@ export class HouseProgressCard {
         progressCircleFill.strokePath();
       }
       progressContainer.add(progressCircleFill);
-      
-      // Tree emoji in center
-      const treeIcon = scene.add.text(circleX, bottomY, '🌳',
-        { fontSize: scaleFontSize(18) }
-      ).setOrigin(0.5);
+
+      // Map progress percentage to tree stages (1-7)
+      let treeStage: number;
+      if (progressPercentForCircle === 0) {
+        treeStage = 1;
+      } else if (progressPercentForCircle === 100) {
+        treeStage = 7; // Final stage when complete
+      } else {
+        // Stages 2-6 for progress in between
+        treeStage = Math.floor((progressPercentForCircle / 100) * 5) + 2;
+        treeStage = Math.min(treeStage, 6); // Cap at stage 6 until 100%
+      }
+
+      // Display the tree stage image (these are loaded in PreloaderScene as 'tree_stage_1' through 'tree_stage_7')
+      const treeIcon = scene.add.image(circleX, bottomY, `tree_stage_${treeStage}`);
+
+      // Scale the tree to fit in the circular progress indicator
+      // The circle has radius of scale(16), so tree should fit within ~scale(28) diameter
+      const targetSize = scale(28);
+      const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
+      treeIcon.setScale(treeScale);
+      treeIcon.setOrigin(0.5);
+
       progressContainer.add(treeIcon);
 
       // Continue button
