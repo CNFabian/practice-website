@@ -605,109 +605,98 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createHouse(house: HousePosition, index: number): void {
-  const { width, height } = this.scale;
-  
-  const { x, y } = this.calculateHousePosition(index, width, height, house);
+    const { width, height } = this.scale;
+    
+    const { x, y } = this.calculateHousePosition(index, width, height, house);
 
-  const houseContainer = this.add.container(x, y);
-  houseContainer.setDepth(2);
+    const houseContainer = this.add.container(x, y);
+    houseContainer.setDepth(2);
 
-  // Determine if house has backend data
-  const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
+    // Determine if house has backend data
+    const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
 
-  // Create house icon
-  if (house.houseType) {
-    this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
-  }
-
-  // Add cloud overlay
-  if (!hasBackendData && house.houseType) {
-    const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
-    cloudOverlay.setDisplaySize(scale(700), scale(700));
-    cloudOverlay.setAlpha(0.9);
-    cloudOverlay.setDepth(10);
-    this.cloudOverlays.push(cloudOverlay);
-  }
-
-  // ADD PROGRESS CARD - positioned to the right-middle of the house
-  const progressCardX = x + scale(250); // Right side of house
-  const progressCardY = y; // Middle height
-
-  // Get progress data from backend (if available)
-  const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
-
-  // Log what we found for debugging
-  if (house.moduleBackendId) {
-    console.log(`🏠 House "${house.name}":`, {
-      moduleBackendId: house.moduleBackendId,
-      hasProgressData: !!moduleProgress,
-      progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-      lessonCount: moduleProgress?.module.lesson_count || 0,
-    });
-  }
-
-  // Prepare progress data with REAL backend values
-  const progressData: HouseProgressData = {
-    moduleNumber: index + 1,
-    moduleName: house.name,
-    // ✅ Real duration from backend
-    duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
-    // ✅ Real progress status
-    hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
-    // ✅ Real progress percentage (tree will grow based on this!)
-    progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-    // ✅ Real lesson count
-    lessonCount: moduleProgress?.module.lesson_count || 0,
-    // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
-    quizCount: moduleProgress?.module.lesson_count || 0,
-    coinReward: house.coinReward,
-  };
-
-  const progressCard = HouseProgressCard.createProgressCard(
-    this,
-    progressCardX,
-    progressCardY,
-    progressData,
-    () => {
-      if (!house.isLocked) {
-        this.travelToHouse(index);
-      }
+    // Create house icon
+    if (house.houseType) {
+      this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
     }
-  );
-  progressCard.setAlpha(0); // Start invisible for fade-in
-  progressCard.setDepth(3); // Above houses
-  
-  // Store the progress card for fade-in animation
-  if (!this.progressCards) {
-    this.progressCards = [];
+
+    // Add cloud overlay
+    if (!hasBackendData && house.houseType) {
+      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      cloudOverlay.setDisplaySize(scale(700), scale(700));
+      cloudOverlay.setAlpha(0.9);
+      cloudOverlay.setDepth(10);
+      this.cloudOverlays.push(cloudOverlay);
+    }
+
+    // ADD PROGRESS CARD - positioned to the right-middle of the house
+    const progressCardX = x + scale(250); // Right side of house
+    const progressCardY = y; // Middle height
+
+    // Get progress data from backend (if available)
+    const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
+
+    // Log what we found for debugging
+    if (house.moduleBackendId) {
+      console.log(`🏠 House "${house.name}":`, {
+        moduleBackendId: house.moduleBackendId,
+        hasProgressData: !!moduleProgress,
+        progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+        lessonCount: moduleProgress?.module.lesson_count || 0,
+      });
+    }
+
+    // Prepare progress data with REAL backend values
+    const progressData: HouseProgressData = {
+      moduleNumber: index + 1,
+      moduleName: house.name,
+      // ✅ Real duration from backend
+      duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
+      // ✅ Real progress status
+      hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
+      // ✅ Real progress percentage (tree will grow based on this!)
+      progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+      // ✅ Real lesson count
+      lessonCount: moduleProgress?.module.lesson_count || 0,
+      // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
+      quizCount: moduleProgress?.module.lesson_count || 0,
+      coinReward: house.coinReward,
+    };
+
+    // IMPORTANT: Pass this.bird as the last parameter!
+    const progressCard = HouseProgressCard.createProgressCard(
+      this,
+      progressCardX,
+      progressCardY,
+      progressData,
+      () => {
+        if (!house.isLocked) {
+          this.travelToHouse(index);
+        }
+      },
+      this.bird  // ← ADD THIS LINE! Pass the bird reference
+    );
+    progressCard.setAlpha(0); // Start invisible for fade-in
+    progressCard.setDepth(3); // Above houses
+    
+    // Store the progress card for fade-in animation
+    if (!this.progressCards) {
+      this.progressCards = [];
+    }
+    this.progressCards.push(progressCard);
+
+    // Add coin reward badge if available
+    if (house.coinReward && house.coinReward > 0) {
+      this.createCoinBadge(houseContainer, house.coinReward);
+    }
+
+    if (house.isLocked) {
+      houseContainer.setAlpha(OPACITY.MEDIUM);
+      this.createLockIcon(houseContainer);
+    }
+
+    this.houseSprites.set(house.id, houseContainer);
   }
-  this.progressCards.push(progressCard);
-
-  // Note: nameLabel removed since module name is now in the progress card
-  // If you want to keep the nameLabel below the house, uncomment below:
-  /*
-  const nameLabel = this.add.text(0, scale(90), house.name,
-    createTextStyle('CAPTION', COLORS.TEXT_PRIMARY, {
-      fontSize: scaleFontSize(14),
-      backgroundColor: '#ffffff',
-      padding: { x: scale(8), y: scale(4) },
-    })
-  ).setOrigin(0.5);
-  houseContainer.add(nameLabel);
-  */
-
-  // Add coin reward badge if available
-  if (house.coinReward && house.coinReward > 0) {
-    this.createCoinBadge(houseContainer, house.coinReward);
-  }
-
-  if (house.isLocked) {
-    houseContainer.setAlpha(OPACITY.MEDIUM);
-    this.createLockIcon(houseContainer);
-  }
-
-  this.houseSprites.set(house.id, houseContainer);
-}
 
   private createHouseIcon(
     container: Phaser.GameObjects.Container, 
@@ -899,57 +888,33 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: houseX, y: houseY } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
     
-    const birdOffsetX = width * 0.04;
-    const birdOffsetY = height * 0.025;
+    // Position bird on the bottom blue line of the progress card
+    // Progress card is at progressCardX = houseX + scale(250), progressCardY = houseY
+    const progressCardOffsetX = scale(250); // Right side of house
+    const collapsedHeight = scale(70); // Height of collapsed progress card
     
-    const birdX = houseX + birdOffsetX;
-    const birdY = houseY + birdOffsetY;
+    // Bird should be at the BOTTOM of the progress card (on the blue line)
+    const birdX = houseX + progressCardOffsetX;
+    const birdY = houseY + (collapsedHeight / 2); // Bottom of card
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
   }
 
   private startBirdIdleAnimation(): void {
-    if (this.idleAnimationTimer) {
-      this.idleAnimationTimer.remove();
-    }
-    
-    this.isShuttingDown = false;
-    
-    const scheduleNextIdleHop = () => {
-      if (this.isShuttingDown) return;
-      
-      const randomDelay = Phaser.Math.Between(5000, 8000);
-      
-      this.idleAnimationTimer = this.time.delayedCall(randomDelay, () => {
-        if (this.isShuttingDown) return;
-        if (!this.bird?.getIsAnimating() && !this.isTransitioning) {
-          this.playBirdIdleHop();
-        }
-        scheduleNextIdleHop();
-      });
-    };
-    
-    scheduleNextIdleHop();
-  }
-
-  private playBirdIdleHop(): void {
-    if (!this.bird || this.bird.getIsAnimating() || this.houses.length === 0) return;
-
-    const { width, height } = this.scale;
-    const currentHouse = this.houses[this.currentHouseIndex];
-    
-    const { x: houseX } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
-    
-    const birdOffsetX = width * 0.04;
-    const houseCenterX = houseX + birdOffsetX;
-    const houseAreaRadius = width * 0.05;
-
-    this.bird.playIdleHopWithBoundary(houseCenterX, houseAreaRadius);
+    if (!this.bird) return;
+    this.bird.startIdleAnimation();
   }
 
   private travelToHouse(targetHouseIndex: number): void {
     if (!this.bird || this.bird.getIsAnimating() || targetHouseIndex >= this.houses.length) return;
+
+    // Don't move bird if clicking the house it's already at
+    if (targetHouseIndex === this.currentHouseIndex) {
+      const targetHouse = this.houses[targetHouseIndex];
+      this.handleHouseClick(targetHouse);
+      return;
+    }
 
     this.bird.setIsAnimating(true);
     this.previousHouseIndex = this.currentHouseIndex;
@@ -960,11 +925,12 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: targetX, y: targetY } = this.calculateHousePosition(targetHouseIndex, width, height, targetHouse);
     
-    const birdOffsetX = width * 0.04;
-    const birdOffsetY = height * 0.025;
+    // Position bird on the bottom blue line of the progress card
+    const progressCardOffsetX = scale(250);
+    const collapsedHeight = scale(70);
     
-    const finalX = targetX + birdOffsetX;
-    const finalY = targetY + birdOffsetY;
+    const finalX = targetX + progressCardOffsetX;
+    const finalY = targetY + (collapsedHeight / 2); // Bottom of card
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
@@ -1070,10 +1036,13 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.bird && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
-      const birdOffsetX = width * 0.04;
-      const birdOffsetY = height * 0.025;
-      const birdX = x + birdOffsetX;
-      const birdY = y + birdOffsetY;
+      
+      // Position bird on the bottom blue line of the progress card
+      const progressCardOffsetX = scale(250);
+      const collapsedHeight = scale(70);
+      
+      const birdX = x + progressCardOffsetX;
+      const birdY = y + (collapsedHeight / 2); // Bottom of card
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();

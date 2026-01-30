@@ -178,19 +178,31 @@ export class BirdCharacter {
     const originalY = this.sprite.y;
     const originalX = this.sprite.x;
 
-    // Random small movement with constraints
-    const moveRange = Math.floor(width * 0.01);
+    const moveRange = Math.floor(width * 0.003);
     const moveX = Phaser.Math.Between(-moveRange, moveRange);
-    const minX = width * 0.1;
-    const maxX = width * 0.9;
-    const targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
+    
+    // Use tighter boundaries for NeighborhoodScene
+    // Check if we're in NeighborhoodScene by checking scene key
+    const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
+    
+    let targetX: number;
+    if (isNeighborhoodScene) {
+      // Stay within a smaller radius around current position
+      const maxDistance = width * 0.02; // Small radius
+      targetX = Phaser.Math.Clamp(originalX + moveX, originalX - maxDistance, originalX + maxDistance);
+    } else {
+      // HouseScene - use wider boundaries
+      const minX = width * 0.1;
+      const maxX = width * 0.9;
+      targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
+    }
 
     // Flip sprite based on movement direction
     if (Math.abs(moveX) > moveRange * 0.5) {
       this.sprite.setFlipX(moveX < 0);
     }
 
-    const hopHeight = height * 0.008;
+    const hopHeight = height * 0.003;
     const duration = 400;
 
     this.scene.tweens.add({
@@ -229,19 +241,19 @@ export class BirdCharacter {
     const minX = houseCenterX - boundaryRadius;
     const maxX = houseCenterX + boundaryRadius;
 
-    // Random small movement within boundaries
+    // REDUCED: Random small movement within boundaries (was 0.005, now 0.002)
     const moveDistance = Phaser.Math.Between(-5, 5);
-    let targetX = originalX + (width * 0.005 * moveDistance); // Scale movement
+    let targetX = originalX + (width * 0.002 * moveDistance); // Scale movement
     targetX = Phaser.Math.Clamp(targetX, minX, maxX);
 
     // Flip sprite based on movement direction
     const actualMove = targetX - originalX;
-    if (Math.abs(actualMove) > width * 0.002) {
+    if (Math.abs(actualMove) > width * 0.001) {
       this.sprite.setFlipX(actualMove < 0);
     }
 
-    // Single hop animation
-    const hopHeight = height * 0.003;
+    // REDUCED: Single hop animation (was height * 0.003, now 0.0015)
+    const hopHeight = height * 0.0015;
     const duration = 300;
 
     this.scene.tweens.add({
@@ -262,6 +274,7 @@ export class BirdCharacter {
       },
     });
   }
+
 
   // ═══════════════════════════════════════════════════════════
   // TRAVEL ANIMATION METHODS (for NeighborhoodScene)

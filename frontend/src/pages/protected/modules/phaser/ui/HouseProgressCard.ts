@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { createTextStyle } from '../constants/Typography';
+import { BirdCharacter } from '../characters/BirdCharacter';
 
 export interface HouseProgressData {
   moduleNumber: number;
@@ -22,8 +23,13 @@ export class HouseProgressCard {
     x: number,
     y: number,
     data: HouseProgressData,
-    onContinueClick?: () => void
+    onContinueClick?: () => void,
+    bird?: BirdCharacter 
   ): Phaser.GameObjects.Container {
+    console.log('🐦 Creating progress card with bird:', bird ? 'YES' : 'NO');
+    if (bird) {
+      console.log('🐦 Bird sprite:', bird.getSprite() ? 'EXISTS' : 'MISSING');
+    }
     const container = scene.add.container(x, y);
 
     // Card dimensions
@@ -31,6 +37,9 @@ export class HouseProgressCard {
     const collapsedHeight = scale(70);
     const expandedHeight = scale(110);
     const borderRadius = scale(16);
+
+    // Store original bird position for returning
+    let originalBirdY: number | undefined;
 
     // Determine initial state
     const isExpandable = data.hasProgress && data.progressPercent !== undefined;
@@ -118,7 +127,7 @@ export class HouseProgressCard {
 
     if (isExpandable) {
       progressContainer = scene.add.container(0, 0);
-      progressContainer.setAlpha(0); // Start hidden - FIXED from -10
+      progressContainer.setAlpha(0); // Start hidden
       container.add(progressContainer);
 
       // TIGHTER SPACING - progress bar closer to title
@@ -258,7 +267,7 @@ export class HouseProgressCard {
       progressContainer.add(continueText);
 
       // HOVER ZONE FOR ENTIRE CARD - THIS MUST BE LAST AND ON TOP
-      const hoverZone = scene.add.zone(0, 0, cardWidth, expandedHeight);
+      const hoverZone = scene.add.zone(0, 0, cardWidth, collapsedHeight);
       hoverZone.setOrigin(0.5, 0.5);
       hoverZone.setInteractive({ useHandCursor: true });
       
@@ -271,10 +280,23 @@ export class HouseProgressCard {
       }
       
       hoverZone.on('pointerover', () => {
-        console.log('Card hover - expanding'); // Debug log
+        console.log('Card hover - expanding');
         
         // Update zone size for expanded state
         hoverZone.setSize(cardWidth, expandedHeight);
+        
+        // Kill any existing tweens on bird
+        if (bird) {
+          const birdSprite = bird.getSprite();
+          if (birdSprite) {
+            scene.tweens.killTweensOf(birdSprite);
+            
+            // Store original bird Y position if not already stored
+            if (originalBirdY === undefined) {
+              originalBirdY = birdSprite.y;
+            }
+          }
+        }
         
         // Kill any existing tweens
         scene.tweens.killTweensOf([{ height: collapsedHeight }, { height: expandedHeight }, { glowAlpha: 0 }, { glowAlpha: 1 }]);
@@ -318,13 +340,58 @@ export class HouseProgressCard {
             ease: 'Power2'
           });
         }
+
+        // BIRD ANIMATION: Hop up and STAY at the progress bar area
+        if (bird && bird.getSprite() && originalBirdY !== undefined) {
+          const birdSprite = bird.getSprite();
+          if (birdSprite) {
+            // Calculate target position (around progress bar area - 75% mark)
+            const targetBirdY = y + progressY;
+            
+            // Create hop up animation with arc
+            scene.tweens.add({
+              targets: birdSprite,
+              y: targetBirdY,
+              duration: 300,
+              ease: 'Quad.easeOut',
+              onStart: () => {
+                // Small rotation during hop up
+                scene.tweens.add({
+                  targets: birdSprite,
+                  angle: -8,
+                  duration: 150,
+                  ease: 'Sine.easeOut',
+                  yoyo: false,
+                  onComplete: () => {
+                    // Return angle to 0 after hop
+                    scene.tweens.add({
+                      targets: birdSprite,
+                      angle: 0,
+                      duration: 150,
+                      ease: 'Sine.easeIn'
+                    });
+                  }
+                });
+              }
+            });
+            // Bird now STAYS at targetBirdY (no yoyo, no onComplete that moves it back)
+          }
+        }
       });
       
       hoverZone.on('pointerout', () => {
-        console.log('Card hover - collapsing'); // Debug log
+        console.log('Card hover - collapsing');
         
         // Update zone size back to collapsed state
         hoverZone.setSize(cardWidth, collapsedHeight);
+        
+        // Kill any existing tweens on bird
+        if (bird) {
+          const birdSprite = bird.getSprite();
+          if (birdSprite) {
+            scene.tweens.killTweensOf(birdSprite);
+          }
+        }
         
         // Kill any existing tweens
         scene.tweens.killTweensOf([{ height: collapsedHeight }, { height: expandedHeight }, { glowAlpha: 0 }, { glowAlpha: 1 }]);
@@ -367,6 +434,39 @@ export class HouseProgressCard {
             duration: 200,
             ease: 'Power2'
           });
+        }
+
+        // BIRD ANIMATION: Hop back down to original position (REVERSED)
+        if (bird && bird.getSprite() && originalBirdY !== undefined) {
+          const birdSprite = bird.getSprite();
+          if (birdSprite) {
+            // Hop back down to original position
+            scene.tweens.add({
+              targets: birdSprite,
+              y: originalBirdY,
+              duration: 300,
+              ease: 'Quad.easeIn',
+              onStart: () => {
+                // Small rotation during hop down (opposite direction)
+                scene.tweens.add({
+                  targets: birdSprite,
+                  angle: 8,
+                  duration: 150,
+                  ease: 'Sine.easeOut',
+                  yoyo: false,
+                  onComplete: () => {
+                    // Return angle to 0 after hop
+                    scene.tweens.add({
+                      targets: birdSprite,
+                      angle: 0,
+                      duration: 150,
+                      ease: 'Sine.easeIn'
+                    });
+                  }
+                });
+              }
+            });
+          }
         }
       });
 
