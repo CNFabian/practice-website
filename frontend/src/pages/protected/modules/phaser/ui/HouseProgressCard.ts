@@ -26,7 +26,8 @@ export class HouseProgressCard {
     data: HouseProgressData,
     onContinueClick?: () => void,
     bird?: BirdCharacter,
-    houseImage?: Phaser.GameObjects.Image
+    houseImage?: Phaser.GameObjects.Image,
+    isInteractionBlocked?: () => boolean
   ): Phaser.GameObjects.Container {
     console.log('🐦 Creating progress card with bird:', bird ? 'YES' : 'NO');
     if (bird) {
@@ -279,6 +280,11 @@ export class HouseProgressCard {
       
       // SHARED EXPAND FUNCTION - used by both card and house
       const expand = () => {
+        // Block hover expansion if interactions are blocked (e.g., bird is traveling)
+        if (isInteractionBlocked && isInteractionBlocked()) {
+          return;
+        }
+        
         // Cancel any pending collapse
         if (collapseDebounce) {
           collapseDebounce.remove();
@@ -288,7 +294,7 @@ export class HouseProgressCard {
         // Prevent duplicate expansion
         if (isExpanded) return;
         isExpanded = true;
-        
+              
         console.log('Expanding card');
         
         // Update zone size for expanded state
@@ -385,6 +391,11 @@ export class HouseProgressCard {
       
       // SHARED COLLAPSE FUNCTION - used by both card and house
       const scheduleCollapse = () => {
+        // Block hover collapse if interactions are blocked (e.g., bird is traveling)
+        if (isInteractionBlocked && isInteractionBlocked()) {
+          return;
+        }
+        
         console.log('Scheduling collapse');
         
         // Clear existing timer

@@ -56,6 +56,7 @@ export default class NeighborhoodScene extends BaseScene {
   private bird?: BirdCharacter;
   private currentHouseIndex: number = 0;
   private previousHouseIndex: number = 0;
+  private isBirdTraveling: boolean = false;
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -85,6 +86,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     this.isTransitioning = false;
     this.isShuttingDown = false;
+    this.isBirdTraveling = false;
     this.currentHouseIndex = data.currentHouseIndex ?? 0;
     this.previousHouseIndex = this.currentHouseIndex;
     
@@ -230,7 +232,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Setup mouse/touch drag controls for horizontal scrolling
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.isDown && !this.isTransitioning) {
+      if (pointer.isDown && !this.isTransitioning && !this.isBirdTraveling) {
         // Drag camera horizontally only
         const dragSpeedX = pointer.velocity.x * 0.1;
         const newScrollX = this.cameras.main.scrollX - dragSpeedX;
@@ -245,7 +247,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Add mouse wheel scrolling (horizontal)
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number) => {
-      if (!this.isTransitioning) {
+      if (!this.isTransitioning && !this.isBirdTraveling) {
         const scrollSpeed = 50;
         const newScrollX = this.cameras.main.scrollX + (deltaY * scrollSpeed / 100);
         
@@ -623,7 +625,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     // Add cloud overlay for locked houses ONLY - positioned lower
     if (isLocked && house.houseType) {
-      const cloudOverlay = this.add.image(x, y + scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD);
       cloudOverlay.setDisplaySize(scale(700), scale(700));
       cloudOverlay.setAlpha(0); // Start invisible for fade-in
       cloudOverlay.setDepth(10);
@@ -658,10 +660,14 @@ export default class NeighborhoodScene extends BaseScene {
         progressCardY,
         progressData,
         () => {
-          this.travelToHouse(index);
+          // Prevent interaction during bird travel
+          if (!this.isBirdTraveling) {
+            this.travelToHouse(index);
+          }
         },
         index === this.currentHouseIndex ? this.bird : undefined,
-        houseImage
+        houseImage,
+        () => this.isBirdTraveling // Pass function to check if bird is traveling
       );
       progressCard.setAlpha(0); // Start invisible for fade-in
       progressCard.setDepth(3); // Above houses
@@ -704,7 +710,7 @@ export default class NeighborhoodScene extends BaseScene {
     y: number
   ): void {
     // Create tooltip container (initially hidden) - positioned lower
-    const tooltipContainer = this.add.container(x, y + scale(180));
+    const tooltipContainer = this.add.container(x, y + scale(10));
     tooltipContainer.setAlpha(0);
     tooltipContainer.setDepth(20); // Above everything
 
@@ -966,12 +972,12 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: houseX, y: houseY } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
     
-    // FIXED: Use same positioning as everywhere else
+    // Use consistent positioning formula
     const progressCardOffsetX = scale(250);
     const collapsedHeight = scale(70);
     
     const birdX = houseX + progressCardOffsetX + scale(100);
-    const birdY = houseY + (collapsedHeight / 10) - scale(15); // Bottom of card
+    const birdY = houseY + (collapsedHeight / 10) - scale(10); // Bottom of card
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
@@ -990,7 +996,7 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private travelToHouse(targetHouseIndex: number): void {
-    if (!this.bird || this.bird.getIsAnimating() || targetHouseIndex >= this.houses.length) return;
+    if (!this.bird || this.bird.getIsAnimating() || targetHouseIndex >= this.houses.length || this.isBirdTraveling) return;
 
     // Don't move bird if clicking the house it's already at
     if (targetHouseIndex === this.currentHouseIndex) {
@@ -999,6 +1005,8 @@ export default class NeighborhoodScene extends BaseScene {
       return;
     }
 
+    // Set traveling flag to block all interactions
+    this.isBirdTraveling = true;
     this.bird.setIsAnimating(true);
     this.previousHouseIndex = this.currentHouseIndex;
     this.currentHouseIndex = targetHouseIndex;
@@ -1008,28 +1016,24 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: targetX, y: targetY } = this.calculateHousePosition(targetHouseIndex, width, height, targetHouse);
     
-    // Position bird on the bottom blue line of the progress card
+    // Use consistent positioning formula - same as createBird()
     const progressCardOffsetX = scale(250);
     const collapsedHeight = scale(70);
     
-    const finalX = targetX + progressCardOffsetX;
-    const finalY = targetY + (collapsedHeight / 2); // Bottom of card
+    const finalX = targetX + progressCardOffsetX + scale(100);
+    const finalY = targetY + (collapsedHeight / 10) - scale(40); // Bottom of card
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
-    if (houseDistance > 1) {
-      this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
-        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
-          this.handleHouseClick(targetHouse);
-        }
-      });
-    } else {
-      this.bird.hopToPosition(finalX, finalY, () => {
-        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
-          this.handleHouseClick(targetHouse);
-        }
-      });
-    }
+    // Always use glide animation for house-to-house travel
+    this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
+      // Clear traveling flag when animation completes
+      this.isBirdTraveling = false;
+      
+      if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+        this.handleHouseClick(targetHouse);
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1058,7 +1062,7 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private handleBackToMap(): void {
-    if (this.isTransitioning) return;
+    if (this.isTransitioning || this.isBirdTraveling) return;
 
     this.isTransitioning = true;
 
@@ -1117,7 +1121,7 @@ export default class NeighborhoodScene extends BaseScene {
       this.cameras.main.setScroll(maxScrollX, 0);
     }
     
-    // FIXED: Reposition bird with correct formula before recreating UI
+    // Use consistent positioning formula - same as createBird() and travelToHouse()
     if (this.bird && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
@@ -1125,8 +1129,8 @@ export default class NeighborhoodScene extends BaseScene {
       const progressCardOffsetX = scale(250);
       const collapsedHeight = scale(70);
       
-      const birdX = x + progressCardOffsetX;
-      const birdY = y + (collapsedHeight / 2);
+      const birdX = x + progressCardOffsetX + scale(100);
+      const birdY = y + (collapsedHeight / 10) - scale(10);
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
