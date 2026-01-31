@@ -98,14 +98,11 @@ export class LockedHouseTooltip {
     houseContainer: Phaser.GameObjects.Container,
     tooltipContainer: Phaser.GameObjects.Container
   ): void {
-    // Make house container interactive with pixel-perfect detection
+    // Make house container interactive
     const houseSize = scale(200);
     houseContainer.setSize(houseSize, houseSize);
-    houseContainer.setInteractive({
-      pixelPerfect: true,
-      alphaTolerance: 1
-    });
-    
+    houseContainer.setInteractive();
+
     // Show tooltip on hover
     houseContainer.on('pointerover', () => {
       scene.tweens.add({

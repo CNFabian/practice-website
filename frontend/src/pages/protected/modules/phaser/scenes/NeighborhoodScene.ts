@@ -625,13 +625,14 @@ export default class NeighborhoodScene extends BaseScene {
     }
 
     // Add cloud overlay for locked houses ONLY
-    if (isLocked && house.houseType) {
-      const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD); // Moved down to overlap more
-      cloudOverlay.setDisplaySize(scale(700), scale(700));
-      cloudOverlay.setAlpha(0); // Start invisible for fade-in
-      cloudOverlay.setDepth(10);
-      this.cloudOverlays.push(cloudOverlay);
-    }
+   if (isLocked && house.houseType) {
+    const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD);
+    cloudOverlay.setDisplaySize(scale(700), scale(700));
+    cloudOverlay.setAlpha(0);
+    cloudOverlay.setDepth(10);
+    cloudOverlay.setInteractive(false); // Make non-interactive so hover events pass through
+    this.cloudOverlays.push(cloudOverlay);
+  }
 
     // Only show progress card for unlocked houses
     if (!isLocked) {
