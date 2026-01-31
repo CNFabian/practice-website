@@ -169,60 +169,58 @@ export class BirdCharacter {
   }
 
   /**
-   * Play a single idle hop animation
-   */
-  private playIdleHop(): void {
-    if (!this.sprite || this.isAnimating) return;
+ * Play a single idle movement animation (horizontal only, no hop)
+ */
+private playIdleHop(): void {
+  if (!this.sprite || this.isAnimating) return;
 
-    const { width, height } = this.scene.scale;
-    const originalY = this.sprite.y;
-    const originalX = this.sprite.x;
+  const { width } = this.scene.scale;
+  const originalX = this.sprite.x;
 
-    const moveRange = Math.floor(width * 0.003);
-    const moveX = Phaser.Math.Between(-moveRange, moveRange);
-    
-    // Use tighter boundaries for NeighborhoodScene
-    // Check if we're in NeighborhoodScene by checking scene key
-    const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
-    
-    let targetX: number;
-    if (isNeighborhoodScene) {
-      // Stay within a smaller radius around current position
-      const maxDistance = width * 0.02; // Small radius
-      targetX = Phaser.Math.Clamp(originalX + moveX, originalX - maxDistance, originalX + maxDistance);
-    } else {
-      // HouseScene - use wider boundaries
-      const minX = width * 0.1;
-      const maxX = width * 0.9;
-      targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
-    }
-
-    // Flip sprite based on movement direction
-    if (Math.abs(moveX) > moveRange * 0.5) {
-      this.sprite.setFlipX(moveX < 0);
-    }
-
-    const hopHeight = height * 0.003;
-    const duration = 400;
-
-    this.scene.tweens.add({
-      targets: this.sprite,
-      x: targetX,
-      y: originalY - hopHeight,
-      duration: duration,
-      ease: 'Sine.easeOut',
-      yoyo: true,
-      onStart: () => {
-        this.scene.tweens.add({
-          targets: this.sprite,
-          angle: -3,
-          duration: duration / 2,
-          ease: 'Sine.easeInOut',
-          yoyo: true,
-        });
-      },
-    });
+  const moveRange = Math.floor(width * 0.003);
+  const moveX = Phaser.Math.Between(-moveRange, moveRange);
+  
+  // Use tighter boundaries for NeighborhoodScene
+  // Check if we're in NeighborhoodScene by checking scene key
+  const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
+  
+  let targetX: number;
+  if (isNeighborhoodScene) {
+    // Stay within a smaller radius around current position
+    const maxDistance = width * 0.02; // Small radius
+    targetX = Phaser.Math.Clamp(originalX + moveX, originalX - maxDistance, originalX + maxDistance);
+  } else {
+    // HouseScene - use wider boundaries
+    const minX = width * 0.1;
+    const maxX = width * 0.9;
+    targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
   }
+
+  // Flip sprite based on movement direction
+  if (Math.abs(moveX) > moveRange * 0.5) {
+    this.sprite.setFlipX(moveX < 0);
+  }
+
+  const duration = 600;
+
+  // Only horizontal movement, no vertical hop
+  this.scene.tweens.add({
+    targets: this.sprite,
+    x: targetX,
+    duration: duration,
+    ease: 'Sine.easeInOut',
+    onStart: () => {
+      // Slight rotation for visual interest
+      this.scene.tweens.add({
+        targets: this.sprite,
+        angle: moveX < 0 ? 2 : -2,
+        duration: duration / 2,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+      });
+    },
+  });
+}
 
   /**
    * Play idle hop with boundary constraints (for NeighborhoodScene)

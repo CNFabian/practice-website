@@ -36,7 +36,7 @@ export class HouseProgressCard {
 
     // Card dimensions
     const cardWidth = scale(380);
-    const collapsedHeight = scale(70);
+    const collapsedHeight = scale(55);
     const expandedHeight = scale(110);
     const borderRadius = scale(16);
 
@@ -499,7 +499,11 @@ export class HouseProgressCard {
       
       // HOUSE IMAGE HANDLERS (if house image provided)
       if (houseImage) {
-        houseImage.setInteractive({ useHandCursor: true });
+        houseImage.setInteractive({ 
+          useHandCursor: true,
+          pixelPerfect: true,
+          alphaTolerance: 1
+        });
         
         houseImage.on('pointerover', expand);
         houseImage.on('pointerout', scheduleCollapse);

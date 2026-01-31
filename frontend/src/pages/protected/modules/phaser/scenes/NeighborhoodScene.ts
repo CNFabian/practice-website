@@ -7,6 +7,7 @@ import { COLORS, OPACITY } from '../constants/Colors';
 import { CardBuilder } from '../ui/CardBuilder';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
+import { LockedHouseTooltip } from '../ui/LockedHouseToolTip';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 import { createTextStyle } from '../constants/Typography';
@@ -208,9 +209,6 @@ export default class NeighborhoodScene extends BaseScene {
       console.warn('⚠️ No dashboard modules found in registry');
     }
     
-    // Don't create houses here - createUI() will handle it
-    // this.createHouses(); // ← REMOVED - was causing duplicate clouds
-    
     this.createUI();
     this.fadeInScene();
     this.setupEventListeners();
@@ -325,52 +323,52 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private prefetchAllHouseLessons(): void {
-  if (this.houses.length === 0) {
-    console.log('⏭️ No houses to prefetch');
-    return;
+    if (this.houses.length === 0) {
+      console.log('⏭️ No houses to prefetch');
+      return;
+    }
+
+    console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
+
+    const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
+
+    if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
+      this.houses.forEach(house => {
+        // Skip mock modules - only prefetch real modules with valid UUIDs
+        if (house.moduleBackendId && !house.moduleBackendId.startsWith('mock-')) {
+          console.log(`🔄 Prefetching lessons for house: ${house.name} (${house.moduleBackendId})`);
+          handlePrefetchLessons(house.moduleBackendId);
+        }
+      });
+    } else {
+      console.warn('⚠️ Prefetch handler not found in registry');
+    }
   }
-
-  console.log(`🚀 Starting prefetch for ${this.houses.length} houses`);
-
-  const handlePrefetchLessons = this.registry.get('handlePrefetchLessons');
-
-  if (handlePrefetchLessons && typeof handlePrefetchLessons === 'function') {
-    this.houses.forEach(house => {
-      // Skip mock modules - only prefetch real modules with valid UUIDs
-      if (house.moduleBackendId && !house.moduleBackendId.startsWith('mock-')) {
-        console.log(`🔄 Prefetching lessons for house: ${house.name} (${house.moduleBackendId})`);
-        handlePrefetchLessons(house.moduleBackendId);
-      }
-    });
-  } else {
-    console.warn('⚠️ Prefetch handler not found in registry');
-  }
-}
 
   // ═══════════════════════════════════════════════════════════
   // UI CREATION METHODS
   // ═══════════════════════════════════════════════════════════
   private createUI(): void {
-  this.createBackButton();
+    this.createBackButton();
 
-  if (this.houses.length > 0) {
-    this.createEnvironment();
-    this.createBird();
-    this.createHouses();
-    
-    // Set all elements to alpha 0 initially
-    this.setAllElementsInvisible();
-    
-    this.startBirdIdleAnimation();
-  } else {
-    this.createPlaceholder();
-    
-    // Set placeholder invisible initially
-    if (this.placeholderCard) {
-      this.placeholderCard.setAlpha(0);
+    if (this.houses.length > 0) {
+      this.createEnvironment();
+      this.createBird();
+      this.createHouses();
+      
+      // Set all elements to alpha 0 initially
+      this.setAllElementsInvisible();
+      
+      this.startBirdIdleAnimation();
+    } else {
+      this.createPlaceholder();
+      
+      // Set placeholder invisible initially
+      if (this.placeholderCard) {
+        this.placeholderCard.setAlpha(0);
+      }
     }
   }
-}
 
   private createBackButton(): void {
     this.backButton = ButtonBuilder.createBackButton(
@@ -512,42 +510,44 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.backButton) {
       this.backButton.setAlpha(0);
     }
-    
-    // Set all house sprites invisible
-    this.houseSprites.forEach(sprite => {
-      sprite.setAlpha(0);
-    });
-    
-    // Set all roads invisible
-    this.roads.forEach(road => {
-      road.setAlpha(0);
-    });
-    
-    // Set cloud overlays invisible
-    this.cloudOverlays.forEach(cloud => {
-      cloud.setAlpha(0);
-    });
-    
-    // Set bird invisible - use the proper getSprite() method
-    if (this.bird) {
-      const birdSprite = this.bird.getSprite();
-      if (birdSprite) {
-        birdSprite.setAlpha(0);
-      }
-    }
-    
-    // Set coin counter invisible (from BaseScene)
+
+    // Set coin counter invisible
     if (this.coinCounter) {
       this.coinCounter.setAlpha(0);
     }
 
+    // Set roads invisible
+    this.roads.forEach((road) => {
+      road.setAlpha(0);
+    });
+
+    // Set house sprites invisible
+    const houseSpritesArray = Array.from(this.houseSprites.values());
+    houseSpritesArray.forEach((sprite) => {
+      sprite.setAlpha(0);
+    });
+
     // Set progress cards invisible
-    this.progressCards.forEach(card => {
+    this.progressCards.forEach((card) => {
       card.setAlpha(0);
     });
 
-    // Set locked tooltips invisible (they should stay hidden until hover)
-    this.lockedTooltips.forEach(tooltip => {
+    // Set cloud overlays invisible
+    this.cloudOverlays.forEach((cloud) => {
+      cloud.setAlpha(0);
+    });
+
+    // Set bird invisible and ensure depth
+    if (this.bird) {
+      const birdSprite = this.bird.getSprite();
+      if (birdSprite) {
+        birdSprite.setAlpha(0);
+        birdSprite.setDepth(1000);
+      }
+    }
+
+    // Keep locked tooltips hidden (they only appear on hover)
+    this.lockedTooltips.forEach((tooltip) => {
       tooltip.setAlpha(0);
     });
   }
@@ -585,27 +585,20 @@ export default class NeighborhoodScene extends BaseScene {
     const columnIndex = Math.floor(index / 2);
     
     const startX = 15; // Start at 15% from left edge
-    const horizontalSpacing = 80; // 50% spacing between houses
-    const bottomRowOffset = 40; // Bottom row shifted to the right by 25%
-    const topRowY = 35; // Top row at 30% from top
-    const bottomRowY = 70; // Bottom row at 65% from top (35% vertical gap)
+    const horizontalSpacing = 80; // 80% spacing between houses
+    const bottomRowOffset = 40; // Bottom row shifted to the right by 40%
+    const topRowY = 35; // Top row at 35% from top
+    const bottomRowY = 70; // Bottom row at 70% from top
     
     // Calculate X position with offset for bottom row
     const defaultX = isTopRow 
-      ? startX + (columnIndex * horizontalSpacing)  // Top row: 15%, 65%, 115%...
-      : startX + (columnIndex * horizontalSpacing) + bottomRowOffset;  // Bottom row: 40%, 90%, 140%...
+      ? startX + (columnIndex * horizontalSpacing)  // Top row: 15%, 95%, 175%...
+      : startX + (columnIndex * horizontalSpacing) + bottomRowOffset;  // Bottom row: 55%, 135%, 215%...
     
-    const defaultY = isTopRow ? topRowY : bottomRowY;  // Always top or bottom, no progression
+    const defaultY = isTopRow ? topRowY : bottomRowY;
     
-   
     const x = (defaultX / 100) * width;
     const y = (defaultY / 100) * height;
-    
-    // ORIGINAL CODE (use backend if available):
-    // const x = house.x !== undefined ? (house.x / 100) * width : (defaultX / 100) * width;
-    // const y = house.y !== undefined ? (house.y / 100) * height : (defaultY / 100) * height;
-    
-    console.log(`  - Final position: ${x}px, ${y}px (screen: ${width}x${height})`);
     
     return { x, y };
   }
@@ -633,7 +626,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     // Add cloud overlay for locked houses ONLY
     if (isLocked && house.houseType) {
-      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD); // Moved down to overlap more
       cloudOverlay.setDisplaySize(scale(700), scale(700));
       cloudOverlay.setAlpha(0); // Start invisible for fade-in
       cloudOverlay.setDepth(10);
@@ -649,32 +642,17 @@ export default class NeighborhoodScene extends BaseScene {
       // Get progress data from backend (if available)
       const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
 
-      // Log what we found for debugging
-      if (house.moduleBackendId) {
-        console.log(`🏠 House "${house.name}":`, {
-          moduleBackendId: house.moduleBackendId,
-          hasProgressData: !!moduleProgress,
-          progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-          lessonCount: moduleProgress?.module.lesson_count || 0,
-        });
-      }
-
       // Prepare progress data with REAL backend values
       const progressData: HouseProgressData = {
         moduleNumber: index + 1,
         moduleName: house.name,
-        // ✅ Real duration from backend
         duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
-        // ✅ Real progress status
         hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
-        // ✅ Real progress percentage (tree will grow based on this!)
         progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-        // ✅ Real lesson count
         lessonCount: moduleProgress?.module.lesson_count || 0,
-        // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
         quizCount: moduleProgress?.module.lesson_count || 0,
         coinReward: house.coinReward,
-        isLocked: false, // Pass unlock status to control hover behavior
+        isLocked: false,
       };
 
       const progressCard = HouseProgressCard.createProgressCard(
@@ -685,8 +663,8 @@ export default class NeighborhoodScene extends BaseScene {
         () => {
           this.travelToHouse(index);
         },
-        this.bird,
-        houseImage  // Pass the house image reference
+        index === this.currentHouseIndex ? this.bird : undefined,
+        houseImage
       );
       progressCard.setAlpha(0); // Start invisible for fade-in
       progressCard.setDepth(3); // Above houses
@@ -696,17 +674,10 @@ export default class NeighborhoodScene extends BaseScene {
         this.progressCards = [];
       }
       this.progressCards.push(progressCard);
-
-      // Coin reward badge removed - no longer displaying on houses
-      // if (house.coinReward && house.coinReward > 0) {
-      //   this.createCoinBadge(houseContainer, house.coinReward);
-      // }
     } else {
       // For locked houses, create hover tooltip
       houseContainer.setAlpha(OPACITY.MEDIUM);
-      // Lock icon removed - no longer displaying on locked houses
-      // this.createLockIcon(houseContainer);
-      this.createLockedHouseTooltip(houseContainer, house, index, x, y);
+      this.createLockedHouseTooltip(houseContainer, house, index, x, y + scale(100));
     }
 
     this.houseSprites.set(house.id, houseContainer);
@@ -752,215 +723,126 @@ export default class NeighborhoodScene extends BaseScene {
     container.add(lockIcon);
   }
 
-  private createLockedHouseTooltip(
-    houseContainer: Phaser.GameObjects.Container,
-    house: HousePosition,
-    index: number,
-    x: number,
-    y: number
-  ): void {
-    // Create tooltip container (initially hidden)
-    const tooltipContainer = this.add.container(x, y - scale(120));
-    tooltipContainer.setAlpha(0);
-    tooltipContainer.setDepth(20); // Above everything
+ private createLockedHouseTooltip(
+  houseContainer: Phaser.GameObjects.Container,
+  house: HousePosition,
+  index: number,
+  x: number,
+  y: number
+): void {
+  const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
+  
+  const tooltip = LockedHouseTooltip.create({
+    scene: this,
+    x: x,
+    y: y,
+    previousHouseName: previousHouseName,
+    houseContainer: houseContainer
+  });
 
-    // Tooltip dimensions
-    const tooltipWidth = scale(300);
-    const tooltipHeight = scale(90);
-    const cornerRadius = scale(12);
-
-    // Tooltip background - white with high opacity to match card style
-    const tooltipBg = this.add.rectangle(
-      0,
-      0,
-      tooltipWidth,
-      tooltipHeight,
-      COLORS.WHITE,
-      OPACITY.HIGH
-    );
-    tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
-    tooltipContainer.add(tooltipBg);
-
-    // Lock icon using standard icon circle style
-    const lockIconBg = this.add.circle(0, scale(-25), scale(20), COLORS.GRAY_300);
-    tooltipContainer.add(lockIconBg);
-
-    const lockIcon = this.add.text(0, scale(-25), '🔒', {
-      fontSize: scaleFontSize(18),
-    }).setOrigin(0.5);
-    tooltipContainer.add(lockIcon);
-
-    // Tooltip text - using standard text colors
-    const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
-    const tooltipText = this.add.text(
-      0,
-      scale(15),
-      `Complete ${previousHouseName}\nto unlock this house`,
-      createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
-        fontSize: scaleFontSize(13),
-        align: 'center',
-        wordWrap: { width: tooltipWidth - scale(20) },
-      })
-    ).setOrigin(0.5);
-    tooltipContainer.add(tooltipText);
-
-    // Add pointer triangle at bottom - white to match background
-    const triangle = this.add.triangle(
-      0,
-      tooltipHeight / 2,
-      0, 0,
-      scale(10), scale(12),
-      scale(-10), scale(12),
-      COLORS.WHITE
-    );
-    tooltipContainer.add(triangle);
-
-    // Add triangle border for depth
-    const triangleBorder = this.add.triangle(
-      0,
-      tooltipHeight / 2 + scale(1),
-      0, 0,
-      scale(11), scale(13),
-      scale(-11), scale(13),
-      COLORS.GRAY_200
-    );
-    triangleBorder.setDepth(-1);
-    tooltipContainer.add(triangleBorder);
-
-    // Store tooltip
-    this.lockedTooltips.set(house.id, tooltipContainer);
-
-    // Make house container interactive with explicit size
-    const houseSize = scale(200);
-    houseContainer.setSize(houseSize, houseSize);
-    houseContainer.setInteractive();
-    
-    // Show tooltip on hover
-    houseContainer.on('pointerover', () => {
-      this.tweens.add({
-        targets: tooltipContainer,
-        alpha: 1,
-        duration: 200,
-        ease: 'Power2',
-      });
-    });
-
-    // Hide tooltip on pointer out
-    houseContainer.on('pointerout', () => {
-      this.tweens.add({
-        targets: tooltipContainer,
-        alpha: 0,
-        duration: 200,
-        ease: 'Power2',
-      });
-    });
-
-    // Prevent click action on locked houses - add bounce animation
-    houseContainer.on('pointerdown', () => {
-      this.tweens.add({
-        targets: houseContainer,
-        scaleX: 0.95,
-        scaleY: 0.95,
-        duration: 100,
-        yoyo: true,
-        ease: 'Power2',
-      });
-    });
-  }
+  // Store tooltip
+  this.lockedTooltips.set(house.id, tooltip);
+}
 
   private fadeInScene(): void {
-  const fadeDuration = 600;
-  
-  // Fade in back button
-  if (this.backButton) {
-    this.tweens.add({
-      targets: this.backButton,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  }
-
-  // Fade in coin counter
-  if (this.coinCounter) {
-    this.tweens.add({
-      targets: this.coinCounter,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  }
-  
-  // Fade in roads
-  this.roads.forEach((road) => {
-    this.tweens.add({
-      targets: road,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  });
-  
-  // Fade in house sprites
-  const houseSpritesArray = Array.from(this.houseSprites.values());
-  houseSpritesArray.forEach((sprite) => {
-    this.tweens.add({
-      targets: sprite,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  });
-  
-  // Fade in progress cards
-  this.progressCards.forEach((card) => {
-    this.tweens.add({
-      targets: card,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  });
-  
-  // Fade in cloud overlays
-  this.cloudOverlays.forEach((cloud) => {
-    this.tweens.add({
-      targets: cloud,
-      alpha: 0.9,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
-    });
-  });
-  
-  // Fade in bird
-  if (this.bird) {
-    const birdSprite = this.bird.getSprite();
-    if (birdSprite) {
+    const fadeDuration = 600;
+    
+    // Fade in back button
+    if (this.backButton) {
       this.tweens.add({
-        targets: birdSprite,
+        targets: this.backButton,
         alpha: 1,
         duration: fadeDuration,
         ease: 'Cubic.easeOut'
       });
     }
-  }
-  
-  // Fade in placeholder if no houses
-  if (this.placeholderCard) {
-    this.tweens.add({
-      targets: this.placeholderCard,
-      alpha: 1,
-      duration: fadeDuration,
-      ease: 'Cubic.easeOut'
+
+    // Fade in coin counter
+    if (this.coinCounter) {
+      this.tweens.add({
+        targets: this.coinCounter,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    
+    // Fade in roads
+    this.roads.forEach((road) => {
+      this.tweens.add({
+        targets: road,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in house sprites
+    const houseSpritesArray = Array.from(this.houseSprites.values());
+    houseSpritesArray.forEach((sprite) => {
+      this.tweens.add({
+        targets: sprite,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in progress cards
+    this.progressCards.forEach((card) => {
+      this.tweens.add({
+        targets: card,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in cloud overlays
+    this.cloudOverlays.forEach((cloud) => {
+      this.tweens.add({
+        targets: cloud,
+        alpha: 0.9,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    });
+    
+    // Fade in bird with depth enforcement
+    if (this.bird) {
+      const birdSprite = this.bird.getSprite();
+      if (birdSprite) {
+        birdSprite.setDepth(1000);
+        this.tweens.add({
+          targets: birdSprite,
+          alpha: 1,
+          duration: fadeDuration,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            if (birdSprite && !birdSprite.scene) return;
+            if (birdSprite) {
+              birdSprite.setDepth(1000);
+            }
+          }
+        });
+      }
+    }
+    
+    // Fade in placeholder if no houses
+    if (this.placeholderCard) {
+      this.tweens.add({
+        targets: this.placeholderCard,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+
+    // Locked tooltips stay hidden (only appear on hover)
+    this.lockedTooltips.forEach((tooltip) => {
+      tooltip.setAlpha(0);
     });
   }
-
-  // Locked tooltips stay hidden (only appear on hover)
-  this.lockedTooltips.forEach((tooltip) => {
-    tooltip.setAlpha(0);
-  });
-}
-
 
   private createPlaceholder(): void {
     const { width, height } = this.scale;
@@ -1009,17 +891,22 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: houseX, y: houseY } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
     
-    // Position bird on the bottom blue line of the progress card
-    // Progress card is at progressCardX = houseX + scale(250), progressCardY = houseY
-    const progressCardOffsetX = scale(350); // Right side of house
-    const collapsedHeight = scale(70); // Height of collapsed progress card
+    // FIXED: Use same positioning as everywhere else
+    const progressCardOffsetX = scale(250);
+    const collapsedHeight = scale(70);
     
-    // Bird should be at the BOTTOM of the progress card (on the blue line)
-    const birdX = houseX + progressCardOffsetX;
-    const birdY = houseY + (collapsedHeight - 145); // Bottom of card
+    const birdX = houseX + progressCardOffsetX + scale(100);
+    const birdY = houseY + (collapsedHeight / 10) - scale(15); // Bottom of card
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
+    
+    // Ensure bird starts invisible with correct depth
+    const birdSprite = this.bird.getSprite();
+    if (birdSprite) {
+      birdSprite.setAlpha(0);
+      birdSprite.setDepth(1000);
+    }
   }
 
   private startBirdIdleAnimation(): void {
@@ -1046,28 +933,21 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: targetX, y: targetY } = this.calculateHousePosition(targetHouseIndex, width, height, targetHouse);
     
-    // Position bird on the bottom blue line of the progress card
+    // Position bird on the right side of the progress card (same as createBird position)
     const progressCardOffsetX = scale(250);
     const collapsedHeight = scale(70);
     
-    const finalX = targetX + progressCardOffsetX;
-    const finalY = targetY + (collapsedHeight / 2); // Bottom of card
+    const finalX = targetX + progressCardOffsetX + scale(100); // Same as createBird
+    const finalY = targetY + (collapsedHeight / 2) - scale(65); // Same as createBird
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
-    if (houseDistance > 1) {
-      this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
-        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
-          this.handleHouseClick(targetHouse);
-        }
-      });
-    } else {
-      this.bird.hopToPosition(finalX, finalY, () => {
-        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
-          this.handleHouseClick(targetHouse);
-        }
-      });
-    }
+    // Always use glide (fly) animation regardless of distance
+    this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
+      if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+        this.handleHouseClick(targetHouse);
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1089,7 +969,6 @@ export default class NeighborhoodScene extends BaseScene {
 
     if (handleHouseSelect && typeof handleHouseSelect === 'function') {
       this.transitionToHouse(() => {
-        // Pass both house.id AND house.moduleBackendId
         handleHouseSelect(house.id, house.moduleBackendId);
         this.isTransitioning = false;
       });
@@ -1160,30 +1039,31 @@ export default class NeighborhoodScene extends BaseScene {
       const currentHouse = this.houses[this.currentHouseIndex];
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
       
-      // Position bird on the bottom blue line of the progress card
       const progressCardOffsetX = scale(250);
       const collapsedHeight = scale(70);
       
-      const birdX = x + progressCardOffsetX;
-      const birdY = y + (collapsedHeight / 2); // Bottom of card
+      const birdX = x + progressCardOffsetX + scale(100);
+      const birdY = y + (collapsedHeight / 2) - scale(15);
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
+      
+      // Ensure depth is maintained
+      const birdSprite = this.bird.getSprite();
+      if (birdSprite) {
+        birdSprite.setDepth(1000);
+      }
     }
     
-    // FIXED: Match the same order as createUI()
     this.createBackButton();
     
     if (this.houses.length > 0) {
       this.createEnvironment();
       this.createHouses();
       
-      // Set all elements invisible before fading them in
       this.setAllElementsInvisible();
-      // Fade in all elements (including clouds and tooltips)
       this.fadeInScene();
       
-      // FIXED: Start bird idle animation after resize (was missing)
       this.startBirdIdleAnimation();
     } else {
       this.createPlaceholder();
@@ -1210,10 +1090,10 @@ export default class NeighborhoodScene extends BaseScene {
   // TRANSITION METHODS
   // ═══════════════════════════════════════════════════════════
   private transitionToHouse(callback: () => void): void {
-    this.transitionManager.toHouse(callback); // Use manager
+    this.transitionManager.toHouse(callback);
   }
 
   private transitionToMap(callback: () => void): void {
-    this.transitionManager.backToMap(callback); // Use manager
+    this.transitionManager.backToMap(callback);
   }
 }
