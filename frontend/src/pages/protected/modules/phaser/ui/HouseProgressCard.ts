@@ -12,6 +12,7 @@ export interface HouseProgressData {
   lessonCount?: number;
   quizCount?: number;
   coinReward?: number;
+  isLocked?: boolean;
 }
 
 export class HouseProgressCard {
@@ -43,7 +44,7 @@ export class HouseProgressCard {
     let originalBirdY: number | undefined;
 
     // Determine initial state
-    const isExpandable = data.hasProgress && data.progressPercent !== undefined;
+    const isExpandable = data.isLocked !== true;
     const initialHeight = isExpandable ? collapsedHeight : collapsedHeight;
 
     // Create glow graphics FIRST (so it appears behind everything)
@@ -498,19 +499,24 @@ export class HouseProgressCard {
       
       // HOUSE IMAGE HANDLERS (if house image provided)
       if (houseImage) {
-        houseImage.setInteractive({ useHandCursor: true });
-        
-        houseImage.on('pointerover', expand);
-        houseImage.on('pointerout', scheduleCollapse);
-        
-        // Click handler for house
-        if (onContinueClick) {
-          houseImage.on('pointerdown', () => {
-            console.log('House image clicked - navigating');
-            onContinueClick();
-          });
-        }
+      // Enable pixel-perfect interaction - only respond to non-transparent pixels
+      houseImage.setInteractive({ 
+        pixelPerfect: true,
+        alphaTolerance: 1,
+        useHandCursor: true 
+      });
+      
+      houseImage.on('pointerover', expand);
+      houseImage.on('pointerout', scheduleCollapse);
+      
+      // Click handler for house
+      if (onContinueClick) {
+        houseImage.on('pointerdown', () => {
+          console.log('House image clicked - navigating');
+          onContinueClick();
+        });
       }
+    }
 
       // Add zone LAST so it's on top
       container.add(hoverZone);

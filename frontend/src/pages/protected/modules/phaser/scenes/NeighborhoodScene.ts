@@ -357,8 +357,6 @@ export default class NeighborhoodScene extends BaseScene {
       
       // Set all elements to alpha 0 initially
       this.setAllElementsInvisible();
-      
-      this.startBirdIdleAnimation();
     } else {
       this.createPlaceholder();
       
@@ -623,9 +621,9 @@ export default class NeighborhoodScene extends BaseScene {
       houseImage = this.createHouseIcon(houseContainer, house.houseType, isLocked);
     }
 
-    // Add cloud overlay for locked houses ONLY
+    // Add cloud overlay for locked houses ONLY - positioned lower
     if (isLocked && house.houseType) {
-      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      const cloudOverlay = this.add.image(x, y + scale(50), ASSET_KEYS.HOUSE_CLOUD);
       cloudOverlay.setDisplaySize(scale(700), scale(700));
       cloudOverlay.setAlpha(0); // Start invisible for fade-in
       cloudOverlay.setDepth(10);
@@ -698,30 +696,6 @@ export default class NeighborhoodScene extends BaseScene {
     return houseImage;
   }
 
-  private createCoinBadge(container: Phaser.GameObjects.Container, coinReward: number): void {
-    const badgeBg = this.add.circle(scale(50), scale(-50), scale(20), 0xFFD700);
-    badgeBg.setStrokeStyle(scale(2), 0xFFA500);
-    container.add(badgeBg);
-
-    const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`,
-      createTextStyle('BADGE', '#000000', {
-        fontSize: scaleFontSize(12),
-      })
-    ).setOrigin(0.5);
-    container.add(coinText);
-  }
-
-  private createLockIcon(container: Phaser.GameObjects.Container): void {
-    const lockBg = this.add.circle(scale(-50), scale(-50), scale(18), 0xFF6B6B);
-    lockBg.setStrokeStyle(scale(2), 0xCC0000);
-    container.add(lockBg);
-
-    const lockIcon = this.add.text(scale(-50), scale(-50), '🔒', {
-      fontSize: scaleFontSize(20),
-    }).setOrigin(0.5);
-    container.add(lockIcon);
-  }
-
   private createLockedHouseTooltip(
     houseContainer: Phaser.GameObjects.Container,
     house: HousePosition,
@@ -729,14 +703,14 @@ export default class NeighborhoodScene extends BaseScene {
     x: number,
     y: number
   ): void {
-    // Create tooltip container (initially hidden)
-    const tooltipContainer = this.add.container(x, y - scale(120));
+    // Create tooltip container (initially hidden) - positioned lower
+    const tooltipContainer = this.add.container(x, y + scale(180));
     tooltipContainer.setAlpha(0);
     tooltipContainer.setDepth(20); // Above everything
 
-    // Tooltip dimensions
-    const tooltipWidth = scale(300);
-    const tooltipHeight = scale(90);
+    // Tooltip dimensions - made larger
+    const tooltipWidth = scale(400);
+    const tooltipHeight = scale(120);
 
     // Tooltip background - white with high opacity to match card style
     const tooltipBg = this.add.rectangle(
@@ -750,36 +724,36 @@ export default class NeighborhoodScene extends BaseScene {
     tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
     tooltipContainer.add(tooltipBg);
 
-    // Lock icon using standard icon circle style
-    const lockIconBg = this.add.circle(0, scale(-25), scale(20), COLORS.GRAY_300);
+    // Lock icon using standard icon circle style - larger for bigger tooltip
+    const lockIconBg = this.add.circle(0, scale(-35), scale(25), COLORS.GRAY_300);
     tooltipContainer.add(lockIconBg);
 
-    const lockIcon = this.add.text(0, scale(-25), '🔒', {
-      fontSize: scaleFontSize(18),
+    const lockIcon = this.add.text(0, scale(-35), '🔒', {
+      fontSize: scaleFontSize(24),
     }).setOrigin(0.5);
     tooltipContainer.add(lockIcon);
 
-    // Tooltip text - using standard text colors
+    // Tooltip text - using standard text colors, larger font
     const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
     const tooltipText = this.add.text(
       0,
-      scale(15),
+      scale(20),
       `Complete ${previousHouseName}\nto unlock this house`,
       createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
-        fontSize: scaleFontSize(13),
+        fontSize: scaleFontSize(16),
         align: 'center',
-        wordWrap: { width: tooltipWidth - scale(20) },
+        wordWrap: { width: tooltipWidth - scale(30) },
       })
     ).setOrigin(0.5);
     tooltipContainer.add(tooltipText);
 
-    // Add pointer triangle at bottom - white to match background
+    // Add pointer triangle at top - white to match background
     const triangle = this.add.triangle(
       0,
-      tooltipHeight / 2,
+      -tooltipHeight / 2,
       0, 0,
-      scale(10), scale(12),
-      scale(-10), scale(12),
+      scale(12), scale(-15),
+      scale(-12), scale(-15),
       COLORS.WHITE
     );
     tooltipContainer.add(triangle);
@@ -787,10 +761,10 @@ export default class NeighborhoodScene extends BaseScene {
     // Add triangle border for depth
     const triangleBorder = this.add.triangle(
       0,
-      tooltipHeight / 2 + scale(1),
+      -tooltipHeight / 2 - scale(1),
       0, 0,
-      scale(11), scale(13),
-      scale(-11), scale(13),
+      scale(13), scale(-16),
+      scale(-13), scale(-16),
       COLORS.GRAY_200
     );
     triangleBorder.setDepth(-1);
@@ -799,10 +773,16 @@ export default class NeighborhoodScene extends BaseScene {
     // Store tooltip
     this.lockedTooltips.set(house.id, tooltipContainer);
 
-    // Make house container interactive with explicit size
-    const houseSize = scale(200);
+    // Make house container interactive with explicit size to cover entire house image
+    const houseSize = scale(350);
     houseContainer.setSize(houseSize, houseSize);
     houseContainer.setInteractive();
+    
+    // Adjust hit area to be centered on the house image
+    houseContainer.setInteractive(
+      new Phaser.Geom.Rectangle(-houseSize / 2, -houseSize / 2, houseSize, houseSize),
+      Phaser.Geom.Rectangle.Contains
+    );
     
     // Show tooltip on hover
     houseContainer.on('pointerover', () => {
@@ -916,6 +896,8 @@ export default class NeighborhoodScene extends BaseScene {
             if (birdSprite) {
               birdSprite.setDepth(1000);
             }
+            // Start idle animation AFTER fade-in completes to prevent alpha conflicts
+            this.startBirdIdleAnimation();
           }
         });
       }
@@ -1164,8 +1146,6 @@ export default class NeighborhoodScene extends BaseScene {
       
       this.setAllElementsInvisible();
       this.fadeInScene();
-      
-      this.startBirdIdleAnimation();
     } else {
       this.createPlaceholder();
     }
