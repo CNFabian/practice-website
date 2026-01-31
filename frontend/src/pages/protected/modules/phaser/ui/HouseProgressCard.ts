@@ -12,7 +12,6 @@ export interface HouseProgressData {
   lessonCount?: number;
   quizCount?: number;
   coinReward?: number;
-  isLocked?: boolean;
 }
 
 export class HouseProgressCard {
@@ -36,7 +35,7 @@ export class HouseProgressCard {
 
     // Card dimensions
     const cardWidth = scale(380);
-    const collapsedHeight = scale(55);
+    const collapsedHeight = scale(70);
     const expandedHeight = scale(110);
     const borderRadius = scale(16);
 
@@ -44,7 +43,7 @@ export class HouseProgressCard {
     let originalBirdY: number | undefined;
 
     // Determine initial state
-    const isExpandable = !data.isLocked;
+    const isExpandable = data.hasProgress && data.progressPercent !== undefined;
     const initialHeight = isExpandable ? collapsedHeight : collapsedHeight;
 
     // Create glow graphics FIRST (so it appears behind everything)
@@ -499,11 +498,7 @@ export class HouseProgressCard {
       
       // HOUSE IMAGE HANDLERS (if house image provided)
       if (houseImage) {
-        houseImage.setInteractive({ 
-          useHandCursor: true,
-          pixelPerfect: true,
-          alphaTolerance: 1
-        });
+        houseImage.setInteractive({ useHandCursor: true });
         
         houseImage.on('pointerover', expand);
         houseImage.on('pointerout', scheduleCollapse);

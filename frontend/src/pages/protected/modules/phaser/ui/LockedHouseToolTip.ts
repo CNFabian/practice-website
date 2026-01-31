@@ -98,11 +98,11 @@ export class LockedHouseTooltip {
     houseContainer: Phaser.GameObjects.Container,
     tooltipContainer: Phaser.GameObjects.Container
   ): void {
-    // Make house container interactive
+    // Make house container interactive with explicit size
     const houseSize = scale(200);
     houseContainer.setSize(houseSize, houseSize);
     houseContainer.setInteractive();
-
+    
     // Show tooltip on hover
     houseContainer.on('pointerover', () => {
       scene.tweens.add({

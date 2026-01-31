@@ -7,7 +7,6 @@ import { COLORS, OPACITY } from '../constants/Colors';
 import { CardBuilder } from '../ui/CardBuilder';
 import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { UIComponents } from '../ui/UIComponents';
-import { LockedHouseTooltip } from '../ui/LockedHouseToolTip';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
 import { createTextStyle } from '../constants/Typography';
@@ -625,14 +624,13 @@ export default class NeighborhoodScene extends BaseScene {
     }
 
     // Add cloud overlay for locked houses ONLY
-   if (isLocked && house.houseType) {
-    const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD);
-    cloudOverlay.setDisplaySize(scale(700), scale(700));
-    cloudOverlay.setAlpha(0);
-    cloudOverlay.setDepth(10);
-    cloudOverlay.setInteractive(false); // Make non-interactive so hover events pass through
-    this.cloudOverlays.push(cloudOverlay);
-  }
+    if (isLocked && house.houseType) {
+      const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
+      cloudOverlay.setDisplaySize(scale(700), scale(700));
+      cloudOverlay.setAlpha(0); // Start invisible for fade-in
+      cloudOverlay.setDepth(10);
+      this.cloudOverlays.push(cloudOverlay);
+    }
 
     // Only show progress card for unlocked houses
     if (!isLocked) {
@@ -678,7 +676,7 @@ export default class NeighborhoodScene extends BaseScene {
     } else {
       // For locked houses, create hover tooltip
       houseContainer.setAlpha(OPACITY.MEDIUM);
-      this.createLockedHouseTooltip(houseContainer, house, index, x, y + scale(100));
+      this.createLockedHouseTooltip(houseContainer, house, index, x, y);
     }
 
     this.houseSprites.set(house.id, houseContainer);
@@ -724,26 +722,120 @@ export default class NeighborhoodScene extends BaseScene {
     container.add(lockIcon);
   }
 
- private createLockedHouseTooltip(
-  houseContainer: Phaser.GameObjects.Container,
-  house: HousePosition,
-  index: number,
-  x: number,
-  y: number
-): void {
-  const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
-  
-  const tooltip = LockedHouseTooltip.create({
-    scene: this,
-    x: x,
-    y: y,
-    previousHouseName: previousHouseName,
-    houseContainer: houseContainer
-  });
+  private createLockedHouseTooltip(
+    houseContainer: Phaser.GameObjects.Container,
+    house: HousePosition,
+    index: number,
+    x: number,
+    y: number
+  ): void {
+    // Create tooltip container (initially hidden)
+    const tooltipContainer = this.add.container(x, y - scale(120));
+    tooltipContainer.setAlpha(0);
+    tooltipContainer.setDepth(20); // Above everything
 
-  // Store tooltip
-  this.lockedTooltips.set(house.id, tooltip);
-}
+    // Tooltip dimensions
+    const tooltipWidth = scale(300);
+    const tooltipHeight = scale(90);
+
+    // Tooltip background - white with high opacity to match card style
+    const tooltipBg = this.add.rectangle(
+      0,
+      0,
+      tooltipWidth,
+      tooltipHeight,
+      COLORS.WHITE,
+      OPACITY.HIGH
+    );
+    tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    tooltipContainer.add(tooltipBg);
+
+    // Lock icon using standard icon circle style
+    const lockIconBg = this.add.circle(0, scale(-25), scale(20), COLORS.GRAY_300);
+    tooltipContainer.add(lockIconBg);
+
+    const lockIcon = this.add.text(0, scale(-25), '🔒', {
+      fontSize: scaleFontSize(18),
+    }).setOrigin(0.5);
+    tooltipContainer.add(lockIcon);
+
+    // Tooltip text - using standard text colors
+    const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
+    const tooltipText = this.add.text(
+      0,
+      scale(15),
+      `Complete ${previousHouseName}\nto unlock this house`,
+      createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
+        fontSize: scaleFontSize(13),
+        align: 'center',
+        wordWrap: { width: tooltipWidth - scale(20) },
+      })
+    ).setOrigin(0.5);
+    tooltipContainer.add(tooltipText);
+
+    // Add pointer triangle at bottom - white to match background
+    const triangle = this.add.triangle(
+      0,
+      tooltipHeight / 2,
+      0, 0,
+      scale(10), scale(12),
+      scale(-10), scale(12),
+      COLORS.WHITE
+    );
+    tooltipContainer.add(triangle);
+
+    // Add triangle border for depth
+    const triangleBorder = this.add.triangle(
+      0,
+      tooltipHeight / 2 + scale(1),
+      0, 0,
+      scale(11), scale(13),
+      scale(-11), scale(13),
+      COLORS.GRAY_200
+    );
+    triangleBorder.setDepth(-1);
+    tooltipContainer.add(triangleBorder);
+
+    // Store tooltip
+    this.lockedTooltips.set(house.id, tooltipContainer);
+
+    // Make house container interactive with explicit size
+    const houseSize = scale(200);
+    houseContainer.setSize(houseSize, houseSize);
+    houseContainer.setInteractive();
+    
+    // Show tooltip on hover
+    houseContainer.on('pointerover', () => {
+      this.tweens.add({
+        targets: tooltipContainer,
+        alpha: 1,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
+
+    // Hide tooltip on pointer out
+    houseContainer.on('pointerout', () => {
+      this.tweens.add({
+        targets: tooltipContainer,
+        alpha: 0,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
+
+    // Prevent click action on locked houses - add bounce animation
+    houseContainer.on('pointerdown', () => {
+      this.tweens.add({
+        targets: houseContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+      });
+    });
+  }
 
   private fadeInScene(): void {
     const fadeDuration = 600;
@@ -934,21 +1026,28 @@ export default class NeighborhoodScene extends BaseScene {
     
     const { x: targetX, y: targetY } = this.calculateHousePosition(targetHouseIndex, width, height, targetHouse);
     
-    // Position bird on the right side of the progress card (same as createBird position)
+    // Position bird on the bottom blue line of the progress card
     const progressCardOffsetX = scale(250);
     const collapsedHeight = scale(70);
     
-    const finalX = targetX + progressCardOffsetX + scale(100); // Same as createBird
-    const finalY = targetY + (collapsedHeight / 2) - scale(65); // Same as createBird
+    const finalX = targetX + progressCardOffsetX;
+    const finalY = targetY + (collapsedHeight / 2); // Bottom of card
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
-    // Always use glide (fly) animation regardless of distance
-    this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
-      if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
-        this.handleHouseClick(targetHouse);
-      }
-    });
+    if (houseDistance > 1) {
+      this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
+        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+          this.handleHouseClick(targetHouse);
+        }
+      });
+    } else {
+      this.bird.hopToPosition(finalX, finalY, () => {
+        if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
+          this.handleHouseClick(targetHouse);
+        }
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1036,6 +1135,7 @@ export default class NeighborhoodScene extends BaseScene {
       this.cameras.main.setScroll(maxScrollX, 0);
     }
     
+    // FIXED: Reposition bird with correct formula before recreating UI
     if (this.bird && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
@@ -1043,8 +1143,8 @@ export default class NeighborhoodScene extends BaseScene {
       const progressCardOffsetX = scale(250);
       const collapsedHeight = scale(70);
       
-      const birdX = x + progressCardOffsetX + scale(100);
-      const birdY = y + (collapsedHeight / 2) - scale(15);
+      const birdX = x + progressCardOffsetX;
+      const birdY = y + (collapsedHeight / 2);
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
