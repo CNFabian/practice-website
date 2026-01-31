@@ -50,6 +50,7 @@ export default class NeighborhoodScene extends BaseScene {
   private transitionManager: SceneTransitionManager;
   private progressCards: Phaser.GameObjects.Container[] = [];
   private moduleProgressMap?: Map<string, any>;
+  private lockedTooltips: Map<string, Phaser.GameObjects.Container> = new Map();
 
   // Bird character properties
   private bird?: BirdCharacter;
@@ -94,6 +95,7 @@ export default class NeighborhoodScene extends BaseScene {
     this.houseSprites.clear();
     this.houseImages = [];
     this.roads = [];
+    this.lockedTooltips.clear();
     
     // Cleanup existing bird
     if (this.bird) {
@@ -137,7 +139,7 @@ export default class NeighborhoodScene extends BaseScene {
         id: 'mock-house-1',
         name: 'Home-buying Foundations',
         houseType: ASSET_KEYS.HOUSE_1,
-        isLocked: false,
+        isLocked: true,
         moduleId: 1,
         moduleBackendId: 'mock-module-1',
         description: 'Learn the basics of home buying',
@@ -147,7 +149,7 @@ export default class NeighborhoodScene extends BaseScene {
         id: 'mock-house-2',
         name: 'Financial Planning',
         houseType: ASSET_KEYS.HOUSE_2,
-        isLocked: false,
+        isLocked: true,
         moduleId: 2,
         moduleBackendId: 'mock-module-2',
         description: 'Master your finances for home ownership',
@@ -157,7 +159,7 @@ export default class NeighborhoodScene extends BaseScene {
         id: 'mock-house-3',
         name: 'Property Search',
         houseType: ASSET_KEYS.HOUSE_3,
-        isLocked: false,
+        isLocked: true,
         moduleId: 3,
         moduleBackendId: 'mock-module-3',
         description: 'Find your perfect home',
@@ -167,7 +169,7 @@ export default class NeighborhoodScene extends BaseScene {
         id: 'mock-house-4',
         name: 'Making an Offer',
         houseType: ASSET_KEYS.HOUSE_4,
-        isLocked: false,
+        isLocked: true,
         moduleId: 4,
         moduleBackendId: 'mock-module-4',
         description: 'Negotiate and secure your home',
@@ -177,7 +179,7 @@ export default class NeighborhoodScene extends BaseScene {
         id: 'mock-house-5',
         name: 'Closing Process',
         houseType: ASSET_KEYS.HOUSE_5,
-        isLocked: false,
+        isLocked: true,
         moduleId: 5,
         moduleBackendId: 'mock-module-5',
         description: 'Complete your home purchase',
@@ -206,8 +208,8 @@ export default class NeighborhoodScene extends BaseScene {
       console.warn('⚠️ No dashboard modules found in registry');
     }
     
-    // Now create houses with progress data
-    this.createHouses();
+    // Don't create houses here - createUI() will handle it
+    // this.createHouses(); // ← REMOVED - was causing duplicate clouds
     
     this.createUI();
     this.fadeInScene();
@@ -298,6 +300,8 @@ export default class NeighborhoodScene extends BaseScene {
     this.tweens.killAll();
     this.progressCards.forEach(card => card.destroy());
     this.progressCards = [];
+    this.lockedTooltips.forEach(tooltip => tooltip.destroy());
+    this.lockedTooltips.clear();
     this.cleanupEventListeners();
     this.cleanupBird();
   }
@@ -537,8 +541,14 @@ export default class NeighborhoodScene extends BaseScene {
       this.coinCounter.setAlpha(0);
     }
 
+    // Set progress cards invisible
     this.progressCards.forEach(card => {
       card.setAlpha(0);
+    });
+
+    // Set locked tooltips invisible (they should stay hidden until hover)
+    this.lockedTooltips.forEach(tooltip => {
+      tooltip.setAlpha(0);
     });
   }
 
@@ -612,87 +622,91 @@ export default class NeighborhoodScene extends BaseScene {
     const houseContainer = this.add.container(x, y);
     houseContainer.setDepth(2);
 
-    // Determine if house has backend data
-    const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
+    // Set house to locked by default unless explicitly unlocked by backend
+    const isLocked = house.isLocked !== false; // Locked unless explicitly set to false
 
     // Create house icon
     let houseImage: Phaser.GameObjects.Image | undefined;
     if (house.houseType) {
-      houseImage = this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
+      houseImage = this.createHouseIcon(houseContainer, house.houseType, isLocked);
     }
-    // Add cloud overlay
-    if (!hasBackendData && house.houseType) {
+
+    // Add cloud overlay for locked houses ONLY
+    if (isLocked && house.houseType) {
       const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
       cloudOverlay.setDisplaySize(scale(700), scale(700));
-      cloudOverlay.setAlpha(0.9);
+      cloudOverlay.setAlpha(0); // Start invisible for fade-in
       cloudOverlay.setDepth(10);
       this.cloudOverlays.push(cloudOverlay);
     }
 
-    // ADD PROGRESS CARD - positioned to the right-middle of the house
-    const progressCardX = x + scale(250); // Right side of house
-    const progressCardY = y; // Middle height
+    // Only show progress card for unlocked houses
+    if (!isLocked) {
+      // ADD PROGRESS CARD - positioned to the right-middle of the house
+      const progressCardX = x + scale(250); // Right side of house
+      const progressCardY = y; // Middle height
 
-    // Get progress data from backend (if available)
-    const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
+      // Get progress data from backend (if available)
+      const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
 
-    // Log what we found for debugging
-    if (house.moduleBackendId) {
-      console.log(`🏠 House "${house.name}":`, {
-        moduleBackendId: house.moduleBackendId,
-        hasProgressData: !!moduleProgress,
-        progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-        lessonCount: moduleProgress?.module.lesson_count || 0,
-      });
-    }
-
-    // Prepare progress data with REAL backend values
-    const progressData: HouseProgressData = {
-      moduleNumber: index + 1,
-      moduleName: house.name,
-      // ✅ Real duration from backend
-      duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
-      // ✅ Real progress status
-      hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
-      // ✅ Real progress percentage (tree will grow based on this!)
-      progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
-      // ✅ Real lesson count
-      lessonCount: moduleProgress?.module.lesson_count || 0,
-      // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
-      quizCount: moduleProgress?.module.lesson_count || 0,
-      coinReward: house.coinReward,
-    };
-
-  const progressCard = HouseProgressCard.createProgressCard(
-    this,
-    progressCardX,
-    progressCardY,
-    progressData,
-    () => {
-      if (!house.isLocked) {
-        this.travelToHouse(index);
+      // Log what we found for debugging
+      if (house.moduleBackendId) {
+        console.log(`🏠 House "${house.name}":`, {
+          moduleBackendId: house.moduleBackendId,
+          hasProgressData: !!moduleProgress,
+          progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+          lessonCount: moduleProgress?.module.lesson_count || 0,
+        });
       }
-    },
-    this.bird,
-    houseImage  // Pass the house image reference
-  );
-    progressCard.setAlpha(0); // Start invisible for fade-in
-    progressCard.setDepth(3); // Above houses
-    
-    // Store the progress card for fade-in animation
-    if (!this.progressCards) {
-      this.progressCards = [];
-    }
-    this.progressCards.push(progressCard);
 
-    // Add coin reward badge if available
-    if (house.coinReward && house.coinReward > 0) {
-      this.createCoinBadge(houseContainer, house.coinReward);
-    }
+      // Prepare progress data with REAL backend values
+      const progressData: HouseProgressData = {
+        moduleNumber: index + 1,
+        moduleName: house.name,
+        // ✅ Real duration from backend
+        duration: this.formatDuration(moduleProgress?.module.estimated_duration_minutes || 0),
+        // ✅ Real progress status
+        hasProgress: moduleProgress ? moduleProgress.lessons_completed > 0 : false,
+        // ✅ Real progress percentage (tree will grow based on this!)
+        progressPercent: moduleProgress ? parseFloat(moduleProgress.completion_percentage) : 0,
+        // ✅ Real lesson count
+        lessonCount: moduleProgress?.module.lesson_count || 0,
+        // ⚠️ TEMPORARY: Use lesson count as quiz count (backend doesn't provide quiz_count yet)
+        quizCount: moduleProgress?.module.lesson_count || 0,
+        coinReward: house.coinReward,
+        isLocked: false, // Pass unlock status to control hover behavior
+      };
 
-    if (house.isLocked) {
+      const progressCard = HouseProgressCard.createProgressCard(
+        this,
+        progressCardX,
+        progressCardY,
+        progressData,
+        () => {
+          this.travelToHouse(index);
+        },
+        this.bird,
+        houseImage  // Pass the house image reference
+      );
+      progressCard.setAlpha(0); // Start invisible for fade-in
+      progressCard.setDepth(3); // Above houses
+      
+      // Store the progress card for fade-in animation
+      if (!this.progressCards) {
+        this.progressCards = [];
+      }
+      this.progressCards.push(progressCard);
+
+      // Coin reward badge removed - no longer displaying on houses
+      // if (house.coinReward && house.coinReward > 0) {
+      //   this.createCoinBadge(houseContainer, house.coinReward);
+      // }
+    } else {
+      // For locked houses, create hover tooltip
       houseContainer.setAlpha(OPACITY.MEDIUM);
-      this.createLockIcon(houseContainer);
+      // Lock icon removed - no longer displaying on locked houses
+      // this.createLockIcon(houseContainer);
+      this.createLockedHouseTooltip(houseContainer, house, index, x, y);
     }
 
     this.houseSprites.set(house.id, houseContainer);
@@ -719,15 +733,6 @@ export default class NeighborhoodScene extends BaseScene {
     badgeBg.setStrokeStyle(scale(2), 0xFFA500);
     container.add(badgeBg);
 
-    // BEFORE (Fredoka):
-    // const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`, {
-    //   fontSize: scaleFontSize(12),
-    //   fontFamily: 'Fredoka, sans-serif',
-    //   color: '#000000',
-    //   fontStyle: 'bold',
-    // }).setOrigin(0.5);
-    
-    // AFTER (Onest):
     const coinText = this.add.text(scale(50), scale(-50), `${coinReward}`,
       createTextStyle('BADGE', '#000000', {
         fontSize: scaleFontSize(12),
@@ -745,6 +750,122 @@ export default class NeighborhoodScene extends BaseScene {
       fontSize: scaleFontSize(20),
     }).setOrigin(0.5);
     container.add(lockIcon);
+  }
+
+  private createLockedHouseTooltip(
+    houseContainer: Phaser.GameObjects.Container,
+    house: HousePosition,
+    index: number,
+    x: number,
+    y: number
+  ): void {
+    // Create tooltip container (initially hidden)
+    const tooltipContainer = this.add.container(x, y - scale(120));
+    tooltipContainer.setAlpha(0);
+    tooltipContainer.setDepth(20); // Above everything
+
+    // Tooltip dimensions
+    const tooltipWidth = scale(300);
+    const tooltipHeight = scale(90);
+    const cornerRadius = scale(12);
+
+    // Tooltip background - white with high opacity to match card style
+    const tooltipBg = this.add.rectangle(
+      0,
+      0,
+      tooltipWidth,
+      tooltipHeight,
+      COLORS.WHITE,
+      OPACITY.HIGH
+    );
+    tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    tooltipContainer.add(tooltipBg);
+
+    // Lock icon using standard icon circle style
+    const lockIconBg = this.add.circle(0, scale(-25), scale(20), COLORS.GRAY_300);
+    tooltipContainer.add(lockIconBg);
+
+    const lockIcon = this.add.text(0, scale(-25), '🔒', {
+      fontSize: scaleFontSize(18),
+    }).setOrigin(0.5);
+    tooltipContainer.add(lockIcon);
+
+    // Tooltip text - using standard text colors
+    const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
+    const tooltipText = this.add.text(
+      0,
+      scale(15),
+      `Complete ${previousHouseName}\nto unlock this house`,
+      createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
+        fontSize: scaleFontSize(13),
+        align: 'center',
+        wordWrap: { width: tooltipWidth - scale(20) },
+      })
+    ).setOrigin(0.5);
+    tooltipContainer.add(tooltipText);
+
+    // Add pointer triangle at bottom - white to match background
+    const triangle = this.add.triangle(
+      0,
+      tooltipHeight / 2,
+      0, 0,
+      scale(10), scale(12),
+      scale(-10), scale(12),
+      COLORS.WHITE
+    );
+    tooltipContainer.add(triangle);
+
+    // Add triangle border for depth
+    const triangleBorder = this.add.triangle(
+      0,
+      tooltipHeight / 2 + scale(1),
+      0, 0,
+      scale(11), scale(13),
+      scale(-11), scale(13),
+      COLORS.GRAY_200
+    );
+    triangleBorder.setDepth(-1);
+    tooltipContainer.add(triangleBorder);
+
+    // Store tooltip
+    this.lockedTooltips.set(house.id, tooltipContainer);
+
+    // Make house container interactive with explicit size
+    const houseSize = scale(200);
+    houseContainer.setSize(houseSize, houseSize);
+    houseContainer.setInteractive();
+    
+    // Show tooltip on hover
+    houseContainer.on('pointerover', () => {
+      this.tweens.add({
+        targets: tooltipContainer,
+        alpha: 1,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
+
+    // Hide tooltip on pointer out
+    houseContainer.on('pointerout', () => {
+      this.tweens.add({
+        targets: tooltipContainer,
+        alpha: 0,
+        duration: 200,
+        ease: 'Power2',
+      });
+    });
+
+    // Prevent click action on locked houses - add bounce animation
+    houseContainer.on('pointerdown', () => {
+      this.tweens.add({
+        targets: houseContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+      });
+    });
   }
 
   private fadeInScene(): void {
@@ -833,6 +954,11 @@ export default class NeighborhoodScene extends BaseScene {
       ease: 'Cubic.easeOut'
     });
   }
+
+  // Locked tooltips stay hidden (only appear on hover)
+  this.lockedTooltips.forEach((tooltip) => {
+    tooltip.setAlpha(0);
+  });
 }
 
 
@@ -1012,6 +1138,8 @@ export default class NeighborhoodScene extends BaseScene {
     if (this.placeholderCard) this.placeholderCard.destroy();
     this.cloudOverlays.forEach(cloud => cloud.destroy());
     this.cloudOverlays = [];
+    this.lockedTooltips.forEach(tooltip => tooltip.destroy());
+    this.lockedTooltips.clear();
 
     this.handleCoinCounterResize();
     
@@ -1043,6 +1171,7 @@ export default class NeighborhoodScene extends BaseScene {
       this.bird.handleResize();
     }
     
+    // FIXED: Match the same order as createUI()
     this.createBackButton();
     
     if (this.houses.length > 0) {
@@ -1051,8 +1180,11 @@ export default class NeighborhoodScene extends BaseScene {
       
       // Set all elements invisible before fading them in
       this.setAllElementsInvisible();
-      // Fade in all elements (including clouds)
+      // Fade in all elements (including clouds and tooltips)
       this.fadeInScene();
+      
+      // FIXED: Start bird idle animation after resize (was missing)
+      this.startBirdIdleAnimation();
     } else {
       this.createPlaceholder();
     }

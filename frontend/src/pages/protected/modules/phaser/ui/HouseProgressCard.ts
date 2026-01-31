@@ -12,6 +12,7 @@ export interface HouseProgressData {
   lessonCount?: number;
   quizCount?: number;
   coinReward?: number;
+  isLocked?: boolean;
 }
 
 export class HouseProgressCard {
@@ -43,7 +44,7 @@ export class HouseProgressCard {
     let originalBirdY: number | undefined;
 
     // Determine initial state
-    const isExpandable = data.hasProgress && data.progressPercent !== undefined;
+    const isExpandable = !data.isLocked;
     const initialHeight = isExpandable ? collapsedHeight : collapsedHeight;
 
     // Create glow graphics FIRST (so it appears behind everything)
