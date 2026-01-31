@@ -616,10 +616,10 @@ export default class NeighborhoodScene extends BaseScene {
     const hasBackendData = !!(house.moduleBackendId && !house.moduleBackendId.startsWith('mock-'));
 
     // Create house icon
+    let houseImage: Phaser.GameObjects.Image | undefined;
     if (house.houseType) {
-      this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
+      houseImage = this.createHouseIcon(houseContainer, house.houseType, house.isLocked);
     }
-
     // Add cloud overlay
     if (!hasBackendData && house.houseType) {
       const cloudOverlay = this.add.image(x, y - scale(50), ASSET_KEYS.HOUSE_CLOUD);
@@ -663,19 +663,19 @@ export default class NeighborhoodScene extends BaseScene {
       coinReward: house.coinReward,
     };
 
-    // IMPORTANT: Pass this.bird as the last parameter!
-    const progressCard = HouseProgressCard.createProgressCard(
-      this,
-      progressCardX,
-      progressCardY,
-      progressData,
-      () => {
-        if (!house.isLocked) {
-          this.travelToHouse(index);
-        }
-      },
-      this.bird  // ← ADD THIS LINE! Pass the bird reference
-    );
+  const progressCard = HouseProgressCard.createProgressCard(
+    this,
+    progressCardX,
+    progressCardY,
+    progressData,
+    () => {
+      if (!house.isLocked) {
+        this.travelToHouse(index);
+      }
+    },
+    this.bird,
+    houseImage  // Pass the house image reference
+  );
     progressCard.setAlpha(0); // Start invisible for fade-in
     progressCard.setDepth(3); // Above houses
     
@@ -702,7 +702,7 @@ export default class NeighborhoodScene extends BaseScene {
     container: Phaser.GameObjects.Container, 
     houseType: string, 
     isLocked?: boolean
-  ): void {
+  ): Phaser.GameObjects.Image {
     const houseImage = this.add.image(0, 0, houseType);
     houseImage.setScale(scale(1));
     
@@ -711,6 +711,7 @@ export default class NeighborhoodScene extends BaseScene {
     }
     
     container.add(houseImage);
+    return houseImage;
   }
 
   private createCoinBadge(container: Phaser.GameObjects.Container, coinReward: number): void {

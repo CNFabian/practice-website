@@ -24,7 +24,8 @@ export class HouseProgressCard {
     y: number,
     data: HouseProgressData,
     onContinueClick?: () => void,
-    bird?: BirdCharacter 
+    bird?: BirdCharacter,
+    houseImage?: Phaser.GameObjects.Image
   ): Phaser.GameObjects.Container {
     console.log('🐦 Creating progress card with bird:', bird ? 'YES' : 'NO');
     if (bird) {
@@ -271,16 +272,23 @@ export class HouseProgressCard {
       hoverZone.setOrigin(0.5, 0.5);
       hoverZone.setInteractive({ useHandCursor: true });
       
-      // Click handler - clicking anywhere on card triggers navigation
-      if (onContinueClick) {
-        hoverZone.on('pointerdown', () => {
-          console.log('Card clicked - navigating');
-          onContinueClick();
-        });
-      }
+      // Shared debounce timer to prevent flickering between house and card
+      let collapseDebounce: Phaser.Time.TimerEvent | null = null;
+      let isExpanded = false;
       
-      hoverZone.on('pointerover', () => {
-        console.log('Card hover - expanding');
+      // SHARED EXPAND FUNCTION - used by both card and house
+      const expand = () => {
+        // Cancel any pending collapse
+        if (collapseDebounce) {
+          collapseDebounce.remove();
+          collapseDebounce = null;
+        }
+        
+        // Prevent duplicate expansion
+        if (isExpanded) return;
+        isExpanded = true;
+        
+        console.log('Expanding card');
         
         // Update zone size for expanded state
         hoverZone.setSize(cardWidth, expandedHeight);
@@ -310,14 +318,14 @@ export class HouseProgressCard {
           onUpdate: (tween) => {
             const height = tween.getValue();
             if (height !== null) {
-              drawCard(height, true); // Pass true for hovered state - blue bar disappears
+              drawCard(height, true);
               title.setY(-height / 2 + scale(20));
               duration.setY(-height / 2 + scale(20));
             }
           }
         });
 
-        // Fade in blue glow with FULL opacity for prominence
+        // Fade in blue glow
         scene.tweens.add({
           targets: { glowAlpha: 0 },
           glowAlpha: 1,
@@ -341,21 +349,18 @@ export class HouseProgressCard {
           });
         }
 
-        // BIRD ANIMATION: Hop up and STAY at the progress bar area
+        // Bird hop up
         if (bird && bird.getSprite() && originalBirdY !== undefined) {
           const birdSprite = bird.getSprite();
           if (birdSprite) {
-            // Calculate target position (around progress bar area - 75% mark)
-            const targetBirdY = y + scale(-30); 
+            const targetBirdY = y + scale(-30);
             
-            // Create hop up animation with arc
             scene.tweens.add({
               targets: birdSprite,
               y: targetBirdY,
               duration: 300,
               ease: 'Quad.easeOut',
               onStart: () => {
-                // Small rotation during hop up
                 scene.tweens.add({
                   targets: birdSprite,
                   angle: -8,
@@ -363,7 +368,6 @@ export class HouseProgressCard {
                   ease: 'Sine.easeOut',
                   yoyo: false,
                   onComplete: () => {
-                    // Return angle to 0 after hop
                     scene.tweens.add({
                       targets: birdSprite,
                       angle: 0,
@@ -374,101 +378,139 @@ export class HouseProgressCard {
                 });
               }
             });
-            // Bird now STAYS at targetBirdY (no yoyo, no onComplete that moves it back)
           }
         }
-      });
+      };
       
-      hoverZone.on('pointerout', () => {
-        console.log('Card hover - collapsing');
+      // SHARED COLLAPSE FUNCTION - used by both card and house
+      const scheduleCollapse = () => {
+        console.log('Scheduling collapse');
         
-        // Update zone size back to collapsed state
-        hoverZone.setSize(cardWidth, collapsedHeight);
-        
-        // Kill any existing tweens on bird
-        if (bird) {
-          const birdSprite = bird.getSprite();
-          if (birdSprite) {
-            scene.tweens.killTweensOf(birdSprite);
-          }
+        // Clear existing timer
+        if (collapseDebounce) {
+          collapseDebounce.remove();
         }
         
-        // Kill any existing tweens
-        scene.tweens.killTweensOf([{ height: collapsedHeight }, { height: expandedHeight }, { glowAlpha: 0 }, { glowAlpha: 1 }]);
-        
-        // Collapse animation
-        scene.tweens.add({
-          targets: { height: expandedHeight },
-          height: collapsedHeight,
-          duration: 200,
-          ease: 'Power2',
-          onUpdate: (tween) => {
-            const height = tween.getValue();
-            if (height !== null) {
-              drawCard(height, false); // Pass false for normal state - blue bar returns
-              title.setY(-height / 2 + scale(20));
-              duration.setY(-height / 2 + scale(20));
+        // Delay collapse to allow seamless transition between house and card
+        collapseDebounce = scene.time.delayedCall(100, () => {
+          isExpanded = false;
+          console.log('Collapsing card');
+          
+          // Update zone size back to collapsed state
+          hoverZone.setSize(cardWidth, collapsedHeight);
+          
+          // Kill any existing tweens on bird
+          if (bird) {
+            const birdSprite = bird.getSprite();
+            if (birdSprite) {
+              scene.tweens.killTweensOf(birdSprite);
             }
           }
-        });
-
-        // Fade out blue glow
-        scene.tweens.add({
-          targets: { glowAlpha: 1 },
-          glowAlpha: 0,
-          duration: 200,
-          ease: 'Power2',
-          onUpdate: (tween) => {
-            const alpha = tween.getValue();
-            if (alpha !== null) {
-              drawGlow(collapsedHeight, alpha);
-            }
-          }
-        });
-
-        // Fade out progress details
-        if (progressContainer) {
+          
+          // Kill any existing tweens
+          scene.tweens.killTweensOf([{ height: collapsedHeight }, { height: expandedHeight }, { glowAlpha: 0 }, { glowAlpha: 1 }]);
+          
+          // Collapse animation
           scene.tweens.add({
-            targets: progressContainer,
-            alpha: 0,
+            targets: { height: expandedHeight },
+            height: collapsedHeight,
             duration: 200,
-            ease: 'Power2'
+            ease: 'Power2',
+            onUpdate: (tween) => {
+              const height = tween.getValue();
+              if (height !== null) {
+                drawCard(height, false);
+                title.setY(-height / 2 + scale(20));
+                duration.setY(-height / 2 + scale(20));
+              }
+            }
+          });
+
+          // Fade out blue glow
+          scene.tweens.add({
+            targets: { glowAlpha: 1 },
+            glowAlpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onUpdate: (tween) => {
+              const alpha = tween.getValue();
+              if (alpha !== null) {
+                drawGlow(collapsedHeight, alpha);
+              }
+            }
+          });
+
+          // Fade out progress details
+          if (progressContainer) {
+            scene.tweens.add({
+              targets: progressContainer,
+              alpha: 0,
+              duration: 200,
+              ease: 'Power2'
+            });
+          }
+
+          // Bird hop down
+          if (bird && bird.getSprite() && originalBirdY !== undefined) {
+            const birdSprite = bird.getSprite();
+            if (birdSprite) {
+              scene.tweens.add({
+                targets: birdSprite,
+                y: originalBirdY,
+                duration: 300,
+                ease: 'Quad.easeIn',
+                onStart: () => {
+                  scene.tweens.add({
+                    targets: birdSprite,
+                    angle: 8,
+                    duration: 150,
+                    ease: 'Sine.easeOut',
+                    yoyo: false,
+                    onComplete: () => {
+                      scene.tweens.add({
+                        targets: birdSprite,
+                        angle: 0,
+                        duration: 150,
+                        ease: 'Sine.easeIn'
+                      });
+                    }
+                  });
+                }
+              });
+            }
+          }
+          
+          collapseDebounce = null;
+        });
+      };
+      
+      // CARD ZONE HANDLERS
+      hoverZone.on('pointerover', expand);
+      hoverZone.on('pointerout', scheduleCollapse);
+      
+      // Click handler for card
+      if (onContinueClick) {
+        hoverZone.on('pointerdown', () => {
+          console.log('Card clicked - navigating');
+          onContinueClick();
+        });
+      }
+      
+      // HOUSE IMAGE HANDLERS (if house image provided)
+      if (houseImage) {
+        houseImage.setInteractive({ useHandCursor: true });
+        
+        houseImage.on('pointerover', expand);
+        houseImage.on('pointerout', scheduleCollapse);
+        
+        // Click handler for house
+        if (onContinueClick) {
+          houseImage.on('pointerdown', () => {
+            console.log('House image clicked - navigating');
+            onContinueClick();
           });
         }
-
-        // BIRD ANIMATION: Hop back down to original position (REVERSED)
-        if (bird && bird.getSprite() && originalBirdY !== undefined) {
-          const birdSprite = bird.getSprite();
-          if (birdSprite) {
-            // Hop back down to original position
-            scene.tweens.add({
-              targets: birdSprite,
-              y: originalBirdY,
-              duration: 300,
-              ease: 'Quad.easeIn',
-              onStart: () => {
-                // Small rotation during hop down (opposite direction)
-                scene.tweens.add({
-                  targets: birdSprite,
-                  angle: 8,
-                  duration: 150,
-                  ease: 'Sine.easeOut',
-                  yoyo: false,
-                  onComplete: () => {
-                    // Return angle to 0 after hop
-                    scene.tweens.add({
-                      targets: birdSprite,
-                      angle: 0,
-                      duration: 150,
-                      ease: 'Sine.easeIn'
-                    });
-                  }
-                });
-              }
-            });
-          }
-        }
-      });
+      }
 
       // Add zone LAST so it's on top
       container.add(hoverZone);
