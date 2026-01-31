@@ -536,15 +536,6 @@ export default class NeighborhoodScene extends BaseScene {
       cloud.setAlpha(0);
     });
 
-    // Set bird invisible and ensure depth
-    if (this.bird) {
-      const birdSprite = this.bird.getSprite();
-      if (birdSprite) {
-        birdSprite.setAlpha(0);
-        birdSprite.setDepth(1000);
-      }
-    }
-
     // Keep locked tooltips hidden (they only appear on hover)
     this.lockedTooltips.forEach((tooltip) => {
       tooltip.setAlpha(0);
@@ -887,26 +878,11 @@ export default class NeighborhoodScene extends BaseScene {
       });
     });
     
-    // Fade in bird with depth enforcement
     if (this.bird) {
-      const birdSprite = this.bird.getSprite();
-      if (birdSprite) {
-        birdSprite.setDepth(1000);
-        this.tweens.add({
-          targets: birdSprite,
-          alpha: 1,
-          duration: fadeDuration,
-          ease: 'Cubic.easeOut',
-          onComplete: () => {
-            if (birdSprite && !birdSprite.scene) return;
-            if (birdSprite) {
-              birdSprite.setDepth(1000);
-            }
-            // Start idle animation AFTER fade-in completes to prevent alpha conflicts
-            this.startBirdIdleAnimation();
-          }
-        });
-      }
+      this.bird.fadeIn(fadeDuration, () => {
+        // Start idle animation AFTER fade-in completes
+        this.startBirdIdleAnimation();
+      });
     }
     
     // Fade in placeholder if no houses
@@ -981,13 +957,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
-    
-    // Ensure bird starts invisible with correct depth
-    const birdSprite = this.bird.getSprite();
-    if (birdSprite) {
-      birdSprite.setAlpha(0);
-      birdSprite.setDepth(1000);
-    }
+    // BirdCharacter.createStatic() now handles alpha=0 and depth internally
   }
 
   private startBirdIdleAnimation(): void {
@@ -1021,14 +991,14 @@ export default class NeighborhoodScene extends BaseScene {
     const collapsedHeight = scale(70);
     
     const finalX = targetX + progressCardOffsetX + scale(100);
-    const finalY = targetY + (collapsedHeight / 10) - scale(40); // Bottom of card
+    const finalY = targetY + (collapsedHeight / 10) - scale(40); // Progress bar
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
     // Always use glide animation for house-to-house travel
     this.bird.glideToPosition(finalX, finalY, houseDistance, () => {
-      // Clear traveling flag when animation completes
-      this.isBirdTraveling = false;
+      // DON'T clear traveling flag here - keep it blocked during transition
+      // It will be cleared after the full scene transition completes
       
       if (!this.isShuttingDown && this.scene.isActive(SCENE_KEYS.NEIGHBORHOOD)) {
         this.handleHouseClick(targetHouse);
@@ -1057,6 +1027,7 @@ export default class NeighborhoodScene extends BaseScene {
       this.transitionToHouse(() => {
         handleHouseSelect(house.id, house.moduleBackendId);
         this.isTransitioning = false;
+        this.isBirdTraveling = false; // Clear traveling flag after full transition
       });
     }
   }
@@ -1130,16 +1101,11 @@ export default class NeighborhoodScene extends BaseScene {
       const collapsedHeight = scale(70);
       
       const birdX = x + progressCardOffsetX + scale(100);
-      const birdY = y + (collapsedHeight / 10) - scale(10);
+      const birdY = y + (collapsedHeight / 10) - scale(15);
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
       
-      // Ensure depth is maintained
-      const birdSprite = this.bird.getSprite();
-      if (birdSprite) {
-        birdSprite.setDepth(1000);
-      }
     }
     
     this.createBackButton();

@@ -25,6 +25,7 @@ export class BirdCharacter {
   private idleTimer?: Phaser.Time.TimerEvent;
   private isAnimating: boolean = false;
   private cleanupScheduled: boolean = false;
+  private hasFadedIn: boolean = false; // Track if fade-in has completed
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -39,11 +40,76 @@ export class BirdCharacter {
 
   /**
    * Create bird sprite at position without animation
+   * IMPORTANT: Sprite starts at alpha 0 - must call fadeIn() to make visible
    */
   createStatic(x: number, y: number): void {
     this.sprite = this.scene.add.image(x, y, ASSET_KEYS.BIRD_IDLE);
     this.updateSize();
     this.sprite.setDepth(1000);
+    this.sprite.setAlpha(0); // Always start invisible
+    this.hasFadedIn = false;
+  }
+
+  /**
+   * Fade in the bird sprite - call this from scene's fadeInScene method
+   * This is the ONLY way to make the bird visible after createStatic
+   */
+  fadeIn(duration: number = 600, onComplete?: () => void): void {
+    if (!this.sprite) return;
+
+    // Kill any existing tweens on this sprite to prevent conflicts
+    this.scene.tweens.killTweensOf(this.sprite);
+
+    // Ensure we start from 0
+    this.sprite.setAlpha(0);
+    this.sprite.setDepth(1000);
+
+    this.scene.tweens.add({
+      targets: this.sprite,
+      alpha: 1,
+      duration: duration,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        // FORCE alpha to 1 after tween completes - bulletproof
+        if (this.sprite && this.sprite.scene) {
+          this.sprite.setAlpha(1);
+          this.sprite.setDepth(1000);
+          this.hasFadedIn = true;
+        }
+        if (onComplete) onComplete();
+      }
+    });
+  }
+
+  /**
+   * Check if bird has completed its fade-in animation
+   */
+  getHasFadedIn(): boolean {
+    return this.hasFadedIn;
+  }
+
+  /**
+   * Force the bird to be fully visible (use after fade-in or for instant visibility)
+   */
+  forceVisible(): void {
+    if (this.sprite) {
+      this.scene.tweens.killTweensOf(this.sprite);
+      this.sprite.setAlpha(1);
+      this.sprite.setDepth(1000);
+      this.hasFadedIn = true;
+    }
+  }
+
+  /**
+   * Ensure alpha is maintained at 1 after fade-in (call periodically if needed)
+   */
+  enforceAlpha(): void {
+    if (this.sprite && this.hasFadedIn) {
+      // Only enforce if we've completed fade-in
+      if (this.sprite.alpha < 1) {
+        this.sprite.setAlpha(1);
+      }
+    }
   }
 
   /**
@@ -65,6 +131,8 @@ export class BirdCharacter {
     this.updateSize(true);
     this.sprite.setDepth(1000);
     this.sprite.setFlipX(!fromLeft);
+    this.sprite.setAlpha(1); // Flying entrance is immediately visible
+    this.hasFadedIn = true;
 
     this.isAnimating = true;
 
@@ -78,6 +146,7 @@ export class BirdCharacter {
       onComplete: () => {
         this.switchToIdleTexture();
         this.sprite!.setFlipX(false);
+        this.sprite!.setAlpha(1); // Ensure alpha stays 1
         this.isAnimating = false;
         if (onComplete) onComplete();
       },
@@ -101,6 +170,8 @@ export class BirdCharacter {
     this.updateSize();
     this.sprite.setDepth(1000);
     this.sprite.setFlipX(!fromLeft);
+    this.sprite.setAlpha(1); // Hopping entrance is immediately visible
+    this.hasFadedIn = true;
 
     // Calculate hop path
     const distance = Math.abs(finalX - startX);
@@ -122,6 +193,7 @@ export class BirdCharacter {
     this.isAnimating = true;
     this.performHopSequence(path, hopHeight, hopDuration, () => {
       this.sprite!.setFlipX(false);
+      this.sprite!.setAlpha(1); // Ensure alpha stays 1
       this.isAnimating = false;
       if (onComplete) onComplete();
     });
@@ -133,19 +205,21 @@ export class BirdCharacter {
 
   /**
    * Start idle animation (small random hops)
+   * IMPORTANT: Only starts if bird has faded in
    */
-
   startIdleAnimation(): void {
     this.stopIdleAnimation();
-    this.cleanupScheduled = false; // Reset flag
+    this.cleanupScheduled = false;
     
     const scheduleNextIdleHop = () => {
-      if (this.cleanupScheduled) return; // Exit if cleanup requested
+      if (this.cleanupScheduled) return;
       
       const randomDelay = Phaser.Math.Between(5000, 8000);
       this.idleTimer = this.scene.time.delayedCall(randomDelay, () => {
         if (this.cleanupScheduled) return;
-        if (!this.isAnimating && this.sprite) {
+        if (!this.isAnimating && this.sprite && this.hasFadedIn) {
+          // Enforce alpha before any animation
+          this.enforceAlpha();
           this.playIdleHop();
         }
         scheduleNextIdleHop();
@@ -154,8 +228,6 @@ export class BirdCharacter {
     
     scheduleNextIdleHop();
   }
-
- 
 
   /**
    * Stop idle animation
@@ -169,58 +241,56 @@ export class BirdCharacter {
   }
 
   /**
- * Play a single idle movement animation (horizontal only, no hop)
- */
-private playIdleHop(): void {
-  if (!this.sprite || this.isAnimating) return;
+   * Play a single idle movement animation (horizontal only, no hop)
+   */
+  private playIdleHop(): void {
+    if (!this.sprite || this.isAnimating || !this.hasFadedIn) return;
 
-  const { width } = this.scene.scale;
-  const originalX = this.sprite.x;
+    const { width } = this.scene.scale;
+    const originalX = this.sprite.x;
 
-  const moveRange = Math.floor(width * 0.003);
-  const moveX = Phaser.Math.Between(-moveRange, moveRange);
-  
-  // Use tighter boundaries for NeighborhoodScene
-  // Check if we're in NeighborhoodScene by checking scene key
-  const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
-  
-  let targetX: number;
-  if (isNeighborhoodScene) {
-    // Stay within a smaller radius around current position
-    const maxDistance = width * 0.02; // Small radius
-    targetX = Phaser.Math.Clamp(originalX + moveX, originalX - maxDistance, originalX + maxDistance);
-  } else {
-    // HouseScene - use wider boundaries
-    const minX = width * 0.1;
-    const maxX = width * 0.9;
-    targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
+    const moveRange = Math.floor(width * 0.003);
+    const moveX = Phaser.Math.Between(-moveRange, moveRange);
+    
+    // Use tighter boundaries for NeighborhoodScene
+    const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
+    
+    let targetX: number;
+    if (isNeighborhoodScene) {
+      const maxDistance = width * 0.02;
+      targetX = Phaser.Math.Clamp(originalX + moveX, originalX - maxDistance, originalX + maxDistance);
+    } else {
+      const minX = width * 0.1;
+      const maxX = width * 0.9;
+      targetX = Phaser.Math.Clamp(originalX + moveX, minX, maxX);
+    }
+
+    if (Math.abs(moveX) > moveRange * 0.5) {
+      this.sprite.setFlipX(moveX < 0);
+    }
+
+    const duration = 600;
+
+    this.scene.tweens.add({
+      targets: this.sprite,
+      x: targetX,
+      duration: duration,
+      ease: 'Sine.easeInOut',
+      onStart: () => {
+        this.scene.tweens.add({
+          targets: this.sprite,
+          angle: moveX < 0 ? 2 : -2,
+          duration: duration / 2,
+          ease: 'Sine.easeInOut',
+          yoyo: true,
+        });
+      },
+      onComplete: () => {
+        // Enforce alpha after animation completes
+        this.enforceAlpha();
+      }
+    });
   }
-
-  // Flip sprite based on movement direction
-  if (Math.abs(moveX) > moveRange * 0.5) {
-    this.sprite.setFlipX(moveX < 0);
-  }
-
-  const duration = 600;
-
-  // Only horizontal movement, no vertical hop
-  this.scene.tweens.add({
-    targets: this.sprite,
-    x: targetX,
-    duration: duration,
-    ease: 'Sine.easeInOut',
-    onStart: () => {
-      // Slight rotation for visual interest
-      this.scene.tweens.add({
-        targets: this.sprite,
-        angle: moveX < 0 ? 2 : -2,
-        duration: duration / 2,
-        ease: 'Sine.easeInOut',
-        yoyo: true,
-      });
-    },
-  });
-}
 
   /**
    * Play idle hop with boundary constraints (for NeighborhoodScene)
@@ -229,28 +299,24 @@ private playIdleHop(): void {
     houseCenterX: number,
     boundaryRadius: number
   ): void {
-    if (!this.sprite || this.isAnimating) return;
+    if (!this.sprite || this.isAnimating || !this.hasFadedIn) return;
 
     const { width, height } = this.scene.scale;
     const originalY = this.sprite.y;
     const originalX = this.sprite.x;
 
-    // Calculate boundaries around house
     const minX = houseCenterX - boundaryRadius;
     const maxX = houseCenterX + boundaryRadius;
 
-    // REDUCED: Random small movement within boundaries (was 0.005, now 0.002)
     const moveDistance = Phaser.Math.Between(-5, 5);
-    let targetX = originalX + (width * 0.002 * moveDistance); // Scale movement
+    let targetX = originalX + (width * 0.002 * moveDistance);
     targetX = Phaser.Math.Clamp(targetX, minX, maxX);
 
-    // Flip sprite based on movement direction
     const actualMove = targetX - originalX;
     if (Math.abs(actualMove) > width * 0.001) {
       this.sprite.setFlipX(actualMove < 0);
     }
 
-    // REDUCED: Single hop animation (was height * 0.003, now 0.0015)
     const hopHeight = height * 0.0015;
     const duration = 300;
 
@@ -270,9 +336,12 @@ private playIdleHop(): void {
           yoyo: true,
         });
       },
+      onComplete: () => {
+        // Enforce alpha after animation completes
+        this.enforceAlpha();
+      }
     });
   }
-
 
   // ═══════════════════════════════════════════════════════════
   // TRAVEL ANIMATION METHODS (for NeighborhoodScene)
@@ -291,13 +360,11 @@ private playIdleHop(): void {
 
     this.isAnimating = true;
 
-    // Flip sprite based on direction
     this.sprite.setFlipX(targetX < this.sprite.x);
 
     const hopDuration = 250;
     const totalGlideTime = distance * hopDuration * 4;
 
-    // Switch to flight texture
     this.sprite.setTexture(ASSET_KEYS.BIRD_FLY);
     this.updateSize(true);
 
@@ -310,6 +377,7 @@ private playIdleHop(): void {
       onComplete: () => {
         this.switchToIdleTexture();
         this.isAnimating = false;
+        this.enforceAlpha(); // Ensure alpha after animation
         if (onComplete) onComplete();
       },
     });
@@ -327,7 +395,6 @@ private playIdleHop(): void {
 
     this.isAnimating = true;
 
-    // Flip sprite based on direction
     this.sprite.setFlipX(targetX < this.sprite.x);
 
     const distance = Phaser.Math.Distance.Between(
@@ -342,7 +409,6 @@ private playIdleHop(): void {
     const hopHeight = height * 0.01;
     const hopDuration = 250;
 
-    // Create hop path
     const path: { x: number; y: number }[] = [];
     for (let i = 0; i <= numHops; i++) {
       const t = i / numHops;
@@ -353,6 +419,7 @@ private playIdleHop(): void {
 
     this.performHopSequence(path, hopHeight, hopDuration, () => {
       this.isAnimating = false;
+      this.enforceAlpha(); // Ensure alpha after animation
       if (onComplete) onComplete();
     });
   }
@@ -374,6 +441,7 @@ private playIdleHop(): void {
 
     const performNextHop = () => {
       if (currentHop >= path.length - 1) {
+        this.enforceAlpha(); // Ensure alpha at end of sequence
         if (onComplete) onComplete();
         return;
       }
@@ -426,7 +494,6 @@ private playIdleHop(): void {
     const { width, height } = this.scene.scale;
 
     if (isFlying) {
-      // Flying texture size (larger)
       const flyTexture = this.scene.textures.get(ASSET_KEYS.BIRD_FLY);
       const flyWidth = flyTexture.getSourceImage().width;
       const flyHeight = flyTexture.getSourceImage().height;
@@ -434,7 +501,6 @@ private playIdleHop(): void {
       const flySize = Math.min(width, height) * 0.1;
       this.sprite.setDisplaySize(flySize * flyAspectRatio, flySize);
     } else {
-      // Idle texture size
       const birdSize = Math.min(width, height) * 0.08;
       this.sprite.setDisplaySize(birdSize, birdSize);
     }
@@ -447,6 +513,7 @@ private playIdleHop(): void {
     if (!this.sprite) return;
     this.sprite.setTexture(ASSET_KEYS.BIRD_IDLE);
     this.updateSize(false);
+    this.enforceAlpha(); // Ensure alpha after texture switch
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -497,9 +564,11 @@ private playIdleHop(): void {
   destroy(): void {
     this.stopIdleAnimation();
     if (this.sprite) {
+      this.scene.tweens.killTweensOf(this.sprite); // Kill all tweens before destroy
       this.sprite.destroy();
       this.sprite = undefined;
     }
+    this.hasFadedIn = false;
   }
 
   /**
@@ -510,6 +579,7 @@ private playIdleHop(): void {
       const currentTexture = this.sprite.texture.key;
       const isFlying = currentTexture === ASSET_KEYS.BIRD_FLY;
       this.updateSize(isFlying);
+      this.enforceAlpha(); // Ensure alpha after resize
     }
   }
 }
