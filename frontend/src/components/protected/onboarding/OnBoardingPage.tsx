@@ -5,7 +5,8 @@ import {
   OnboardingImage2,
   OnboardingImage3_5,
   OnboardingImage4,
-  TextBox
+  TextBox,
+  OnestFont
 } from '../../../assets';
 import {
   getOnboardingOptions,
@@ -212,14 +213,14 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-pure-white flex flex-col">
       {/* Progress Bar */}
       <div className="w-full px-8 pt-8 pb-4">
         <div className="max-w-4xl mx-auto">
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-3 bg-light-background-blue rounded-full overflow-hidden">
             <div 
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%`, backgroundColor: '#6B85F5' }}
+              className="h-full bg-elegant-blue rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -241,9 +242,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 <div className="relative">
                   <img src={TextBox} alt="" className="w-full h-auto" />
                   <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
-                    <h1 className="text-lg font-semibold text-gray-700 text-center leading-relaxed">
+                    <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center">
                       Hi! Welcome to<br />NestNavigate!
-                    </h1>
+                    </OnestFont>
                   </div>
                 </div>
               </div>
@@ -251,12 +252,11 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={handleNext}
-            className="mx-auto block px-12 py-4 text-white rounded-full text-lg font-medium transition-colors shadow-md"
-            style={{ backgroundColor: '#6B85F5' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5A73E0'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6B85F5'}
+            className="mx-auto block px-12 py-4 bg-elegant-blue hover:opacity-90 text-pure-white rounded-full transition-opacity shadow-md"
           >
-            CONTINUE
+            <OnestFont weight={500} lineHeight="relaxed" className="text-lg">
+              CONTINUE
+            </OnestFont>
           </button>
         </div>
       )}
@@ -273,9 +273,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 <div className="relative">
                   <img src={TextBox} alt="" className="w-full h-auto" />
                   <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
-                    <h1 className="text-lg font-semibold text-gray-700 text-center leading-relaxed">
+                    <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center">
                       Let's build the learning<br />path for you!
-                    </h1>
+                    </OnestFont>
                   </div>
                 </div>
               </div>
@@ -283,12 +283,11 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={handleNext}
-            className="mx-auto block px-12 py-4 text-white rounded-full text-lg font-medium transition-colors shadow-md"
-            style={{ backgroundColor: '#6B85F5' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5A73E0'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6B85F5'}
+            className="mx-auto block px-12 py-4 bg-elegant-blue hover:opacity-90 text-pure-white rounded-full transition-opacity shadow-md"
           >
-            CONTINUE
+            <OnestFont weight={500} lineHeight="relaxed" className="text-lg">
+              CONTINUE
+            </OnestFont>
           </button>
         </div>
       )}
@@ -298,74 +297,74 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
                 <img src={OnboardingImage3_5} alt="Question" className="w-16 h-16 object-contain" />
-                <h1 className="text-2xl font-semibold text-gray-800">
+                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-text-blue-black">
                   Are you working with a ...
-                </h1>
+                </OnestFont>
               </div>
 
               <div className="space-y-8">
                 {/* Real Estate Officer */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#6B85F5' }}>Real Estate Officer?</h2>
+                  <OnestFont as="h2" weight={700} lineHeight="relaxed" className="text-xl mb-4 text-elegant-blue">
+                    Real Estate Officer?
+                  </OnestFont>
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={() => setFormData({ ...formData, has_realtor: true })}
-                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
-                      style={formData.has_realtor === true ? { 
-                        backgroundColor: '#EBF0FF', 
-                        borderColor: '#6B85F5'
-                      } : {
-                        backgroundColor: 'white',
-                        borderColor: '#d1d5db'
-                      }}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_realtor === true 
+                          ? 'bg-elegant-blue/10 border-elegant-blue' 
+                          : 'bg-pure-white border-light-background-blue'
+                      }`}
                     >
-                      Yes, I am
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                        Yes, I am
+                      </OnestFont>
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, has_realtor: false })}
-                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
-                      style={formData.has_realtor === false ? { 
-                        backgroundColor: '#EBF0FF', 
-                        borderColor: '#6B85F5'
-                      } : {
-                        backgroundColor: 'white',
-                        borderColor: '#d1d5db'
-                      }}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_realtor === false 
+                          ? 'bg-elegant-blue/10 border-elegant-blue' 
+                          : 'bg-pure-white border-light-background-blue'
+                      }`}
                     >
-                      Not yet
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                        Not yet
+                      </OnestFont>
                     </button>
                   </div>
                 </div>
 
                 {/* Loan Officer */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#6B85F5' }}>Loan Officer?</h2>
+                  <OnestFont as="h2" weight={700} lineHeight="relaxed" className="text-xl mb-4 text-elegant-blue">
+                    Loan Officer?
+                  </OnestFont>
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={() => setFormData({ ...formData, has_loan_officer: true })}
-                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
-                      style={formData.has_loan_officer === true ? { 
-                        backgroundColor: '#EBF0FF', 
-                        borderColor: '#6B85F5'
-                      } : {
-                        backgroundColor: 'white',
-                        borderColor: '#d1d5db'
-                      }}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_loan_officer === true 
+                          ? 'bg-elegant-blue/10 border-elegant-blue' 
+                          : 'bg-pure-white border-light-background-blue'
+                      }`}
                     >
-                      Yes, I am
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                        Yes, I am
+                      </OnestFont>
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, has_loan_officer: false })}
-                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
-                      style={formData.has_loan_officer === false ? { 
-                        backgroundColor: '#EBF0FF', 
-                        borderColor: '#6B85F5'
-                      } : {
-                        backgroundColor: 'white',
-                        borderColor: '#d1d5db'
-                      }}
+                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
+                        formData.has_loan_officer === false 
+                          ? 'bg-elegant-blue/10 border-elegant-blue' 
+                          : 'bg-pure-white border-light-background-blue'
+                      }`}
                     >
-                      Not yet
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                        Not yet
+                      </OnestFont>
                     </button>
                   </div>
                 </div>
@@ -375,33 +374,24 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
               <div className="flex gap-8 justify-center pt-8">
                 <button
                   onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
-                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
-                  &lt; Back
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    &lt; Back
+                  </OnestFont>
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
-                  style={{ 
-                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
-                    cursor: canProceed() ? 'pointer' : 'not-allowed'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#5A73E0';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#6B85F5';
-                    }
-                  }}
+                  className={`px-24 py-2 rounded-full transition-opacity text-pure-white ${
+                    canProceed() 
+                      ? 'bg-elegant-blue hover:opacity-90 cursor-pointer' 
+                      : 'bg-elegant-blue/30 cursor-not-allowed'
+                  }`}
                 >
-                  NEXT &gt;
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    NEXT &gt;
+                  </OnestFont>
                 </button>
               </div>
             </div>
@@ -412,9 +402,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
                 <img src={OnboardingImage4} alt="Expert Contact" className="w-16 h-16 object-contain" />
-                <h1 className="text-xl font-semibold text-gray-800">
+                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
                   Would you like to get in contact with an expert?
-                </h1>
+                </OnestFont>
               </div>
 
               <div className="space-y-4 max-w-md mx-auto">
@@ -422,16 +412,15 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                   <button
                     key={option.id}
                     onClick={() => setFormData({ ...formData, wants_expert_contact: option.name })}
-                    className="w-full px-8 py-4 rounded-xl border-2 transition-all text-gray-700"
-                    style={formData.wants_expert_contact === option.name ? { 
-                      backgroundColor: '#EBF0FF', 
-                      borderColor: '#6B85F5'
-                    } : {
-                      backgroundColor: 'white',
-                      borderColor: '#d1d5db'
-                    }}
+                    className={`w-full px-8 py-4 rounded-xl border-2 transition-all ${
+                      formData.wants_expert_contact === option.name 
+                        ? 'bg-elegant-blue/10 border-elegant-blue' 
+                        : 'bg-pure-white border-light-background-blue'
+                    }`}
                   >
-                    {option.name}
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                      {option.name}
+                    </OnestFont>
                   </button>
                 ))}
               </div>
@@ -440,33 +429,24 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
               <div className="flex gap-8 justify-center pt-8">
                 <button
                   onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
-                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
-                  &lt; Back
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    &lt; Back
+                  </OnestFont>
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
-                  style={{ 
-                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
-                    cursor: canProceed() ? 'pointer' : 'not-allowed'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#5A73E0';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#6B85F5';
-                    }
-                  }}
+                  className={`px-24 py-2 rounded-full transition-opacity text-pure-white ${
+                    canProceed() 
+                      ? 'bg-elegant-blue hover:opacity-90 cursor-pointer' 
+                      : 'bg-elegant-blue/30 cursor-not-allowed'
+                  }`}
                 >
-                  NEXT &gt;
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    NEXT &gt;
+                  </OnestFont>
                 </button>
               </div>
             </div>
@@ -477,17 +457,19 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
                 <img src={OnboardingImage3_5} alt="Timeline" className="w-16 h-16 object-contain" />
-                <h1 className="text-xl font-semibold text-gray-800">
+                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
                   When do you want to achieve homeownership?
-                </h1>
+                </OnestFont>
               </div>
 
               <div className="max-w-xl mx-auto space-y-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold mb-2" style={{ color: '#6B85F5' }}>
+                  <OnestFont weight={700} lineHeight="tight" className="text-4xl mb-2 text-elegant-blue">
                     {formatTimeline(formData.homeownership_timeline_months)}
-                  </div>
-                  <div className="text-sm text-gray-500">Estimated timeline</div>
+                  </OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                    Estimated timeline
+                  </OnestFont>
                 </div>
 
                 <div className="px-4">
@@ -497,14 +479,18 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                     max="60"
                     value={formData.homeownership_timeline_months}
                     onChange={(e) => setFormData({ ...formData, homeownership_timeline_months: parseInt(e.target.value) })}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    className="w-full h-2 bg-light-background-blue rounded-lg appearance-none cursor-pointer slider"
                     style={{
-                      background: `linear-gradient(to right, #6B85F5 0%, #6B85F5 ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb 100%)`
+                      background: `linear-gradient(to right, #6B85F5 0%, #6B85F5 ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #EBEFFF ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #EBEFFF 100%)`
                     }}
                   />
-                  <div className="flex justify-between text-sm text-gray-600 mt-2">
-                    <span>6 months</span>
-                    <span>5 years</span>
+                  <div className="flex justify-between mt-2">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                      6 months
+                    </OnestFont>
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                      5 years
+                    </OnestFont>
                   </div>
                 </div>
               </div>
@@ -513,33 +499,24 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
               <div className="flex gap-8 justify-center pt-8">
                 <button
                   onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
-                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
-                  &lt; Back
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    &lt; Back
+                  </OnestFont>
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
-                  style={{ 
-                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
-                    cursor: canProceed() ? 'pointer' : 'not-allowed'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#5A73E0';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (canProceed()) {
-                      e.currentTarget.style.backgroundColor = '#6B85F5';
-                    }
-                  }}
+                  className={`px-24 py-2 rounded-full transition-opacity text-pure-white ${
+                    canProceed() 
+                      ? 'bg-elegant-blue hover:opacity-90 cursor-pointer' 
+                      : 'bg-elegant-blue/30 cursor-not-allowed'
+                  }`}
                 >
-                  NEXT &gt;
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    NEXT &gt;
+                  </OnestFont>
                 </button>
               </div>
             </div>
@@ -550,13 +527,15 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
                 <img src={OnboardingImage3_5} alt="Location" className="w-16 h-16 object-contain" />
-                <h1 className="text-xl font-semibold text-gray-800">
+                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
                   Finally, let's find your future home base!
-                </h1>
+                </OnestFont>
               </div>
 
               <div className="max-w-xl mx-auto space-y-4">
-                <p className="text-sm" style={{ color: '#6B85F5' }}>Search and select cities you're interested in</p>
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue">
+                  Search and select cities you're interested in
+                </OnestFont>
                 
                 <div className="relative">
                   <input
@@ -566,30 +545,32 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                     onChange={(e) => {
                       setCityInput(e.target.value);
                     }}
-                    className="w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 text-lg transition-colors"
-                    style={{
-                      borderColor: selectedCities.length > 0 ? '#10b981' : cityError ? '#ef4444' : '#6B85F5',
-                      ...(selectedCities.length > 0 || cityError ? {} : { '--tw-ring-color': '#6B85F5' } as any)
-                    }}
+                    className={`w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-elegant-blue text-lg transition-colors ${
+                      selectedCities.length > 0 
+                        ? 'border-status-green' 
+                        : cityError 
+                        ? 'border-status-red' 
+                        : 'border-elegant-blue'
+                    }`}
                   />
                   
                   {/* Loading Spinner */}
                   {isValidatingCity && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: '#6B85F5', borderTopColor: 'transparent' }}></div>
+                      <div className="w-6 h-6 border-2 border-elegant-blue border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   )}
                   
                   {/* Success Checkmark */}
                   {selectedCities.length > 0 && !isValidatingCity && !cityInput && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-2xl">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-status-green text-2xl">
                       ✓
                     </div>
                   )}
                   
                   {/* Error X */}
                   {cityError && !isValidatingCity && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 text-2xl">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-status-red text-2xl">
                       ✕
                     </div>
                   )}
@@ -597,9 +578,11 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
 
                 {/* City Results - Show search results */}
                 {cityResults.length > 0 && !isValidatingCity && (
-                  <div className="border-2 rounded-xl overflow-hidden" style={{ borderColor: '#6B85F5' }}>
-                    <div className="bg-gray-50 px-4 py-2 border-b-2" style={{ borderColor: '#6B85F5' }}>
-                      <p className="text-sm font-medium text-gray-700">Click to add cities:</p>
+                  <div className="border-2 border-elegant-blue rounded-xl overflow-hidden">
+                    <div className="bg-light-background-blue px-4 py-2 border-b-2 border-elegant-blue">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                        Click to add cities:
+                      </OnestFont>
                     </div>
                     <div className="max-h-60 overflow-y-auto">
                       {cityResults.map((city, index) => {
@@ -620,27 +603,22 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                                 setSelectedCities([...selectedCities, city]);
                               }
                             }}
-                            className="w-full px-4 py-3 text-left transition-colors border-b border-gray-200 last:border-b-0 flex items-center justify-between"
-                            style={{
-                              backgroundColor: isSelected ? '#EBF0FF' : 'white'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isSelected) {
-                                e.currentTarget.style.backgroundColor = '#F5F7FF';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isSelected) {
-                                e.currentTarget.style.backgroundColor = 'white';
-                              }
-                            }}
+                            className={`w-full px-4 py-3 text-left transition-colors border-b border-light-background-blue last:border-b-0 flex items-center justify-between ${
+                              isSelected 
+                                ? 'bg-elegant-blue/10' 
+                                : 'bg-pure-white hover:bg-light-background-blue'
+                            }`}
                           >
                             <div>
-                              <div className="font-medium text-gray-800">{city.city}, {city.state}</div>
-                              <div className="text-sm text-gray-500">Zipcode: {city.zipcode}</div>
+                              <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                                {city.city}, {city.state}
+                              </OnestFont>
+                              <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                                Zipcode: {city.zipcode}
+                              </OnestFont>
                             </div>
                             {isSelected && (
-                              <div className="text-green-500 text-xl">✓</div>
+                              <div className="text-status-green text-xl">✓</div>
                             )}
                           </button>
                         );
@@ -653,35 +631,40 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 {selectedCities.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between px-2">
-                      <p className="text-sm font-medium text-gray-700">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
                         Selected Cities ({selectedCities.length})
-                      </p>
+                      </OnestFont>
                       <button
                         onClick={() => setSelectedCities([])}
-                        className="text-sm font-medium hover:underline"
-                        style={{ color: '#6B85F5' }}
+                        className="text-elegant-blue hover:underline"
                       >
-                        Clear All
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                          Clear All
+                        </OnestFont>
                       </button>
                     </div>
                     <div className="space-y-2">
                       {selectedCities.map((city, index) => (
                         <div
                           key={index}
-                          className="bg-green-50 border-2 border-green-500 rounded-xl p-3 flex items-center justify-between"
+                          className="bg-status-green/10 border-2 border-status-green rounded-xl p-3 flex items-center justify-between"
                         >
-                          <div className="flex items-center gap-2 text-green-700">
+                          <div className="flex items-center gap-2 text-status-green">
                             <span className="text-sm">✓</span>
                             <div>
-                              <p className="font-semibold text-sm">{city.city}, {city.state}</p>
-                              <p className="text-xs text-green-600">Zipcode: {city.zipcode}</p>
+                              <OnestFont weight={700} lineHeight="relaxed" className="text-sm">
+                                {city.city}, {city.state}
+                              </OnestFont>
+                              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-status-green">
+                                Zipcode: {city.zipcode}
+                              </OnestFont>
                             </div>
                           </div>
                           <button
                             onClick={() => {
                               setSelectedCities(selectedCities.filter((_, i) => i !== index));
                             }}
-                            className="text-green-700 hover:text-green-900 text-xl leading-none"
+                            className="text-status-green hover:text-status-green/80 text-xl leading-none"
                           >
                             ×
                           </button>
@@ -693,50 +676,47 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
 
                 {/* Error Message */}
                 {cityError && (
-                  <div className="text-red-600 text-sm">{cityError}</div>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-status-red text-sm">
+                    {cityError}
+                  </OnestFont>
                 )}
 
                 {/* Helper Text */}
                 {!cityInput && selectedCities.length === 0 && (
-                  <p className="text-sm text-gray-500">Start typing to search for cities</p>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                    Start typing to search for cities
+                  </OnestFont>
                 )}
               </div>
 
               {error && (
-                <div className="text-red-600 text-sm font-medium">{error}</div>
+                <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm">
+                  {error}
+                </OnestFont>
               )}
 
               {/* Bottom Navigation Buttons */}
               <div className="flex gap-8 justify-center pt-8">
                 <button
                   onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
-                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
-                  &lt; Back
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    &lt; Back
+                  </OnestFont>
                 </button>
                 <button
                   onClick={handleComplete}
                   disabled={!canProceed() || isLoading}
-                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
-                  style={{ 
-                    backgroundColor: (canProceed() && !isLoading) ? '#6B85F5' : '#C8D4F9',
-                    cursor: (canProceed() && !isLoading) ? 'pointer' : 'not-allowed'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canProceed() && !isLoading) {
-                      e.currentTarget.style.backgroundColor = '#5A73E0';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (canProceed() && !isLoading) {
-                      e.currentTarget.style.backgroundColor = '#6B85F5';
-                    }
-                  }}
+                  className={`px-24 py-2 rounded-full transition-opacity text-pure-white ${
+                    (canProceed() && !isLoading) 
+                      ? 'bg-elegant-blue hover:opacity-90 cursor-pointer' 
+                      : 'bg-elegant-blue/30 cursor-not-allowed'
+                  }`}
                 >
-                  {isLoading ? 'LOADING...' : "LET'S GO"}
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    {isLoading ? 'LOADING...' : "LET'S GO"}
+                  </OnestFont>
                 </button>
               </div>
             </div>

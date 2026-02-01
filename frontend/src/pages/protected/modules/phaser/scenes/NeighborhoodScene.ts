@@ -526,8 +526,8 @@ export default class NeighborhoodScene extends BaseScene {
     y2: number,
     startHouseIndex: number
   ): void {
-    // Line styling
-    const lineColor = COLORS.ELEGANT_BLUE; // Use ELEGANT_BLUE for path
+    // Line styling - CHANGED: Using LOGO_BLUE for path lights (only place LogoBlue should be used)
+    const lineColor = COLORS.LOGO_BLUE;
     const dotSpacing = 100; // Space between dots (increased from 15)
     const dotSize = 48; // Size of each dot (increased from 8)
     

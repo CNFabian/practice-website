@@ -58,27 +58,95 @@ export class HouseProgressCard {
     // Create card background
     const cardBg = scene.add.graphics();
     
+    // Helper function to create a rounded rectangle with horizontal gradient using render texture
+    const createGradientRoundedRect = (
+      width: number,
+      height: number,
+      radius: number,
+      colorStart: string,
+      colorEnd: string,
+      key: string,
+      roundedCorners: 'all' | 'bottom' = 'all' // NEW: specify which corners to round
+    ): Phaser.GameObjects.Image => {
+      // Create a canvas with the gradient
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(width);
+      canvas.height = Math.ceil(height);
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // Create horizontal gradient
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        
+        // Draw rounded rectangle with gradient
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        
+        if (roundedCorners === 'bottom') {
+          // Only bottom corners rounded (for accent bar)
+          ctx.moveTo(0, 0); // Top-left (square)
+          ctx.lineTo(canvas.width, 0); // Top-right (square)
+          ctx.lineTo(canvas.width, canvas.height - radius); // Right side
+          ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - radius, canvas.height); // Bottom-right
+          ctx.lineTo(radius, canvas.height); // Bottom side
+          ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - radius); // Bottom-left
+          ctx.closePath();
+        } else {
+          // All corners rounded (for progress bar)
+          ctx.moveTo(radius, 0);
+          ctx.lineTo(canvas.width - radius, 0);
+          ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
+          ctx.lineTo(canvas.width, canvas.height - radius);
+          ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - radius, canvas.height);
+          ctx.lineTo(radius, canvas.height);
+          ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - radius);
+          ctx.lineTo(0, radius);
+          ctx.quadraticCurveTo(0, 0, radius, 0);
+          ctx.closePath();
+        }
+        
+        ctx.fill();
+      }
+      
+      // Add texture to Phaser
+      if (!scene.textures.exists(key)) {
+        scene.textures.addCanvas(key, canvas);
+      }
+      
+      // Create and return image
+      const image = scene.add.image(0, 0, key);
+      image.setDisplaySize(width, height);
+      return image;
+    };
+
     const drawCard = (height: number, isHovered: boolean = false) => {
       cardBg.clear();
       cardBg.fillStyle(COLORS.TEXT_WHITE, 1); // TextWhite - Light background
       cardBg.fillRoundedRect(-cardWidth / 2, -height / 2, cardWidth, height, borderRadius);
-      
-      // Only add the blue accent bar at bottom when NOT hovered
-      if (!isHovered) {
-        const shadowHeight = scale(6);
-        cardBg.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
-        cardBg.fillRoundedRect(
-          -cardWidth / 2,
-          height / 2 - shadowHeight,
-          cardWidth,
-          shadowHeight,
-          { bl: borderRadius, br: borderRadius, tl: 0, tr: 0 }
-        );
-      }
     };
     
     drawCard(initialHeight, false);
     container.add(cardBg);
+
+    // Create gradient bar for bottom accent with rounded corners ONLY on bottom
+    const shadowHeight = scale(15);
+    const gradientBarKey = `gradient-bar-${Date.now()}-${Math.random()}`;
+    
+    const gradientBar = createGradientRoundedRect(
+      cardWidth,
+      shadowHeight,
+      borderRadius,
+      '#1D3CC6', // LinearBlue1 start
+      '#837CFF', // LinearBlue1 end
+      gradientBarKey,
+      'bottom' // Only round bottom corners
+    );
+    
+    gradientBar.setPosition(0, initialHeight / 2 - shadowHeight / 2);
+    gradientBar.setOrigin(0.5, 0.5);
+    container.add(gradientBar);
 
     // Function to draw the glow - TONED DOWN
     const drawGlow = (height: number, alpha: number = 0) => {
@@ -120,9 +188,10 @@ export class HouseProgressCard {
     ).setOrigin(0, 0.5);
     container.add(title);
 
-    // Duration (top right) - always visible
+    // Duration (top right) - CHANGED: Using LinearBlue1 start color
+    // Note: Using hex string format since createTextStyle expects string
     const duration = scene.add.text(cardWidth / 2 - scale(20), titleY, data.duration,
-      createTextStyle('BODY_LIGHT', COLORS.TEXT_SECONDARY, {
+      createTextStyle('BODY_LIGHT', '#1D3CC6', { // LinearBlue1 start color
         fontSize: scaleFontSize(14),
       })
     ).setOrigin(1, 0.5);
@@ -157,23 +226,33 @@ export class HouseProgressCard {
       const completedLessons = data.completedLessons || 0;
       const totalLessons = data.lessonCount || 0;
       
-      // Progress bar fill - ONLY SHOW IF THERE ARE COMPLETED LESSONS
+      // Progress bar fill - CHANGED: Using LinearBlue1 gradient instead of LogoBlue
+      // ONLY SHOW IF THERE ARE COMPLETED LESSONS
       let progressFillWidth = 0;
       if (totalLessons > 0 && completedLessons > 0) {
         // Calculate progress based on lessons completed (not percentage)
         const lessonProgress = completedLessons / totalLessons;
         progressFillWidth = progressBarWidth * lessonProgress;
         
-        const progressFill = scene.add.graphics();
-        progressFill.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
-        progressFill.fillRoundedRect(
-          -progressBarWidth / 2,
-          progressY - progressBarHeight / 2,
+        // Create rounded gradient progress bar with all corners rounded
+        const progressGradientKey = `progress-gradient-${Date.now()}-${Math.random()}`;
+        const progressFillImage = createGradientRoundedRect(
           progressFillWidth,
           progressBarHeight,
-          progressBarHeight / 2
+          progressBarHeight / 2, // Fully rounded ends
+          '#1D3CC6', // LinearBlue1 start
+          '#837CFF', // LinearBlue1 end
+          progressGradientKey,
+          'all' // All corners rounded (pill shape)
         );
-        progressContainer.add(progressFill);
+        
+        progressFillImage.setPosition(
+          -progressBarWidth / 2 + progressFillWidth / 2,
+          progressY
+        );
+        progressFillImage.setOrigin(0.5, 0.5);
+        
+        progressContainer.add(progressFillImage);
       }
 
       // Star icons on progress bar - ONLY RENDER FOR COMPLETED LESSONS
@@ -294,13 +373,13 @@ export class HouseProgressCard {
 
       const buttonText = getButtonText();
 
-      // Continue/Start button
+      // Continue/Start button - CHANGED: Using ElegantBlue for button background and text
       const buttonWidth = scale(120);
       const buttonHeight = scale(36);
       const buttonX = cardWidth / 2 - scale(20) - buttonWidth / 2;
 
       const continueButton = scene.add.graphics();
-      continueButton.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
+      continueButton.fillStyle(COLORS.ELEGANT_BLUE, 1); // CHANGED: ElegantBlue for button background
       continueButton.fillRoundedRect(
         buttonX - buttonWidth / 2,
         bottomY - buttonHeight / 2,
@@ -311,7 +390,7 @@ export class HouseProgressCard {
       progressContainer.add(continueButton);
 
       const continueText = scene.add.text(buttonX, bottomY, buttonText,
-        createTextStyle('BUTTON', COLORS.TEXT_WHITE_HEX, { fontSize: scaleFontSize(14) })
+        createTextStyle('BUTTON', COLORS.TEXT_WHITE_HEX, { fontSize: scaleFontSize(14) }) // White text on ElegantBlue button
       ).setOrigin(0.5);
       progressContainer.add(continueText);
 
@@ -374,8 +453,17 @@ export class HouseProgressCard {
               drawCard(height, true);
               title.setY(-height / 2 + scale(20));
               duration.setY(-height / 2 + scale(20));
+              gradientBar.setY(height / 2 - shadowHeight / 2);
             }
           }
+        });
+
+        // Fade out gradient bar when expanding (hiding the bottom accent)
+        scene.tweens.add({
+          targets: gradientBar,
+          alpha: 0,
+          duration: 200,
+          ease: 'Power2'
         });
 
         // Fade in blue glow
@@ -480,8 +568,17 @@ export class HouseProgressCard {
                 drawCard(height, false);
                 title.setY(-height / 2 + scale(20));
                 duration.setY(-height / 2 + scale(20));
+                gradientBar.setY(height / 2 - shadowHeight / 2);
               }
             }
+          });
+
+          // Fade in gradient bar when collapsing (showing the bottom accent)
+          scene.tweens.add({
+            targets: gradientBar,
+            alpha: 1,
+            duration: 200,
+            ease: 'Power2'
           });
 
           // Fade out blue glow

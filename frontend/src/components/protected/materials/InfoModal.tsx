@@ -50,7 +50,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <DialogPanel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-pure-white p-6 text-left align-middle shadow-xl transition-all">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div>
@@ -59,18 +59,18 @@ const InfoModal: React.FC<InfoModalProps> = ({
                         as="h3"
                         weight={700}
                         lineHeight="tight"
-                        className="text-2xl text-gray-900 mb-2"
+                        className="text-2xl text-text-blue-black mb-2"
                       >
                         {title}
                       </OnestFont>
                     </DialogTitle>
-                    <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
                       {description}
                     </OnestFont>
                   </div>
                   <button
                     type="button"
-                    className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="ml-4 text-unavailable-button hover:text-text-grey transition-colors"
                     onClick={onClose}
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -82,18 +82,18 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 <div className="space-y-6">
                   {/* How to Use Section */}
                   <div>
-                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-3 flex items-center gap-2">
-                      <span className="text-blue-600">📋</span>
+                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-3 flex items-center gap-2">
+                      <span className="text-logo-blue">📋</span>
                       {howToUseTitle}
                     </OnestFont>
-                    <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="bg-logo-blue/10 rounded-xl p-4">
                       <ol className="space-y-2">
                         {howToUse.map((step, index) => (
-                          <li key={index} className="flex items-start gap-3 text-sm text-gray-700">
-                            <OnestFont weight={500} lineHeight="relaxed" className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mt-0.5">
+                          <li key={index} className="flex items-start gap-3 text-sm text-text-blue-black">
+                            <OnestFont weight={500} lineHeight="relaxed" className="flex-shrink-0 w-6 h-6 bg-logo-blue text-pure-white rounded-full text-xs flex items-center justify-center mt-0.5">
                               {index + 1}
                             </OnestFont>
-                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-gray-700">
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
                               {step}
                             </OnestFont>
                           </li>
@@ -104,18 +104,18 @@ const InfoModal: React.FC<InfoModalProps> = ({
 
                   {/* Terms & Definitions Section */}
                   <div>
-                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-3 flex items-center gap-2">
-                      <span className="text-green-600">📖</span>
+                    <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-3 flex items-center gap-2">
+                      <span className="text-status-green">📖</span>
                       Terms & Definitions
                     </OnestFont>
-                    <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="bg-light-background-blue rounded-xl p-4">
                       <div className="space-y-4">
                         {terms.map((term, index) => (
-                          <div key={index} className="border-b border-gray-200 last:border-b-0 pb-3 last:pb-0">
-                            <OnestFont as="div" weight={500} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                          <div key={index} className="border-b border-light-background-blue last:border-b-0 pb-3 last:pb-0">
+                            <OnestFont as="div" weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                               {term.term}
                             </OnestFont>
-                            <OnestFont as="div" weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                            <OnestFont as="div" weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                               {term.definition}
                             </OnestFont>
                           </div>
@@ -129,10 +129,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 <div className="mt-6 flex justify-end">
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-lg border border-transparent bg-blue-600 px-6 py-2 text-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors"
+                    className="inline-flex justify-center rounded-lg border border-transparent bg-logo-blue px-6 py-2 text-sm hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-blue focus-visible:ring-offset-2 transition-opacity"
                     onClick={onClose}
                   >
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-white">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-pure-white">
                       Got it!
                     </OnestFont>
                   </button>

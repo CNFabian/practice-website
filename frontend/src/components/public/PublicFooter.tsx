@@ -6,7 +6,8 @@ import {
   TwitterIcon,
   InstagramIcon,
   LinkedInIcon,
-  YouTubeIcon
+  YouTubeIcon,
+  OnestFont
  } from '../../assets'
 
 import AccessibilityDoc from '../../assets/downloadables/Accessibility_Statement.pdf?url'
@@ -20,7 +21,7 @@ const PublicFooter: React.FC = () => {
   
   return (
     <>
-      <footer className="bg-white">
+      <footer className="bg-pure-white">
         <div className="max-w-7xl mx-auto px-6 py-12">
           {/* Main Footer Content */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-8 lg:space-y-0">
@@ -36,16 +37,16 @@ const PublicFooter: React.FC = () => {
                   />
                 </Link>
               </div>
-              <p className="text-gray-500 text-sm">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
                 © 2025 Nest Navigate, Inc. All rights reserved.
-              </p>
+              </OnestFont>
             </div>
 
             {/* Right Section - Social Media Icons */}
             <div className="flex items-center space-x-4">
               <a 
                 href="#" 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-unavailable-button hover:text-text-grey transition-colors"
                 aria-label="YouTube"
               >
                 <img src={YouTubeIcon} alt="YouTube" className="w-7 h-7" />
@@ -53,7 +54,7 @@ const PublicFooter: React.FC = () => {
               
               <a 
                 href="#" 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-unavailable-button hover:text-text-grey transition-colors"
                 aria-label="Facebook"
               >
                 <img src={FacebookIcon} alt="Facebook" className="w-7 h-7" />
@@ -61,7 +62,7 @@ const PublicFooter: React.FC = () => {
 
               <a 
                 href="#" 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-unavailable-button hover:text-text-grey transition-colors"
                 aria-label="Twitter"
               >
                 <img src={TwitterIcon} alt="Twitter" className="w-7 h-7" />
@@ -69,7 +70,7 @@ const PublicFooter: React.FC = () => {
               
               <a 
                 href="#" 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-unavailable-button hover:text-text-grey transition-colors"
                 aria-label="Instagram"
               >
                 <img src={InstagramIcon} alt="Instagram" className="w-7 h-7" />
@@ -77,7 +78,7 @@ const PublicFooter: React.FC = () => {
               
               <a 
                 href="#" 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center text-unavailable-button hover:text-text-grey transition-colors"
                 aria-label="LinkedIn"
               >
                 <img src={LinkedInIcon} alt="LinkedIn" className="w-7 h-7" />
@@ -86,36 +87,44 @@ const PublicFooter: React.FC = () => {
           </div>
 
           {/* Bottom Section - Legal Links and Blog */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="mt-8 pt-8 border-t border-light-background-blue">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               {/* Legal Links */}
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <button
                   onClick={() => openWordDocument(AccessibilityDoc)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-text-grey hover:text-text-blue-black transition-colors"
                 >
-                  Accessibility
+                  <OnestFont weight={300} lineHeight="relaxed">
+                    Accessibility
+                  </OnestFont>
                 </button>
                 <button
                   onClick={() => openWordDocument(PrivacyPolicyDoc)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-text-grey hover:text-text-blue-black transition-colors"
                 >
-                  Privacy Policy
+                  <OnestFont weight={300} lineHeight="relaxed">
+                    Privacy Policy
+                  </OnestFont>
                 </button>
                 <button
                   onClick={() => openWordDocument(TermsConditionsDoc)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-text-grey hover:text-text-blue-black transition-colors"
                 >
-                  Terms & Conditions
+                  <OnestFont weight={300} lineHeight="relaxed">
+                    Terms & Conditions
+                  </OnestFont>
                 </button>
               </div>
 
               {/* Blog Link */}
               <a
                 href="#"
-                className="text-xs text-gray-400 hover:text-gray-500 transition-colors"
+                className="text-unavailable-button hover:text-text-grey transition-colors"
               >
-                Blog
+                <OnestFont weight={300} lineHeight="relaxed" className="text-xs">
+                  Blog
+                </OnestFont>
               </a>
             </div>
           </div>

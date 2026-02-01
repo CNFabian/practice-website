@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { loginUser, getCurrentUser } from '../../services/authAPI'
 import { setUser } from '../../store/slices/authSlice'
-import { LoginImage, Eye, Blind } from '../../assets'
+import { LoginImage, Eye, Blind, OnestFont } from '../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
@@ -67,18 +67,20 @@ const LoginPage: React.FC = () => {
       <div className="flex-1 flex items-center justify-center px-6 lg:px-8 my-8">
         <div className="w-full max-w-md space-y-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black mb-4">
               Welcome Back!
-            </h1>
-            <p className="text-gray-600 text-lg">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-lg">
               Sign in to continue your learning journey
-            </p>
+            </OnestFont>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
-                {error}
+              <div className="bg-status-red/10 border border-status-red rounded-lg p-3">
+                <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm">
+                  {error}
+                </OnestFont>
               </div>
             )}
 
@@ -89,8 +91,7 @@ const LoginPage: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              style={{ backgroundColor: '#EFF2FF' }}
+              className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
             />
 
             <div className="relative">
@@ -101,13 +102,12 @@ const LoginPage: React.FC = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 pr-12 border-0 rounded-lg text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                style={{ backgroundColor: '#EFF2FF' }}
+                className="w-full px-4 py-3 pr-12 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
               >
                 <img 
                   src={showPassword ? Blind : Eye} 
@@ -122,28 +122,33 @@ const LoginPage: React.FC = () => {
                 id="stayLoggedIn"
                 name="stayLoggedIn"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-logo-blue focus:ring-logo-blue border-light-background-blue rounded"
               />
-              <label htmlFor="stayLoggedIn" className="ml-2 block text-sm text-gray-700">
-                Stay logged in
+              <label htmlFor="stayLoggedIn" className="ml-2 block">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                  Stay logged in
+                </OnestFont>
               </label>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="mx-auto w-48 bg-blue-600 text-white py-3 px-6 rounded-full font-semibold text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-              style={{ backgroundColor: '#3F6CB9' }}
+              className="mx-auto w-48 bg-logo-blue text-pure-white py-3 px-6 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2"></div>
               ) : null}
-              Log In
+              <OnestFont weight={700} lineHeight="relaxed" className="text-lg">
+                Log In
+              </OnestFont>
             </button>
           </form>
 
-          <div className="text-center text-gray-600">
-            <p>No account yet? Register <a href='/auth/signup' className="text-blue-600 hover:underline">here</a></p>
+          <div className="text-center">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
+              No account yet? Register <a href='/auth/signup' className="text-logo-blue hover:underline">here</a>
+            </OnestFont>
           </div>
         </div>
       </div>

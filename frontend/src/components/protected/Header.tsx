@@ -16,7 +16,8 @@ import {
   ShareIcon, 
   GetHelpIcon, 
   SettingsIcon, 
-  SignOutIcon 
+  SignOutIcon,
+  OnestFont
 } from '../../assets';
 
 const Header: React.FC = () => {
@@ -73,9 +74,9 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 h-2 bg-gray-50 z-10"></div>
+      <div className="fixed top-0 left-0 right-0 h-2 bg-light-background-blue z-10"></div>
       
-      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl" style={{ backgroundColor: '#EFF2FF' }}>
+      <header className="mx-2 mt-2 px-6 py-3 shadow-sm fixed top-0 left-0 right-0 z-10 h-16 rounded-xl bg-light-background-blue">
         <div className="flex items-center justify-between h-full">
         {/* Left Section - Logo and Greeting */}
         <div className="flex items-center space-x-3">
@@ -84,12 +85,12 @@ const Header: React.FC = () => {
           
           {/* Greeting Section */}
           <div className="flex flex-col">
-            <h1 className="text-lg font-semibold text-gray-800">
+            <OnestFont as="h1" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black">
               Hello, {getDisplayName()}
-            </h1>
-            <p className="text-sm text-gray-600">
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
               Let's begin your journey to land a home!
-            </p>
+            </OnestFont>
           </div>
         </div>
 
@@ -97,13 +98,17 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {/* Coins Counter with Animation */}
           <div className={`flex items-center space-x-2 rounded-full px-3 py-2 transition-all duration-500 ${
-            isAnimating ? 'scale-110 bg-yellow-100' : 'scale-100'
+            isAnimating ? 'scale-110 bg-logo-yellow/20' : 'scale-100'
           }`}>
-            <span className={`text-lg font-bold text-gray-800 transition-colors duration-500 ${
-              isAnimating ? 'text-yellow-600' : ''
-            }`}>
+            <OnestFont 
+              weight={700} 
+              lineHeight="relaxed" 
+              className={`text-lg transition-colors duration-500 ${
+                isAnimating ? 'text-logo-yellow' : 'text-text-blue-black'
+              }`}
+            >
               {totalCoins}
-            </span>
+            </OnestFont>
             <img src={CoinIcon} alt="Coins" className={`w-6 h-6 transition-transform duration-500 ${
               isAnimating ? 'rotate-12' : ''
             }`} />
@@ -118,10 +123,10 @@ const Header: React.FC = () => {
                   <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
                 )}
                 
-                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 relative z-50">
+                <MenuButton className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-background-blue/50 relative z-50">
                   <img src={BellIcon} alt="Notifications" className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-status-red text-pure-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -136,24 +141,34 @@ const Header: React.FC = () => {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <MenuItems className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none z-50 max-h-96 overflow-y-auto">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                      <p className="text-sm text-gray-500 mt-1">Stay updated on your progress</p>
+                  <MenuItems className="absolute right-0 mt-2 w-80 bg-pure-white rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none z-50 max-h-96 overflow-y-auto">
+                    <div className="px-6 py-4 border-b border-light-background-blue">
+                      <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black">
+                        Notifications
+                      </OnestFont>
+                      <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                        Stay updated on your progress
+                      </OnestFont>
                     </div>
                     
                     <div className="py-2">
                       <MenuItem>
                         {({ active }) => (
-                          <div className={`px-6 py-3 ${active ? 'bg-gray-50' : ''}`}>
+                          <div className={`px-6 py-3 ${active ? 'bg-light-background-blue' : ''}`}>
                             <div className="flex items-start space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-blue-600 text-sm font-medium">🎓</span>
+                              <div className="w-8 h-8 bg-logo-blue/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-logo-blue text-sm font-medium">🎓</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">Course completed!</p>
-                                <p className="text-sm text-gray-500 mt-1">You completed "Investment Basics" and earned 50 coins</p>
-                                <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
+                                <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                                  Course completed!
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                                  You completed "Investment Basics" and earned 50 coins
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-unavailable-button mt-1">
+                                  2 hours ago
+                                </OnestFont>
                               </div>
                             </div>
                           </div>
@@ -162,15 +177,21 @@ const Header: React.FC = () => {
 
                       <MenuItem>
                         {({ active }) => (
-                          <div className={`px-6 py-3 ${active ? 'bg-gray-50' : ''}`}>
+                          <div className={`px-6 py-3 ${active ? 'bg-light-background-blue' : ''}`}>
                             <div className="flex items-start space-x-3">
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-green-600 text-sm font-medium">🏆</span>
+                              <div className="w-8 h-8 bg-status-green/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-status-green text-sm font-medium">🏆</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">New badge earned!</p>
-                                <p className="text-sm text-gray-500 mt-1">You earned the "Quick Learner" badge</p>
-                                <p className="text-xs text-gray-400 mt-1">5 hours ago</p>
+                                <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                                  New badge earned!
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                                  You earned the "Quick Learner" badge
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-unavailable-button mt-1">
+                                  5 hours ago
+                                </OnestFont>
                               </div>
                             </div>
                           </div>
@@ -179,15 +200,21 @@ const Header: React.FC = () => {
 
                       <MenuItem>
                         {({ active }) => (
-                          <div className={`px-6 py-3 ${active ? 'bg-gray-50' : ''}`}>
+                          <div className={`px-6 py-3 ${active ? 'bg-light-background-blue' : ''}`}>
                             <div className="flex items-start space-x-3">
-                              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-purple-600 text-sm font-medium">📚</span>
+                              <div className="w-8 h-8 bg-elegant-blue/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-elegant-blue text-sm font-medium">📚</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">New lesson available</p>
-                                <p className="text-sm text-gray-500 mt-1">Check out "Advanced Portfolio Management"</p>
-                                <p className="text-xs text-gray-400 mt-1">1 day ago</p>
+                                <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                                  New lesson available
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                                  Check out "Advanced Portfolio Management"
+                                </OnestFont>
+                                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-unavailable-button mt-1">
+                                  1 day ago
+                                </OnestFont>
                               </div>
                             </div>
                           </div>
@@ -195,9 +222,11 @@ const Header: React.FC = () => {
                       </MenuItem>
                     </div>
 
-                    <div className="px-6 py-3 border-t border-gray-100">
-                      <button className="w-full text-sm text-blue-600 hover:text-blue-500 font-medium">
-                        View all notifications
+                    <div className="px-6 py-3 border-t border-light-background-blue">
+                      <button className="w-full text-logo-blue hover:opacity-90 transition-opacity">
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                          View all notifications
+                        </OnestFont>
                       </button>
                     </div>
                   </MenuItems>
@@ -215,7 +244,7 @@ const Header: React.FC = () => {
                   <div className="fixed inset-0 bg-black/20 z-40" aria-hidden="true" />
                 )}
                 
-                <MenuButton className="w-8 h-8 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all relative z-50">
+                <MenuButton className="w-8 h-8 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-logo-blue transition-all relative z-50">
                   <img src={ProfileIcon} alt="Profile" className="w-full h-full object-cover" />
                 </MenuButton>
 
@@ -228,14 +257,18 @@ const Header: React.FC = () => {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <MenuItems className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none z-50">
+                  <MenuItems className="absolute right-0 mt-2 w-64 bg-pure-white rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none z-50">
                     {/* Profile Header */}
-                    <div className="px-6 py-4 border-b border-gray-100">
+                    <div className="px-6 py-4 border-b border-light-background-blue">
                       <div className="flex items-center space-x-3">
                         <img src={ProfileIcon} alt="Profile" className="w-10 h-10 rounded-full" />
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{getDisplayName()}</p>
-                          <p className="text-xs text-gray-500">{getUserHandle()}</p>
+                          <OnestFont weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                            {getDisplayName()}
+                          </OnestFont>
+                          <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey">
+                            {getUserHandle()}
+                          </OnestFont>
                         </div>
                       </div>
                     </div>
@@ -247,11 +280,13 @@ const Header: React.FC = () => {
                           <button
                             onClick={() => navigate('/rewards')}
                             className={`w-full px-6 py-3 text-left flex items-center space-x-3 ${
-                              active ? 'bg-gray-50' : ''
+                              active ? 'bg-light-background-blue' : ''
                             }`}
                           >
                             <img src={RewardsIcon} alt="" className="w-4 h-4" />
-                            <span className="text-sm text-gray-700">Rewards</span>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                              Rewards
+                            </OnestFont>
                           </button>
                         )}
                       </MenuItem>
@@ -260,11 +295,13 @@ const Header: React.FC = () => {
                         {({ active }) => (
                           <button
                             className={`w-full px-6 py-3 text-left flex items-center space-x-3 ${
-                              active ? 'bg-gray-50' : ''
+                              active ? 'bg-light-background-blue' : ''
                             }`}
                           >
                             <img src={ShareIcon} alt="" className="w-4 h-4" />
-                            <span className="text-sm text-gray-700">Share & Earn</span>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                              Share & Earn
+                            </OnestFont>
                           </button>
                         )}
                       </MenuItem>
@@ -274,11 +311,13 @@ const Header: React.FC = () => {
                           <button
                             onClick={() => navigate('/help')}
                             className={`w-full px-6 py-3 text-left flex items-center space-x-3 ${
-                              active ? 'bg-gray-50' : ''
+                              active ? 'bg-light-background-blue' : ''
                             }`}
                           >
                             <img src={GetHelpIcon} alt="" className="w-4 h-4" />
-                            <span className="text-sm text-gray-700">Get Help</span>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                              Get Help
+                            </OnestFont>
                           </button>
                         )}
                       </MenuItem>
@@ -287,28 +326,32 @@ const Header: React.FC = () => {
                         {({ active }) => (
                           <button
                             className={`w-full px-6 py-3 text-left flex items-center space-x-3 ${
-                              active ? 'bg-gray-50' : ''
+                              active ? 'bg-light-background-blue' : ''
                             }`}
                           >
                             <img src={SettingsIcon} alt="" className="w-4 h-4" />
-                            <span className="text-sm text-gray-700">Settings</span>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                              Settings
+                            </OnestFont>
                           </button>
                         )}
                       </MenuItem>
                     </div>
 
                     {/* Logout */}
-                    <div className="py-2 border-t border-gray-100">
+                    <div className="py-2 border-t border-light-background-blue">
                       <MenuItem>
                         {({ active }) => (
                           <button
                             onClick={handleLogout}
                             className={`w-full px-6 py-3 text-left flex items-center space-x-3 ${
-                              active ? 'bg-gray-50' : ''
+                              active ? 'bg-light-background-blue' : ''
                             }`}
                           >
                             <img src={SignOutIcon} alt="" className="w-4 h-4" />
-                            <span className="text-sm text-gray-700">Sign Out</span>
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                              Sign Out
+                            </OnestFont>
                           </button>
                         )}
                       </MenuItem>

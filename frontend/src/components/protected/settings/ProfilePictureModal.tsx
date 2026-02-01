@@ -116,17 +116,17 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
       {/* Full-screen container to center the panel */}
       <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
         {/* The actual dialog panel */}
-        <DialogPanel className="mx-auto max-w-lg w-full rounded-xl bg-white p-6 shadow-lg">
+        <DialogPanel className="mx-auto max-w-lg w-full rounded-xl bg-pure-white p-6 shadow-lg">
           {/* Header with close button */}
           <div className="flex items-center justify-between mb-6">
-            <DialogTitle className="text-lg text-gray-900">
+            <DialogTitle className="text-lg text-text-blue-black">
               <OnestFont weight={700} lineHeight="relaxed">
                 Choose Profile Picture
               </OnestFont>
             </DialogTitle>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-unavailable-button hover:text-text-grey"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -140,8 +140,8 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               onClick={() => setActiveTab('upload')}
               className={`flex-1 py-3 px-4 text-sm rounded-lg transition-colors ${
                 activeTab === 'upload'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-logo-blue text-pure-white'
+                  : 'bg-light-background-blue text-text-grey hover:bg-light-background-blue/80'
               }`}
             >
               <OnestFont weight={500} lineHeight="relaxed">
@@ -152,8 +152,8 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               onClick={() => setActiveTab('avatar')}
               className={`flex-1 py-3 px-4 text-sm rounded-lg transition-colors ml-2 ${
                 activeTab === 'avatar'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-logo-blue text-pure-white'
+                  : 'bg-light-background-blue text-text-grey hover:bg-light-background-blue/80'
               }`}
             >
               <OnestFont weight={500} lineHeight="relaxed">
@@ -168,7 +168,7 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               <>
                 {/* Avatar Selection */}
                 <div className="text-center mb-4">
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                     Select one of our preset avatars
                   </OnestFont>
                 </div>
@@ -181,15 +181,15 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                         onClick={() => handleAvatarSelect(avatar.id)}
                         className={`cursor-pointer rounded-lg border p-3 text-center transition-all hover:scale-[1.01] ${
                           isSelected 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                            ? 'border-logo-blue bg-logo-blue/10' 
+                            : 'border-light-background-blue bg-pure-white hover:border-elegant-blue hover:shadow-sm'
                         }`}
                       >
                         <div className="text-2xl mb-2">{avatar.icon}</div>
-                        <OnestFont weight={500} lineHeight="relaxed" className="text-xs text-gray-900 leading-tight block">
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-xs text-text-blue-black leading-tight block">
                           {avatar.label}
                         </OnestFont>
-                        <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 leading-tight block mt-1">
+                        <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey leading-tight block mt-1">
                           {avatar.description}
                         </OnestFont>
                       </div>
@@ -203,8 +203,8 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                 <div
                   className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
                     dragActive 
-                      ? 'border-blue-400 bg-blue-50' 
-                      : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                      ? 'border-logo-blue bg-logo-blue/10' 
+                      : 'border-light-background-blue bg-light-background-blue hover:border-elegant-blue'
                   }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -215,7 +215,7 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                   {/* Upload icon */}
                   <div className="mb-3">
                     <svg 
-                      className="w-10 h-10 text-gray-400 mx-auto" 
+                      className="w-10 h-10 text-unavailable-button mx-auto" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -229,11 +229,11 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                     </svg>
                   </div>
                   
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-base text-gray-900 mb-1">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-base text-text-blue-black mb-1">
                     Click to upload or drag and drop
                   </OnestFont>
                   
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                     PNG, JPEG under 15 MB
                   </OnestFont>
                   
@@ -254,7 +254,7 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-6 py-3 rounded-lg text-sm text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 rounded-lg text-sm text-text-grey bg-pure-white border border-light-background-blue hover:bg-light-background-blue transition-colors"
             >
               <OnestFont weight={500} lineHeight="relaxed">
                 Cancel
@@ -264,7 +264,7 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               <button
                 onClick={handleSaveChanges}
                 disabled={!canSave && activeTab === 'avatar'}
-                className="px-6 py-3 rounded-lg text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-3 rounded-lg text-sm text-pure-white bg-logo-blue hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 <OnestFont weight={500} lineHeight="relaxed">
                   Save Changes

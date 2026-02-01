@@ -124,15 +124,15 @@ const CreditScoreCalculator: React.FC = () => {
 
   const getScoreCategory = (score: number): { level: string; color: string; range: string } => {
     if (score >= 800) {
-      return { level: 'Exceptional', color: 'text-green-600 bg-green-50 border-green-200', range: '800-850' };
+      return { level: 'Exceptional', color: 'text-status-green bg-status-green/10 border-status-green', range: '800-850' };
     } else if (score >= 740) {
-      return { level: 'Very Good', color: 'text-blue-600 bg-blue-50 border-blue-200', range: '740-799' };
+      return { level: 'Very Good', color: 'text-logo-blue bg-logo-blue/10 border-logo-blue', range: '740-799' };
     } else if (score >= 670) {
-      return { level: 'Good', color: 'text-indigo-600 bg-indigo-50 border-indigo-200', range: '670-739' };
+      return { level: 'Good', color: 'text-elegant-blue bg-elegant-blue/10 border-elegant-blue', range: '670-739' };
     } else if (score >= 580) {
-      return { level: 'Fair', color: 'text-yellow-600 bg-yellow-50 border-yellow-200', range: '580-669' };
+      return { level: 'Fair', color: 'text-status-yellow bg-status-yellow/10 border-status-yellow', range: '580-669' };
     } else {
-      return { level: 'Poor', color: 'text-red-600 bg-red-50 border-red-200', range: '300-579' };
+      return { level: 'Poor', color: 'text-status-red bg-status-red/10 border-status-red', range: '300-579' };
     }
   };
 
@@ -142,14 +142,14 @@ const CreditScoreCalculator: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit relative">
+        <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6 h-fit relative">
           {/* Info Button */}
           <div className="absolute top-6 right-6">
             <InfoButton onClick={() => setIsInfoModalOpen(true)} />
           </div>
           
           <div className="mb-6 pr-12">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-logo-blue rounded-2xl flex items-center justify-center mx-auto mb-4">
               <img 
                 src={ChartIcon} 
                 alt="Chart"
@@ -157,10 +157,10 @@ const CreditScoreCalculator: React.FC = () => {
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
-            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 text-center mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-text-blue-black text-center mb-2">
               Credit Score Calculator
             </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-center text-sm">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-center text-sm">
               Estimate your credit score based on key factors
             </OnestFont>
           </div>
@@ -168,13 +168,13 @@ const CreditScoreCalculator: React.FC = () => {
           <div className="space-y-6">
             {/* Payment History */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Payment History (35% weight)
               </OnestFont>
               <select
                 value={factors[0].value}
                 onChange={(e) => updateFactor('payment', 'value', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
               >
                 <option value="excellent">Excellent - Never missed payments</option>
                 <option value="good">Good - 1-2 late payments in 2 years</option>
@@ -185,7 +185,7 @@ const CreditScoreCalculator: React.FC = () => {
 
             {/* Credit Utilization */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Credit Utilization (30% weight)
               </OnestFont>
               <div className="relative">
@@ -195,19 +195,19 @@ const CreditScoreCalculator: React.FC = () => {
                   max="100"
                   value={factors[1].value}
                   onChange={(e) => updateFactor('utilization', 'value', parseInt(e.target.value) || 0)}
-                  className="w-full pr-8 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pr-8 pl-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="25"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-grey">%</span>
               </div>
-              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey mt-1">
                 Percentage of available credit you're using
               </OnestFont>
             </div>
 
             {/* Credit History Length */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Credit History Length (15% weight)
               </OnestFont>
               <div className="relative">
@@ -217,25 +217,25 @@ const CreditScoreCalculator: React.FC = () => {
                   max="50"
                   value={factors[2].value}
                   onChange={(e) => updateFactor('history', 'value', parseInt(e.target.value) || 0)}
-                  className="w-full pr-12 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pr-12 pl-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="5"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">years</span>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-grey">years</span>
               </div>
-              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey mt-1">
                 How long you've had credit accounts
               </OnestFont>
             </div>
 
             {/* Credit Mix */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Credit Mix (10% weight)
               </OnestFont>
               <select
                 value={factors[3].value}
                 onChange={(e) => updateFactor('mix', 'value', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
               >
                 <option value="excellent">Excellent - Multiple types (cards, loans, mortgage)</option>
                 <option value="good">Good - Credit cards and one loan type</option>
@@ -246,7 +246,7 @@ const CreditScoreCalculator: React.FC = () => {
 
             {/* New Credit Inquiries */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Hard Inquiries (10% weight)
               </OnestFont>
               <input
@@ -255,10 +255,10 @@ const CreditScoreCalculator: React.FC = () => {
                 max="20"
                 value={factors[4].value}
                 onChange={(e) => updateFactor('inquiries', 'value', parseInt(e.target.value) || 0)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                 placeholder="2"
               />
-              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey mt-1">
                 Number of hard inquiries in the past 2 years
               </OnestFont>
             </div>
@@ -268,13 +268,13 @@ const CreditScoreCalculator: React.FC = () => {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Estimated Score Display */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6">
             <div className="mb-6">
-              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 text-center mb-4">
+              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center mb-4">
                 Estimated Credit Score
               </OnestFont>
               <div className="text-center mb-4">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500 mb-2">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mb-2">
                   Based on your credit profile
                 </OnestFont>
               </div>
@@ -295,18 +295,18 @@ const CreditScoreCalculator: React.FC = () => {
             {/* Score Range Visualization */}
             <div className="mb-6">
               <div className="relative">
-                <div className="w-full bg-gray-200 rounded-full h-4">
+                <div className="w-full bg-light-background-blue rounded-full h-4">
                   <div 
                     className={`h-4 rounded-full transition-all duration-500 ${
-                      estimatedScore >= 800 ? 'bg-green-500' :
-                      estimatedScore >= 740 ? 'bg-blue-500' :
-                      estimatedScore >= 670 ? 'bg-indigo-500' :
-                      estimatedScore >= 580 ? 'bg-yellow-500' : 'bg-red-500'
+                      estimatedScore >= 800 ? 'bg-status-green' :
+                      estimatedScore >= 740 ? 'bg-logo-blue' :
+                      estimatedScore >= 670 ? 'bg-elegant-blue' :
+                      estimatedScore >= 580 ? 'bg-status-yellow' : 'bg-status-red'
                     }`}
                     style={{ width: `${((estimatedScore - 300) / 550) * 100}%` }}
                   ></div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-text-grey mt-1">
                   <OnestFont weight={300} lineHeight="relaxed">300</OnestFont>
                   <OnestFont weight={300} lineHeight="relaxed">580</OnestFont>
                   <OnestFont weight={300} lineHeight="relaxed">670</OnestFont>
@@ -319,12 +319,12 @@ const CreditScoreCalculator: React.FC = () => {
 
             {/* Factor Breakdown */}
             <div className="space-y-3">
-              <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-gray-900">
+              <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-text-blue-black">
                 Credit Score Factors
               </OnestFont>
               {factors.map((factor) => (
                 <div key={factor.id} className="flex justify-between items-center">
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                     {factor.label}
                   </OnestFont>
                   <div className="flex items-center gap-2">
@@ -332,10 +332,10 @@ const CreditScoreCalculator: React.FC = () => {
                       {factor.weight}%
                     </OnestFont>
                     <div className={`w-3 h-3 rounded-full ${
-                      factor.id === 'payment' ? 'bg-red-400' :
-                      factor.id === 'utilization' ? 'bg-orange-400' :
-                      factor.id === 'history' ? 'bg-blue-400' :
-                      factor.id === 'mix' ? 'bg-green-400' : 'bg-purple-400'
+                      factor.id === 'payment' ? 'bg-status-red' :
+                      factor.id === 'utilization' ? 'bg-status-yellow' :
+                      factor.id === 'history' ? 'bg-logo-blue' :
+                      factor.id === 'mix' ? 'bg-status-green' : 'bg-elegant-blue'
                     }`}></div>
                   </div>
                 </div>
@@ -346,25 +346,25 @@ const CreditScoreCalculator: React.FC = () => {
       
 
           {/* General Tips */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
-            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-green-900 mb-3">
+          <div className="bg-status-green/10 border border-status-green rounded-2xl p-6">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-status-green mb-3">
               💡 General Credit Tips
             </OnestFont>
-            <div className="space-y-3 text-sm text-green-800">
+            <div className="space-y-3 text-sm text-text-blue-black">
               <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
+                <span className="text-status-green mt-1">✓</span>
                 <OnestFont weight={300} lineHeight="relaxed">Monitor your credit report regularly for errors</OnestFont>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
+                <span className="text-status-green mt-1">✓</span>
                 <OnestFont weight={300} lineHeight="relaxed">Keep credit card balances low</OnestFont>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
+                <span className="text-status-green mt-1">✓</span>
                 <OnestFont weight={300} lineHeight="relaxed">Don't close old credit accounts</OnestFont>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">✓</span>
+                <span className="text-status-green mt-1">✓</span>
                 <OnestFont weight={300} lineHeight="relaxed">Limit new credit applications</OnestFont>
               </div>
             </div>
@@ -373,17 +373,17 @@ const CreditScoreCalculator: React.FC = () => {
       </div>
 
       {/* Score Interpretation */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-6">
+      <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6">
+        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-6">
           What Your Score Means
         </OnestFont>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {[
-            { range: '300-579', level: 'Poor', color: 'bg-red-100 text-red-800 border border-red-200', description: 'Difficulty obtaining credit' },
-            { range: '580-669', level: 'Fair', color: 'bg-yellow-100 text-yellow-800 border border-yellow-200', description: 'Higher rates and strict terms' },
-            { range: '670-739', level: 'Good', color: 'bg-indigo-100 text-indigo-800 border border-indigo-200', description: 'Fair rates offered by most' },
-            { range: '740-799', level: 'Very Good', color: 'bg-blue-100 text-blue-800 border border-blue-200', description: 'Good rates and terms' },
-            { range: '800-850', level: 'Exceptional', color: 'bg-green-100 text-green-800 border border-green-200', description: 'Best rates and terms' }
+            { range: '300-579', level: 'Poor', color: 'bg-status-red/10 text-status-red border border-status-red', description: 'Difficulty obtaining credit' },
+            { range: '580-669', level: 'Fair', color: 'bg-status-yellow/10 text-status-yellow border border-status-yellow', description: 'Higher rates and strict terms' },
+            { range: '670-739', level: 'Good', color: 'bg-elegant-blue/10 text-elegant-blue border border-elegant-blue', description: 'Fair rates offered by most' },
+            { range: '740-799', level: 'Very Good', color: 'bg-logo-blue/10 text-logo-blue border border-logo-blue', description: 'Good rates and terms' },
+            { range: '800-850', level: 'Exceptional', color: 'bg-status-green/10 text-status-green border border-status-green', description: 'Best rates and terms' }
           ].map((category) => (
             <div key={category.range} className={`p-3 rounded-xl ${category.color}`}>
               <OnestFont weight={700} lineHeight="relaxed" className="text-sm mb-1">
@@ -399,8 +399,8 @@ const CreditScoreCalculator: React.FC = () => {
           ))}
         </div>
         {currentCategory.level !== 'Exceptional' && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-blue-800">
+          <div className="mt-6 p-4 bg-logo-blue/10 border border-logo-blue rounded-xl">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue">
               <span className="font-semibold">Keep improving!</span> Continue monitoring and enhancing your credit habits to reach the next level and unlock better rates and terms.
             </OnestFont>
           </div>

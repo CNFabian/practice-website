@@ -13,7 +13,8 @@ import {
   DocumentDarkIcon,
   ChecklistDarkIcon,
   ControllerDarkIcon,
-  Logo
+  Logo,
+  OnestFont
 } from '../../assets';
 import OnBoardingPage from './onboarding/OnBoardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -69,13 +70,12 @@ const Sidebar: React.FC = () => {
   return (
     <>
       <aside 
-        className={`fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50 transition-all duration-300 ease-in-out ${
+        className={`fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50 transition-all duration-300 ease-in-out bg-gradient-to-b from-light-background-blue to-tab-active ${
           isCollapsed ? 'w-16' : 'w-44'
         }`}
-        style={{ background: 'linear-gradient(180deg, #EDF0FF 0%, #DDE3FF 100%)' }}
       >
         {/* Logo at the top */}
-        <div className="px-4 pt-4 flex items-center justify-center border-b border-white/20">
+        <div className="px-4 pt-4 flex items-center justify-center border-b border-pure-white/20">
           <button 
             onClick={toggleCollapsed}
             className="transition-transform duration-200 hover:scale-110"
@@ -94,22 +94,23 @@ const Sidebar: React.FC = () => {
                 className={`
                   flex items-center rounded-2xl transition-all duration-200
                   ${isActive(item.path) 
-                    ? 'font-medium shadow-sm' 
-                    : 'hover:bg-white/50'
-                  } text-gray-700 hover:text-gray-900
+                    ? 'bg-tab-active font-medium shadow-sm' 
+                    : 'hover:bg-pure-white/50'
+                  } text-text-blue-black hover:text-text-blue-black
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
-                style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
               >
                 {/* Icon */}
                 <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
-                <span 
+                <OnestFont 
+                  weight={500}
+                  lineHeight="relaxed"
                   className={`text-sm whitespace-nowrap transition-all duration-300 ${
                     isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
                   }`}
                 >
                   {item.label}
-                </span>
+                </OnestFont>
               </Link>
             ))}
 
@@ -122,14 +123,15 @@ const Sidebar: React.FC = () => {
                       className={`
                         w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
                         ${location.pathname.startsWith('/app/materials')
-                          ? 'font-medium shadow-sm' 
-                          : 'hover:bg-white/50'
-                        } text-gray-700 hover:text-gray-900
+                          ? 'bg-tab-active font-medium shadow-sm' 
+                          : 'hover:bg-pure-white/50'
+                        } text-text-blue-black hover:text-text-blue-black
                       `}
-                      style={location.pathname.startsWith('/app/materials') ? { backgroundColor: '#D7DEFF' } : {}}
                     >
                       <img src={SavedIcon} alt="Materials" className="w-5 h-5 flex-shrink-0" />
-                      <span className="text-sm flex-1 text-left">Materials</span>
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm flex-1 text-left">
+                        Materials
+                      </OnestFont>
                       <svg
                         className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
                         fill="none"
@@ -155,13 +157,15 @@ const Sidebar: React.FC = () => {
                             className={`
                               flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200
                               ${isActive(subItem.path)
-                                ? 'font-medium bg-white/60'
-                                : 'hover:bg-white/40'
-                              } text-gray-700 hover:text-gray-900
+                                ? 'font-medium bg-pure-white/60'
+                                : 'hover:bg-pure-white/40'
+                              } text-text-blue-black hover:text-text-blue-black
                             `}
                           >
                             <img src={subItem.icon} alt={subItem.label} className="w-4 h-4" />
-                            {subItem.label}
+                            <OnestFont weight={500} lineHeight="relaxed">
+                              {subItem.label}
+                            </OnestFont>
                           </Link>
                         ))}
                       </Disclosure.Panel>
@@ -178,11 +182,10 @@ const Sidebar: React.FC = () => {
                 className={`
                   flex items-center justify-center rounded-2xl transition-all duration-200 px-2 py-3
                   ${location.pathname.startsWith('/app/materials')
-                    ? 'font-medium shadow-sm' 
-                    : 'hover:bg-white/50'
-                  } text-gray-700 hover:text-gray-900
+                    ? 'bg-tab-active font-medium shadow-sm' 
+                    : 'hover:bg-pure-white/50'
+                  } text-text-blue-black hover:text-text-blue-black
                 `}
-                style={location.pathname.startsWith('/app/materials') ? { backgroundColor: '#D7DEFF' } : {}}
               >
                 <img src={SavedIcon} alt="Materials" className="w-5 h-5" />
               </Link>
@@ -191,15 +194,17 @@ const Sidebar: React.FC = () => {
         </nav>
 
         {/* Bottom Navigation */}
-        <div className="border-t border-white/20 px-3 py-3">
+        <div className="border-t border-pure-white/20 px-3 py-3">
           <div className="space-y-1">
             {/* TEMPORARY TESTING BUTTON */}
             {!isCollapsed && (
               <button
                 onClick={() => setShowOnboarding(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 bg-red-500 hover:bg-red-600 text-white font-medium"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-opacity duration-200 bg-status-red hover:opacity-90 text-pure-white font-medium"
               >
-                <span className="text-sm">🧪 Test Onboarding</span>
+                <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                  🧪 Test Onboarding
+                </OnestFont>
               </button>
             )}
 
@@ -210,22 +215,23 @@ const Sidebar: React.FC = () => {
                 className={`
                   flex items-center rounded-2xl transition-all duration-200
                   ${isActive(item.path) 
-                    ? 'font-medium shadow-sm' 
-                    : 'hover:bg-white/50'
-                  } text-gray-700 hover:text-gray-900
+                    ? 'bg-tab-active font-medium shadow-sm' 
+                    : 'hover:bg-pure-white/50'
+                  } text-text-blue-black hover:text-text-blue-black
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
-                style={isActive(item.path) ? { backgroundColor: '#D7DEFF' } : {}}
               >
                 {/* Icon */}
                 <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
-                <span 
+                <OnestFont 
+                  weight={500}
+                  lineHeight="relaxed"
                   className={`text-sm whitespace-nowrap transition-all duration-300 ${
                     isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
                   }`}
                 >
                   {item.label}
-                </span>
+                </OnestFont>
               </Link>
             ))}
           </div>

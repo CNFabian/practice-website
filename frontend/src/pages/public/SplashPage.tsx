@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { OnestFont } from '../../assets'
 
 const SplashPage: React.FC = () => {
   const navigate = useNavigate()
@@ -10,16 +11,20 @@ const SplashPage: React.FC = () => {
       <div className="space-y-4">
         <button
           onClick={() => navigate('/auth/login')}
-          className="w-full bg-indigo-600 text-white py-3 px-6"
+          className="w-full bg-logo-blue text-pure-white py-3 px-6 hover:opacity-90 transition-opacity rounded-lg"
         >
-          Login
+          <OnestFont weight={500} lineHeight="relaxed">
+            Login
+          </OnestFont>
         </button>
         
         <button
           onClick={() => navigate('/auth/signup')}
-          className="w-full bg-white text-indigo-600 py-3 px-6 "
+          className="w-full bg-pure-white text-logo-blue py-3 px-6 border-2 border-logo-blue hover:bg-logo-blue/10 transition-colors rounded-lg"
         >
-          Sign Up
+          <OnestFont weight={500} lineHeight="relaxed">
+            Sign Up
+          </OnestFont>
         </button>
       </div>
 

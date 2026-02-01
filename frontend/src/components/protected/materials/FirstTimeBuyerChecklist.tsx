@@ -228,16 +228,16 @@ const FirstTimeBuyerChecklist: React.FC = () => {
 
   const Modal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
+      <div className="bg-pure-white rounded-2xl p-6 max-w-md w-full">
+        <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-4">
           🎉 Congratulations!
         </OnestFont>
-        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 mb-6">
+        <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey mb-6">
           You've completed all the essential steps for first-time homebuying! You're well-prepared for your homebuying journey.
         </OnestFont>
         <button
           onClick={() => setShowModal(false)}
-          className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
+          className="w-full bg-elegant-blue text-pure-white py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
         >
           <OnestFont weight={500} lineHeight="relaxed">
             Awesome!
@@ -256,39 +256,39 @@ const FirstTimeBuyerChecklist: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header with Progress */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 relative">
+      <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6 relative">
         {/* Info Button - positioned in top right */}
         <div className="absolute top-4 right-4">
-          <InfoButton onClick={() => setIsInfoModalOpen(true)} category="purple" />
+          <InfoButton onClick={() => setIsInfoModalOpen(true)} />
         </div>
 
         <div className="flex items-center justify-between mb-4 pr-12">
           <div>
-            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-2xl text-gray-900 mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-2xl text-text-blue-black mb-2">
               First-Time Homebuyer Checklist
             </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
               Your complete guide to buying your first home
             </OnestFont>
           </div>
           <div className="text-right">
-            <OnestFont weight={700} lineHeight="tight" className="text-3xl text-purple-600">
+            <OnestFont weight={700} lineHeight="tight" className="text-3xl text-elegant-blue">
               {progress.percentage}%
             </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
               Complete
             </OnestFont>
           </div>
         </div>
         
         {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-light-background-blue rounded-full h-3">
           <div 
-            className="bg-purple-600 h-3 rounded-full transition-all duration-300"
+            className="bg-elegant-blue h-3 rounded-full transition-all duration-300"
             style={{ width: `${progress.percentage}%` }}
           ></div>
         </div>
-        <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500 mt-2">
+        <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-2">
           {progress.completed} of {progress.total} tasks completed
         </OnestFont>
       </div>
@@ -299,22 +299,22 @@ const FirstTimeBuyerChecklist: React.FC = () => {
         const categoryCompleted = categoryItems.filter(item => item.completed).length;
         
         return (
-          <div key={category} className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div key={category} className="bg-pure-white rounded-2xl border border-light-background-blue p-6">
             <div className="flex items-center justify-between mb-4">
-              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-xl text-gray-900">
+              <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-xl text-text-blue-black">
                 {category}
               </OnestFont>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                   categoryCompleted === categoryItems.length 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-purple-100 text-purple-700'
+                    ? 'bg-status-green/10 text-status-green' 
+                    : 'bg-elegant-blue/10 text-elegant-blue'
                 }`}>
                   <OnestFont weight={500} lineHeight="relaxed">
                     {categoryCompleted}
                   </OnestFont>
                 </div>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-500">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   / {categoryItems.length}
                 </OnestFont>
               </div>
@@ -326,19 +326,19 @@ const FirstTimeBuyerChecklist: React.FC = () => {
                   key={item.id}
                   className={`border rounded-xl p-4 transition-all cursor-pointer ${
                     item.completed 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-gray-200 bg-white hover:border-purple-300'
+                      ? 'border-status-green bg-status-green/10' 
+                      : 'border-light-background-blue bg-pure-white hover:border-elegant-blue'
                   }`}
                   onClick={() => toggleItem(item.id)}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
                       item.completed 
-                        ? 'border-green-500 bg-green-500' 
-                        : 'border-gray-300 hover:border-purple-500'
+                        ? 'border-status-green bg-status-green' 
+                        : 'border-unavailable-button hover:border-elegant-blue'
                     }`}>
                       {item.completed && (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3 h-3 text-pure-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
@@ -346,12 +346,12 @@ const FirstTimeBuyerChecklist: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <OnestFont weight={500} lineHeight="relaxed" className={`text-sm ${
-                          item.completed ? 'text-green-800 line-through' : 'text-gray-900'
+                          item.completed ? 'text-status-green line-through' : 'text-text-blue-black'
                         }`}>
                           {item.title}
                         </OnestFont>
                         {item.optional && (
-                          <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                          <span className="px-2 py-1 text-xs font-medium bg-elegant-blue/10 text-elegant-blue rounded-full">
                             <OnestFont weight={500} lineHeight="relaxed">
                               Optional
                             </OnestFont>
@@ -359,7 +359,7 @@ const FirstTimeBuyerChecklist: React.FC = () => {
                         )}
                       </div>
                       <OnestFont weight={300} lineHeight="relaxed" className={`text-sm mt-1 ${
-                        item.completed ? 'text-green-700' : 'text-gray-600'
+                        item.completed ? 'text-status-green' : 'text-text-grey'
                       }`}>
                         {item.description}
                       </OnestFont>
@@ -373,25 +373,25 @@ const FirstTimeBuyerChecklist: React.FC = () => {
       })}
 
       {/* Tips Section */}
-      <div className="bg-purple-50 border border-purple-200 rounded-2xl p-6">
-        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-purple-900 mb-3">
+      <div className="bg-elegant-blue/10 border border-elegant-blue rounded-2xl p-6">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-elegant-blue mb-3">
           💡 Pro Tips for Success
         </OnestFont>
-        <div className="space-y-3 text-sm text-purple-800">
+        <div className="space-y-3 text-sm text-text-blue-black">
           <div className="flex items-start gap-2">
-            <span className="text-purple-500 mt-1">•</span>
+            <span className="text-elegant-blue mt-1">•</span>
             <OnestFont weight={500} lineHeight="relaxed">Start early - the homebuying process typically takes 30-60 days from offer to closing</OnestFont>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-purple-500 mt-1">•</span>
+            <span className="text-elegant-blue mt-1">•</span>
             <OnestFont weight={500} lineHeight="relaxed">Keep all financial documents organized and easily accessible</OnestFont>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-purple-500 mt-1">•</span>
+            <span className="text-elegant-blue mt-1">•</span>
             <OnestFont weight={500} lineHeight="relaxed">Don't make any major financial changes during the process (new loans, job changes, etc.)</OnestFont>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-purple-500 mt-1">•</span>
+            <span className="text-elegant-blue mt-1">•</span>
             <OnestFont weight={500} lineHeight="relaxed">Ask questions! Your real estate agent and lender are there to help guide you</OnestFont>
           </div>
         </div>

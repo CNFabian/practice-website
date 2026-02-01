@@ -67,14 +67,14 @@ const MortgageCalculator: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit relative">
+        <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6 h-fit relative">
           {/* Info Button */}
           <div className="absolute top-6 right-6">
             <InfoButton onClick={() => setIsInfoModalOpen(true)} />
           </div>
           
           <div className="mb-6 pr-12">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-logo-blue rounded-2xl flex items-center justify-center mx-auto mb-4">
               <img 
                 src={MaterialHomeIcon} 
                 alt="Home"
@@ -82,10 +82,10 @@ const MortgageCalculator: React.FC = () => {
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
-            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 text-center mb-2">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-text-blue-black text-center mb-2">
               Mortgage Calculator
             </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-center text-sm">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-center text-sm">
               Calculate your estimated monthly mortgage payments
             </OnestFont>
           </div>
@@ -93,18 +93,18 @@ const MortgageCalculator: React.FC = () => {
           <div className="space-y-4">
             {/* Home Price */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Home Price
               </OnestFont>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-grey">$</span>
                 <input
                   type="number"
                   min="0"
                   max="50000000"
                   value={homePrice}
                   onChange={(e) => setHomePrice(validateCurrencyInput(e.target.value, 50000000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="500000"
                 />
               </div>
@@ -112,35 +112,35 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Down Payment */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Down Payment
               </OnestFont>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-grey">$</span>
                 <input
                   type="number"
                   min="0"
                   max={homePrice}
                   value={downPayment}
                   onChange={(e) => setDownPayment(validateCurrencyInput(e.target.value, homePrice))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="100000"
                 />
               </div>
-              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey mt-1">
                 {((downPayment / homePrice) * 100).toFixed(1)}% of home price
               </OnestFont>
             </div>
 
             {/* Loan Term */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Loan Term (Years)
               </OnestFont>
               <select
                 value={loanTerm}
                 onChange={(e) => setLoanTerm(parseInt(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
               >
                 <option value={15}>15 years</option>
                 <option value={20}>20 years</option>
@@ -151,7 +151,7 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Interest Rate */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Interest Rate
               </OnestFont>
               <div className="relative">
@@ -162,27 +162,27 @@ const MortgageCalculator: React.FC = () => {
                   step="0.1"
                   value={interestRate}
                   onChange={(e) => setInterestRate(validatePercentageInput(e.target.value, 30))}
-                  className="w-full pr-8 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pr-8 pl-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="6.5"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-grey">%</span>
               </div>
             </div>
 
             {/* Property Tax */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Monthly Property Tax
               </OnestFont>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-grey">$</span>
                 <input
                   type="number"
                   min="0"
                   max="10000"
                   value={propertyTax}
                   onChange={(e) => setPropertyTax(validateCurrencyInput(e.target.value, 10000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="500"
                 />
               </div>
@@ -190,18 +190,18 @@ const MortgageCalculator: React.FC = () => {
 
             {/* Home Insurance */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Monthly Home Insurance
               </OnestFont>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-grey">$</span>
                 <input
                   type="number"
                   min="0"
                   max="2000"
                   value={homeInsurance}
                   onChange={(e) => setHomeInsurance(validateCurrencyInput(e.target.value, 2000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="150"
                 />
               </div>
@@ -209,22 +209,22 @@ const MortgageCalculator: React.FC = () => {
 
             {/* PMI */}
             <div>
-              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-gray-700 mb-2">
+              <OnestFont as="label" weight={500} lineHeight="relaxed" className="block text-sm text-text-blue-black mb-2">
                 Monthly PMI
               </OnestFont>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-grey">$</span>
                 <input
                   type="number"
                   min="0"
                   max="1000"
                   value={pmi}
                   onChange={(e) => setPmi(validateCurrencyInput(e.target.value, 1000))}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-4 py-3 border border-light-background-blue rounded-lg focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                   placeholder="0"
                 />
               </div>
-              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-gray-500 mt-1">
+              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey mt-1">
                 Required if down payment is less than 20%
               </OnestFont>
             </div>
@@ -234,46 +234,46 @@ const MortgageCalculator: React.FC = () => {
         {/* Results Section */}
         <div className="space-y-6">
           {/* Monthly Payment Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
+          <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-4">
               Monthly Payment Breakdown
             </OnestFont>
             
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <div className="bg-logo-blue/10 rounded-xl p-4 border border-logo-blue">
                 <div className="flex justify-between items-center">
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey">
                     Principal & Interest
                   </OnestFont>
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                     {formatCurrency(principalAndInterest)}
                   </OnestFont>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey">
                     Property Tax
                   </OnestFont>
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                     {formatCurrency(propertyTax)}
                   </OnestFont>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey">
                     Home Insurance
                   </OnestFont>
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                     {formatCurrency(homeInsurance)}
                   </OnestFont>
                 </div>
 
                 {pmi > 0 && (
                   <div className="flex justify-between items-center">
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey">
                       PMI
                     </OnestFont>
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                       {formatCurrency(pmi)}
                     </OnestFont>
                   </div>
@@ -283,35 +283,35 @@ const MortgageCalculator: React.FC = () => {
           </div>
 
           {/* Loan Summary Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-gray-900 mb-4">
+          <div className="bg-pure-white rounded-2xl border border-light-background-blue p-6">
+            <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-4">
               Loan Summary
             </OnestFont>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
                   Loan Amount
                 </OnestFont>
-                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                   {formatCurrency(principalAmount)}
                 </OnestFont>
               </div>
 
               <div className="flex justify-between items-center">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
                   Total Interest Paid
                 </OnestFont>
-                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+                <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                   {formatCurrency(totalInterest)}
                 </OnestFont>
               </div>
 
-              <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                <OnestFont weight={500} lineHeight="relaxed" className="text-gray-900">
+              <div className="flex justify-between items-center border-t border-light-background-blue pt-3">
+                <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                   Total Amount Paid
                 </OnestFont>
-                <OnestFont weight={700} lineHeight="relaxed" className="text-xl text-gray-900">
+                <OnestFont weight={700} lineHeight="relaxed" className="text-xl text-text-blue-black">
                   {formatCurrency(totalPayment)}
                 </OnestFont>
               </div>
@@ -319,11 +319,11 @@ const MortgageCalculator: React.FC = () => {
           </div>
 
           {/* Tips Card */}
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-            <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-blue-900 mb-3">
+          <div className="bg-logo-blue/10 border border-logo-blue rounded-2xl p-6">
+            <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-lg text-logo-blue mb-3">
               💡 Money-Saving Tips
             </OnestFont>
-            <ul className="space-y-2 text-sm text-blue-800">
+            <ul className="space-y-2 text-sm text-text-blue-black">
               <li>
                 <OnestFont weight={500} lineHeight="relaxed">• A larger down payment reduces PMI and monthly payments</OnestFont>
               </li>
