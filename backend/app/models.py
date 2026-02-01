@@ -96,6 +96,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
+    def __str__(self):
+        return f"{self.email} ({self.first_name} {self.last_name})"
+
 
 class UserOnboarding(Base):
     __tablename__ = "user_onboarding"
@@ -194,6 +197,9 @@ class Module(Base):
     progress: Mapped[List["UserModuleProgress"]] = relationship(
         back_populates="module", cascade="all, delete-orphan"
     )
+    
+    def __str__(self):
+        return self.title
 
 
 class Lesson(Base):
@@ -239,6 +245,9 @@ class Lesson(Base):
     user_quiz_attempts: Mapped[List["UserQuizAttempt"]] = relationship(
         back_populates="lesson", cascade="all, delete-orphan"
     )
+    
+    def __str__(self):
+        return self.title
 
 
 class QuizQuestion(Base):
@@ -265,6 +274,11 @@ class QuizQuestion(Base):
         back_populates="question", cascade="all, delete-orphan"
     )
 
+    def __str__(self):
+    # Truncate long questions
+        return self.question_text[:80] + "..." if len(self.question_text) > 80 else self.question_text
+
+
 
 class QuizAnswer(Base):
     __tablename__ = "quiz_answers"
@@ -287,6 +301,10 @@ class QuizAnswer(Base):
     user_quiz_answers: Mapped[List["UserQuizAnswer"]] = relationship(
         back_populates="selected_answer"
     )
+
+    # Add this method
+    def __str__(self):
+        return self.answer_text
 
 
 # ================================
@@ -317,6 +335,9 @@ class Badge(Base):
     users: Mapped[List["UserBadge"]] = relationship(
         back_populates="badge", cascade="all, delete-orphan"
     )
+
+    def __str__(self):
+        return self.name
 
 
 class LessonBadgeReward(Base):
@@ -374,6 +395,9 @@ class RewardCoupon(Base):
     user_redemptions: Mapped[List["UserCouponRedemption"]] = relationship(
         back_populates="coupon", cascade="all, delete-orphan"
     )
+
+    def __str__(self):
+        return f"{self.title} ({self.partner_company})"
 
 
 # ================================

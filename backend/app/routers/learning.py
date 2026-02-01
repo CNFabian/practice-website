@@ -121,24 +121,24 @@ def get_module(
         )
 
     # Check prerequisites
-    if module.prerequisite_module_id:
-        prerequisite_progress = (
-            db.query(UserModuleProgress)
-            .filter(
-                and_(
-                    UserModuleProgress.user_id == current_user.id,
-                    UserModuleProgress.module_id == module.prerequisite_module_id,
-                    UserModuleProgress.status == "completed",
-                )
-            )
-            .first()
-        )
+    # if module.prerequisite_module_id:
+    #     prerequisite_progress = (
+    #         db.query(UserModuleProgress)
+    #         .filter(
+    #             and_(
+    #                 UserModuleProgress.user_id == current_user.id,
+    #                 UserModuleProgress.module_id == module.prerequisite_module_id,
+    #                 UserModuleProgress.status == "completed",
+    #             )
+    #         )
+    #         .first()
+    #     )
 
-        if not prerequisite_progress:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please complete the prerequisite module first",
-            )
+    #     if not prerequisite_progress:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_403_FORBIDDEN,
+    #             detail="Please complete the prerequisite module first",
+    #         )
 
     # Get lesson count
     lesson_count = (
@@ -197,24 +197,24 @@ def get_module_lessons(
         )
 
     # Check prerequisites
-    if module.prerequisite_module_id:
-        prerequisite_progress = (
-            db.query(UserModuleProgress)
-            .filter(
-                and_(
-                    UserModuleProgress.user_id == current_user.id,
-                    UserModuleProgress.module_id == module.prerequisite_module_id,
-                    UserModuleProgress.status == "completed",
-                )
-            )
-            .first()
-        )
+    # if module.prerequisite_module_id:
+    #     prerequisite_progress = (
+    #         db.query(UserModuleProgress)
+    #         .filter(
+    #             and_(
+    #                 UserModuleProgress.user_id == current_user.id,
+    #                 UserModuleProgress.module_id == module.prerequisite_module_id,
+    #                 UserModuleProgress.status == "completed",
+    #             )
+    #         )
+    #         .first()
+    #     )
 
-        if not prerequisite_progress:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please complete the prerequisite module first",
-            )
+    #     if not prerequisite_progress:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_403_FORBIDDEN,
+    #             detail="Please complete the prerequisite module first",
+    #         )
 
     # Get lessons
     lessons = (
@@ -282,25 +282,25 @@ def get_lesson(
         )
 
     # Check module prerequisites
-    module = db.query(Module).filter(Module.id == lesson.module_id).first()
-    if module and module.prerequisite_module_id:
-        prerequisite_progress = (
-            db.query(UserModuleProgress)
-            .filter(
-                and_(
-                    UserModuleProgress.user_id == current_user.id,
-                    UserModuleProgress.module_id == module.prerequisite_module_id,
-                    UserModuleProgress.status == "completed",
-                )
-            )
-            .first()
-        )
+    # module = db.query(Module).filter(Module.id == lesson.module_id).first()
+    # if module and module.prerequisite_module_id:
+    #     prerequisite_progress = (
+    #         db.query(UserModuleProgress)
+    #         .filter(
+    #             and_(
+    #                 UserModuleProgress.user_id == current_user.id,
+    #                 UserModuleProgress.module_id == module.prerequisite_module_id,
+    #                 UserModuleProgress.status == "completed",
+    #             )
+    #         )
+    #         .first()
+    #     )
 
-        if not prerequisite_progress:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please complete the prerequisite module first",
-            )
+    #     if not prerequisite_progress:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_403_FORBIDDEN,
+    #             detail="Please complete the prerequisite module first",
+    #         )
 
     # Get user progress for this lesson
     user_progress = (

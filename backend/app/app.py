@@ -1,9 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from mangum import Mangum
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from admin import setup_admin
 import logging
 import os
 
@@ -23,31 +27,94 @@ Base.metadata.create_all(bind=engine)
 
 # Create FastAPI app
 app = FastAPI(
-    title="Gamified Learning Platform API",
-    description="A comprehensive backend for a gamified homebuying education platform",
+    title="NestNavigate Backend API",
+    description="Backend API for the NestNavigate platform",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# Proxy Headers (CRITICAL FOR ALB)
+class ProxyHeadersMiddleware(BaseHTTPMiddleware):
+    """Handle X-Forwarded-* headers from AWS ALB"""
+    async def dispatch(self, request: Request, call_next):
+        # Trust proxy headers from ALB
+        forwarded_proto = request.headers.get("x-forwarded-proto")
+        if forwarded_proto:
+            request.scope["scheme"] = forwarded_proto
+        
+        forwarded_host = request.headers.get("x-forwarded-host")
+        if forwarded_host:
+            request.scope["headers"] = [
+                (b"host", forwarded_host.encode()) 
+                if name == b"host" else (name, value)
+                for name, value in request.scope["headers"]
+            ]
+        
+        response = await call_next(request)
+        return response
+
+# Proxy middleware FIRST (before all others)
+app.add_middleware(ProxyHeadersMiddleware)
+
+# Trusted Hosts
+if ENVIRONMENT == "production":
+    ALLOWED_HOSTS = os.getenv(
+        "ALLOWED_HOSTS",
+        "nestnavigate-backend-v1-alb-1309778730.us-east-1.elb.amazonaws.com"
+    ).split(",")
+    
+    # This middleware handles proxy headers
+    app.add_middleware(
+        TrustedHostMiddleware, 
+        allowed_hosts=ALLOWED_HOSTS
+    )
+    logger.info(f"Production mode: Allowed hosts = {ALLOWED_HOSTS}")
+else:
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "host.docker.internal"
+    ]
+    app.add_middleware(
+        TrustedHostMiddleware, 
+        allowed_hosts=ALLOWED_HOSTS
+    )
+    logger.info(f"Development mode: Allowed hosts = {ALLOWED_HOSTS}")
+
 # CORS Configuration
-# When allow_credentials=True, you CANNOT use allow_origins=["*"]
-# You must specify exact origins
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
     "https://main.dzynw01sy9n1b.amplifyapp.com,http://localhost:3000,http://localhost:5173,https://app.nestnavigate.com"
 ).split(",")
 
-# Add CORS middleware
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # Configure this for production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # Explicit methods
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+# Session (with secure cookie config)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY"),
+    session_cookie="admin_session",
+    max_age=86400,  # 24 hours
+    same_site="lax",
+    https_only=(ENVIRONMENT == "production"),
+)
+
+
+# Setup admin interface
+setup_admin(app)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
@@ -92,9 +159,10 @@ def health_check(db: Session = Depends(get_db)):
 def api_status():
     """API status endpoint"""
     return {
-        "api": "Gamified Learning Platform",
+        "api": "Nest Navigate API Platform",
         "version": "1.0.0",
         "status": "running",
+        "environment": ENVIRONMENT,
         "features": [
             "User Authentication",
             "Onboarding Flow", 
