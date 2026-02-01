@@ -13,6 +13,8 @@ export interface HouseProgressData {
   quizCount?: number;
   coinReward?: number;
   isLocked?: boolean;
+  status?: 'start' | 'continue' | 'locked'; // Button text status
+  completedLessons?: number; // Number of completed lessons
 }
 
 export class HouseProgressCard {
@@ -37,7 +39,7 @@ export class HouseProgressCard {
 
     // Card dimensions
     const cardWidth = scale(380);
-    const collapsedHeight = scale(70);
+    const collapsedHeight = scale(60);
     const expandedHeight = scale(110);
     const borderRadius = scale(16);
 
@@ -150,27 +152,45 @@ export class HouseProgressCard {
       );
       progressContainer.add(progressBg);
 
-      // Progress bar fill
-      const progressFillWidth = (progressBarWidth * (data.progressPercent || 0)) / 100;
-      const progressFill = scene.add.graphics();
-      progressFill.fillStyle(0x5B7FDB, 1);
-      progressFill.fillRoundedRect(
-        -progressBarWidth / 2,
-        progressY - progressBarHeight / 2,
-        progressFillWidth,
-        progressBarHeight,
-        progressBarHeight / 2
-      );
-      progressContainer.add(progressFill);
+      // Calculate progress based on completed lessons
+      const completedLessons = data.completedLessons || 0;
+      const totalLessons = data.lessonCount || 0;
+      
+      // Progress bar fill - ONLY SHOW IF THERE ARE COMPLETED LESSONS
+      let progressFillWidth = 0;
+      if (totalLessons > 0 && completedLessons > 0) {
+        // Calculate progress based on lessons completed (not percentage)
+        const lessonProgress = completedLessons / totalLessons;
+        progressFillWidth = progressBarWidth * lessonProgress;
+        
+        const progressFill = scene.add.graphics();
+        progressFill.fillStyle(0x5B7FDB, 1);
+        progressFill.fillRoundedRect(
+          -progressBarWidth / 2,
+          progressY - progressBarHeight / 2,
+          progressFillWidth,
+          progressBarHeight,
+          progressBarHeight / 2
+        );
+        progressContainer.add(progressFill);
+      }
 
-      // Star icon on progress bar
-      const starX = -progressBarWidth / 2 + progressFillWidth;
-      const star = scene.add.text(starX, progressY, '⭐',
-        {
-          fontSize: scaleFontSize(20),
+      // Star icons on progress bar - ONLY RENDER FOR COMPLETED LESSONS
+      // Stars positioned at the END of each lesson segment
+      if (totalLessons > 0 && completedLessons > 0) {
+        // Calculate spacing for stars along the progress bar
+        const starSpacing = progressBarWidth / totalLessons;
+        
+        // Render stars for each completed lesson at the END of each segment
+        for (let i = 0; i < completedLessons; i++) {
+          // Position star at the end of each lesson segment
+          const starX = -progressBarWidth / 2 + (starSpacing * (i + 1));
+          const starIcon = scene.add.image(starX, progressY, 'progressStarIcon');
+          starIcon.setDisplaySize(scale(20), scale(20));
+          starIcon.setOrigin(0.5);
+          progressContainer.add(starIcon);
         }
-      ).setOrigin(0.5);
-      progressContainer.add(star);
+      }
 
       // Bottom section with icons and button
       const bottomY = progressY + scale(35);
@@ -208,8 +228,12 @@ export class HouseProgressCard {
       progressCircleBg.strokeCircle(circleX, bottomY, circleRadius);
       progressContainer.add(progressCircleBg);
       
-      // Draw circular progress fill (green arc based on progress)
-      const progressPercentForCircle = data.progressPercent || 0;
+      // Draw circular progress fill (green arc based on completed lessons)
+      let progressPercentForCircle = 0;
+      if (totalLessons > 0 && completedLessons > 0) {
+        progressPercentForCircle = (completedLessons / totalLessons) * 100;
+      }
+      
       const progressCircleFill = scene.add.graphics();
       progressCircleFill.lineStyle(scale(3), 0x10B981, 1); // Green color
       
@@ -248,7 +272,28 @@ export class HouseProgressCard {
 
       progressContainer.add(treeIcon);
 
-      // Continue button
+      // Determine button text based on status
+      const getButtonText = (): string => {
+        if (data.isLocked) return 'LOCKED';
+        if (!data.status) {
+          // Fallback to old logic if status not provided
+          return data.hasProgress ? 'CONTINUE' : 'START';
+        }
+        switch (data.status) {
+          case 'continue':
+            return 'CONTINUE';
+          case 'start':
+            return 'START';
+          case 'locked':
+            return 'LOCKED';
+          default:
+            return 'START';
+        }
+      };
+
+      const buttonText = getButtonText();
+
+      // Continue/Start button
       const buttonWidth = scale(120);
       const buttonHeight = scale(36);
       const buttonX = cardWidth / 2 - scale(20) - buttonWidth / 2;
@@ -264,7 +309,7 @@ export class HouseProgressCard {
       );
       progressContainer.add(continueButton);
 
-      const continueText = scene.add.text(buttonX, bottomY, 'CONTINUE',
+      const continueText = scene.add.text(buttonX, bottomY, buttonText,
         createTextStyle('BUTTON', '#FFFFFF', { fontSize: scaleFontSize(14) })
       ).setOrigin(0.5);
       progressContainer.add(continueText);

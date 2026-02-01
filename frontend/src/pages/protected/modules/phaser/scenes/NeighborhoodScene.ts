@@ -51,6 +51,7 @@ export default class NeighborhoodScene extends BaseScene {
   private progressCards: Phaser.GameObjects.Container[] = [];
   private moduleProgressMap?: Map<string, any>;
   private lockedTooltips: Map<string, Phaser.GameObjects.Container> = new Map();
+  private grassLayer?: Phaser.GameObjects.TileSprite;
 
   // Bird character properties
   private bird?: BirdCharacter;
@@ -296,6 +297,12 @@ export default class NeighborhoodScene extends BaseScene {
       this.idleAnimationTimer = undefined;
     }
     
+    // Cleanup grass layer
+    if (this.grassLayer) {
+      this.grassLayer.destroy();
+      this.grassLayer = undefined;
+    }
+    
     this.tweens.killAll();
     this.progressCards.forEach(card => card.destroy());
     this.progressCards = [];
@@ -377,8 +384,47 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createEnvironment(): void {
+    this.createGrassLayer();
     this.createDottedPaths();
   }
+
+  private createGrassLayer(): void {
+    const { width, height } = this.scale;
+    
+    // Use world width instead of just viewport width for scrollable area
+    const worldWidth = width * 2.5;
+    
+    // Create a TileSprite that repeats the grass texture across the entire world width
+    this.grassLayer = this.add.tileSprite(
+      worldWidth / 2,  // Center of the world
+      height,          // Bottom of the screen
+      worldWidth,      // Width to cover entire scrollable area
+      0,               // Height will be set automatically based on texture
+      'frontGrass'
+    );
+    
+    // Set origin to bottom-center so it sits flush at the bottom
+    this.grassLayer.setOrigin(0.5, 1);
+    
+    // Automatically scale height to maintain aspect ratio
+    const textureHeight = this.textures.get('frontGrass').getSourceImage().height;
+    
+    // Calculate the height needed to maintain aspect ratio
+    // We want the grass to tile horizontally at original size
+    const displayHeight = textureHeight;
+    this.grassLayer.setDisplaySize(worldWidth, displayHeight);
+    
+    // Set depth to 1 (above background which is 0, but below houses which are 2+)
+    this.grassLayer.setDepth(1);
+    
+    // Make the grass scroll with the camera (it's part of the world, not UI)
+    this.grassLayer.setScrollFactor(1);
+    
+    console.log('🌱 Tiled grass layer created at depth 1');
+    console.log('   - World width:', worldWidth);
+    console.log('   - Texture will repeat to fill width');
+  }
+
 
   private createDottedPaths(): void {
     const { width, height } = this.scale;
@@ -515,6 +561,11 @@ export default class NeighborhoodScene extends BaseScene {
       this.coinCounter.setAlpha(0);
     }
 
+    // Set grass layer invisible
+    if (this.grassLayer) {
+      this.grassLayer.setAlpha(0);
+    }
+
     // Set roads invisible
     this.roads.forEach((road) => {
       road.setAlpha(0);
@@ -632,6 +683,21 @@ export default class NeighborhoodScene extends BaseScene {
       // Get progress data from backend (if available)
       const moduleProgress = this.moduleProgressMap?.get(house.moduleBackendId || '');
 
+      // Determine button status based on backend data
+      const getModuleStatus = (): 'start' | 'continue' | 'locked' => {
+        if (isLocked) return 'locked';
+        
+        if (!moduleProgress) return 'start';
+        
+        // If lessons_completed > 0, show "Continue"
+        if (moduleProgress.lessons_completed > 0) {
+          return 'continue';
+        }
+        
+        // Otherwise show "Start"
+        return 'start';
+      };
+
       // Prepare progress data with REAL backend values
       const progressData: HouseProgressData = {
         moduleNumber: index + 1,
@@ -643,6 +709,8 @@ export default class NeighborhoodScene extends BaseScene {
         quizCount: moduleProgress?.module.lesson_count || 0,
         coinReward: house.coinReward,
         isLocked: false,
+        status: getModuleStatus(),
+        completedLessons: moduleProgress?.lessons_completed || 0, // ⭐ NEW: Pass completed lessons count
       };
 
       const progressCard = HouseProgressCard.createProgressCard(
@@ -676,6 +744,7 @@ export default class NeighborhoodScene extends BaseScene {
 
     this.houseSprites.set(house.id, houseContainer);
   }
+
 
   private createHouseIcon(
     container: Phaser.GameObjects.Container, 
@@ -837,6 +906,16 @@ export default class NeighborhoodScene extends BaseScene {
       });
     }
     
+    // Fade in grass layer
+    if (this.grassLayer) {
+      this.tweens.add({
+        targets: this.grassLayer,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    
     // Fade in roads
     this.roads.forEach((road) => {
       this.tweens.add({
@@ -900,7 +979,6 @@ export default class NeighborhoodScene extends BaseScene {
       tooltip.setAlpha(0);
     });
   }
-
   private createPlaceholder(): void {
     const { width, height } = this.scale;
 
@@ -953,7 +1031,7 @@ export default class NeighborhoodScene extends BaseScene {
     const collapsedHeight = scale(70);
     
     const birdX = houseX + progressCardOffsetX + scale(100);
-    const birdY = houseY + (collapsedHeight / 10) - scale(10); // Bottom of card
+    const birdY = houseY + (collapsedHeight / 10) - scale(15); // Bottom of card
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
@@ -1076,6 +1154,12 @@ export default class NeighborhoodScene extends BaseScene {
     this.cloudOverlays = [];
     this.lockedTooltips.forEach(tooltip => tooltip.destroy());
     this.lockedTooltips.clear();
+    
+    // Destroy grass layer before recreating
+    if (this.grassLayer) {
+      this.grassLayer.destroy();
+      this.grassLayer = undefined;
+    }
 
     this.handleCoinCounterResize();
     
@@ -1105,13 +1189,12 @@ export default class NeighborhoodScene extends BaseScene {
       
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
-      
     }
     
     this.createBackButton();
     
     if (this.houses.length > 0) {
-      this.createEnvironment();
+      this.createEnvironment();  // This will recreate the grass layer with new dimensions
       this.createHouses();
       
       this.setAllElementsInvisible();

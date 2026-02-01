@@ -32,6 +32,8 @@ import {
   NoticeBirdIcon,
   VideoProgressIcon,
   DocumentProgressIcon,
+  ProgressStarIcon,
+  FrontGrass
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
@@ -126,6 +128,8 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.HOUSE_CLOUD, HouseCloud);
     this.load.image(ASSET_KEYS.VIDEO_PROGRESS_ICON, VideoProgressIcon);
     this.load.image(ASSET_KEYS.DOCUMENT_PROGRESS_ICON, DocumentProgressIcon);
+    this.load.image(ASSET_KEYS.PROGRESS_STAR_ICON, ProgressStarIcon);
+    this.load.image(ASSET_KEYS.FRONT_GRASS, FrontGrass);
     
     // Characters
     this.load.image(ASSET_KEYS.BIRD_IDLE, BirdIdle);

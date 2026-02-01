@@ -22,6 +22,8 @@ export const ASSET_KEYS = {
   HOUSE_CLOUD: 'houseCloud',
   VIDEO_PROGRESS_ICON: 'videoProgressIcon',
   DOCUMENT_PROGRESS_ICON: 'documentProgressIcon',
+  PROGRESS_STAR_ICON: 'progressStarIcon',
+  FRONT_GRASS: 'frontGrass',
     
   // Characters
   BIRD_IDLE: 'bird_idle',
