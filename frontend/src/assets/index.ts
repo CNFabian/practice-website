@@ -104,6 +104,7 @@ export { default as VideoProgressIcon } from './images/phaser/houses/Video_Progr
 export { default as DocumentProgressIcon } from './images/phaser/houses/Document_ProgressCard.svg'
 export { default as ProgressStarIcon } from './images/phaser/houses/progress_star.png'
 export { default as FrontGrass } from './images/phaser/houses/FrontGrass.png'
+export { default as BackgroundCloud } from './images/phaser/houses/background_cloud.png'
 
 // CutHouse Images for Phaser Scenes
 export { default as HouseBackground } from './images/phaser/house_background1.png'

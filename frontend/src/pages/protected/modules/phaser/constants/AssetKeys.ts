@@ -24,6 +24,8 @@ export const ASSET_KEYS = {
   DOCUMENT_PROGRESS_ICON: 'documentProgressIcon',
   PROGRESS_STAR_ICON: 'progressStarIcon',
   FRONT_GRASS: 'frontGrass',
+  BACKGROUND_CLOUD: 'backgroundCloud',
+
     
   // Characters
   BIRD_IDLE: 'bird_idle',

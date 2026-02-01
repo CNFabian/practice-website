@@ -52,6 +52,9 @@ export default class NeighborhoodScene extends BaseScene {
   private moduleProgressMap?: Map<string, any>;
   private lockedTooltips: Map<string, Phaser.GameObjects.Container> = new Map();
   private grassLayer?: Phaser.GameObjects.TileSprite;
+  private houseHoverTweens: Map<string, Phaser.Tweens.Tween> = new Map();
+  private backgroundClouds: Phaser.GameObjects.Image[] = [];
+  private cloudTweens: Phaser.Tweens.Tween[] = [];
 
   // Bird character properties
   private bird?: BirdCharacter;
@@ -210,7 +213,8 @@ export default class NeighborhoodScene extends BaseScene {
     } else {
       console.warn('⚠️ No dashboard modules found in registry');
     }
-    
+
+    this.createBackgroundClouds();
     this.createUI();
     this.fadeInScene();
     this.setupEventListeners();
@@ -272,6 +276,11 @@ export default class NeighborhoodScene extends BaseScene {
       this.resizeDebounceTimer.remove();
       this.resizeDebounceTimer = undefined;
     }
+
+    this.houseHoverTweens.forEach((tween) => {
+      tween.stop();
+    });
+    this.houseHoverTweens.clear();
     
     this.houseImages.forEach(image => {
       if (image && image.input) {
@@ -281,6 +290,17 @@ export default class NeighborhoodScene extends BaseScene {
     });
     
     this.houseImages = [];
+
+    this.cloudTweens.forEach((tween) => {
+      tween.stop();
+    });
+    this.cloudTweens = [];
+
+    // Clean up cloud sprites
+    this.backgroundClouds.forEach((cloud) => {
+      cloud.destroy();
+    });
+    this.backgroundClouds = [];
     
     if (this.backButton) {
       this.cloudOverlays.forEach(cloud => cloud.destroy());
@@ -329,6 +349,63 @@ export default class NeighborhoodScene extends BaseScene {
       this.bird = undefined;
     }
   }
+
+  private createBackgroundClouds(): void {
+  const { width, height } = this.scale;
+  
+  // Create 3-5 clouds at random positions
+  const numClouds = Phaser.Math.Between(3, 5);
+  
+  for (let i = 0; i < numClouds; i++) {
+    // Random Y position (anywhere on screen)
+    const randomY = Phaser.Math.Between(scale(50), height - scale(50));
+    
+    // Start clouds at random X positions across the entire screen width
+    const randomStartX = Phaser.Math.Between(-scale(200), width + scale(200));
+    
+    // Create cloud
+    const cloud = this.add.image(randomStartX, randomY, ASSET_KEYS.BACKGROUND_CLOUD);
+    cloud.setScale(scale(0.5 + Math.random() * 0.5)); // Random scale between 0.5-1.0
+    cloud.setAlpha(0.6 + Math.random() * 0.3); // Random alpha between 0.6-0.9 for depth
+    cloud.setDepth(0); // Behind everything
+    
+    this.backgroundClouds.push(cloud);
+    
+    // Left edge (where clouds reset to)
+    const leftEdge = -scale(200);
+    // Right edge (where clouds travel to)
+    const rightEdge = width + scale(200);
+    
+    // Very slow speed: 20-40 pixels per second
+    const speed = 20 + Math.random() * 20;
+    
+    // Calculate duration based on how far THIS cloud needs to travel to reach the right edge
+    const distanceToRight = rightEdge - randomStartX;
+    const duration = (distanceToRight / speed) * 1000; // Convert to milliseconds
+    
+    // Create scrolling tween
+    const tween = this.tweens.add({
+      targets: cloud,
+      x: rightEdge,
+      duration: duration,
+      ease: 'Linear',
+      repeat: -1, // Infinite loop
+      repeatDelay: 0,
+      onRepeat: () => {
+        // When cloud reaches right side, reset to left with new random Y
+        cloud.x = leftEdge;
+        cloud.y = Phaser.Math.Between(scale(50), height - scale(50));
+        
+        // Recalculate duration for the full journey from left to right
+        const fullDistance = rightEdge - leftEdge;
+        tween.updateTo('x', rightEdge, true);
+        tween.duration = (fullDistance / speed) * 1000;
+      }
+    });
+    
+    this.cloudTweens.push(tween);
+  }
+}
 
   private prefetchAllHouseLessons(): void {
     if (this.houses.length === 0) {
@@ -749,7 +826,7 @@ export default class NeighborhoodScene extends BaseScene {
   private createHouseIcon(
     container: Phaser.GameObjects.Container, 
     houseType: string, 
-    isLocked?: boolean
+    isLocked: boolean
   ): Phaser.GameObjects.Image {
     const houseImage = this.add.image(0, 0, houseType);
     houseImage.setScale(scale(1));
@@ -759,6 +836,20 @@ export default class NeighborhoodScene extends BaseScene {
     }
     
     container.add(houseImage);
+    
+    // ADD HOVERING ANIMATION - minimal floating effect with random delay
+    const randomDelay = Math.random() * 1500; // Random delay between 0-1500ms
+    
+    const hoverTween = this.tweens.add({
+      targets: houseImage,
+      y: -scale(3), // Move up by 3 pixels (scaled)
+      duration: 1500, // 1.5 seconds
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1, // Infinite loop
+      delay: randomDelay // Each house starts at a different time
+    });
+    
     return houseImage;
   }
 
@@ -959,6 +1050,10 @@ export default class NeighborhoodScene extends BaseScene {
     
     if (this.bird) {
       this.bird.fadeIn(fadeDuration, () => {
+        // ⭐ FORCE bird to be fully visible after fade-in completes
+        if (this.bird) {
+          this.bird.forceVisible(); // This ensures alpha=1 and depth=1000
+        }
         // Start idle animation AFTER fade-in completes
         this.startBirdIdleAnimation();
       });
@@ -979,6 +1074,14 @@ export default class NeighborhoodScene extends BaseScene {
       tooltip.setAlpha(0);
     });
   }
+
+  update(): void {
+    // Ensure bird stays fully visible
+    if (this.bird) {
+      this.bird.enforceAlpha();
+    }
+  }
+
   private createPlaceholder(): void {
     const { width, height } = this.scale;
 
