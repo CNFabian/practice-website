@@ -4,3 +4,4 @@ export * from './helpAPI';
 export * from './badgesAPI';
 export * from './rewardsAPI';
 export * from './dashboardAPI';
+export * from './citiesAPI';

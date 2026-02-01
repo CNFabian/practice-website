@@ -15,6 +15,7 @@ import {
   completeStep5,
   type OnboardingOptions
 } from '../../../services/onBoardingAPI';
+import { searchCities as searchCitiesAPI } from '../../../services';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 
 interface OnBoardingPageProps {
@@ -71,7 +72,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Search cities when user types - GOOGLE PLACES AUTOCOMPLETE
+  // Search cities when user types - NOW USES BACKEND API
   useEffect(() => {
     const searchCities = async () => {
       // Only search if input is at least 2 characters
@@ -85,137 +86,33 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
       setCityError(null);
 
       try {
-        const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-        
-        if (!GOOGLE_API_KEY) {
-          console.error('Google Places API key not configured');
-          setCityResults([]);
-          setCityError('Configuration error. Please add VITE_GOOGLE_PLACES_API_KEY to .env');
-          setIsValidatingCity(false);
-          return;
-        }
+        // ✅ Call backend API instead of Google directly
+        const cities = await searchCitiesAPI(cityInput);
 
-        // Use Google Places Autocomplete API
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
-          `input=${encodeURIComponent(cityInput)}` +
-          `&types=(cities)` + // Only cities
-          `&components=country:us` + // USA only
-          `&key=${GOOGLE_API_KEY}`
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to search cities');
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'ZERO_RESULTS' || !data.predictions || data.predictions.length === 0) {
+        if (cities.length === 0) {
           setCityResults([]);
           setCityError('No cities found. Try a different search.');
           return;
         }
 
-        if (data.status === 'REQUEST_DENIED') {
-          console.error('Google Places API Error:', data.error_message);
-          setCityResults([]);
-          setCityError('API access error. Please check your API key configuration.');
-          return;
-        }
-
-        // Process predictions to get city, state, and zipcode
-        const cityPromises = data.predictions.slice(0, 10).map(async (prediction: any) => {
-          try {
-            // Get place details to fetch zipcode
-            const detailsResponse = await fetch(
-              `https://maps.googleapis.com/maps/api/place/details/json?` +
-              `place_id=${prediction.place_id}` +
-              `&fields=address_components` +
-              `&key=${GOOGLE_API_KEY}`
-            );
-
-            if (!detailsResponse.ok) return null;
-
-            const detailsData = await detailsResponse.json();
-            
-            if (!detailsData.result?.address_components) return null;
-
-            // Extract city, state, and zipcode from address components
-            let city = '';
-            let state = '';
-            let zipcode = '';
-
-            for (const component of detailsData.result.address_components) {
-              if (component.types.includes('locality')) {
-                city = component.long_name;
-              }
-              if (component.types.includes('administrative_area_level_1')) {
-                state = component.short_name; // State abbreviation (e.g., CA, TX)
-              }
-              if (component.types.includes('postal_code')) {
-                zipcode = component.long_name;
-              }
-            }
-
-            // If no zipcode found in this result, try to get a default one for the city
-            if (!zipcode && city && state) {
-              // Use a geocoding call to get approximate zipcode
-              const geocodeResponse = await fetch(
-                `https://maps.googleapis.com/maps/api/geocode/json?` +
-                `address=${encodeURIComponent(city + ', ' + state)}` +
-                `&key=${GOOGLE_API_KEY}`
-              );
-              
-              if (geocodeResponse.ok) {
-                const geocodeData = await geocodeResponse.json();
-                if (geocodeData.results?.[0]?.address_components) {
-                  for (const component of geocodeData.results[0].address_components) {
-                    if (component.types.includes('postal_code')) {
-                      zipcode = component.long_name;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-
-            // Only return if we have city, state, and zipcode
-            if (city && state && zipcode) {
-              return { city, state, zipcode };
-            }
-
-            return null;
-          } catch (err) {
-            console.error('Error fetching place details:', err);
-            return null;
-          }
-        });
-
-        const cities = (await Promise.all(cityPromises)).filter(Boolean) as ZipcodeData[];
-
-        // Remove duplicates based on city + state
-        const uniqueCities = Array.from(
-          new Map(cities.map(city => [`${city.city}-${city.state}`, city])).values()
-        );
-
-        if (uniqueCities.length === 0) {
-          setCityResults([]);
-          setCityError('No cities with zipcodes found. Try a different search.');
-          return;
-        }
-
-        setCityResults(uniqueCities);
+        setCityResults(cities);
         setCityError(null);
       } catch (err) {
         console.error('City search error:', err);
         setCityResults([]);
-        setCityError('Failed to search cities. Please try again.');
+        
+        // Show user-friendly error message
+        if (err instanceof Error) {
+          setCityError(err.message);
+        } else {
+          setCityError('Failed to search cities. Please try again.');
+        }
       } finally {
         setIsValidatingCity(false);
       }
     };
 
-    // Debounce for better UX
+    // Debounce for better UX (300ms already optimal)
     const timeoutId = setTimeout(searchCities, 300);
     return () => clearTimeout(timeoutId);
   }, [cityInput]);
