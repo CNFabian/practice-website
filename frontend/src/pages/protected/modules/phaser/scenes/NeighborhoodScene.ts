@@ -840,7 +840,7 @@ export default class NeighborhoodScene extends BaseScene {
     // ADD HOVERING ANIMATION - minimal floating effect with random delay
     const randomDelay = Math.random() * 1500; // Random delay between 0-1500ms
     
-    const hoverTween = this.tweens.add({
+    this.tweens.add({
       targets: houseImage,
       y: -scale(3), // Move up by 3 pixels (scaled)
       duration: 1500, // 1.5 seconds

@@ -4,7 +4,8 @@ import {
   OnboardingImage1,
   OnboardingImage2,
   OnboardingImage3_5,
-  OnboardingImage4
+  OnboardingImage4,
+  TextBox
 } from '../../../assets';
 import {
   getOnboardingOptions,
@@ -46,11 +47,12 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     zipcode: ''
   });
 
-  // Zipcode validation state
-  const [zipcodeInput, setZipcodeInput] = useState('');
-  const [isValidatingZipcode, setIsValidatingZipcode] = useState(false);
-  const [zipcodeData, setZipcodeData] = useState<ZipcodeData | null>(null);
-  const [zipcodeError, setZipcodeError] = useState<string | null>(null);
+  // City validation state
+  const [cityInput, setCityInput] = useState('');
+  const [isValidatingCity, setIsValidatingCity] = useState(false);
+  const [cityResults, setCityResults] = useState<ZipcodeData[]>([]);
+  const [selectedCities, setSelectedCities] = useState<ZipcodeData[]>([]);
+  const [cityError, setCityError] = useState<string | null>(null);
 
   // Load onboarding options on mount
   useEffect(() => {
@@ -69,54 +71,154 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Validate zipcode when user types
+  // Search cities when user types - GOOGLE PLACES AUTOCOMPLETE
   useEffect(() => {
-    const validateZipcode = async () => {
-      // Only validate if input is exactly 5 digits
-      if (zipcodeInput.length !== 5 || !/^\d{5}$/.test(zipcodeInput)) {
-        setZipcodeData(null);
-        setZipcodeError(null);
-        setFormData({ ...formData, zipcode: '' });
+    const searchCities = async () => {
+      // Only search if input is at least 2 characters
+      if (cityInput.length < 2) {
+        setCityResults([]);
+        setCityError(null);
         return;
       }
 
-      setIsValidatingZipcode(true);
-      setZipcodeError(null);
+      setIsValidatingCity(true);
+      setCityError(null);
 
       try {
-        const response = await fetch(`https://api.zippopotam.us/us/${zipcodeInput}`);
+        const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
         
+        if (!GOOGLE_API_KEY) {
+          console.error('Google Places API key not configured');
+          setCityResults([]);
+          setCityError('Configuration error. Please add VITE_GOOGLE_PLACES_API_KEY to .env');
+          setIsValidatingCity(false);
+          return;
+        }
+
+        // Use Google Places Autocomplete API
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
+          `input=${encodeURIComponent(cityInput)}` +
+          `&types=(cities)` + // Only cities
+          `&components=country:us` + // USA only
+          `&key=${GOOGLE_API_KEY}`
+        );
+
         if (!response.ok) {
-          throw new Error('Invalid zipcode');
+          throw new Error('Failed to search cities');
         }
 
         const data = await response.json();
-        
-        // Extract city and state from response
-        const place = data.places[0];
-        const zipcodeInfo: ZipcodeData = {
-          city: place['place name'],
-          state: place['state abbreviation'],
-          zipcode: zipcodeInput
-        };
 
-        setZipcodeData(zipcodeInfo);
-        setFormData({ ...formData, zipcode: zipcodeInput });
-        setZipcodeError(null);
+        if (data.status === 'ZERO_RESULTS' || !data.predictions || data.predictions.length === 0) {
+          setCityResults([]);
+          setCityError('No cities found. Try a different search.');
+          return;
+        }
+
+        if (data.status === 'REQUEST_DENIED') {
+          console.error('Google Places API Error:', data.error_message);
+          setCityResults([]);
+          setCityError('API access error. Please check your API key configuration.');
+          return;
+        }
+
+        // Process predictions to get city, state, and zipcode
+        const cityPromises = data.predictions.slice(0, 10).map(async (prediction: any) => {
+          try {
+            // Get place details to fetch zipcode
+            const detailsResponse = await fetch(
+              `https://maps.googleapis.com/maps/api/place/details/json?` +
+              `place_id=${prediction.place_id}` +
+              `&fields=address_components` +
+              `&key=${GOOGLE_API_KEY}`
+            );
+
+            if (!detailsResponse.ok) return null;
+
+            const detailsData = await detailsResponse.json();
+            
+            if (!detailsData.result?.address_components) return null;
+
+            // Extract city, state, and zipcode from address components
+            let city = '';
+            let state = '';
+            let zipcode = '';
+
+            for (const component of detailsData.result.address_components) {
+              if (component.types.includes('locality')) {
+                city = component.long_name;
+              }
+              if (component.types.includes('administrative_area_level_1')) {
+                state = component.short_name; // State abbreviation (e.g., CA, TX)
+              }
+              if (component.types.includes('postal_code')) {
+                zipcode = component.long_name;
+              }
+            }
+
+            // If no zipcode found in this result, try to get a default one for the city
+            if (!zipcode && city && state) {
+              // Use a geocoding call to get approximate zipcode
+              const geocodeResponse = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?` +
+                `address=${encodeURIComponent(city + ', ' + state)}` +
+                `&key=${GOOGLE_API_KEY}`
+              );
+              
+              if (geocodeResponse.ok) {
+                const geocodeData = await geocodeResponse.json();
+                if (geocodeData.results?.[0]?.address_components) {
+                  for (const component of geocodeData.results[0].address_components) {
+                    if (component.types.includes('postal_code')) {
+                      zipcode = component.long_name;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+
+            // Only return if we have city, state, and zipcode
+            if (city && state && zipcode) {
+              return { city, state, zipcode };
+            }
+
+            return null;
+          } catch (err) {
+            console.error('Error fetching place details:', err);
+            return null;
+          }
+        });
+
+        const cities = (await Promise.all(cityPromises)).filter(Boolean) as ZipcodeData[];
+
+        // Remove duplicates based on city + state
+        const uniqueCities = Array.from(
+          new Map(cities.map(city => [`${city.city}-${city.state}`, city])).values()
+        );
+
+        if (uniqueCities.length === 0) {
+          setCityResults([]);
+          setCityError('No cities with zipcodes found. Try a different search.');
+          return;
+        }
+
+        setCityResults(uniqueCities);
+        setCityError(null);
       } catch (err) {
-        console.error('Zipcode validation error:', err);
-        setZipcodeData(null);
-        setZipcodeError('Invalid zipcode. Please enter a valid US zipcode.');
-        setFormData({ ...formData, zipcode: '' });
+        console.error('City search error:', err);
+        setCityResults([]);
+        setCityError('Failed to search cities. Please try again.');
       } finally {
-        setIsValidatingZipcode(false);
+        setIsValidatingCity(false);
       }
     };
 
-    // Debounce the validation
-    const timeoutId = setTimeout(validateZipcode, 500);
+    // Debounce for better UX
+    const timeoutId = setTimeout(searchCities, 300);
     return () => clearTimeout(timeoutId);
-  }, [zipcodeInput]);
+  }, [cityInput]);
 
   // Progress calculation (6 total steps)
   const progress = ((currentStep + 1) / 6) * 100;
@@ -141,7 +243,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
       case 4: // Timeline
         return formData.homeownership_timeline_months > 0;
       case 5: // City/Zipcode
-        return formData.zipcode !== '' && zipcodeData !== null;
+        return selectedCities.length > 0;
       default:
         return false;
     }
@@ -171,9 +273,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
         homeownership_timeline_months: formData.homeownership_timeline_months
       });
 
-      // Step 5: Zipcode
+      // Step 5: Zipcode - send the first selected city's zipcode (or you can modify backend to accept multiple)
       await completeStep5({
-        zipcode: formData.zipcode
+        zipcode: selectedCities[0].zipcode // Sending first city's zipcode for now
       });
 
       console.log('All onboarding steps completed successfully');
@@ -219,8 +321,8 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
         <div className="max-w-4xl mx-auto">
           <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%`, backgroundColor: '#6B85F5' }}
             />
           </div>
         </div>
@@ -230,45 +332,69 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="max-w-2xl w-full">
           
-          {/* Screen 1: Welcome */}
-          {currentStep === 0 && (
-            <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex flex-col items-center">
-                <img src={OnboardingImage1} alt="Welcome" className="w-64 h-64 object-contain mb-6" />
-                <div className="bg-white rounded-3xl shadow-lg px-8 py-4 inline-block">
-                  <h1 className="text-2xl font-semibold text-gray-800">
-                    Hi! Welcome to NestNavigate!
-                  </h1>
+      {/* Screen 1: Welcome */}
+      {currentStep === 0 && (
+        <div className="text-center space-y-8 animate-fadeIn">
+          <div className="flex items-center justify-center">
+            <div className="relative inline-block">
+              {/* Bird Image */}
+              <img src={OnboardingImage1} alt="Welcome" className="w-72 h-72 object-contain" />
+              {/* Text Box positioned absolutely above and to the right */}
+              <div className="absolute -top-24 left-1/2 translate-x-8 w-80">
+                <div className="relative">
+                  <img src={TextBox} alt="" className="w-full h-auto" />
+                  <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
+                    <h1 className="text-lg font-semibold text-gray-700 text-center leading-relaxed">
+                      Hi! Welcome to<br />NestNavigate!
+                    </h1>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={handleNext}
-                className="mx-auto block px-12 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full text-lg font-medium transition-colors shadow-md"
-              >
-                CONTINUE
-              </button>
             </div>
-          )}
+          </div>
+          <button
+            onClick={handleNext}
+            className="mx-auto block px-12 py-4 text-white rounded-full text-lg font-medium transition-colors shadow-md"
+            style={{ backgroundColor: '#6B85F5' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5A73E0'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6B85F5'}
+          >
+            CONTINUE
+          </button>
+        </div>
+      )}
 
-          {/* Screen 2: Let's Build */}
-          {currentStep === 1 && (
-            <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex flex-col items-center">
-                <img src={OnboardingImage2} alt="Let's Build" className="w-64 h-64 object-contain mb-6" />
-                <div className="bg-white rounded-3xl shadow-lg px-8 py-4 inline-block">
-                  <h1 className="text-2xl font-semibold text-gray-800">
-                    Let's build the learning path for you!
-                  </h1>
+      {/* Screen 2: Let's Build */}
+      {currentStep === 1 && (
+        <div className="text-center space-y-8 animate-fadeIn">
+          <div className="flex items-center justify-center">
+            <div className="relative inline-block">
+              {/* Bird Image */}
+              <img src={OnboardingImage2} alt="Let's Build" className="w-48 h-72 object-contain" />
+              {/* Text Box positioned absolutely above and to the right */}
+              <div className="absolute -top-24 left-1/2 translate-x-8 w-80">
+                <div className="relative">
+                  <img src={TextBox} alt="" className="w-full h-auto" />
+                  <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
+                    <h1 className="text-lg font-semibold text-gray-700 text-center leading-relaxed">
+                      Let's build the learning<br />path for you!
+                    </h1>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={handleNext}
-                className="mx-auto block px-12 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full text-lg font-medium transition-colors shadow-md"
-              >
-                CONTINUE
-              </button>
             </div>
-          )}
+          </div>
+          <button
+            onClick={handleNext}
+            className="mx-auto block px-12 py-4 text-white rounded-full text-lg font-medium transition-colors shadow-md"
+            style={{ backgroundColor: '#6B85F5' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5A73E0'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6B85F5'}
+          >
+            CONTINUE
+          </button>
+        </div>
+      )}
 
           {/* Screen 3: Professionals */}
           {currentStep === 2 && (
@@ -283,25 +409,31 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
               <div className="space-y-8">
                 {/* Real Estate Officer */}
                 <div>
-                  <h2 className="text-xl font-semibold text-indigo-600 mb-4">Real Estate Officer?</h2>
+                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#6B85F5' }}>Real Estate Officer?</h2>
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={() => setFormData({ ...formData, has_realtor: true })}
-                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
-                        formData.has_realtor === true
-                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
-                      }`}
+                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
+                      style={formData.has_realtor === true ? { 
+                        backgroundColor: '#EBF0FF', 
+                        borderColor: '#6B85F5'
+                      } : {
+                        backgroundColor: 'white',
+                        borderColor: '#d1d5db'
+                      }}
                     >
                       Yes, I am
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, has_realtor: false })}
-                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
-                        formData.has_realtor === false
-                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
-                      }`}
+                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
+                      style={formData.has_realtor === false ? { 
+                        backgroundColor: '#EBF0FF', 
+                        borderColor: '#6B85F5'
+                      } : {
+                        backgroundColor: 'white',
+                        borderColor: '#d1d5db'
+                      }}
                     >
                       Not yet
                     </button>
@@ -310,25 +442,31 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
 
                 {/* Loan Officer */}
                 <div>
-                  <h2 className="text-xl font-semibold text-indigo-600 mb-4">Loan Officer?</h2>
+                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#6B85F5' }}>Loan Officer?</h2>
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={() => setFormData({ ...formData, has_loan_officer: true })}
-                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
-                        formData.has_loan_officer === true
-                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
-                      }`}
+                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
+                      style={formData.has_loan_officer === true ? { 
+                        backgroundColor: '#EBF0FF', 
+                        borderColor: '#6B85F5'
+                      } : {
+                        backgroundColor: 'white',
+                        borderColor: '#d1d5db'
+                      }}
                     >
                       Yes, I am
                     </button>
                     <button
                       onClick={() => setFormData({ ...formData, has_loan_officer: false })}
-                      className={`px-8 py-3 rounded-xl border-2 transition-all ${
-                        formData.has_loan_officer === false
-                          ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
-                      }`}
+                      className="px-8 py-3 rounded-xl border-2 transition-all text-gray-700"
+                      style={formData.has_loan_officer === false ? { 
+                        backgroundColor: '#EBF0FF', 
+                        borderColor: '#6B85F5'
+                      } : {
+                        backgroundColor: 'white',
+                        borderColor: '#d1d5db'
+                      }}
                     >
                       Not yet
                     </button>
@@ -336,17 +474,39 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              <button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
-                  canProceed()
-                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                CONTINUE
-              </button>
+              {/* Bottom Navigation Buttons */}
+              <div className="flex gap-8 justify-center pt-8">
+                <button
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
+                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  &lt; Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
+                  style={{ 
+                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
+                    cursor: canProceed() ? 'pointer' : 'not-allowed'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#5A73E0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#6B85F5';
+                    }
+                  }}
+                >
+                  NEXT &gt;
+                </button>
+              </div>
             </div>
           )}
 
@@ -365,28 +525,53 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                   <button
                     key={option.id}
                     onClick={() => setFormData({ ...formData, wants_expert_contact: option.name })}
-                    className={`w-full px-8 py-4 rounded-xl border-2 transition-all ${
-                      formData.wants_expert_contact === option.name
-                        ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
-                        : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-300'
-                    }`}
+                    className="w-full px-8 py-4 rounded-xl border-2 transition-all text-gray-700"
+                    style={formData.wants_expert_contact === option.name ? { 
+                      backgroundColor: '#EBF0FF', 
+                      borderColor: '#6B85F5'
+                    } : {
+                      backgroundColor: 'white',
+                      borderColor: '#d1d5db'
+                    }}
                   >
                     {option.name}
                   </button>
                 ))}
               </div>
 
-              <button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
-                  canProceed()
-                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                CONTINUE
-              </button>
+              {/* Bottom Navigation Buttons */}
+              <div className="flex gap-8 justify-center pt-8">
+                <button
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
+                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  &lt; Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
+                  style={{ 
+                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
+                    cursor: canProceed() ? 'pointer' : 'not-allowed'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#5A73E0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#6B85F5';
+                    }
+                  }}
+                >
+                  NEXT &gt;
+                </button>
+              </div>
             </div>
           )}
 
@@ -402,7 +587,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
 
               <div className="max-w-xl mx-auto space-y-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-indigo-600 mb-2">
+                  <div className="text-4xl font-bold mb-2" style={{ color: '#6B85F5' }}>
                     {formatTimeline(formData.homeownership_timeline_months)}
                   </div>
                   <div className="text-sm text-gray-500">Estimated timeline</div>
@@ -417,7 +602,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                     onChange={(e) => setFormData({ ...formData, homeownership_timeline_months: parseInt(e.target.value) })}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     style={{
-                      background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb 100%)`
+                      background: `linear-gradient(to right, #6B85F5 0%, #6B85F5 ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb ${((formData.homeownership_timeline_months - 6) / 54) * 100}%, #e5e7eb 100%)`
                     }}
                   />
                   <div className="flex justify-between text-sm text-gray-600 mt-2">
@@ -427,21 +612,43 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              <button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
-                  canProceed()
-                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                CONTINUE
-              </button>
+              {/* Bottom Navigation Buttons */}
+              <div className="flex gap-8 justify-center pt-8">
+                <button
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
+                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  &lt; Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
+                  style={{ 
+                    backgroundColor: canProceed() ? '#6B85F5' : '#C8D4F9',
+                    cursor: canProceed() ? 'pointer' : 'not-allowed'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#5A73E0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canProceed()) {
+                      e.currentTarget.style.backgroundColor = '#6B85F5';
+                    }
+                  }}
+                >
+                  NEXT &gt;
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Screen 6: Zipcode */}
+          {/* Screen 6: City Search */}
           {currentStep === 5 && (
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
@@ -452,70 +659,149 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
               </div>
 
               <div className="max-w-xl mx-auto space-y-4">
-                <p className="text-sm text-indigo-600">Enter your zipcode</p>
+                <p className="text-sm" style={{ color: '#6B85F5' }}>Search and select cities you're interested in</p>
                 
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Enter 5-digit zipcode"
-                    value={zipcodeInput}
+                    placeholder="e.g., San Francisco, Los Angeles"
+                    value={cityInput}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-                      setZipcodeInput(value);
+                      setCityInput(e.target.value);
                     }}
-                    maxLength={5}
-                    className={`w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 text-lg transition-colors ${
-                      zipcodeData
-                        ? 'border-green-500 focus:ring-green-500'
-                        : zipcodeError
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-indigo-500 focus:ring-indigo-500'
-                    }`}
+                    className="w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 text-lg transition-colors"
+                    style={{
+                      borderColor: selectedCities.length > 0 ? '#10b981' : cityError ? '#ef4444' : '#6B85F5',
+                      ...(selectedCities.length > 0 || cityError ? {} : { '--tw-ring-color': '#6B85F5' } as any)
+                    }}
                   />
                   
                   {/* Loading Spinner */}
-                  {isValidatingZipcode && (
+                  {isValidatingCity && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: '#6B85F5', borderTopColor: 'transparent' }}></div>
                     </div>
                   )}
                   
                   {/* Success Checkmark */}
-                  {zipcodeData && !isValidatingZipcode && (
+                  {selectedCities.length > 0 && !isValidatingCity && !cityInput && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-2xl">
                       ✓
                     </div>
                   )}
                   
                   {/* Error X */}
-                  {zipcodeError && !isValidatingZipcode && zipcodeInput.length === 5 && (
+                  {cityError && !isValidatingCity && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 text-2xl">
                       ✕
                     </div>
                   )}
                 </div>
 
-                {/* Zipcode Info Display */}
-                {zipcodeData && (
-                  <div className="bg-green-50 border-2 border-green-500 rounded-xl p-4 text-left">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <span className="text-lg">✓</span>
-                      <div>
-                        <p className="font-semibold text-lg">{zipcodeData.city}, {zipcodeData.state}</p>
-                        <p className="text-sm text-green-600">Zipcode: {zipcodeData.zipcode}</p>
-                      </div>
+                {/* City Results - Show search results */}
+                {cityResults.length > 0 && !isValidatingCity && (
+                  <div className="border-2 rounded-xl overflow-hidden" style={{ borderColor: '#6B85F5' }}>
+                    <div className="bg-gray-50 px-4 py-2 border-b-2" style={{ borderColor: '#6B85F5' }}>
+                      <p className="text-sm font-medium text-gray-700">Click to add cities:</p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {cityResults.map((city, index) => {
+                        const isSelected = selectedCities.some(
+                          (selected) => selected.city === city.city && selected.state === city.state
+                        );
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              if (isSelected) {
+                                // Remove city
+                                setSelectedCities(selectedCities.filter(
+                                  (selected) => !(selected.city === city.city && selected.state === city.state)
+                                ));
+                              } else {
+                                // Add city
+                                setSelectedCities([...selectedCities, city]);
+                              }
+                            }}
+                            className="w-full px-4 py-3 text-left transition-colors border-b border-gray-200 last:border-b-0 flex items-center justify-between"
+                            style={{
+                              backgroundColor: isSelected ? '#EBF0FF' : 'white'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.backgroundColor = '#F5F7FF';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.backgroundColor = 'white';
+                              }
+                            }}
+                          >
+                            <div>
+                              <div className="font-medium text-gray-800">{city.city}, {city.state}</div>
+                              <div className="text-sm text-gray-500">Zipcode: {city.zipcode}</div>
+                            </div>
+                            {isSelected && (
+                              <div className="text-green-500 text-xl">✓</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Cities Display */}
+                {selectedCities.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <p className="text-sm font-medium text-gray-700">
+                        Selected Cities ({selectedCities.length})
+                      </p>
+                      <button
+                        onClick={() => setSelectedCities([])}
+                        className="text-sm font-medium hover:underline"
+                        style={{ color: '#6B85F5' }}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedCities.map((city, index) => (
+                        <div
+                          key={index}
+                          className="bg-green-50 border-2 border-green-500 rounded-xl p-3 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 text-green-700">
+                            <span className="text-sm">✓</span>
+                            <div>
+                              <p className="font-semibold text-sm">{city.city}, {city.state}</p>
+                              <p className="text-xs text-green-600">Zipcode: {city.zipcode}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedCities(selectedCities.filter((_, i) => i !== index));
+                            }}
+                            className="text-green-700 hover:text-green-900 text-xl leading-none"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Error Message */}
-                {zipcodeError && (
-                  <div className="text-red-600 text-sm">{zipcodeError}</div>
+                {cityError && (
+                  <div className="text-red-600 text-sm">{cityError}</div>
                 )}
 
                 {/* Helper Text */}
-                {!zipcodeInput && (
-                  <p className="text-sm text-gray-500">Please enter a valid 5-digit US zipcode</p>
+                {!cityInput && selectedCities.length === 0 && (
+                  <p className="text-sm text-gray-500">Start typing to search for cities</p>
                 )}
               </div>
 
@@ -523,17 +809,39 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
                 <div className="text-red-600 text-sm font-medium">{error}</div>
               )}
 
-              <button
-                onClick={handleComplete}
-                disabled={!canProceed() || isLoading}
-                className={`mx-auto block px-12 py-4 rounded-full text-lg font-medium transition-all shadow-md ${
-                  canProceed() && !isLoading
-                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {isLoading ? 'LOADING...' : "LET'S GO"}
-              </button>
+              {/* Bottom Navigation Buttons */}
+              <div className="flex gap-8 justify-center pt-8">
+                <button
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-24 py-2 rounded-full border-2 bg-white font-medium transition-all"
+                  style={{ borderColor: '#6B85F5', color: '#6B85F5' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F5F7FF'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  &lt; Back
+                </button>
+                <button
+                  onClick={handleComplete}
+                  disabled={!canProceed() || isLoading}
+                  className="px-24 py-2 rounded-full font-medium transition-all text-white"
+                  style={{ 
+                    backgroundColor: (canProceed() && !isLoading) ? '#6B85F5' : '#C8D4F9',
+                    cursor: (canProceed() && !isLoading) ? 'pointer' : 'not-allowed'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canProceed() && !isLoading) {
+                      e.currentTarget.style.backgroundColor = '#5A73E0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (canProceed() && !isLoading) {
+                      e.currentTarget.style.backgroundColor = '#6B85F5';
+                    }
+                  }}
+                >
+                  {isLoading ? 'LOADING...' : "LET'S GO"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -548,7 +856,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
           height: 20px;
           border-radius: 50%;
           background: white;
-          border: 3px solid #6366f1;
+          border: 3px solid #6B85F5;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
@@ -558,7 +866,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
           height: 20px;
           border-radius: 50%;
           background: white;
-          border: 3px solid #6366f1;
+          border: 3px solid #6B85F5;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
