@@ -77,10 +77,10 @@ const FAQSection: React.FC = () => {
 
   return (
     <div>
-      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 mb-3">
+      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-text-blue-black mb-3">
         Frequently Asked Questions
       </OnestFont>
-      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 mb-8">
+      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey mb-8">
         Find quick answers to common questions about our platform and services.
       </OnestFont>
 
@@ -92,10 +92,10 @@ const FAQSection: React.FC = () => {
             placeholder="Search FAQs..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full px-4 py-3 pl-10 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 pl-10 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all"
           />
           <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-unavailable-button"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -105,7 +105,7 @@ const FAQSection: React.FC = () => {
           {searchTerm && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -117,13 +117,13 @@ const FAQSection: React.FC = () => {
 
       {/* Category Filters */}
       <div className="mb-8">
-        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-sm text-gray-700 mb-3">
+        <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-sm text-text-grey mb-3">
           Filter by Category
         </OnestFont>
         <div className="flex flex-wrap gap-2">
           {isLoadingCategories ? (
-            <div className="px-4 py-2 bg-gray-100 rounded-full">
-              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-sm text-gray-500">
+            <div className="px-4 py-2 bg-light-background-blue rounded-full">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-sm text-unavailable-button">
                 Loading categories...
               </OnestFont>
             </div>
@@ -134,8 +134,8 @@ const FAQSection: React.FC = () => {
                 onClick={() => handleCategoryChange(category)}
                 className={`px-4 py-2 rounded-full text-sm transition-all ${
                   selectedCategory === category
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-logo-blue text-white'
+                    : 'bg-light-background-blue text-text-grey hover:bg-light-background-blue/80'
                 }`}
               >
                 <OnestFont as="span" weight={selectedCategory === category ? 500 : 300} lineHeight="relaxed">
@@ -150,8 +150,8 @@ const FAQSection: React.FC = () => {
       {/* Loading State */}
       {(isLoadingFAQs || isSearching) && (
         <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-600">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-logo-blue mb-4"></div>
+          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey">
             {isSearching ? 'Searching...' : 'Loading FAQs...'}
           </OnestFont>
         </div>
@@ -159,12 +159,12 @@ const FAQSection: React.FC = () => {
 
       {/* Error State */}
       {faqError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mb-6 p-4 bg-status-red/10 border border-status-red rounded-lg">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-status-red mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-red-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-status-red">
               Failed to load FAQs. Using fallback data.
             </OnestFont>
           </div>
@@ -177,25 +177,25 @@ const FAQSection: React.FC = () => {
           {faqs.map((faq) => (
             <div
               key={faq.id}
-              className="border border-gray-200 rounded-lg overflow-hidden transition-all hover:shadow-md"
+              className="border border-light-background-blue rounded-lg overflow-hidden transition-all hover:shadow-md"
             >
               <button
                 onClick={() => toggleFAQ(faq.id)}
-                className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
+                className="w-full px-6 py-4 text-left bg-white hover:bg-light-background-blue focus:outline-none focus:bg-light-background-blue transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-gray-900 text-base">
+                    <OnestFont as="h3" weight={500} lineHeight="relaxed" className="text-text-blue-black text-base">
                       {faq.question}
                     </OnestFont>
                     {faq.category && (
-                      <OnestFont as="span" weight={300} lineHeight="relaxed" className="text-sm text-blue-600 mt-1 inline-block">
+                      <OnestFont as="span" weight={300} lineHeight="relaxed" className="text-sm text-logo-blue mt-1 inline-block">
                         {faq.category}
                       </OnestFont>
                     )}
                   </div>
                   <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                    className={`w-5 h-5 text-unavailable-button transition-transform ${
                       expandedFAQ === faq.id ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -208,8 +208,8 @@ const FAQSection: React.FC = () => {
               </button>
               
               {expandedFAQ === faq.id && (
-                <div className="px-6 pb-4 bg-gray-50 border-t border-gray-200">
-                  <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-gray-700 pt-3">
+                <div className="px-6 pb-4 bg-light-background-blue border-t border-light-background-blue">
+                  <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-text-grey pt-3">
                     {faq.answer}
                   </OnestFont>
                 </div>
@@ -222,13 +222,13 @@ const FAQSection: React.FC = () => {
       {/* No Results State */}
       {!isLoadingFAQs && !isSearching && faqs.length === 0 && !faqError && (
         <div className="text-center py-8">
-          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 text-unavailable-button mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-gray-500 mb-2">
+          <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-unavailable-button mb-2">
             No FAQs found
           </OnestFont>
-          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-400 text-sm">
+          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-unavailable-button text-sm">
             {searchTerm ? 'Try adjusting your search terms' : 'No FAQs available for this category'}
           </OnestFont>
         </div>

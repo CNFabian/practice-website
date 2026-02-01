@@ -8,10 +8,10 @@ interface TaskItemProps {
 
 const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   return (
-    <div className="border-b border-gray-300 min-h-14 py-2">
+    <div className="border-b border-light-background-blue min-h-14 py-2">
       <div className="flex items-center justify-between h-full gap-2">
         <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 min-w-0 flex-1">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-logo-blue/10 rounded-full flex items-center justify-center flex-shrink-0">
             <img
               src={task.icon}
               alt="Avatar"
@@ -22,7 +22,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
             weight={300} 
             lineHeight="relaxed"
             className={`text-sm sm:text-base lg:text-lg font-medium min-w-0 ${
-              task.isWIP ? 'text-blue-600' : 'text-gray-900'
+              task.isWIP ? 'text-logo-blue' : 'text-text-blue-black'
             }`}
             style={{ 
               wordBreak: 'break-word',
@@ -34,11 +34,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
           </OnestFont>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3 flex-shrink-0">
-          <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap">
+          <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey text-xs sm:text-sm font-medium whitespace-nowrap">
             {task.points}+
           </OnestFont>
           <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center ${
-            task.completed ? 'bg-green-500' : 'bg-gray-400'
+            task.completed ? 'bg-status-green' : 'bg-unavailable-button'
           }`}>
             {task.completed && (
               <svg

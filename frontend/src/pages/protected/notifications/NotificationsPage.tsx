@@ -72,13 +72,13 @@ const NotificationsPage: React.FC = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case 'high':
-        return 'bg-red-100 text-red-800';
+        return 'bg-status-red/10 text-status-red';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-status-yellow/10 text-status-yellow';
       case 'low':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-logo-blue/10 text-logo-blue';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-light-background-blue text-text-grey';
     }
   };
 
@@ -88,10 +88,10 @@ const NotificationsPage: React.FC = () => {
     <div className="p-6 max-w-8xl mx-auto h-full overflow-y-auto">
       {/* Header */}
       <div className="mb-8">
-        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-text-blue-black mb-3 mt-3">
           Notifications
         </OnestFont>
-        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600">
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey">
           Stay updated with the latest news, reminders, and important information.
         </OnestFont>
       </div>
@@ -99,15 +99,14 @@ const NotificationsPage: React.FC = () => {
       {/* Filter and Actions Bar */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+        <div className="flex items-center gap-2 bg-light-background-blue p-1 rounded-lg w-fit">
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-md text-sm transition-colors ${
               filter === 'all'
-                ? 'text-blue-700 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-tab-active text-logo-blue shadow-sm'
+                : 'text-text-grey hover:text-text-blue-black'
             }`}
-            style={filter === 'all' ? { backgroundColor: '#D7DEFF' } : {}}
           >
             <OnestFont weight={filter === 'all' ? 500 : 300} lineHeight="relaxed">
               All ({notifications.length})
@@ -117,10 +116,9 @@ const NotificationsPage: React.FC = () => {
             onClick={() => setFilter('unread')}
             className={`px-4 py-2 rounded-md text-sm transition-colors ${
               filter === 'unread'
-                ? 'text-blue-700 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-tab-active text-logo-blue shadow-sm'
+                : 'text-text-grey hover:text-text-blue-black'
             }`}
-            style={filter === 'unread' ? { backgroundColor: '#D7DEFF' } : {}}
           >
             <OnestFont weight={filter === 'unread' ? 500 : 300} lineHeight="relaxed">
               Unread ({unreadCount})
@@ -132,7 +130,7 @@ const NotificationsPage: React.FC = () => {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+            className="text-sm text-logo-blue hover:opacity-90 transition-colors"
           >
             <OnestFont weight={500} lineHeight="relaxed">Mark all as read</OnestFont>
           </button>
@@ -143,27 +141,27 @@ const NotificationsPage: React.FC = () => {
       <div className="space-y-3">
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600">Loading notifications...</OnestFont>
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-logo-blue/20 border-t-logo-blue mx-auto mb-4"></div>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">Loading notifications...</OnestFont>
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <OnestFont weight={300} lineHeight="relaxed" className="text-red-600 mb-4">{error}</OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-status-red mb-4">{error}</OnestFont>
             <button
               onClick={() => {
                 queryClient.invalidateQueries({
                   queryKey: queryKeys.notifications.list(),
                 });
               }}
-              className="text-blue-600 hover:text-blue-700"
+              className="text-logo-blue hover:opacity-90"
             >
               <OnestFont weight={500} lineHeight="relaxed">Try again</OnestFont>
             </button>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="text-center py-12 bg-light-background-blue rounded-lg">
             <svg
-              className="mx-auto h-12 w-12 text-gray-400 mb-4"
+              className="mx-auto h-12 w-12 text-unavailable-button mb-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -175,10 +173,10 @@ const NotificationsPage: React.FC = () => {
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
-            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey text-lg mb-2">
               No notifications
             </OnestFont>
-            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-500 text-sm">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-unavailable-button text-sm">
               You're all caught up! Check back later for updates.
             </OnestFont>
           </div>
@@ -188,8 +186,8 @@ const NotificationsPage: React.FC = () => {
               key={notification.id}
               className={`bg-white rounded-lg p-4 border transition-all hover:shadow-md ${
                 notification.is_read
-                  ? 'border-gray-200 opacity-75'
-                  : 'border-blue-200 bg-blue-50/30'
+                  ? 'border-light-background-blue opacity-75'
+                  : 'border-logo-blue/30 bg-logo-blue/5'
               }`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -198,14 +196,14 @@ const NotificationsPage: React.FC = () => {
                   <div className="flex items-center gap-2 mb-1">
                     {/* Unread Indicator */}
                     {!notification.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
+                      <div className="w-2 h-2 rounded-full bg-logo-blue flex-shrink-0"></div>
                     )}
                     
                     {/* Title */}
                     <OnestFont
                       weight={notification.is_read ? 500 : 700}
                       lineHeight="relaxed"
-                      className="text-gray-900 truncate"
+                      className="text-text-blue-black truncate"
                     >
                       {notification.title}
                     </OnestFont>
@@ -221,12 +219,12 @@ const NotificationsPage: React.FC = () => {
                   </div>
 
                   {/* Message */}
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mb-2 line-clamp-2">
                     {notification.message}
                   </OnestFont>
 
                   {/* Metadata */}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-unavailable-button">
                     <span>{formatDate(notification.created_at)}</span>
                     <span>•</span>
                     <span className="capitalize">{notification.notification_type}</span>
@@ -238,7 +236,7 @@ const NotificationsPage: React.FC = () => {
                   {/* Mark as Read/Unread */}
                   <button
                     onClick={() => handleMarkAsRead(notification.id, notification.is_read)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="p-2 text-unavailable-button hover:text-logo-blue hover:bg-logo-blue/10 rounded-lg transition-colors"
                     title={notification.is_read ? 'Mark as unread' : 'Mark as read'}
                   >
                     <svg
@@ -259,7 +257,7 @@ const NotificationsPage: React.FC = () => {
                   {/* Delete */}
                   <button
                     onClick={() => handleDelete(notification.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-unavailable-button hover:text-status-red hover:bg-status-red/10 rounded-lg transition-colors"
                     title="Delete notification"
                   >
                     <svg

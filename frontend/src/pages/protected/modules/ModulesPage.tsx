@@ -6,7 +6,6 @@ import {
 } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
-import Minigame from './Minigame';
 import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
@@ -167,13 +166,6 @@ const ModulesPage: React.FC = () => {
       ...prev,
       currentView: 'house',
       lessonId: null,
-    }));
-  }, []);
-
-  const handleCloseMinigame = useCallback(() => {
-    setNavState(prev => ({
-      ...prev,
-      currentView: 'house',
     }));
   }, []);
 
@@ -511,25 +503,25 @@ const ModulesPage: React.FC = () => {
       {/* Loading indicators */}
       {isLoadingModules && (
         <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-gray-600">Loading modules...</p>
+          <p className="text-sm text-text-grey">Loading modules...</p>
         </div>
       )}
 
       {modulesError && (
-        <div className="absolute top-4 right-4 bg-red-100 px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-red-600">Failed to load modules</p>
+        <div className="absolute top-4 right-4 bg-status-red/10 px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-status-red">Failed to load modules</p>
         </div>
       )}
 
       {isLoadingLessons && navState.currentView === 'house' && (
         <div className="absolute top-16 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-gray-600">Loading lessons...</p>
+          <p className="text-sm text-text-grey">Loading lessons...</p>
         </div>
       )}
 
       {lessonsError && navState.currentView === 'house' && (
-        <div className="absolute top-16 right-4 bg-red-100 px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-red-600">Failed to load lessons</p>
+        <div className="absolute top-16 right-4 bg-status-red/10 px-4 py-2 rounded-lg shadow-lg z-50">
+          <p className="text-sm text-status-red">Failed to load lessons</p>
         </div>
       )}
 
@@ -560,8 +552,8 @@ const ModulesPage: React.FC = () => {
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-8">
-            <p className="text-2xl font-bold text-red-600 mb-4">Lesson not found</p>
-            <div className="bg-gray-100 p-4 rounded text-left">
+            <p className="text-2xl font-bold text-status-red mb-4">Lesson not found</p>
+            <div className="bg-light-background-blue p-4 rounded text-left">
               <p><strong>navState.lessonId:</strong> {navState.lessonId}</p>
               <p><strong>navState.moduleId:</strong> {navState.moduleId}</p>
               <p><strong>navState.moduleBackendId:</strong> {navState.moduleBackendId}</p>
@@ -573,13 +565,6 @@ const ModulesPage: React.FC = () => {
         )}
       </div>
     )}
-
-      {/* Minigame view */}
-      {navState.currentView === 'minigame' && (
-        <div className="absolute inset-0 bg-white z-20">
-          <Minigame onClose={handleCloseMinigame} />
-        </div>
-      )}
     </div>
   );
 };

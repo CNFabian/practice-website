@@ -63,7 +63,7 @@ export default class MapScene extends BaseScene {
       // Fallback: Set a solid color background
       const bgElement = document.getElementById('section-background');
       if (bgElement) {
-        bgElement.style.setProperty('background', 'linear-gradient(180deg, #E0E7FF 0%, #C7D2FE 100%)', 'important');
+        bgElement.style.setProperty('background', 'linear-gradient(180deg, #EBEFFF 0%, #DDE3FF 100%)', 'important');
       }
     }
     
@@ -120,7 +120,7 @@ export default class MapScene extends BaseScene {
         name: 'Home-Buying Knowledge',
         x: width * 0.25, // Middle ground: was 0.2, then 0.3, now 0.25
         y: height * 0.65,
-        color: COLORS.BLUE_500,
+        color: COLORS.LOGO_BLUE,
         isLocked: false,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_1,
       },
@@ -129,7 +129,7 @@ export default class MapScene extends BaseScene {
         name: 'Locked Neighborhood',
         x: width * 0.5,  // Middle ground: was 0.45, then 0.55, now 0.5
         y: height * 0.25,
-        color: COLORS.GRAY_400,
+        color: COLORS.UNAVAILABLE_BUTTON,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_2,
       },
@@ -138,7 +138,7 @@ export default class MapScene extends BaseScene {
         name: 'Construction Zone',
         x: width * 0.75, // Middle ground: was 0.7, then 0.8, now 0.75
         y: height * 0.65,
-        color: COLORS.ORANGE_500,
+        color: COLORS.STATUS_YELLOW,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
       },
@@ -348,8 +348,8 @@ export default class MapScene extends BaseScene {
       ctx.scale(1, bgHeight / bgWidth); // Flatten the gradient vertically
 
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, centerX);
-      gradient.addColorStop(0, 'rgba(54, 88, 236, 0.8)');
-      gradient.addColorStop(1, 'rgba(64, 85, 167, 0)');
+      gradient.addColorStop(0, 'rgba(54, 88, 236, 0.8)'); // LOGO_BLUE with opacity
+      gradient.addColorStop(1, 'rgba(107, 133, 245, 0)'); // ELEGANT_BLUE with opacity 0
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -369,7 +369,7 @@ export default class MapScene extends BaseScene {
 
       // Neighborhood name label
       nameLabel = this.add.text(0, 0, neighborhood.name,
-        createTextStyle('BODY_BOLD', COLORS.TEXT_WHITE, {
+        createTextStyle('BODY_BOLD', COLORS.TEXT_WHITE_HEX, {
           fontSize: scaleFontSize(16),
           align: 'center',
           wordWrap: { width: scale(246) },

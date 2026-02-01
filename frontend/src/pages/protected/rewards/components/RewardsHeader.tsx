@@ -8,10 +8,7 @@ interface RewardsHeaderProps {
 const RewardsHeader: React.FC<RewardsHeaderProps> = ({ coinBalance }) => {
   return (
     <div 
-      className="rounded-2xl text-white text-center py-12 px-8 mb-6 mt-8 max-w-7xl mx-auto"
-      style={{
-        background: 'linear-gradient(135deg, #24368b 0%, #4e46e4 100%)'
-      }}
+      className="bg-linear-blue-1 rounded-2xl text-white text-center py-12 px-8 mb-6 mt-8 max-w-7xl mx-auto"
     >
       <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl font-bold mb-4">
         Rewards & Offers

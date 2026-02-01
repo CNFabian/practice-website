@@ -527,7 +527,7 @@ export default class NeighborhoodScene extends BaseScene {
     startHouseIndex: number
   ): void {
     // Line styling
-    const lineColor = 0x5B9FE3; // Light blue color for path
+    const lineColor = COLORS.ELEGANT_BLUE; // Use ELEGANT_BLUE for path
     const dotSpacing = 100; // Space between dots (increased from 15)
     const dotSize = 48; // Size of each dot (increased from 8)
     
@@ -875,14 +875,14 @@ export default class NeighborhoodScene extends BaseScene {
       0,
       tooltipWidth,
       tooltipHeight,
-      COLORS.WHITE,
+      COLORS.PURE_WHITE,
       OPACITY.HIGH
     );
-    tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    tooltipBg.setStrokeStyle(scale(2), COLORS.UNAVAILABLE_BUTTON);
     tooltipContainer.add(tooltipBg);
 
     // Lock icon using standard icon circle style - larger for bigger tooltip
-    const lockIconBg = this.add.circle(0, scale(-35), scale(25), COLORS.GRAY_300);
+    const lockIconBg = this.add.circle(0, scale(-35), scale(25), COLORS.UNAVAILABLE_BUTTON);
     tooltipContainer.add(lockIconBg);
 
     const lockIcon = this.add.text(0, scale(-35), '🔒', {
@@ -911,7 +911,7 @@ export default class NeighborhoodScene extends BaseScene {
       0, 0,
       scale(12), scale(-15),
       scale(-12), scale(-15),
-      COLORS.WHITE
+      COLORS.PURE_WHITE
     );
     tooltipContainer.add(triangle);
 
@@ -922,7 +922,7 @@ export default class NeighborhoodScene extends BaseScene {
       0, 0,
       scale(13), scale(-16),
       scale(-13), scale(-16),
-      COLORS.GRAY_200
+      COLORS.UNAVAILABLE_BUTTON
     );
     triangleBorder.setDepth(-1);
     tooltipContainer.add(triangleBorder);
@@ -1096,7 +1096,7 @@ export default class NeighborhoodScene extends BaseScene {
       subtitleText: this.neighborhoodId
         ? `Neighborhood: ${this.neighborhoodId}`
         : 'No neighborhood selected',
-      iconCircleColor: COLORS.ORANGE_500,
+      iconCircleColor: COLORS.STATUS_YELLOW,
     });
 
     const description = UIComponents.createSubtitle(

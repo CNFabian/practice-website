@@ -33,14 +33,14 @@ export class LockedHouseTooltip {
       0,
       tooltipWidth,
       tooltipHeight,
-      COLORS.WHITE,
+      COLORS.PURE_WHITE,
       OPACITY.HIGH
     );
-    tooltipBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    tooltipBg.setStrokeStyle(scale(2), COLORS.UNAVAILABLE_BUTTON);
     tooltipContainer.add(tooltipBg);
 
     // Lock icon using standard icon circle style
-    const lockIconBg = scene.add.circle(0, scale(-25), scale(20), COLORS.GRAY_300);
+    const lockIconBg = scene.add.circle(0, scale(-25), scale(20), COLORS.UNAVAILABLE_BUTTON);
     tooltipContainer.add(lockIconBg);
 
     const lockIcon = scene.add.text(0, scale(-25), '🔒', {
@@ -68,7 +68,7 @@ export class LockedHouseTooltip {
       0, 0,
       scale(10), scale(12),
       scale(-10), scale(12),
-      COLORS.WHITE
+      COLORS.PURE_WHITE
     );
     tooltipContainer.add(triangle);
 
@@ -79,7 +79,7 @@ export class LockedHouseTooltip {
       0, 0,
       scale(11), scale(13),
       scale(-11), scale(13),
-      COLORS.GRAY_200
+      COLORS.UNAVAILABLE_BUTTON
     );
     triangleBorder.setDepth(-1);
     tooltipContainer.add(triangleBorder);

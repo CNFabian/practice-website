@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
+import { COLORS } from '../constants/Colors';
 import { createTextStyle } from '../constants/Typography';
 import { BirdCharacter } from '../characters/BirdCharacter';
 
@@ -59,13 +60,13 @@ export class HouseProgressCard {
     
     const drawCard = (height: number, isHovered: boolean = false) => {
       cardBg.clear();
-      cardBg.fillStyle(0xE8F0FE, 1); // Light blue background
+      cardBg.fillStyle(COLORS.TEXT_WHITE, 1); // TextWhite - Light background
       cardBg.fillRoundedRect(-cardWidth / 2, -height / 2, cardWidth, height, borderRadius);
       
       // Only add the blue accent bar at bottom when NOT hovered
       if (!isHovered) {
         const shadowHeight = scale(6);
-        cardBg.fillStyle(0x5B7FDB, 1); // Blue shadow
+        cardBg.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
         cardBg.fillRoundedRect(
           -cardWidth / 2,
           height / 2 - shadowHeight,
@@ -83,8 +84,8 @@ export class HouseProgressCard {
     const drawGlow = (height: number, alpha: number = 0) => {
       glowGraphics.clear();
       if (alpha > 0) {
-        // Outer glow layer - REDUCED from 0.25 to 0.15
-        glowGraphics.lineStyle(scale(12), 0x5B7FDB, alpha * 0.15);
+        // Outer glow layer - Using LogoBlue
+        glowGraphics.lineStyle(scale(12), COLORS.LOGO_BLUE, alpha * 0.15);
         glowGraphics.strokeRoundedRect(
           -cardWidth / 2 - scale(6), 
           -height / 2 - scale(6), 
@@ -93,8 +94,8 @@ export class HouseProgressCard {
           borderRadius + scale(3)
         );
         
-        // Middle glow layer - REDUCED from 0.5 to 0.3
-        glowGraphics.lineStyle(scale(8), 0x5B7FDB, alpha * 0.3);
+        // Middle glow layer
+        glowGraphics.lineStyle(scale(8), COLORS.LOGO_BLUE, alpha * 0.3);
         glowGraphics.strokeRoundedRect(
           -cardWidth / 2 - scale(4), 
           -height / 2 - scale(4), 
@@ -103,8 +104,8 @@ export class HouseProgressCard {
           borderRadius + scale(2)
         );
         
-        // Inner bright border - REDUCED from alpha to alpha * 0.7
-        glowGraphics.lineStyle(scale(4), 0x5B7FDB, alpha * 0.7);
+        // Inner bright border
+        glowGraphics.lineStyle(scale(4), COLORS.LOGO_BLUE, alpha * 0.7);
         glowGraphics.strokeRoundedRect(-cardWidth / 2, -height / 2, cardWidth, height, borderRadius);
       }
     };
@@ -113,7 +114,7 @@ export class HouseProgressCard {
     const titleY = -initialHeight / 2 + scale(20);
     const titleText = `${data.moduleNumber}. ${data.moduleName}`;
     const title = scene.add.text(-cardWidth / 2 + scale(20), titleY, titleText,
-      createTextStyle('BODY_BOLD', '#1E3A8A', {
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
         fontSize: scaleFontSize(16),
       })
     ).setOrigin(0, 0.5);
@@ -121,7 +122,7 @@ export class HouseProgressCard {
 
     // Duration (top right) - always visible
     const duration = scene.add.text(cardWidth / 2 - scale(20), titleY, data.duration,
-      createTextStyle('BODY_LIGHT', '#6B7280', {
+      createTextStyle('BODY_LIGHT', COLORS.TEXT_SECONDARY, {
         fontSize: scaleFontSize(14),
       })
     ).setOrigin(1, 0.5);
@@ -142,7 +143,7 @@ export class HouseProgressCard {
       const progressBarWidth = cardWidth - scale(40);
       const progressBarHeight = scale(8);
       const progressBg = scene.add.graphics();
-      progressBg.fillStyle(0xD1D5DB, 1);
+      progressBg.fillStyle(COLORS.UNAVAILABLE_BUTTON, 1); // UnavailableButton - Light gray
       progressBg.fillRoundedRect(
         -progressBarWidth / 2,
         progressY - progressBarHeight / 2,
@@ -164,7 +165,7 @@ export class HouseProgressCard {
         progressFillWidth = progressBarWidth * lessonProgress;
         
         const progressFill = scene.add.graphics();
-        progressFill.fillStyle(0x5B7FDB, 1);
+        progressFill.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
         progressFill.fillRoundedRect(
           -progressBarWidth / 2,
           progressY - progressBarHeight / 2,
@@ -203,7 +204,7 @@ export class HouseProgressCard {
       progressContainer.add(videoIcon);
 
       const lessonCount = scene.add.text(-cardWidth / 2 + scale(70), bottomY, `${data.lessonCount || 0}`,
-        createTextStyle('BODY_BOLD', '#5B7FDB', { fontSize: scaleFontSize(16) })
+        createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(lessonCount);
 
@@ -214,7 +215,7 @@ export class HouseProgressCard {
       progressContainer.add(documentIcon);
 
       const quizCount = scene.add.text(-cardWidth / 2 + scale(150), bottomY, `${data.quizCount || 0}`,
-        createTextStyle('BODY_BOLD', '#5B7FDB', { fontSize: scaleFontSize(16) })
+        createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(quizCount);
 
@@ -224,7 +225,7 @@ export class HouseProgressCard {
             
       // Draw circular progress background (gray circle)
       const progressCircleBg = scene.add.graphics();
-      progressCircleBg.lineStyle(scale(3), 0xD1D5DB, 1);
+      progressCircleBg.lineStyle(scale(3), COLORS.UNAVAILABLE_BUTTON, 1); // UnavailableButton - Light gray
       progressCircleBg.strokeCircle(circleX, bottomY, circleRadius);
       progressContainer.add(progressCircleBg);
       
@@ -235,7 +236,7 @@ export class HouseProgressCard {
       }
       
       const progressCircleFill = scene.add.graphics();
-      progressCircleFill.lineStyle(scale(3), 0x10B981, 1); // Green color
+      progressCircleFill.lineStyle(scale(3), COLORS.STATUS_GREEN, 1); // StatusGreen - Success green
       
       // Draw arc from top (270 degrees) clockwise
       const startAngle = Phaser.Math.DegToRad(270);
@@ -299,7 +300,7 @@ export class HouseProgressCard {
       const buttonX = cardWidth / 2 - scale(20) - buttonWidth / 2;
 
       const continueButton = scene.add.graphics();
-      continueButton.fillStyle(0x5B7FDB, 1);
+      continueButton.fillStyle(COLORS.LOGO_BLUE, 1); // LogoBlue - Primary blue
       continueButton.fillRoundedRect(
         buttonX - buttonWidth / 2,
         bottomY - buttonHeight / 2,
@@ -310,7 +311,7 @@ export class HouseProgressCard {
       progressContainer.add(continueButton);
 
       const continueText = scene.add.text(buttonX, bottomY, buttonText,
-        createTextStyle('BUTTON', '#FFFFFF', { fontSize: scaleFontSize(14) })
+        createTextStyle('BUTTON', COLORS.TEXT_WHITE_HEX, { fontSize: scaleFontSize(14) })
       ).setOrigin(0.5);
       progressContainer.add(continueText);
 
@@ -348,7 +349,7 @@ export class HouseProgressCard {
         // Kill any existing tweens on bird
         if (bird) {
           const birdSprite = bird.getSprite();
-          if (birdSprite) {
+          if (birdSprite && bird.getHasFadedIn()) {  // Only kill tweens if fade-in is complete
             scene.tweens.killTweensOf(birdSprite);
             
             // Store original bird Y position if not already stored

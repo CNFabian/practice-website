@@ -15,14 +15,14 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
   onToggleExpand 
 }) => {
   return (
-    <div className="bg-[#EFF2FF] rounded-xl p-4 transition-all duration-300 ease-in-out">
+    <div className="bg-card-gradient rounded-xl p-4 transition-all duration-300 ease-in-out">
       {/* Header with dropdown arrow */}
       <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
         <OnestFont 
           as="h2" 
           weight={700} 
           lineHeight="tight"
-          className="text-gray-900 text-lg sm:text-xl lg:text-2xl flex-1 min-w-0"
+          className="text-text-blue-black text-lg sm:text-xl lg:text-2xl flex-1 min-w-0"
           style={{ 
             wordBreak: 'break-word',
             overflowWrap: 'break-word'
@@ -36,7 +36,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           aria-label={isExpanded ? "Collapse welcome section" : "Expand welcome section"}
         >
           <svg
-            className={`w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0 transition-transform duration-300 ${
+            className={`w-5 h-5 sm:w-6 sm:h-6 text-unavailable-button flex-shrink-0 transition-transform duration-300 ${
               isExpanded ? 'rotate-180' : ''
             }`}
             fill="none"
@@ -58,7 +58,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         as="p" 
         weight={300} 
         lineHeight="relaxed"
-        className="text-gray-600 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base leading-relaxed"
+        className="text-text-grey mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base leading-relaxed"
         style={{ 
           wordBreak: 'break-word',
           overflowWrap: 'break-word'

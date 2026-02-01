@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { createTextStyle } from '../../constants/Typography';
+import { COLORS } from '../../constants/Colors';
 
 interface QuizQuestion {
   id: number;
@@ -142,11 +143,11 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private createBackButton(): void {
     this.backButton = this.add.container(60, 48);
-    const arrow = this.add.text(0, 0, '←', { fontSize: '48px', color: '#6b7280' });
+    const arrow = this.add.text(0, 0, '←', { fontSize: '48px', color: COLORS.TEXT_SECONDARY });
     arrow.setOrigin(0.5);
     
     const text = this.add.text(40, 0, 'Module 1', 
-      createTextStyle('H2', '#1f2937', { fontSize: '36px' })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
     );
     text.setOrigin(0, 0.5);
     this.backButton.add([arrow, text]);
@@ -167,7 +168,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private createHeader(width: number): void {
     this.headerTitle = this.add.text(width / 2, 48, 'Grow Your Nest',
-      createTextStyle('H2', '#1f2937', { fontSize: '42px' })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '42px' })
     );
     this.headerTitle.setOrigin(0.5, 0.5);
     this.headerTitle.setDepth(10);
@@ -187,15 +188,15 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
     // Use graphics instead of rectangle for rounded corners
     const panelBg = this.add.graphics();
-    panelBg.fillStyle(0xffffff, 1);
-    panelBg.lineStyle(2, 0xe5e7eb);
+    panelBg.fillStyle(COLORS.PURE_WHITE, 1);
+    panelBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
     const cornerRadius = 16;
     panelBg.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     panelBg.strokeRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     this.leftPanel.add(panelBg);
 
     const title = this.add.text(panelWidth / 2, 40, 'Growth',
-      createTextStyle('H2', '#1f2937', { fontSize: '36px' })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
     );
     title.setOrigin(0.5, 0);
     this.leftPanel.add(title);
@@ -209,7 +210,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const rightMargin = 30;
     
     this.stageText = this.add.text(leftMargin, bottomY, 'Stage 1',
-      createTextStyle('BODY_BOLD', '#6b7280', { fontSize: '20px' })
+      createTextStyle('BODY_BOLD', COLORS.TEXT_SECONDARY, { fontSize: '20px' })
     );
     this.stageText.setOrigin(0, 0.5);
     this.leftPanel.add(this.stageText);
@@ -218,18 +219,18 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const progressBarStartX = leftMargin + 80;
     const progressBarWidth = panelWidth - progressBarStartX - rightMargin;
     
-    const progressBarBg = this.add.rectangle(progressBarStartX + progressBarWidth / 2, bottomY, progressBarWidth, 12, 0xe5e7eb);
-    progressBarBg.setStrokeStyle(1, 0xd1d5db);
+    const progressBarBg = this.add.rectangle(progressBarStartX + progressBarWidth / 2, bottomY, progressBarWidth, 12, COLORS.UNAVAILABLE_BUTTON);
+    progressBarBg.setStrokeStyle(1, COLORS.UNAVAILABLE_BUTTON);
     this.leftPanel.add(progressBarBg);
 
-    const progressBarFill = this.add.rectangle(progressBarStartX, bottomY, 0, 12, 0x22c55e);
+    const progressBarFill = this.add.rectangle(progressBarStartX, bottomY, 0, 12, COLORS.STATUS_GREEN);
     progressBarFill.setOrigin(0, 0.5);
     this.leftPanel.add(progressBarFill);
     this.leftPanel.setData('progressBar', progressBarFill);
     this.leftPanel.setData('progressBarWidth', progressBarWidth);
 
     this.progressText = this.add.text(panelWidth - rightMargin, bottomY, '0 / 100',
-      createTextStyle('BODY_MEDIUM', '#6b7280', { fontSize: '16px' })
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, { fontSize: '16px' })
     );
     this.progressText.setOrigin(1, 0.5);
     this.leftPanel.add(this.progressText);
@@ -243,15 +244,15 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     // Use graphics instead of rectangle for rounded corners
     const panelBg = this.add.graphics();
-    panelBg.fillStyle(0xffffff, 1);
-    panelBg.lineStyle(2, 0xe5e7eb);
+    panelBg.fillStyle(COLORS.PURE_WHITE, 1);
+    panelBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
     const cornerRadius = 16;
     panelBg.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     panelBg.strokeRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     this.rightPanel.add(panelBg);
     
     const title = this.add.text(panelWidth / 2, 40, 'Question Cards',
-      createTextStyle('H2', '#1f2937', { fontSize: '36px' })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
     );
     title.setOrigin(0.5, 0);
     this.rightPanel.add(title);
@@ -368,7 +369,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const fullQuestionText = `${this.currentQuestionIndex + 1}. ${question.question}`;
     
     this.questionText = this.add.text(horizontalPadding, questionStartY, fullQuestionText,
-      createTextStyle('BODY_MEDIUM', '#1f2937', {
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
         fontSize: `${questionTextFontSize}px`,
         wordWrap: { width: contentWidth },
         lineSpacing: questionTextFontSize * 0.4
@@ -406,8 +407,8 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private createOptionButton(option: { letter: string; text: string }, y: number, leftPadding: number, buttonWidth: number, buttonHeight: number, letterFontSize: number, textFontSize: number): Phaser.GameObjects.Container {
     const container = this.add.container(0, y);
     const buttonBg = this.add.graphics();
-    buttonBg.fillStyle(0xdbeafe, 1);
-    buttonBg.lineStyle(2, 0xe5e7eb);
+    buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
+    buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
     const cornerRadius = buttonHeight * 0.2;
     buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
     buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
@@ -416,13 +417,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const letterPaddingLeft = buttonWidth * 0.05;
     
     const letterText = this.add.text(leftPadding + letterPaddingLeft, 0, `${option.letter}.`,
-      createTextStyle('BODY_BOLD', '#1f2937', { fontSize: `${letterFontSize}px` })
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: `${letterFontSize}px` })
     );
     letterText.setOrigin(0, 0.5);
     const optionTextPaddingLeft = buttonWidth * 0.15;
     
     const optionText = this.add.text(leftPadding + optionTextPaddingLeft, 0, option.text,
-      createTextStyle('BODY_MEDIUM', '#374151', {
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
         fontSize: `${textFontSize}px`,
         wordWrap: { width: buttonWidth * 0.8 }
       })
@@ -441,8 +442,8 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     buttonHitArea.on('pointerover', () => {
       if (this.selectedAnswer !== option.letter) {
         buttonBg.clear();
-        buttonBg.fillStyle(0xbfdbfe, 1);
-        buttonBg.lineStyle(2, 0x93c5fd);
+        buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.3);
+        buttonBg.lineStyle(2, COLORS.ELEGANT_BLUE);
         buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       }
@@ -450,20 +451,20 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     buttonHitArea.on('pointerout', () => {
       if (this.selectedAnswer === option.letter) {
         buttonBg.clear();
-        buttonBg.fillStyle(0xdbeafe, 1);
-        buttonBg.lineStyle(2, 0x3b82f6);
+        buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
+        buttonBg.lineStyle(2, COLORS.LOGO_BLUE);
         buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       } else if (this.selectedAnswer !== null) {
         buttonBg.clear();
-        buttonBg.fillStyle(0xf3f4f6, 1);
-        buttonBg.lineStyle(2, 0xe5e7eb);
+        buttonBg.fillStyle(COLORS.TEXT_WHITE, 1);
+        buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
         buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       } else {
         buttonBg.clear();
-        buttonBg.fillStyle(0xdbeafe, 1);
-        buttonBg.lineStyle(2, 0xe5e7eb);
+        buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
+        buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
         buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       }
@@ -478,16 +479,16 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const borderRadius = buttonHeight / 2;
     const fontSize = Math.round(panelWidth * 0.035);
     const buttonBg = this.add.graphics();
-    buttonBg.fillStyle(0xd1d5db);
+    buttonBg.fillStyle(COLORS.UNAVAILABLE_BUTTON);
     buttonBg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
     
     const buttonText = this.add.text(-buttonWidth * 0.12, 0, 'NEXT',
-      createTextStyle('BUTTON', '#9ca3af', { fontSize: `${fontSize}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, { fontSize: `${fontSize}px` })
     );
     buttonText.setOrigin(0.5, 0.5);
     
     const arrow = this.add.text(buttonWidth * 0.22, 0, '→',
-      createTextStyle('BUTTON', '#9ca3af', { fontSize: `${fontSize + 4}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, { fontSize: `${fontSize + 4}px` })
     );
     arrow.setOrigin(0.5, 0.5);
     this.nextButton.add([buttonBg, buttonText, arrow]);
@@ -518,13 +519,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       bg.clear();
       
       if (btnLetter === letter) {
-        bg.fillStyle(0xdbeafe, 1);
-        bg.lineStyle(2, 0x3b82f6);
+        bg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
+        bg.lineStyle(2, COLORS.LOGO_BLUE);
         bg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         bg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       } else {
-        bg.fillStyle(0xf3f4f6, 1);
-        bg.lineStyle(2, 0xe5e7eb);
+        bg.fillStyle(COLORS.TEXT_WHITE, 1);
+        bg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
         bg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         bg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
       }
@@ -544,15 +545,15 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
     bg.clear();
     if (enabled) {
-      bg.fillStyle(0x3b82f6);
+      bg.fillStyle(COLORS.LOGO_BLUE);
       bg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
-      text.setColor('#ffffff');
-      arrow.setColor('#ffffff');
+      text.setColor(COLORS.TEXT_PURE_WHITE);
+      arrow.setColor(COLORS.TEXT_PURE_WHITE);
     } else {
-      bg.fillStyle(0xd1d5db);
+      bg.fillStyle(COLORS.UNAVAILABLE_BUTTON);
       bg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
-      text.setColor('#9ca3af');
-      arrow.setColor('#9ca3af');
+      text.setColor(COLORS.TEXT_SECONDARY);
+      arrow.setColor(COLORS.TEXT_SECONDARY);
     }
   }
 
@@ -589,7 +590,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const moduleButtonFontSize = Math.round(panelWidth * 0.034);
     
     const title = this.add.text(panelWidth / 2, 40, 'Question Cards',
-      createTextStyle('H2', '#1f2937', { fontSize: `${titleFontSize}px` })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${titleFontSize}px` })
     );
     title.setOrigin(0.5, 0);
     this.rightPanel.add(title);
@@ -603,7 +604,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const completionTextY = birdY + (panelHeight * 0.14);
     
     const completionText = this.add.text(panelWidth / 2, completionTextY, 'Questions Completed!',
-      createTextStyle('H2', '#1f2937', { fontSize: `${completionTextFontSize}px` })
+      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${completionTextFontSize}px` })
     );
     completionText.setOrigin(0.5, 0.5);
     this.rightPanel.add(completionText);
@@ -616,18 +617,18 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     const leftBoxX = horizontalPadding;
     const leftBoxBg = this.add.graphics();
-    leftBoxBg.lineStyle(2, 0x60a5fa);
+    leftBoxBg.lineStyle(2, COLORS.ELEGANT_BLUE);
     leftBoxBg.strokeRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
     this.rightPanel.add(leftBoxBg);
     
     const waterText = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.32, 'Growth Earned',
-      createTextStyle('BODY_BOLD', '#60a5fa', { fontSize: `${boxTitleFontSize}px` })
+      createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxTitleFontSize}px` })
     );
     waterText.setOrigin(0.5, 0.5);
     this.rightPanel.add(waterText);
     
     const waterValue = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.68, 'Water +6\nFertilizer +2',
-      createTextStyle('BODY_MEDIUM', '#60a5fa', {
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
         fontSize: `${boxValueFontSize}px`,
         align: 'center',
         lineSpacing: 2
@@ -638,12 +639,12 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     const rightBoxX = leftBoxX + boxWidth + boxSpacing;
     const rightBoxBg = this.add.graphics();
-    rightBoxBg.lineStyle(2, 0x60a5fa);
+    rightBoxBg.lineStyle(2, COLORS.ELEGANT_BLUE);
     rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
     this.rightPanel.add(rightBoxBg);
     
     const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, 'Amazing!',
-      createTextStyle('BODY_BOLD', '#60a5fa', { fontSize: `${boxTitleFontSize}px` })
+      createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxTitleFontSize}px` })
     );
     accuracyText.setOrigin(0.5, 0.5);
     this.rightPanel.add(accuracyText);
@@ -651,7 +652,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const accuracy = Math.round((this.score / this.questions.length) * 100);
     
     const accuracyValue = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`,
-      createTextStyle('BODY_BOLD', '#60a5fa', { fontSize: `${boxValueFontSize}px` })
+      createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxValueFontSize}px` })
     );
     accuracyValue.setOrigin(0.5, 0.5);
     this.rightPanel.add(accuracyValue);
@@ -661,12 +662,12 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const coinButtonHeight = panelHeight * 0.08;
     const coinButtonRadius = coinButtonHeight / 2;
     const coinButton = this.add.graphics();
-    coinButton.fillStyle(0x60a5fa);
+    coinButton.fillStyle(COLORS.ELEGANT_BLUE);
     coinButton.fillRoundedRect(panelWidth / 2 - coinButtonWidth / 2, coinButtonY, coinButtonWidth, coinButtonHeight, coinButtonRadius);
     this.rightPanel.add(coinButton);
     
     const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, 'You earned 15\nNest Coins!',
-      createTextStyle('BODY_BOLD', '#ffffff', {
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
         fontSize: `${coinButtonFontSize}px`,
         align: 'center',
         lineSpacing: 2
@@ -686,18 +687,18 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.completionReturnButton = this.add.container(moduleButtonX, moduleButtonY);
     
     const moduleButtonBg = this.add.graphics();
-    moduleButtonBg.fillStyle(0x3b82f6);
+    moduleButtonBg.fillStyle(COLORS.LOGO_BLUE);
     moduleButtonBg.fillRoundedRect(-moduleButtonWidth / 2, -moduleButtonHeight / 2, moduleButtonWidth, moduleButtonHeight, moduleButtonRadius);
     
     const moduleButtonText = this.add.text(-moduleButtonWidth * 0.12, 0, 'MODULE',
-      createTextStyle('BUTTON', '#ffffff', { fontSize: `${moduleButtonFontSize}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${moduleButtonFontSize}px` })
     );
     moduleButtonText.setOrigin(0.5, 0.5);
     
     const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
     
     const arrow = this.add.text(moduleButtonWidth * 0.22, 0, '→',
-      createTextStyle('BUTTON', '#ffffff', { fontSize: `${arrowFontSize}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${arrowFontSize}px` })
     );
     arrow.setOrigin(0.5, 0.5);
     

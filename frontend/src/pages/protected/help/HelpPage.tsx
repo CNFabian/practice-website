@@ -7,7 +7,7 @@ const HelpPage: React.FC = () => {
   useEffect(() => {
   const bgElement = document.getElementById('section-background');
   if (bgElement) {
-    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.className = 'bg-light-background-blue';
     bgElement.style.backgroundSize = 'cover';
   }
 }, []);
@@ -17,10 +17,10 @@ const HelpPage: React.FC = () => {
   return (
     <div className="p-6 max-w-8xl mx-auto h-full overflow-y-auto">
       <div className="mb-8">
-        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-gray-900 mb-3 mt-3">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl lg:text-2xl text-text-blue-black mb-3 mt-3">
           Help Center
         </OnestFont>
-        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 leading-relaxed">
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey leading-relaxed">
           Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
         </OnestFont>
       </div>

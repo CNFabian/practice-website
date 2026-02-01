@@ -15,13 +15,13 @@ export class UIComponents {
     const container = scene.add.container(0, 0);
     container.setDepth(100); // High depth to stay on top
 
-    // Background - fully rounded with solid color #DDE3FF
+    // Background - fully rounded with solid color
     const bgWidth = scale(120);
     const bgHeight = scale(40);
     
     // Create fully rounded background using graphics
     const background = scene.add.graphics();
-    background.fillStyle(0x6B85F5, 1); // Solid color #DDE3FF
+    background.fillStyle(COLORS.ELEGANT_BLUE, 1); // ElegantBlue
     background.fillRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, bgHeight/2);
     container.add(background);
 
@@ -33,7 +33,7 @@ export class UIComponents {
 
     // Coin text (on the right) - UPDATED to use Onest
     const coinText = scene.add.text(scale(15), 0, coins.toString(),
-      createTextStyle('H2', '#FFFFFF')
+      createTextStyle('H2', COLORS.TEXT_PURE_WHITE)
     ).setOrigin(0.5);
     coinText.setName('coinText'); // so BaseScene can find it
     container.add(coinText);
@@ -47,14 +47,14 @@ export class UIComponents {
   static createBadge(
     scene: Phaser.Scene,
     text: string,
-    backgroundColor: number = COLORS.GREEN_500,
-    textColor: string = COLORS.TEXT_WHITE
+    backgroundColor: number = COLORS.STATUS_GREEN,
+    textColor: string = COLORS.TEXT_WHITE_HEX
   ): Phaser.GameObjects.Container {
     const container = scene.add.container(0, 0);
 
     // Badge background
     const badge = scene.add.rectangle(0, 0, scale(100), scale(28), backgroundColor);
-    badge.setStrokeStyle(scale(1), COLORS.WHITE);
+    badge.setStrokeStyle(scale(1), COLORS.PURE_WHITE);
     container.add(badge);
 
     // Badge text - UPDATED
@@ -72,9 +72,9 @@ export class UIComponents {
   static createIconCircle(
     scene: Phaser.Scene,
     icon: string,
-    backgroundColor: number = COLORS.BLUE_500,
+    backgroundColor: number = COLORS.LOGO_BLUE,
     radius: number = 32,
-    iconColor: string = COLORS.TEXT_WHITE
+    iconColor: string = COLORS.TEXT_WHITE_HEX
   ): Phaser.GameObjects.Container {
     const container = scene.add.container(0, 0);
 
@@ -134,7 +134,7 @@ export class UIComponents {
     const container = scene.add.container(0, 0);
 
     // Tag background
-    const tagBg = scene.add.rectangle(0, 0, scale(120), scale(24), COLORS.GRAY_200);
+    const tagBg = scene.add.rectangle(0, 0, scale(120), scale(24), COLORS.UNAVAILABLE_BUTTON);
     container.add(tagBg);
 
     // Tag text - UPDATED
@@ -218,7 +218,7 @@ export class UIComponents {
 
     // Percentage text - UPDATED
     const percentText = scene.add.text(x, y, '0%',
-      createTextStyle('LABEL', COLORS.TEXT_WHITE)
+      createTextStyle('LABEL', COLORS.TEXT_WHITE_HEX)
     ).setOrigin(0.5);
 
     return {

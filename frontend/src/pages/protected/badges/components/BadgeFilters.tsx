@@ -15,8 +15,8 @@ export const BadgeFilters = ({ activeFilter, onFilterChange }: BadgeFiltersProps
           onClick={() => onFilterChange(button.key)}
           className={`px-6 py-2 rounded-full transition-all duration-200 ${
             activeFilter === button.key
-              ? 'bg-indigo-500 text-white shadow-lg'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-logo-blue text-white shadow-lg'
+              : 'bg-light-background-blue text-text-grey hover:bg-light-background-blue/80'
           }`}
         >
           <OnestFont weight={500} lineHeight="relaxed">

@@ -1,6 +1,3 @@
-// Main badges page - orchestrates data fetching, filtering, and display
-// Backend: This component will automatically work with real API once BadgeService is updated
-
 import { useState, useEffect } from 'react';
 import { BadgeHeader, BadgeFilters, BadgeGrid } from './components';
 import type { Badge } from '../../../services';
@@ -18,7 +15,7 @@ const BadgesPage = () => {
   useEffect(() => {
   const bgElement = document.getElementById('section-background');
   if (bgElement) {
-    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.className = 'bg-light-background-blue';
     bgElement.style.backgroundSize = 'cover';
   }
 }, []);
@@ -45,7 +42,7 @@ const BadgesPage = () => {
     return (
       <div className="p-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-logo-blue"></div>
         </div>
       </div>
     );

@@ -225,7 +225,7 @@ const OverviewPage: React.FC = () => {
   useEffect(() => {
   const bgElement = document.getElementById('section-background');
   if (bgElement) {
-    bgElement.style.setProperty('background', 'linear-gradient(to bottom, rgb(239, 246, 255), rgb(224, 231, 255))', 'important');
+    bgElement.className = 'bg-gradient-to-b from-[#EFF6FF] to-light-background-blue';
     bgElement.style.backgroundSize = 'cover';
   }
 }, []);
@@ -275,10 +275,10 @@ const OverviewPage: React.FC = () => {
         {onboardingModal}
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <OnestFont weight={500} lineHeight="relaxed" className="text-gray-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey text-lg mb-2">
               Loading your dashboard...
             </OnestFont>
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="w-8 h-8 border-4 border-logo-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
       </>
@@ -292,15 +292,15 @@ const OverviewPage: React.FC = () => {
         {onboardingModal}
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md p-6">
-            <OnestFont weight={500} lineHeight="relaxed" className="text-red-600 text-lg mb-2">
+            <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-lg mb-2">
               Oops! Something went wrong
             </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 mb-4">
+            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey mb-4">
               {error instanceof Error ? error.message : 'Failed to load dashboard data'}
             </OnestFont>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
+              className="bg-logo-blue text-white px-6 py-2 rounded-full hover:opacity-90 transition-colors"
             >
               <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                 Retry
@@ -344,7 +344,7 @@ const OverviewPage: React.FC = () => {
                     as="h2"
                     weight={500}
                     lineHeight="relaxed"
-                    className="text-gray-900 mb-4 text-base sm:text-lg font-medium"
+                    className="text-text-blue-black mb-4 text-base sm:text-lg font-medium"
                   >
                     Continue Lesson
                   </OnestFont>
@@ -364,7 +364,7 @@ const OverviewPage: React.FC = () => {
                       as="h2"
                       weight={500}
                       lineHeight="relaxed"
-                      className="text-gray-900 text-base sm:text-lg flex-1 min-w-0"
+                      className="text-text-blue-black text-base sm:text-lg flex-1 min-w-0"
                       style={{ 
                         wordBreak: 'break-word',
                         overflowWrap: 'break-word'
@@ -373,7 +373,7 @@ const OverviewPage: React.FC = () => {
                       Learning Modules
                     </OnestFont>
                     <button
-                      className="text-black hover:text-blue-700 flex-shrink-0"
+                      className="text-black hover:text-logo-blue flex-shrink-0"
                       onClick={handleSeeAllModules}
                     >
                       <OnestFont weight={500} lineHeight="relaxed" className="text-sm whitespace-nowrap">
@@ -400,7 +400,7 @@ const OverviewPage: React.FC = () => {
             <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
               {/* Learn Earn Rewards Card */}
               <div
-                className="relative overflow-hidden bg-[#D7DEFF] rounded-xl flex flex-col justify-between p-4 sm:p-6"
+                className="relative overflow-hidden bg-tab-active rounded-xl flex flex-col justify-between p-4 sm:p-6"
                 style={{ height: "12.5rem" }}
               >
                 <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
@@ -408,7 +408,7 @@ const OverviewPage: React.FC = () => {
                     as="h2"
                     weight={500}
                     lineHeight="tight"
-                    className="text-gray-900 text-2xl sm:text-3xl font-medium leading-tight"
+                    className="text-text-blue-black text-2xl sm:text-3xl font-medium leading-tight"
                   >
                     Learn. Earn.
                   </OnestFont>
@@ -416,7 +416,7 @@ const OverviewPage: React.FC = () => {
                     as="h2"
                     weight={500}
                     lineHeight="tight"
-                    className="text-gray-900 mb-3 text-2xl sm:text-3xl font-medium leading-tight"
+                    className="text-text-blue-black mb-3 text-2xl sm:text-3xl font-medium leading-tight"
                   >
                     Get Rewards.
                   </OnestFont>
@@ -424,7 +424,7 @@ const OverviewPage: React.FC = () => {
                     as="p"
                     weight={300}
                     lineHeight="relaxed"
-                    className="text-gray-700 max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
+                    className="text-text-grey max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
                   >
                     Redeem NestCoins for prizes to help you towards Homeownership.
                   </OnestFont>
@@ -432,7 +432,7 @@ const OverviewPage: React.FC = () => {
 
                 <div className="absolute bottom-3 right-4 sm:right-6 z-20">
                   <button
-                    className="bg-[#3F6CB9] text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
+                    className="bg-logo-blue text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
                     onClick={handleRewardsShop}
                   >
                     <OnestFont weight={500} lineHeight="relaxed" className="text-sm">

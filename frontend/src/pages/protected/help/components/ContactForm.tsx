@@ -100,21 +100,21 @@ const ContactForm: React.FC = () => {
 
   return (
     <div>
-      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-gray-900 mb-3">
+      <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-text-blue-black mb-3">
         Send Us a message
       </OnestFont>
-      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-gray-600 mb-8">
+      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey mb-8">
         Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
       </OnestFont>
 
       {/* Success Message */}
       {submitSuccess && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="mb-6 p-4 bg-status-green/10 border border-status-green rounded-lg">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-status-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-green-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-status-green">
               Your message has been sent successfully! We'll get back to you soon.
             </OnestFont>
           </div>
@@ -123,12 +123,12 @@ const ContactForm: React.FC = () => {
 
       {/* Error Message */}
       {submitError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mb-6 p-4 bg-status-red/10 border border-status-red rounded-lg">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-status-red mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-red-800">
+            <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-status-red">
               {submitError}
             </OnestFont>
           </div>
@@ -139,7 +139,7 @@ const ContactForm: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="firstName" className="block mb-2">
-              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
                 First Name *
               </OnestFont>
             </label>
@@ -152,12 +152,12 @@ const ContactForm: React.FC = () => {
               placeholder="First Name"
               required
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <div>
             <label htmlFor="lastName" className="block mb-2">
-              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
                 Last Name
               </OnestFont>
             </label>
@@ -169,7 +169,7 @@ const ContactForm: React.FC = () => {
               onChange={handleInputChange}
               placeholder="Last Name"
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -177,7 +177,7 @@ const ContactForm: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="phone" className="block mb-2">
-              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
                 Phone Number
               </OnestFont>
             </label>
@@ -189,12 +189,12 @@ const ContactForm: React.FC = () => {
               onChange={handleInputChange}
               placeholder="Phone Number"
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <div>
             <label htmlFor="email" className="block mb-2">
-              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+              <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
                 Email *
               </OnestFont>
             </label>
@@ -207,14 +207,14 @@ const ContactForm: React.FC = () => {
               placeholder="Email Address"
               required
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
         <div>
           <label htmlFor="category" className="block mb-2">
-            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
               Category *
             </OnestFont>
           </label>
@@ -225,7 +225,7 @@ const ContactForm: React.FC = () => {
             onChange={handleInputChange}
             required
             disabled={isSubmitting || isLoadingCategories}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">
               {isLoadingCategories ? 'Loading categories...' : 'Select a category'}
@@ -240,7 +240,7 @@ const ContactForm: React.FC = () => {
 
         <div>
           <label htmlFor="message" className="block mb-2">
-            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-gray-700">
+            <OnestFont as="span" weight={500} lineHeight="relaxed" className="text-text-grey">
               Message *
             </OnestFont>
           </label>
@@ -253,7 +253,7 @@ const ContactForm: React.FC = () => {
             required
             rows={5}
             disabled={isSubmitting}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-vertical disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-light-background-blue border border-light-background-blue rounded-lg focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent transition-all resize-vertical disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -261,7 +261,7 @@ const ContactForm: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+            className="bg-logo-blue text-white px-8 py-3 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-logo-blue focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
           >
             <OnestFont as="span" weight={500} lineHeight="relaxed">
               {isSubmitting ? 'Sending...' : 'Send Message'}

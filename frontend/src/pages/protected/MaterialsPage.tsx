@@ -385,24 +385,24 @@ const MaterialsPage: React.FC = () => {
   const HeaderSection = () => (
     <div className="flex justify-between items-center mb-8">
       <div>
-        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-gray-900 mb-2">
+        <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-text-blue-black mb-2">
           Materials
         </OnestFont>
-        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-sm">
+        <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
           Financial tools and resources to help with your homeownership journey
         </OnestFont>
         
         {/* Backend Error Banner */}
         {backendError && (
-          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="mt-3 p-3 bg-status-yellow/10 border border-status-yellow rounded-lg">
             <div className="flex items-center">
-              <div className="text-yellow-600">
+              <div className="text-status-yellow">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-2">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-yellow-800">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-status-yellow">
                   Backend unavailable - using offline materials
                 </OnestFont>
               </div>
@@ -418,43 +418,43 @@ const MaterialsPage: React.FC = () => {
             switch (categoryId) {
               case 'Calculators':
                 return {
-                  iconBg: 'bg-blue-600',
-                  activeBorder: 'border-blue-500',
-                  activeBg: 'bg-blue-50',
-                  hoverBorder: 'hover:border-blue-300',
-                  hoverBg: 'hover:bg-blue-25'
+                  iconBg: 'bg-logo-blue',
+                  activeBorder: 'border-logo-blue',
+                  activeBg: 'bg-logo-blue/10',
+                  hoverBorder: 'hover:border-logo-blue/30',
+                  hoverBg: 'hover:bg-logo-blue/5'
                 };
               case 'Worksheets':
                 return {
-                  iconBg: 'bg-green-600',
-                  activeBorder: 'border-green-500',
-                  activeBg: 'bg-green-50',
-                  hoverBorder: 'hover:border-green-300',
-                  hoverBg: 'hover:bg-green-25'
+                  iconBg: 'bg-status-green',
+                  activeBorder: 'border-status-green',
+                  activeBg: 'bg-status-green/10',
+                  hoverBorder: 'hover:border-status-green/30',
+                  hoverBg: 'hover:bg-status-green/5'
                 };
               case 'Checklists':
                 return {
-                  iconBg: 'bg-purple-600',
-                  activeBorder: 'border-purple-500',
-                  activeBg: 'bg-purple-50',
-                  hoverBorder: 'hover:border-purple-300',
-                  hoverBg: 'hover:bg-purple-25'
+                  iconBg: 'bg-elegant-purple',
+                  activeBorder: 'border-elegant-purple',
+                  activeBg: 'bg-elegant-purple/10',
+                  hoverBorder: 'hover:border-elegant-purple/30',
+                  hoverBg: 'hover:bg-elegant-purple/5'
                 };
               case 'Minigames':
                 return {
-                  iconBg: 'bg-orange-600',
-                  activeBorder: 'border-orange-500',
-                  activeBg: 'bg-orange-50',
-                  hoverBorder: 'hover:border-orange-300',
-                  hoverBg: 'hover:bg-orange-25'
+                  iconBg: 'bg-status-yellow',
+                  activeBorder: 'border-status-yellow',
+                  activeBg: 'bg-status-yellow/10',
+                  hoverBorder: 'hover:border-status-yellow/30',
+                  hoverBg: 'hover:bg-status-yellow/5'
                 };
               default:
                 return {
-                  iconBg: 'bg-gray-600',
-                  activeBorder: 'border-gray-500',
-                  activeBg: 'bg-gray-50',
-                  hoverBorder: 'hover:border-gray-300',
-                  hoverBg: 'hover:bg-gray-25'
+                  iconBg: 'bg-text-grey',
+                  activeBorder: 'border-text-grey',
+                  activeBg: 'bg-light-background-blue',
+                  hoverBorder: 'hover:border-text-grey/30',
+                  hoverBg: 'hover:bg-light-background-blue/80'
                 };
             }
           };
@@ -470,7 +470,7 @@ const MaterialsPage: React.FC = () => {
               className={`rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 relative ${
                 activeCategory === category.id
                   ? `${colors.activeBorder} ${colors.activeBg}` 
-                  : `border-gray-200 bg-white ${colors.hoverBorder} ${colors.hoverBg}`
+                  : `border-light-background-blue bg-white ${colors.hoverBorder} ${colors.hoverBg}`
               }`}
             >
               <div className="flex items-center gap-3">
@@ -483,7 +483,7 @@ const MaterialsPage: React.FC = () => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 truncate">
+                  <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black truncate">
                     {category.title}
                   </OnestFont>
                 </div>
@@ -492,11 +492,11 @@ const MaterialsPage: React.FC = () => {
               {/* Tooltip */}
               {hoveredCategory === category.id && (
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
-                  <div className="bg-gray-100 border border-gray-200 text-gray-700 text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
-                    <OnestFont weight={300} lineHeight="relaxed" className="text-gray-700">
+                  <div className="bg-light-background-blue border border-light-background-blue text-text-grey text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
                       {category.description}
                     </OnestFont>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-100"></div>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-light-background-blue"></div>
                   </div>
                 </div>
               )}
@@ -533,17 +533,17 @@ const MaterialCard = ({
     };
 
     const getFocusRingColor = () => {
-      return infoIconColor === 'purple' ? 'focus:ring-purple-500' : 'focus:ring-green-500';
+      return infoIconColor === 'purple' ? 'focus:ring-elegant-purple' : 'focus:ring-status-green';
     };
 
     return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 xl:p-8 text-center hover:shadow-lg transition-all duration-200 relative max-w-lg mx-auto">
+    <div className="bg-white rounded-2xl border border-light-background-blue p-6 xl:p-8 text-center hover:shadow-lg transition-all duration-200 relative max-w-lg mx-auto">
       {/* Info Button */}
       {showInfoButton && onInfoClick && (
         <div className="absolute top-4 right-4">
           <button
             onClick={() => onInfoClick(item.id)}
-            className={`flex items-center justify-center w-10 h-10 bg-white hover:bg-gray-50 border border-gray-200 rounded-full shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 ${getFocusRingColor()} focus:ring-offset-2`}
+            className={`flex items-center justify-center w-10 h-10 bg-white hover:bg-light-background-blue border border-light-background-blue rounded-full shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 ${getFocusRingColor()} focus:ring-offset-2`}
             title={`More information about this ${infoIconColor === 'purple' ? 'checklist' : 'worksheet'}`}
           >
             <img src={getInfoIcon()} alt="Info" style={{ width: '1.25rem', height: '1.25rem' }} />
@@ -560,10 +560,10 @@ const MaterialCard = ({
               style={{ filter: 'brightness(0) invert(1)' }}
             />
         </div>
-        <OnestFont as="h3" weight={700} lineHeight="tight" className="text-lg xl:text-xl text-gray-900 mb-3">
+        <OnestFont as="h3" weight={700} lineHeight="tight" className="text-lg xl:text-xl text-text-blue-black mb-3">
           {item.title}
         </OnestFont>
-        <OnestFont weight={300} lineHeight="relaxed" className="text-gray-600 text-sm leading-relaxed">
+        <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm leading-relaxed">
           {item.description}
         </OnestFont>
       </div>
@@ -572,7 +572,7 @@ const MaterialCard = ({
         <div className="flex gap-3">
           <button 
             onClick={() => onAction(item.id)}
-            className={`flex-1 ${colorClass.replace('bg-', 'bg-')} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('bg-', 'bg-').replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
+            className={`flex-1 ${colorClass.replace('bg-', 'bg-')} text-white py-3 px-6 rounded-xl font-medium hover:opacity-90 transition-colors flex items-center justify-center gap-2`}
           >
             {actionIcon}
             <OnestFont as="span" weight={500} lineHeight="relaxed">
@@ -581,7 +581,7 @@ const MaterialCard = ({
           </button>
           <button 
             onClick={() => secondaryAction.onClick(item.id)}
-            className={`flex-1 bg-white text-${colorClass.replace('bg-', '').replace('600', '600')} py-3 px-6 rounded-xl font-medium border border-${colorClass.replace('bg-', '').replace('600', '600')} hover:bg-${colorClass.replace('bg-', '').replace('600', '50')} transition-colors flex items-center justify-center gap-2`}
+            className={`flex-1 bg-white text-${colorClass.replace('bg-', '').replace('600', '600')} py-3 px-6 rounded-xl font-medium border border-${colorClass.replace('bg-', '').replace('600', '600')} hover:bg-${colorClass.replace('bg-', '').replace('600', '50')} hover:opacity-90 transition-colors flex items-center justify-center gap-2`}
           >
             {secondaryAction.icon}
             <OnestFont as="span" weight={500} lineHeight="relaxed">
@@ -592,7 +592,7 @@ const MaterialCard = ({
       ) : (
         <button 
           onClick={() => onAction(item.id)}
-          className={`w-full ${colorClass} text-white py-3 px-6 rounded-xl font-medium hover:${colorClass.replace('600', '700')} transition-colors flex items-center justify-center gap-2`}
+          className={`w-full ${colorClass} text-white py-3 px-6 rounded-xl font-medium hover:opacity-90 transition-colors flex items-center justify-center gap-2`}
         >
           {actionIcon}
           <OnestFont as="span" weight={500} lineHeight="relaxed">
@@ -609,9 +609,9 @@ const MaterialCard = ({
       <div className="relative">
         <button
           onClick={() => setShowCalculator(null)}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
         >
-          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -622,9 +622,9 @@ const MaterialCard = ({
       <div className="relative">
         <button
           onClick={() => setShowCalculator(null)}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
         >
-          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -635,9 +635,9 @@ const MaterialCard = ({
       <div className="relative">
         <button
           onClick={() => setShowCalculator(null)}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
         >
-          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -648,9 +648,9 @@ const MaterialCard = ({
       <div className="relative">
         <button
           onClick={() => setShowChecklist(null)}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
         >
-          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -661,9 +661,9 @@ const MaterialCard = ({
       <div className="relative">
         <button
           onClick={() => setShowChecklist(null)}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
         >
-          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -691,8 +691,8 @@ const MaterialCard = ({
         <div className="p-6">
           <HeaderSection />
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3 text-gray-600">Loading materials...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-elegant-purple"></div>
+            <span className="ml-3 text-text-grey">Loading materials...</span>
           </div>
         </div>
       </div>
@@ -717,7 +717,7 @@ const MaterialCard = ({
               <MaterialCard
                 key={calculator.id}
                 item={calculator}
-                colorClass="bg-blue-600"
+                colorClass="bg-logo-blue"
                 onAction={handleCalculatorClick}
                 actionText="Use Calculator"
               />
@@ -728,7 +728,7 @@ const MaterialCard = ({
               <MaterialCard
                 key={worksheet.id}
                 item={worksheet}
-                colorClass="bg-green-600"
+                colorClass="bg-status-green"
                 onAction={handleWorksheetDownload}
                 actionText="Download"
                 secondaryAction={{
@@ -746,7 +746,7 @@ const MaterialCard = ({
               <MaterialCard
                 key={checklist.id}
                 item={checklist}
-                colorClass="bg-purple-600"
+                colorClass="bg-elegant-purple"
                 onAction={handleChecklistClick}
                 actionText="Use Checklist"
                 showInfoButton={false}
@@ -758,7 +758,7 @@ const MaterialCard = ({
             {/* Minigames */}
             {activeCategory === 'Minigames' && (
               <div className="col-span-full text-center py-12">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-gray-500 text-lg">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-unavailable-button text-lg">
                   Minigames coming soon!
                 </OnestFont>
               </div>

@@ -49,15 +49,15 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
   return (
     <div
       className={`bg-white rounded-3xl shadow-sm relative overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer flex flex-col ${
-        isFeatured ? 'border-2 border-orange-300' : 'border border-gray-200'
+        isFeatured ? 'border-2 border-status-yellow' : 'border border-light-background-blue'
       }`}
       onClick={onClick}
     >
       {/* Background area - responsive height */}
-      <div className="relative aspect-[16/11] sm:aspect-[18/10] md:aspect-[19/9] rounded-t-3xl bg-gray-100">
+      <div className="relative aspect-[16/11] sm:aspect-[18/10] md:aspect-[19/9] rounded-t-3xl bg-light-background-blue">
         {/* Featured badge - top left */}
         {isFeatured && (
-          <span className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-orange-400 text-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium z-10">
+          <span className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-status-yellow text-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium z-10">
             ⭐ Featured
           </span>
         )}
@@ -76,12 +76,12 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
       {/* White content section with flexible layout */}
       <div className="bg-white p-4 sm:p-5 md:p-6 relative rounded-b-3xl flex-1 flex flex-col">
         {/* Coin reward - positioned in top right of content area */}
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 md:top-4 md:right-4 flex items-center gap-1 bg-yellow-100 rounded-full px-2 py-1">
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 md:top-4 md:right-4 flex items-center gap-1 bg-logo-yellow/20 rounded-full px-2 py-1">
           <OnestFont 
             as="span" 
             weight={700} 
             lineHeight="relaxed"
-            className="text-xs sm:text-sm font-semibold text-gray-900"
+            className="text-xs sm:text-sm font-semibold text-text-blue-black"
           >
             {coupon.cost_in_coins}
           </OnestFont>
@@ -100,7 +100,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
               as="h3" 
               weight={700} 
               lineHeight="tight"
-              className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-1 sm:mb-2 line-clamp-2 break-words"
+              className="text-sm sm:text-base md:text-lg font-bold text-text-grey mb-1 sm:mb-2 line-clamp-2 break-words"
             >
               {coupon.title}
             </OnestFont>
@@ -108,7 +108,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
               as="p" 
               weight={300} 
               lineHeight="relaxed"
-              className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 break-words"
+              className="text-xs sm:text-sm text-text-grey line-clamp-2 sm:line-clamp-3 break-words"
             >
               {coupon.description}
             </OnestFont>
@@ -123,7 +123,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
               as="div" 
               weight={500} 
               lineHeight="relaxed"
-              className="text-xs sm:text-sm text-white bg-gradient-to-r from-blue-500 to-purple-600 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full truncate flex-shrink min-w-0 max-w-[60%] shadow-sm"
+              className="text-xs sm:text-sm text-white bg-gradient-to-r from-logo-blue to-elegant-blue px-2 py-0.5 sm:px-3 sm:py-1 rounded-full truncate flex-shrink min-w-0 max-w-[60%] shadow-sm"
             >
               {coupon.partner_company}
             </OnestFont>
@@ -131,7 +131,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ coupon, onClick }) => {
               as="div" 
               weight={700} 
               lineHeight="relaxed"
-              className="text-xs sm:text-sm font-semibold text-blue-600 whitespace-nowrap flex-shrink-0"
+              className="text-xs sm:text-sm font-semibold text-logo-blue whitespace-nowrap flex-shrink-0"
             >
               {discount}
             </OnestFont>

@@ -30,9 +30,9 @@ export class ButtonBuilder {
       width,
       height,
       text,
-      backgroundColor = COLORS.BLUE_500,
-      hoverColor = COLORS.BLUE_600,
-      textColor = COLORS.TEXT_WHITE,
+      backgroundColor = COLORS.LOGO_BLUE,
+      hoverColor = COLORS.ELEGANT_BLUE,
+      textColor = COLORS.TEXT_WHITE_HEX,
       fontSize = 16,
       onClick,
       disabled = false,
@@ -42,10 +42,10 @@ export class ButtonBuilder {
 
     // Create button background
     const buttonBg = scene.add.rectangle(0, 0, width, height, backgroundColor);
-    buttonBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    buttonBg.setStrokeStyle(scale(2), COLORS.UNAVAILABLE_BUTTON);
     container.add(buttonBg);
 
-    // Create button text - UPDATED
+    // Create button text
     const buttonText = scene.add.text(0, 0, text,
       createTextStyle('BUTTON', textColor, { fontSize: `${scaleFontSize(fontSize)}px` })
     ).setOrigin(0.5);
@@ -100,9 +100,9 @@ export class ButtonBuilder {
       text,
       icon,
       iconSize = 20,
-      backgroundColor = COLORS.BLUE_500,
-      hoverColor = COLORS.BLUE_600,
-      textColor = COLORS.TEXT_WHITE,
+      backgroundColor = COLORS.LOGO_BLUE,
+      hoverColor = COLORS.ELEGANT_BLUE,
+      textColor = COLORS.TEXT_WHITE_HEX,
       fontSize = 14,
       onClick,
       disabled = false,
@@ -112,10 +112,10 @@ export class ButtonBuilder {
 
     // Create button background (rounded)
     const buttonBg = scene.add.rectangle(0, 0, width, height, backgroundColor, OPACITY.HIGH);
-    buttonBg.setStrokeStyle(scale(2), COLORS.WHITE);
+    buttonBg.setStrokeStyle(scale(2), COLORS.PURE_WHITE);
     container.add(buttonBg);
 
-    // Create icon - UPDATED
+    // Create icon
     const iconText = scene.add.text(-width / 4, 0, icon, {
       fontSize: `${scaleFontSize(iconSize)}px`,
       fontFamily: FONT_FAMILY,
@@ -123,7 +123,7 @@ export class ButtonBuilder {
     }).setOrigin(0.5);
     container.add(iconText);
 
-    // Create button text - UPDATED
+    // Create button text
     const buttonText = scene.add.text(width / 8, 0, text,
       createTextStyle('BUTTON', textColor, { fontSize: `${scaleFontSize(fontSize)}px` })
     ).setOrigin(0.5);
@@ -181,7 +181,7 @@ static createBackButton(
   const arrow = scene.add.text(0, 0, '←', {
     fontSize: '48px',  // Fixed size, not scaled
     fontFamily: FONT_FAMILY,
-    color: '#000000',
+    color: COLORS.TEXT_PRIMARY,  // TextBlueBlack
     fontStyle: 'bold',
   }).setOrigin(0, 0.5);
   container.add(arrow);
@@ -190,7 +190,7 @@ static createBackButton(
   const backText = scene.add.text(scale(55), 0, 'Back', {
     fontSize: '32px',  // Fixed size, not scaled
     fontFamily: FONT_FAMILY,
-    color: '#000000',
+    color: COLORS.TEXT_PRIMARY,  // TextBlueBlack
     fontStyle: 'bold',
   }).setOrigin(0, 0.5);
   container.add(backText);
@@ -239,30 +239,30 @@ static createBackButton(
 
     const container = scene.add.container(x, y);
 
-    // Determine colors based on state - Fix type assignments
+    // Determine colors based on state
     let backgroundColor: number;
     let textColor: string;
     let statusIcon = '';
 
     if (isLocked) {
-      backgroundColor = COLORS.GRAY_400; // This is a number
-      textColor = COLORS.TEXT_SECONDARY; // This is a string
+      backgroundColor = COLORS.UNAVAILABLE_BUTTON;
+      textColor = COLORS.TEXT_SECONDARY;
       statusIcon = '🔒';
     } else if (isCompleted) {
-      backgroundColor = COLORS.GREEN_500; // This is a number
-      textColor = COLORS.TEXT_WHITE; // This is a string
+      backgroundColor = COLORS.STATUS_GREEN;
+      textColor = COLORS.TEXT_WHITE_HEX;
       statusIcon = '✓';
     } else {
-      backgroundColor = COLORS.BLUE_500; // This is a number  
-      textColor = COLORS.TEXT_WHITE; // This is a string
+      backgroundColor = COLORS.LOGO_BLUE;
+      textColor = COLORS.TEXT_WHITE_HEX;
     }
 
     // Create button background
     const buttonBg = scene.add.rectangle(0, 0, width, height, backgroundColor);
-    buttonBg.setStrokeStyle(scale(2), COLORS.GRAY_200);
+    buttonBg.setStrokeStyle(scale(2), COLORS.UNAVAILABLE_BUTTON);
     container.add(buttonBg);
 
-    // Create lesson title - UPDATED
+    // Create lesson title
     const lessonText = scene.add.text(0, -scale(8), text,
       createTextStyle('BUTTON', textColor, { fontSize: `${scaleFontSize(16)}px` })
     ).setOrigin(0.5);
@@ -288,11 +288,12 @@ static createBackButton(
 
     // Make interactive if not locked
     if (!isLocked && onClick) {
-      const hoverColor = isCompleted ? COLORS.GREEN_600 : COLORS.BLUE_600;
+      // Use opacity for hover instead of new colors
+      const originalAlpha = container.alpha;
       
       buttonBg.setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
-          buttonBg.setFillStyle(hoverColor);
+          container.setAlpha(OPACITY.HIGH);
           scene.tweens.add({
             targets: container,
             scale: 1.03,
@@ -301,7 +302,7 @@ static createBackButton(
           });
         })
         .on('pointerout', () => {
-          buttonBg.setFillStyle(backgroundColor);
+          container.setAlpha(originalAlpha);
           scene.tweens.add({
             targets: container,
             scale: 1,
@@ -340,9 +341,9 @@ static createBackButton(
 
     const container = scene.add.container(x, y);
 
-    // Special gradient-like background for minigames (using existing colors)
-    const buttonBg = scene.add.rectangle(0, 0, width, height, COLORS.BLUE_700);
-    buttonBg.setStrokeStyle(scale(3), COLORS.BLUE_400);
+    // Use gradient blue colors for minigames
+    const buttonBg = scene.add.rectangle(0, 0, width, height, COLORS.LINEAR_BLUE_1_START);
+    buttonBg.setStrokeStyle(scale(3), COLORS.ELEGANT_BLUE);
     container.add(buttonBg);
 
     // Add icon
@@ -352,17 +353,17 @@ static createBackButton(
     }).setOrigin(0.5);
     container.add(iconText);
 
-    // Add button text - UPDATED
+    // Add button text
     const buttonText = scene.add.text(0, scale(15), text,
-      createTextStyle('BUTTON', COLORS.TEXT_WHITE, { fontSize: `${scaleFontSize(14)}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_WHITE_HEX, { fontSize: `${scaleFontSize(14)}px` })
     ).setOrigin(0.5);
     container.add(buttonText);
 
-    // Make interactive
+    // Make interactive - use opacity for hover
     if (onClick) {
       buttonBg.setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
-          buttonBg.setFillStyle(COLORS.BLUE_600);
+          container.setAlpha(OPACITY.HIGH);
           scene.tweens.add({
             targets: container,
             scale: 1.05,
@@ -371,7 +372,7 @@ static createBackButton(
           });
         })
         .on('pointerout', () => {
-          buttonBg.setFillStyle(COLORS.BLUE_700);
+          container.setAlpha(OPACITY.FULL);
           scene.tweens.add({
             targets: container,
             scale: 1,

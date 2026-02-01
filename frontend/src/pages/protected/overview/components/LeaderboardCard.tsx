@@ -12,14 +12,14 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
   onMenuClick 
 }) => {
   return (
-    <div className="bg-[#EFF2FF] rounded-xl overflow-hidden">
+    <div className="bg-card-gradient rounded-xl overflow-hidden">
       {/* Header section */}
       <div className="flex items-center justify-between h-16 sm:h-20 px-4 py-2 gap-2">
         <OnestFont 
           as="h2" 
           weight={700} 
           lineHeight="tight"
-          className="text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold flex-1 min-w-0"
+          className="text-text-blue-black text-lg sm:text-xl lg:text-2xl font-bold flex-1 min-w-0"
           style={{ 
             wordBreak: 'break-word',
             overflowWrap: 'break-word'
@@ -28,7 +28,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
           Weekly Leaderboard
         </OnestFont>
         <button 
-          className="text-gray-600 hover:text-gray-800 flex-shrink-0"
+          className="text-text-grey hover:text-text-blue-black flex-shrink-0"
           onClick={onMenuClick}
           aria-label="Leaderboard menu"
         >
@@ -52,7 +52,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             className="flex items-center justify-between h-12 px-4 gap-2"
           >
             <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-[#D7DEFF] flex-shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-tab-active flex-shrink-0">
                 <img
                   src={entry.avatar}
                   alt="Avatar"
@@ -62,7 +62,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
               <OnestFont 
                 weight={300} 
                 lineHeight="relaxed"
-                className="text-gray-900 text-sm sm:text-base font-medium truncate"
+                className="text-text-blue-black text-sm sm:text-base font-medium truncate"
               >
                 {entry.name}
               </OnestFont>
@@ -70,7 +70,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             <OnestFont 
               weight={500} 
               lineHeight="relaxed"
-              className="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0"
+              className="text-text-grey text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0"
             >
               {entry.coins} Coins
             </OnestFont>

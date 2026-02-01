@@ -26,9 +26,9 @@ export class CardBuilder {
       y = 0,
       width,
       height,
-      backgroundColor = COLORS.WHITE,
+      backgroundColor = COLORS.PURE_WHITE,
       backgroundAlpha = OPACITY.HIGH,
-      strokeColor = COLORS.GRAY_200,
+      strokeColor = COLORS.UNAVAILABLE_BUTTON,
       strokeWidth = 2,
     } = config;
 
@@ -59,7 +59,7 @@ export class CardBuilder {
   ): Phaser.GameObjects.Container {
     const {
       iconText,
-      iconCircleColor = COLORS.BLUE_500,
+      iconCircleColor = COLORS.LOGO_BLUE,
       iconCircleRadius = 32,
       iconCircleY = -180,
     } = config;
@@ -75,11 +75,11 @@ export class CardBuilder {
     );
     container.add(iconCircle);
 
-    // Add icon text/emoji - UPDATED
+    // Add icon text/emoji
     const icon = config.scene.add.text(0, scale(iconCircleY), iconText, {
       fontSize: `${scale(32)}px`,
       fontFamily: FONT_FAMILY,
-      color: COLORS.TEXT_WHITE,
+      color: COLORS.TEXT_WHITE_HEX,
     }).setOrigin(0.5);
     container.add(icon);
 
@@ -103,7 +103,7 @@ export class CardBuilder {
       iconText,
       titleText,
       subtitleText,
-      iconCircleColor = COLORS.BLUE_500,
+      iconCircleColor = COLORS.LOGO_BLUE,
       titleColor = COLORS.TEXT_PRIMARY,
       subtitleColor = COLORS.TEXT_SECONDARY,
     } = config;
@@ -114,13 +114,13 @@ export class CardBuilder {
       iconCircleColor,
     });
 
-    // Add title - UPDATED
+    // Add title
     const title = config.scene.add.text(0, scale(-120), titleText,
       createTextStyle('H2', titleColor, { fontSize: `${scale(28)}px` })
     ).setOrigin(0.5);
     container.add(title);
 
-    // Add subtitle - UPDATED
+    // Add subtitle
     const subtitle = config.scene.add.text(0, scale(-80), subtitleText,
       createTextStyle('BODY_LIGHT', subtitleColor, { align: 'center' })
     ).setOrigin(0.5);
@@ -149,17 +149,17 @@ export class CardBuilder {
 
     const container = CardBuilder.createCard(config);
 
-    // Determine colors based on state - Fix type assignments
+    // Determine colors based on state
     const titleColor: string = isLocked ? COLORS.TEXT_SECONDARY : COLORS.TEXT_PRIMARY;
-    const descColor: string = COLORS.TEXT_SECONDARY; // Always secondary for description
+    const descColor: string = COLORS.TEXT_SECONDARY;
 
-    // Add neighborhood name - UPDATED
+    // Add neighborhood name
     const title = config.scene.add.text(0, scale(-40), neighborhoodName,
       createTextStyle('H2', titleColor)
     ).setOrigin(0.5);
     container.add(title);
 
-    // Add description - UPDATED
+    // Add description
     const desc = config.scene.add.text(0, scale(-10), description,
       createTextStyle('BODY_LIGHT', descColor, { align: 'center' })
     ).setOrigin(0.5);
@@ -218,7 +218,7 @@ export class CardBuilder {
     // Determine icon based on house type
     const houseIcon = houseType === 'apartment' ? '🏢' : '🏠';
     
-    // Determine colors based on state - Fix type assignments
+    // Determine colors based on state
     let titleColor: string;
     const descColor: string = COLORS.TEXT_SECONDARY;
     let statusIcon = '';
@@ -233,20 +233,20 @@ export class CardBuilder {
       titleColor = COLORS.TEXT_PRIMARY;
     }
 
-    // Add house icon - UPDATED
+    // Add house icon
     const icon = config.scene.add.text(0, scale(-50), houseIcon, {
       fontSize: `${scale(40)}px`,
       fontFamily: FONT_FAMILY,
     }).setOrigin(0.5);
     container.add(icon);
 
-    // Add house name - UPDATED
+    // Add house name
     const title = config.scene.add.text(0, scale(-10), houseName,
       createTextStyle('BODY_BOLD', titleColor)
     ).setOrigin(0.5);
     container.add(title);
 
-    // Add lesson count - UPDATED
+    // Add lesson count
     const lessonText = config.scene.add.text(
       0, 
       scale(15), 
@@ -302,7 +302,7 @@ export class CardBuilder {
 
     const container = CardBuilder.createCard(config);
 
-    // Determine colors and icons - Fix type assignments
+    // Determine colors and icons
     let titleColor: string;
     let typeIcon = '📚';
     let statusIcon = '';
@@ -335,26 +335,26 @@ export class CardBuilder {
         typeIcon = '📚';
     }
 
-    // Add lesson type icon - UPDATED
+    // Add lesson type icon
     const icon = config.scene.add.text(0, scale(-60), typeIcon, {
       fontSize: `${scale(32)}px`,
       fontFamily: FONT_FAMILY,
     }).setOrigin(0.5);
     container.add(icon);
 
-    // Add lesson name - UPDATED
+    // Add lesson name
     const title = config.scene.add.text(0, scale(-20), lessonName,
       createTextStyle('BODY_BOLD', titleColor, { align: 'center' })
     ).setOrigin(0.5);
     container.add(title);
 
-    // Add lesson type - UPDATED
+    // Add lesson type
     const type = config.scene.add.text(0, scale(0), lessonType,
       createTextStyle('CAPTION', COLORS.TEXT_SECONDARY)
     ).setOrigin(0.5);
     container.add(type);
 
-    // Add difficulty - UPDATED (Fix color assignment)
+    // Add difficulty
     const diffColor: string = difficulty === 'Hard' ? COLORS.TEXT_WARNING : 
                               difficulty === 'Medium' ? COLORS.TEXT_WARNING : COLORS.TEXT_SUCCESS;
     const diff = config.scene.add.text(0, scale(20), difficulty,
@@ -362,13 +362,13 @@ export class CardBuilder {
     ).setOrigin(0.5);
     container.add(diff);
 
-    // Add coin reward if not completed - UPDATED
+    // Add coin reward if not completed
     if (!isCompleted && !isLocked) {
       const coinText = config.scene.add.text(
         0, 
         scale(40), 
         `${coinReward} coins`,
-        createTextStyle('CAPTION', COLORS.TEXT_WARNING) // Using TEXT_WARNING as coin color
+        createTextStyle('CAPTION', COLORS.TEXT_WARNING) // Using StatusYellow for coins
       ).setOrigin(0.5);
       container.add(coinText);
     }
@@ -415,13 +415,13 @@ export class CardBuilder {
     const container = CardBuilder.createCard(config);
     const completionPercentage = Math.round((completedLessons / totalLessons) * 100);
 
-    // Add progress title - UPDATED
+    // Add progress title
     const title = config.scene.add.text(0, scale(-50), 'Your Progress',
       createTextStyle('H2', COLORS.TEXT_PRIMARY)
     ).setOrigin(0.5);
     container.add(title);
 
-    // Add completion stats - UPDATED
+    // Add completion stats
     const completionText = config.scene.add.text(
       0, 
       scale(-10), 
@@ -430,7 +430,7 @@ export class CardBuilder {
     ).setOrigin(0.5);
     container.add(completionText);
 
-    // Add percentage - UPDATED
+    // Add percentage
     const percentageText = config.scene.add.text(
       0, 
       scale(15), 
@@ -439,12 +439,12 @@ export class CardBuilder {
     ).setOrigin(0.5);
     container.add(percentageText);
 
-    // Add total coins - UPDATED
+    // Add total coins
     const coinText = config.scene.add.text(
       0, 
       scale(45), 
       `${totalCoins} coins earned`,
-      createTextStyle('BODY_MEDIUM', COLORS.TEXT_WARNING) // Using TEXT_WARNING as coin color
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_WARNING) // Using StatusYellow for coins
     ).setOrigin(0.5);
     container.add(coinText);
 

@@ -134,9 +134,9 @@ export default class HouseScene extends BaseScene {
   private createEnvironment(): void {
     const { width, height } = this.scale;
 
-    // Layer 1 (depth 0): Gradient background
+    // Layer 1 (depth 0): Gradient background - CardGradientColor
     const gradient = this.add.graphics();
-    gradient.fillGradientStyle(0xEEF1FF, 0xEEF1FF, 0xFAFBFF, 0xFAFBFF, 1);
+    gradient.fillGradientStyle(COLORS.CARD_GRADIENT_START, COLORS.CARD_GRADIENT_START, COLORS.CARD_GRADIENT_END, COLORS.CARD_GRADIENT_END, 1);
     gradient.fillRect(0, 0, width, height);
     gradient.setDepth(0);
 
@@ -170,19 +170,6 @@ export default class HouseScene extends BaseScene {
   private createLoadingPlaceholder(): void {
     const { width, height } = this.scale;
     
-    // BEFORE (Arial):
-    // const loadingText = this.add.text(
-    //   width / 2,
-    //   height / 2,
-    //   'Loading lessons...',
-    //   {
-    //     fontSize: scaleFontSize(24),
-    //     fontFamily: 'Arial, sans-serif',
-    //     color: COLORS.TEXT_SECONDARY,
-    //   }
-    // ).setOrigin(0.5);
-    
-    // AFTER (Onest):
     const loadingText = this.add.text(
       width / 2,
       height / 2,
@@ -218,8 +205,8 @@ export default class HouseScene extends BaseScene {
       height: buttonHeight,
       text: 'Minigame',
       fontSize: Math.min(width, height) * 0.016,
-      backgroundColor: COLORS.BLUE_500,
-      hoverColor: COLORS.BLUE_600,
+      backgroundColor: COLORS.LOGO_BLUE,
+      hoverColor: COLORS.ELEGANT_BLUE,
       onClick: () => this.handleMinigameSelect(),
     });
     this.minigameButton.setDepth(10);
@@ -256,25 +243,14 @@ export default class HouseScene extends BaseScene {
     this.lessonContainers.push(lessonContainer);
 
     const cardOffsetY = -cardHeight * 0.1;
-    const card = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.WHITE, 0.7);
+    const card = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.PURE_WHITE, 0.7);
     const strokeWidth = Math.max(2, width * 0.002);
-    card.setStrokeStyle(strokeWidth, COLORS.GRAY_200);
+    card.setStrokeStyle(strokeWidth, COLORS.UNAVAILABLE_BUTTON);
     lessonContainer.add(card);
 
     const titleSize = Math.min(width, height) * 0.022;
     const titleOffsetY = -cardHeight * 0.3;
     
-    // BEFORE (Arial):
-    // const titleText = this.add.text(0, titleOffsetY, lesson.title, {
-    //   fontSize: `${titleSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: COLORS.TEXT_PRIMARY,
-    //   fontStyle: 'bold',
-    //   align: 'center',
-    //   wordWrap: { width: cardWidth * 0.9 },
-    // }).setOrigin(0.5);
-    
-    // AFTER (Onest):
     const titleText = this.add.text(0, titleOffsetY, lesson.title,
       createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
         fontSize: `${titleSize}px`,
@@ -287,15 +263,6 @@ export default class HouseScene extends BaseScene {
     const typeSize = Math.min(width, height) * 0.016;
     const typeOffsetY = -cardHeight * 0.1;
     
-    // BEFORE (Arial):
-    // const typeText = this.add.text(0, typeOffsetY, lesson.type, {
-    //   fontSize: `${typeSize}px`,
-    //   fontFamily: 'Arial, sans-serif',
-    //   color: COLORS.TEXT_SECONDARY,
-    //   align: 'center',
-    // }).setOrigin(0.5);
-    
-    // AFTER (Onest):
     const typeText = this.add.text(0, typeOffsetY, lesson.type,
       createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
         fontSize: `${typeSize}px`,
@@ -305,7 +272,7 @@ export default class HouseScene extends BaseScene {
     lessonContainer.add(typeText);
 
     if (lesson.locked) {
-      const lockOverlay = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.GRAY_200, 0.5);
+      const lockOverlay = this.add.rectangle(0, cardOffsetY, cardWidth, cardHeight, COLORS.UNAVAILABLE_BUTTON, 0.5);
       lessonContainer.add(lockOverlay);
     }
 
@@ -327,22 +294,22 @@ export default class HouseScene extends BaseScene {
 
     if (lesson.completed) {
       // Completed badge (green circle with checkmark)
-      const completedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.GREEN_500);
+      const completedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.STATUS_GREEN);
       container.add(completedBg);
       
       const checkmark = this.add.text(badgeX, badgeY, '✓',
-        createTextStyle('BADGE', COLORS.TEXT_WHITE, {
+        createTextStyle('BADGE', COLORS.TEXT_WHITE_HEX, {
           fontSize: `${badgeSize * 1.2}px`
         })
       ).setOrigin(0.5);
       container.add(checkmark);
     } else if (lesson.locked) {
-      // Locked badge (red circle with lock)
-      const lockedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.GRAY_400);
+      // Locked badge (gray circle with lock)
+      const lockedBg = this.add.circle(badgeX, badgeY, badgeSize, COLORS.UNAVAILABLE_BUTTON);
       container.add(lockedBg);
       
       const lockIcon = this.add.text(badgeX, badgeY, '🔒',
-        createTextStyle('BADGE', COLORS.TEXT_WHITE, {
+        createTextStyle('BADGE', COLORS.TEXT_WHITE_HEX, {
           fontSize: `${badgeSize}px`
         })
       ).setOrigin(0.5);

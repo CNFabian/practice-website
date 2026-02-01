@@ -9,7 +9,7 @@ interface SupportCardProps {
 const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
   return (
     <div 
-      className="flex items-center px-3 sm:px-4 py-3 sm:py-0 min-h-[4rem] sm:h-16 bg-[#D7DEFF] rounded-xl hover:bg-[#c7d0f4] transition-colors cursor-pointer"
+      className="flex items-center px-3 sm:px-4 py-3 sm:py-0 min-h-[4rem] sm:h-16 bg-tab-active rounded-xl hover:bg-tab-active/80 transition-colors cursor-pointer"
       onClick={supportCard.action}
     >
       <div className="flex items-center gap-3 sm:gap-4 w-full">
@@ -25,7 +25,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
             as="h3" 
             weight={700} 
             lineHeight="relaxed"
-            className="text-gray-900 text-base sm:text-lg font-semibold leading-tight"
+            className="text-text-blue-black text-base sm:text-lg font-semibold leading-tight"
             style={{ 
               wordBreak: 'break-word',
               overflowWrap: 'break-word'
@@ -37,7 +37,7 @@ const SupportCard: React.FC<SupportCardProps> = ({ supportCard }) => {
             as="p" 
             weight={300} 
             lineHeight="relaxed"
-            className="text-gray-600 text-xs sm:text-sm leading-tight mt-0.5"
+            className="text-text-grey text-xs sm:text-sm leading-tight mt-0.5"
             style={{ 
               wordBreak: 'break-word',
               overflowWrap: 'break-word'

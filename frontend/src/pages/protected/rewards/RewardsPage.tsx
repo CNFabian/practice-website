@@ -80,7 +80,7 @@ const RewardsPage: React.FC = () => {
   useEffect(() => {
   const bgElement = document.getElementById('section-background');
   if (bgElement) {
-    bgElement.style.setProperty('background', 'rgb(224, 231, 255)', 'important');
+    bgElement.className = 'bg-light-background-blue';
     bgElement.style.backgroundSize = 'cover';
   }
 }, []);
@@ -143,10 +143,10 @@ const RewardsPage: React.FC = () => {
 
   if (loading || coinsLoading) {
     return (
-      <div className="bg-gray-50 p-6 min-h-screen flex items-center justify-center">
+      <div className="bg-light-background-blue p-6 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading rewards...</p>
+          <div className="w-16 h-16 border-4 border-logo-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-text-grey">Loading rewards...</p>
         </div>
       </div>
     );
@@ -157,8 +157,8 @@ const RewardsPage: React.FC = () => {
       {isRedeeming && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 shadow-xl">
-            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 text-center">Redeeming coupon...</p>
+            <div className="w-16 h-16 border-4 border-logo-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-text-grey text-center">Redeeming coupon...</p>
           </div>
         </div>
       )}
@@ -181,8 +181,8 @@ const RewardsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           {redemptionHistory.length === 0 ? (
             <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-600 mb-4">Purchase History</h3>
-              <p className="text-gray-500">No purchases yet. Start browsing rewards to redeem your coins!</p>
+              <h3 className="text-xl font-semibold text-text-grey mb-4">Purchase History</h3>
+              <p className="text-unavailable-button">No purchases yet. Start browsing rewards to redeem your coins!</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -191,11 +191,11 @@ const RewardsPage: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold text-lg">{redemption.coupon.title}</h3>
-                      <p className="text-gray-600">{redemption.coupon.partner_company}</p>
-                      <p className="text-sm text-gray-500 mt-2">
+                      <p className="text-text-grey">{redemption.coupon.partner_company}</p>
+                      <p className="text-sm text-unavailable-button mt-2">
                         Code: <span className="font-mono font-bold">{redemption.redemption_code}</span>
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-unavailable-button mt-1">
                         Redeemed: {new Date(redemption.redeemed_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -208,13 +208,13 @@ const RewardsPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-blue-600">{redemption.coins_spent} coins</p>
+                      <p className="font-semibold text-logo-blue">{redemption.coins_spent} coins</p>
                       {redemption.is_active ? (
-                        <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                        <span className="inline-block mt-2 px-3 py-1 bg-status-green/10 text-status-green rounded-full text-xs">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                        <span className="inline-block mt-2 px-3 py-1 bg-light-background-blue text-text-grey rounded-full text-xs">
                           Used
                         </span>
                       )}

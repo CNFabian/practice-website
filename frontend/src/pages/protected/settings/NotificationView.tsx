@@ -22,8 +22,8 @@ const NotificationsView: React.FC = () => {
   const Toggle: React.FC<{ enabled: boolean; onChange: (enabled: boolean) => void }> = ({ enabled, onChange }) => (
     <button
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-        enabled ? 'bg-blue-600' : 'bg-gray-200'
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-logo-blue focus:ring-offset-2 ${
+        enabled ? 'bg-logo-blue' : 'bg-light-background-blue'
       }`}
     >
       <span
@@ -40,10 +40,10 @@ const NotificationsView: React.FC = () => {
       <div>
         {/* Notifications From Us */}
         <div className="pb-6">
-          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-text-blue-black mb-2">
             Notifications From Us
           </OnestFont>
-          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600 mb-6">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mb-6">
             Receive the latest news and updates from Nest Navigate
           </OnestFont>
           
@@ -51,10 +51,10 @@ const NotificationsView: React.FC = () => {
             {/* News and Updates */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                   News and Updates
                 </OnestFont>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   Receive updates on the latest educational content and rewards offered by Nest Navigate
                 </OnestFont>
               </div>
@@ -64,10 +64,10 @@ const NotificationsView: React.FC = () => {
             {/* Tips and Tutorials */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                   Tips and Tutorials
                 </OnestFont>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   Learn how to use Nest Navigate and make the most of the resources we provide
                 </OnestFont>
               </div>
@@ -77,10 +77,10 @@ const NotificationsView: React.FC = () => {
             {/* User Research */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                   User Research
                 </OnestFont>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   Provide feedback on Nest Navigate and help us improve the product
                 </OnestFont>
               </div>
@@ -90,11 +90,11 @@ const NotificationsView: React.FC = () => {
         </div>
 
         {/* Reminders */}
-        <div className="border-t border-gray-200 pt-6">
-          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-gray-900 mb-2">
+        <div className="border-t border-light-background-blue pt-6">
+          <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-text-blue-black mb-2">
             Reminders
           </OnestFont>
-          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
             Set reminders to help you stay on track
           </OnestFont>
           
@@ -102,10 +102,10 @@ const NotificationsView: React.FC = () => {
             {/* Expert Seminars */}
             <div className="flex items-start justify-between">
               <div className="flex-1 mt-6">
-                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                   Expert Seminars
                 </OnestFont>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   Get reminders about seminars hosted by experts
                 </OnestFont>
               </div>
@@ -113,7 +113,7 @@ const NotificationsView: React.FC = () => {
                 <select
                   value={expertSeminars}
                   onChange={(e) => setExpertSeminars(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer pr-10"
+                  className="px-4 py-2 border border-light-background-blue rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent appearance-none bg-white cursor-pointer pr-10"
                 >
                   <option value="15 minutes before">15 minutes before</option>
                   <option value="30 minutes before">30 minutes before</option>
@@ -123,7 +123,7 @@ const NotificationsView: React.FC = () => {
                   <option value="Never">Never</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -133,10 +133,10 @@ const NotificationsView: React.FC = () => {
             {/* Lesson Reminders */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-gray-900 mb-1">
+                <OnestFont as="h4" weight={700} lineHeight="relaxed" className="text-sm text-text-blue-black mb-1">
                   Lesson Reminders
                 </OnestFont>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   Receive reminders about incomplete lessons and modules that are in progress
                 </OnestFont>
               </div>
@@ -144,7 +144,7 @@ const NotificationsView: React.FC = () => {
                 <select
                   value={lessonReminders}
                   onChange={(e) => setLessonReminders(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer pr-10"
+                  className="px-4 py-2 border border-light-background-blue rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent appearance-none bg-white cursor-pointer pr-10"
                 >
                   <option value="Daily">Daily</option>
                   <option value="Every 3 days">Every 3 days</option>
@@ -153,7 +153,7 @@ const NotificationsView: React.FC = () => {
                   <option value="Never">Never</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-unavailable-button" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -164,16 +164,15 @@ const NotificationsView: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-4 border-t border-light-background-blue">
         <div>
-          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-gray-600">
+          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
             Last edited 2 minutes ago
           </OnestFont>
         </div>
         <button
           onClick={handleSaveSettings}
-          className="px-6 py-3 rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#6B73FF' }}
+          className="px-6 py-3 bg-elegant-blue rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
         >
           <OnestFont weight={700} lineHeight="relaxed">
             Save Settings

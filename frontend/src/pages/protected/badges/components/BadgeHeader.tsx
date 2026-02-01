@@ -8,10 +8,10 @@ interface BadgeHeaderProps {
 export const BadgeHeader = ({ progress }: BadgeHeaderProps) => {
   return (
     <div className="text-center mb-8">
-      <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-gray-800 mb-4">
+      <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-grey mb-4">
         Your Badge Collection
       </OnestFont>
-      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-gray-600 mb-6">
+      <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey mb-6">
         Collect badges by completing modules and achieving milestones in your homeownership journey
       </OnestFont>
       

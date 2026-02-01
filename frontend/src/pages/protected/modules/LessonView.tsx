@@ -119,14 +119,14 @@ const LessonView: React.FC<LessonViewProps> = ({
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
-      bgElement.style.setProperty('background', 'rgb(243, 244, 246)', 'important');
+      bgElement.className = 'bg-light-background-blue';
       bgElement.style.backgroundSize = 'cover';
     }
   }, [lesson.id]);
 
   if (!lesson || !module) {
     console.error('❌ LessonView: Missing required props!');
-    return <div className="p-8 text-center text-red-500">Missing lesson or module data</div>;
+    return <div className="p-8 text-center text-status-red">Missing lesson or module data</div>;
   }
 
   const { goToLesson } = useModules();
@@ -266,7 +266,7 @@ const LessonView: React.FC<LessonViewProps> = ({
             {/* Back Button Section */}
             <button
               onClick={onBack}
-              className="flex items-center text-gray-700 hover:text-gray-900"
+              className="flex items-center text-text-grey hover:text-text-blue-black"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -275,11 +275,11 @@ const LessonView: React.FC<LessonViewProps> = ({
             </button>
 
             {/* Toggle Section */}
-            <div className="flex items-center bg-gray-100 rounded-full p-1">
+            <div className="flex items-center bg-light-background-blue rounded-full p-1">
               <button 
                 onClick={() => setViewMode('video')}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  viewMode === 'video' ? 'bg-white shadow-sm' : 'text-gray-600'
+                  viewMode === 'video' ? 'bg-white shadow-sm' : 'text-text-grey'
                 }`}
               >
                 Video Lesson
@@ -287,7 +287,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               <button 
                 onClick={() => setViewMode('reading')}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  viewMode === 'reading' ? 'bg-white shadow-sm' : 'text-gray-600'
+                  viewMode === 'reading' ? 'bg-white shadow-sm' : 'text-text-grey'
                 }`}
               >
                 Reading
@@ -304,36 +304,36 @@ const LessonView: React.FC<LessonViewProps> = ({
             {/* Title and Finish Button */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
-                <p className="text-sm text-gray-600 mt-1">{displayDescription}</p>
+                <h1 className="text-2xl font-bold text-text-blue-black">{displayTitle}</h1>
+                <p className="text-sm text-text-grey mt-1">{displayDescription}</p>
                 
                 {/* Enhanced Backend Status Indicators */}
                 <div className="mt-2 space-y-1">
                   {isLoadingLesson && (
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                      <p className="text-xs text-blue-500">Loading lesson data from server...</p>
+                      <div className="animate-spin h-3 w-3 border-2 border-logo-blue border-t-transparent rounded-full"></div>
+                      <p className="text-xs text-logo-blue">Loading lesson data from server...</p>
                     </div>
                   )}
                   
                   {lessonError && !isLoadingLesson && (
-                    <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                      <p className="text-xs text-amber-700">
+                    <div className="bg-status-yellow/10 border border-status-yellow rounded px-2 py-1">
+                      <p className="text-xs text-status-yellow">
                         ⚠️ Unable to load lesson data from server. Using local data.
                       </p>
                     </div>
                   )}
                   
                   {!isValidBackendId && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1">
-                      <p className="text-xs text-yellow-700">
+                    <div className="bg-status-yellow/10 border border-status-yellow rounded px-2 py-1">
+                      <p className="text-xs text-status-yellow">
                         📌 This lesson is using demonstration mode
                       </p>
                     </div>
                   )}
                   
                   {isValidBackendId && !lessonError && !isLoadingLesson && backendLessonData && (
-                    <p className="text-xs text-green-600">
+                    <p className="text-xs text-status-green">
                       ✓ Connected to server
                     </p>
                   )}
@@ -343,23 +343,23 @@ const LessonView: React.FC<LessonViewProps> = ({
               <div className="flex flex-col items-end gap-2 ml-4">
                 <button 
                   onClick={handleCompleteLesson}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-logo-blue text-white rounded-full hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoadingLesson}
                 >
                   {nextLesson ? 'Next Lesson' : 'Finish'}
                 </button>
                 
                 {/* Quiz Status Indicator */}
-                <div className="text-xs text-gray-500 text-right">
+                <div className="text-xs text-unavailable-button text-right">
                   {isLoadingQuiz ? (
-                    <span className="text-blue-500">Loading quiz...</span>
+                    <span className="text-logo-blue">Loading quiz...</span>
                   ) : quizError ? (
-                    <span className="text-amber-500">Quiz unavailable</span>
+                    <span className="text-status-yellow">Quiz unavailable</span>
                   ) : (
                     <span>
                       {transformedQuizQuestions.length} quiz question{transformedQuizQuestions.length !== 1 ? 's' : ''} ready
                       {quizData && quizData.length > 0 && (
-                        <span className="text-green-600"> (from server)</span>
+                        <span className="text-status-green"> (from server)</span>
                       )}
                     </span>
                   )}
@@ -371,7 +371,7 @@ const LessonView: React.FC<LessonViewProps> = ({
             {viewMode === 'video' && (
               <>
                 <div className="mb-6">
-                  <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center relative">
+                  <div className="bg-light-background-blue rounded-lg aspect-video flex items-center justify-center relative">
                     {lesson.videoUrl ? (
                       <iframe
                         src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
@@ -382,17 +382,17 @@ const LessonView: React.FC<LessonViewProps> = ({
                       />
                     ) : (
                       <div className="text-center">
-                        <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-20 h-20 bg-unavailable-button rounded-full flex items-center justify-center mx-auto mb-4">
                           <button
                             onClick={() => handleVideoProgress(10)}
-                            className="w-8 h-8 text-white hover:text-blue-400 transition-colors"
+                            className="w-8 h-8 text-white hover:text-logo-blue transition-colors"
                           >
                             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M8 5v14l11-7z"/>
                             </svg>
                           </button>
                         </div>
-                        <p className="text-gray-500 text-sm">No video available</p>
+                        <p className="text-unavailable-button text-sm">No video available</p>
                       </div>
                     )}
                   </div>
@@ -400,8 +400,8 @@ const LessonView: React.FC<LessonViewProps> = ({
 
                 {/* Video Transcript Section */}
                 <div className="mb-8">
-                  <h3 className="font-semibold text-gray-900 mb-3">Video Transcript</h3>
-                  <div className="space-y-2 text-sm text-gray-700">
+                  <h3 className="font-semibold text-text-blue-black mb-3">Video Transcript</h3>
+                  <div className="space-y-2 text-sm text-text-grey">
                     {backendLessonData?.video_transcription ? (
                       (() => {
                         // Split transcript by timestamp pattern [HH:MM:SS]
@@ -444,7 +444,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                           
                           return (
                             <div key={index} className="flex gap-3">
-                              <span className="text-gray-500 font-mono">{timeFormatted}</span>
+                              <span className="text-unavailable-button font-mono">{timeFormatted}</span>
                               <p>{segment.text}</p>
                             </div>
                           );
@@ -452,7 +452,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                       })()
                     ) : (
                       <div className="flex gap-3">
-                        <span className="text-gray-500 font-mono">0:00</span>
+                        <span className="text-unavailable-button font-mono">0:00</span>
                         <p>Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?</p>
                       </div>
                     )}
@@ -490,17 +490,17 @@ const LessonView: React.FC<LessonViewProps> = ({
                       });
                       
                       return paragraphs.map((paragraph, index) => (
-                        <p key={index} className="text-base text-gray-800 leading-relaxed mb-4">
+                        <p key={index} className="text-base text-text-grey leading-relaxed mb-4">
                           {paragraph}
                         </p>
                       ));
                     })()
                   ) : (
                     <>
-                      <p className="text-base text-gray-800 leading-relaxed mb-4">
+                      <p className="text-base text-text-grey leading-relaxed mb-4">
                         Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness.
                       </p>
-                      <p className="text-base text-gray-800 leading-relaxed">
+                      <p className="text-base text-text-grey leading-relaxed">
                         That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
                       </p>
                     </>
@@ -515,7 +515,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <button
                   onClick={handleNextLesson}
                   disabled={isLoadingLesson}
-                  className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 bg-light-background-blue text-text-grey rounded-lg hover:bg-light-background-blue/80 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Next: {nextLesson.title}</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
