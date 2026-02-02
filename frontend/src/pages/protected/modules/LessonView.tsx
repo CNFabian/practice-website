@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useModules } from '../../../hooks/useModules';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
 import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
@@ -10,6 +9,7 @@ interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
+  onNextLesson?: (lessonId: number, moduleBackendId: string) => void; // NEW: Accept navigation handler
 }
 
 interface BackendQuizAnswer {
@@ -17,7 +17,7 @@ interface BackendQuizAnswer {
   question_id: string;
   answer_text: string;
   order_index: number;
-  is_correct?: boolean; // Optional since backend may not always provide it
+  is_correct?: boolean;
 }
 
 interface BackendQuizQuestion {
@@ -69,7 +69,6 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
   return backendQuestions.map((q: BackendQuizQuestion, index: number) => {
     const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
     
-    // Find correct answer - try is_correct field first, fallback to first answer
     let correctAnswerIndex = sortedAnswers.findIndex(ans => ans.is_correct === true);
     
     if (correctAnswerIndex === -1) {
@@ -112,11 +111,12 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
 const LessonView: React.FC<LessonViewProps> = ({ 
   lesson, 
   module, 
-  onBack
+  onBack,
+  onNextLesson // NEW: Use this for navigation
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Add ref for scrollable container
 
-  // Set the background for this section (like Phaser scenes do)
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
@@ -126,7 +126,6 @@ const LessonView: React.FC<LessonViewProps> = ({
       bgElement.style.backgroundRepeat = 'no-repeat';
     }
 
-    // Cleanup: reset background when component unmounts
     return () => {
       const bgElement = document.getElementById('section-background');
       if (bgElement) {
@@ -143,9 +142,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     return <div className="p-8 text-center text-status-red">Missing lesson or module data</div>;
   }
 
-  const { goToLesson } = useModules();
-
-  // Validate backend ID before making API calls
   const isValidBackendId = useMemo(() => {
     const id = lesson?.backendId;
     if (!id) {
@@ -153,12 +149,11 @@ const LessonView: React.FC<LessonViewProps> = ({
       return false;
     }
     
-    // Check if it's a UUID format (8-4-4-4-12 hex characters with dashes)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isValidUUID = uuidRegex.test(String(id));
     
     if (!isValidUUID) {
-      console.warn('⚠️ Backend ID is not a valid UUID format:', id, '(expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+      console.warn('⚠️ Backend ID is not a valid UUID format:', id);
       return false;
     }
     
@@ -166,7 +161,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     return true;
   }, [lesson?.backendId, lesson?.id, lesson?.title]);
 
-  // Conditional API calls - only execute if we have valid backend ID
   const { 
     data: backendLessonData, 
     isLoading: isLoadingLesson, 
@@ -179,7 +173,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     error: quizError
   } = useLessonQuiz(isValidBackendId ? lesson.backendId! : '');
   
-  // Mutations with validation
   const { mutate: completeLessonMutation } = useCompleteLesson(
     isValidBackendId ? lesson.backendId! : '', 
     module?.backendId || ''
@@ -190,7 +183,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     module?.backendId || ''
   );
 
-  // Transform quiz questions with memoization
   const transformedQuizQuestions = useMemo(() => {
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
       console.log('🔄 Using backend quiz questions:', quizData.length);
@@ -213,37 +205,46 @@ const LessonView: React.FC<LessonViewProps> = ({
     [module.lessons, currentLessonIndex]
   );
 
-  // Safe handler for completing lesson
+  // FIXED: Use onNextLesson prop for navigation
   const handleCompleteLesson = useCallback(() => {
-    if (!isValidBackendId || !module?.backendId) {
-      console.error('❌ Cannot complete lesson - invalid backend IDs');
-      console.error('Lesson backendId:', lesson?.backendId);
-      console.error('Module backendId:', module?.backendId);
-      // Still allow navigation even if backend call fails
-      if (nextLesson) {
-        goToLesson(nextLesson.id, module.id);
-      }
-      return;
+    console.log('🔄 Complete lesson called');
+    console.log('Next lesson:', nextLesson);
+    console.log('Module backend ID:', module.backendId);
+    
+    // First, try to complete the lesson on backend (if valid IDs exist)
+    if (isValidBackendId && module?.backendId) {
+      completeLessonMutation({ lessonId: lesson.backendId! }, {
+        onSuccess: () => {
+          console.log('✅ Lesson completed successfully on backend');
+        },
+        onError: (error) => {
+          console.error('❌ Failed to complete lesson on backend:', error);
+        }
+      });
+    } else {
+      console.warn('⚠️ Skipping backend completion - invalid backend IDs');
     }
     
-    completeLessonMutation({ lessonId: lesson.backendId! }, {
-      onSuccess: () => {
-        console.log('✅ Lesson completed successfully');
-        if (nextLesson) {
-          goToLesson(nextLesson.id, module.id);
-        }
-      },
-      onError: (error) => {
-        console.error('❌ Failed to complete lesson:', error);
-        // Still allow navigation even if backend call fails
-        if (nextLesson) {
-          goToLesson(nextLesson.id, module.id);
-        }
+    // Navigate based on whether there's a next lesson
+    if (nextLesson && onNextLesson && module.backendId) {
+      console.log('✅ Navigating to next lesson:', nextLesson.id, 'in module:', module.backendId);
+      
+      // Scroll the content container to very top instantly
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0; // Instant scroll to top
       }
-    });
-  }, [isValidBackendId, module?.backendId, module?.id, completeLessonMutation, nextLesson, goToLesson, lesson?.backendId]);
+      
+      // Navigate to next lesson
+      onNextLesson(nextLesson.id, module.backendId);
+    } else if (!nextLesson) {
+      console.log('✅ No next lesson - navigating back to house');
+      // Navigate back to house when final lesson is completed
+      onBack();
+    } else if (!onNextLesson) {
+      console.error('❌ No navigation handler provided');
+    }
+  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId]);
 
-  // Safe handler for updating progress
   const handleVideoProgress = useCallback((seconds: number) => {
     if (!isValidBackendId || !module?.backendId) {
       console.warn('⚠️ Cannot update progress - invalid backend IDs');
@@ -273,22 +274,18 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   return (
     <div className="h-screen flex flex-col bg-transparent">
-      {/* Top Bar with Back Button and Toggle */}
-      <div className="border-b border-white/20 z-10 flex-shrink-0 bg-white/70 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      {/* Scrollable Main Content Container */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">{/* Added ref here */}
+        <div className="max-w-7xl mx-auto px-7 py-2">
           <div className="flex items-center justify-between">
-            {/* Back Button Section */}
             <button
               onClick={onBack}
-              className="flex items-center text-text-grey hover:text-text-blue-black"
+              className="flex items-center text-text-blue-black font-bold hover:bg-black/10 rounded-xl px-3 py-2 -ml-3 transition-colors"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
+              <span className="text-2xl mr-10">←</span>
+              <span className="text-l">Back</span>
             </button>
 
-            {/* Toggle Section */}
             <div className="flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1">
               <button 
                 onClick={() => setViewMode('video')}
@@ -309,23 +306,18 @@ const LessonView: React.FC<LessonViewProps> = ({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Scrollable Main Content Container */}
-      <div className="flex-1 overflow-y-auto">
+        
         <div className="max-w-3xl mx-auto px-6">
-          <div className="rounded-lg p-8">
-            {/* Title and Finish Button */}
-            <div className="flex items-start justify-between mb-6">
+          <div className="rounded-xl pb-8">
+            <div className="flex items-start justify-between mb-6 bg-text-white rounded-2xl p-6">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-text-blue-black">{displayTitle}</h1>
                 <p className="text-sm text-text-grey mt-1">{displayDescription}</p>
                 
-                {/* Enhanced Backend Status Indicators */}
                 <div className="mt-2 space-y-1">
                   {isLoadingLesson && (
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin h-3 w-3 border-2 border-logo-blue border-t-transparent rounded-full"></div>
+                      <div className="animate-spin h-3 w-3 border-2 border-logo-blue border-t-transparent rounded-2xl"></div>
                       <p className="text-xs text-logo-blue">Loading lesson data from server...</p>
                     </div>
                   )}
@@ -363,7 +355,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   {nextLesson ? 'Next Lesson' : 'Finish'}
                 </button>
                 
-                {/* Quiz Status Indicator */}
                 <div className="text-xs text-unavailable-button text-right">
                   {isLoadingQuiz ? (
                     <span className="text-logo-blue">Loading quiz...</span>
@@ -381,16 +372,15 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             </div>
 
-            {/* Video Content Area */}
             {viewMode === 'video' && (
               <>
                 <div className="mb-6">
-                  <div className="rounded-lg aspect-video flex items-center justify-center relative">
+                  <div className="rounded-2xl aspect-video flex items-center justify-center relative">
                     {lesson.videoUrl ? (
                       <iframe
                         src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
                         title={lesson.title}
-                        className="w-full h-full rounded-lg"
+                        className="w-full h-full rounded-2xl"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
@@ -412,13 +402,11 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </div>
                 </div>
 
-                {/* Video Transcript Section */}
-                <div className="mb-8">
+                <div className="mb-8 bg-text-white rounded-lg p-6">
                   <h3 className="font-semibold text-text-blue-black mb-3">Video Transcript</h3>
                   <div className="space-y-2 text-sm text-text-grey">
                     {backendLessonData?.video_transcription ? (
                       (() => {
-                        // Split transcript by timestamp pattern [HH:MM:SS]
                         const timestampRegex = /\[(\d{2}:\d{2}:\d{2})\]/g;
                         const segments: Array<{ timestamp: string; text: string }> = [];
                         
@@ -427,7 +415,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                         
                         while ((match = timestampRegex.exec(backendLessonData.video_transcription)) !== null) {
                           if (lastIndex > 0) {
-                            // Add the previous segment's text
                             const text = backendLessonData.video_transcription
                               .substring(lastIndex, match.index)
                               .trim();
@@ -436,7 +423,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                             }
                           }
                           
-                          // Start a new segment
                           segments.push({
                             timestamp: match[1],
                             text: ''
@@ -445,7 +431,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                           lastIndex = match.index + match[0].length;
                         }
                         
-                        // Add the last segment's text
                         if (segments.length > 0 && lastIndex < backendLessonData.video_transcription.length) {
                           segments[segments.length - 1].text = backendLessonData.video_transcription
                             .substring(lastIndex)
@@ -453,8 +438,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                         }
                         
                         return segments.map((segment, index) => {
-                          // Convert HH:MM:SS to MM:SS
-                          const timeFormatted = segment.timestamp.substring(3); // Remove first 3 chars (HH:)
+                          const timeFormatted = segment.timestamp.substring(3);
                           
                           return (
                             <div key={index} className="flex gap-3">
@@ -475,28 +459,23 @@ const LessonView: React.FC<LessonViewProps> = ({
               </>
             )}
 
-            {/* Reading Content Area */}
             {viewMode === 'reading' && (
-              <div className="mb-8">
+              <div className="mb-8 bg-text-white rounded-2xl p-6">
                 <div className="prose prose-gray max-w-none">
                   {backendLessonData?.video_transcription ? (
                     (() => {
-                      // Remove all timestamps [HH:MM:SS] from the transcript
                       const cleanText = backendLessonData.video_transcription
                         .replace(/\[\d{2}:\d{2}:\d{2}\]/g, '')
                         .trim();
                       
-                      // Split into sentences (roughly) for better paragraph formatting
                       const sentences = cleanText.split(/(?<=[.!?])\s+/);
                       
-                      // Group sentences into paragraphs (every 3-4 sentences)
                       const paragraphs: string[] = [];
                       let currentParagraph: string[] = [];
                       
                       sentences.forEach((sentence: string, index: number) => {
                         currentParagraph.push(sentence);
                         
-                        // Create a new paragraph every 3-4 sentences or at the end
                         if (currentParagraph.length >= 3 || index === sentences.length - 1) {
                           paragraphs.push(currentParagraph.join(' '));
                           currentParagraph = [];
@@ -523,9 +502,8 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             )}
 
-            {/* Navigation footer */}
             {nextLesson && (
-              <div className="mt-6 pt-6 border-t">
+              <div className="mt-6 border-t pt-4">
                 <button
                   onClick={handleNextLesson}
                   disabled={isLoadingLesson}

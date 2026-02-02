@@ -590,6 +590,7 @@ const ModulesPage: React.FC = () => {
               lesson={currentLesson}
               module={currentModule}
               onBack={handleBackToHouse}
+              onNextLesson={handleLessonSelect}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full p-8">
