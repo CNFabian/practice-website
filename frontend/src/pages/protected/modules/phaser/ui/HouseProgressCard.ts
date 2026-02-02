@@ -123,7 +123,9 @@ export class HouseProgressCard {
 
     const drawCard = (height: number, isHovered: boolean = false) => {
       cardBg.clear();
-      cardBg.fillStyle(COLORS.TEXT_WHITE, 1); // TextWhite - Light background
+      // Use slightly different color or alpha when hovered
+      const bgColor = isHovered ? COLORS.TEXT_WHITE : COLORS.TEXT_WHITE;
+      cardBg.fillStyle(bgColor, 1);
       cardBg.fillRoundedRect(-cardWidth / 2, -height / 2, cardWidth, height, borderRadius);
     };
     

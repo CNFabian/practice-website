@@ -351,61 +351,124 @@ export default class NeighborhoodScene extends BaseScene {
   }
 
   private createBackgroundClouds(): void {
-  const { width, height } = this.scale;
-  
-  // Create 3-5 clouds at random positions
-  const numClouds = Phaser.Math.Between(3, 5);
-  
-  for (let i = 0; i < numClouds; i++) {
-    // Random Y position (anywhere on screen)
-    const randomY = Phaser.Math.Between(scale(50), height - scale(50));
+    const { width, height } = this.scale;
+    const worldWidth = width * 2.5; // Match the camera world width
     
-    // Start clouds at random X positions across the entire screen width
-    const randomStartX = Phaser.Math.Between(-scale(200), width + scale(200));
+    // Create 3-5 clouds at random positions
+    const numClouds = Phaser.Math.Between(3, 5);
     
-    // Create cloud
-    const cloud = this.add.image(randomStartX, randomY, ASSET_KEYS.BACKGROUND_CLOUD);
-    cloud.setScale(scale(0.5 + Math.random() * 0.5)); // Random scale between 0.5-1.0
-    cloud.setAlpha(0.6 + Math.random() * 0.3); // Random alpha between 0.6-0.9 for depth
-    cloud.setDepth(0); // Behind everything
+    // Track occupied positions to prevent overlap
+    const occupiedPositions: Array<{ x: number; y: number; radius: number }> = [];
     
-    this.backgroundClouds.push(cloud);
+    // Minimum spacing between clouds (in pixels)
+    const minSpacing = scale(300); // Minimum horizontal distance
+    const minVerticalSpacing = scale(150); // Minimum vertical distance
     
-    // Left edge (where clouds reset to)
-    const leftEdge = -scale(200);
-    // Right edge (where clouds travel to)
-    const rightEdge = width + scale(200);
-    
-    // Very slow speed: 20-40 pixels per second
-    const speed = 20 + Math.random() * 20;
-    
-    // Calculate duration based on how far THIS cloud needs to travel to reach the right edge
-    const distanceToRight = rightEdge - randomStartX;
-    const duration = (distanceToRight / speed) * 1000; // Convert to milliseconds
-    
-    // Create scrolling tween
-    const tween = this.tweens.add({
-      targets: cloud,
-      x: rightEdge,
-      duration: duration,
-      ease: 'Linear',
-      repeat: -1, // Infinite loop
-      repeatDelay: 0,
-      onRepeat: () => {
-        // When cloud reaches right side, reset to left with new random Y
-        cloud.x = leftEdge;
-        cloud.y = Phaser.Math.Between(scale(50), height - scale(50));
+    for (let i = 0; i < numClouds; i++) {
+      let randomStartX: number = 0;
+      let randomY: number = 0;
+      let attempts = 0;
+      let validPosition = false;
+      
+      // Try to find a valid position (not too close to existing clouds)
+      while (!validPosition && attempts < 50) {
+        // Random Y position (anywhere on screen)
+        randomY = Phaser.Math.Between(scale(50), height - scale(50));
         
-        // Recalculate duration for the full journey from left to right
-        const fullDistance = rightEdge - leftEdge;
-        tween.updateTo('x', rightEdge, true);
-        tween.duration = (fullDistance / speed) * 1000;
+        // Start clouds at random X positions across the ENTIRE WORLD WIDTH
+        randomStartX = Phaser.Math.Between(-scale(200), worldWidth + scale(200));
+        
+        // Check distance from all existing clouds
+        validPosition = true;
+        for (const occupied of occupiedPositions) {
+          const horizontalDistance = Math.abs(randomStartX - occupied.x);
+          const verticalDistance = Math.abs(randomY - occupied.y);
+          
+          // Check if too close to an existing cloud
+          if (horizontalDistance < minSpacing && verticalDistance < minVerticalSpacing) {
+            validPosition = false;
+            break;
+          }
+        }
+        
+        attempts++;
       }
-    });
+      
+      // If we couldn't find a valid position after 50 attempts, skip this cloud
+      if (!validPosition) {
+        console.log(`⚠️ Could not find valid position for cloud ${i + 1}, skipping`);
+        continue;
+      }
+      
+      // Create cloud
+      const cloud = this.add.image(randomStartX, randomY, ASSET_KEYS.BACKGROUND_CLOUD);
+      const cloudScale = scale(0.5 + Math.random() * 0.5); // Random scale between 0.5-1.0
+      cloud.setScale(cloudScale);
+      cloud.setAlpha(0.6 + Math.random() * 0.3); // Random alpha between 0.6-0.9 for depth
+      cloud.setDepth(0); // Behind everything
+      
+      this.backgroundClouds.push(cloud);
+      
+      // Store this cloud's position to prevent future overlaps
+      // Use the cloud's display width to calculate its "radius" for collision detection
+      const cloudRadius = (cloud.displayWidth / 2) + minSpacing / 2;
+      occupiedPositions.push({
+        x: randomStartX,
+        y: randomY,
+        radius: cloudRadius
+      });
+      
+      // Left edge (where clouds reset to) - use world coordinates
+      const leftEdge = -scale(200);
+      // Right edge (where clouds travel to) - use WORLD WIDTH
+      const rightEdge = worldWidth + scale(200);
+      
+      // Very slow speed: 20-40 pixels per second
+      const speed = 20 + Math.random() * 20;
+      
+      // Calculate FULL distance for consistent looping
+      const fullDistance = rightEdge - leftEdge;
+      const fullDuration = (fullDistance / speed) * 1000;
+      
+      // Calculate initial duration to first loop point
+      const distanceToRight = rightEdge - randomStartX;
+      const initialDuration = (distanceToRight / speed) * 1000;
+      
+      // Create scrolling tween
+      const tween = this.tweens.add({
+        targets: cloud,
+        x: rightEdge,
+        duration: initialDuration,
+        ease: 'Linear',
+        onComplete: () => {
+          // Reset cloud to left edge
+          cloud.x = leftEdge;
+          cloud.y = Phaser.Math.Between(scale(50), height - scale(50));
+          
+          // Create new tween with full duration for consistent looping
+          const loopTween = this.tweens.add({
+            targets: cloud,
+            x: rightEdge,
+            duration: fullDuration,
+            ease: 'Linear',
+            repeat: -1,
+            repeatDelay: 0,
+            onRepeat: () => {
+              // Reset position and randomize Y on each loop
+              cloud.x = leftEdge;
+              cloud.y = Phaser.Math.Between(scale(50), height - scale(50));
+            }
+          });
+          
+          this.cloudTweens.push(loopTween);
+        }
+      });
+      
+      this.cloudTweens.push(tween);
+    }
     
-    this.cloudTweens.push(tween);
+    console.log(`☁️ Created ${this.backgroundClouds.length} clouds with proper spacing`);
   }
-}
 
   private prefetchAllHouseLessons(): void {
     if (this.houses.length === 0) {
