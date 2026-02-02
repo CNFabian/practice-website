@@ -196,6 +196,18 @@ export default class NeighborhoodScene extends BaseScene {
 
   create() {
     super.create();
+    
+    // Set background image on DOM element (like MapScene does)
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      // Sky blue gradient
+      bgElement.style.setProperty(
+        'background', 
+        'linear-gradient(180deg, #EBEFFF 0%, #DDE3FF 100%)', 
+        'important'
+      );
+    }
+    
     this.transitionManager = new SceneTransitionManager(this);
     this.transitionManager.enterNeighborhood();
     

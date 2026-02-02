@@ -134,21 +134,26 @@ export default class HouseScene extends BaseScene {
   private createEnvironment(): void {
     const { width, height } = this.scale;
 
-    // Layer 1 (depth 0): Gradient background - CardGradientColor
-    const gradient = this.add.graphics();
-    gradient.fillGradientStyle(COLORS.CARD_GRADIENT_START, COLORS.CARD_GRADIENT_START, COLORS.CARD_GRADIENT_END, COLORS.CARD_GRADIENT_END, 1);
-    gradient.fillRect(0, 0, width, height);
-    gradient.setDepth(0);
+    // Set background image on DOM element (like MapScene does)
+    if (this.textures.exists(ASSET_KEYS.SUBURBAN_BACKGROUND)) {
+      this.setBackgroundImage(ASSET_KEYS.SUBURBAN_BACKGROUND);
+    } else {
+      // Fallback: Set gradient background on DOM
+      const bgElement = document.getElementById('section-background');
+      if (bgElement) {
+        // Use CardGradientColor: linear-gradient(133.93deg, #EEF1FF 24.22%, #FAFBFF 79%)
+        bgElement.style.setProperty(
+          'background', 
+          'linear-gradient(133.93deg, #EEF1FF 24.22%, #FAFBFF 79%)', 
+          'important'
+        );
+      }
+    }
 
-    // Layer 2 (depth 1): Scene background image with transparent background
-    const sceneBackground = this.add.image(width / 2, height / 2, ASSET_KEYS.SUBURBAN_BACKGROUND);
-    sceneBackground.setDepth(1);
-    const bgScale = Math.max(width / sceneBackground.width, height / sceneBackground.height);
-    sceneBackground.setScale(bgScale);
-
-    // Layer 3 (depth 2): Lesson house image with transparent background
+    // Layer 1 (depth 2): Lesson house image with transparent background
+    // NOTE: Changed from depth 2 to depth 1 since we removed the gradient layer
     this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
-    this.lessonHouse.setDepth(2);
+    this.lessonHouse.setDepth(1);
     const houseScale = Math.min(width, height) * 0.00121;
     this.lessonHouse.setScale(houseScale);
   }
