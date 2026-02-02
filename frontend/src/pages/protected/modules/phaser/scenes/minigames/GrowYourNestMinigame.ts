@@ -156,6 +156,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     hitArea.setOrigin(0, 0.5);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => {
+      // Emit completion event BEFORE stopping
+      this.events.emit('minigameCompleted');
+      
       // Stop the minigame completely
       this.scene.stop();
       
@@ -707,6 +710,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const hitArea = this.add.rectangle(0, 0, moduleButtonWidth, moduleButtonHeight, 0x000000, 0);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => {
+      // Emit completion event BEFORE stopping
+      this.events.emit('minigameCompleted');
+      
       this.scene.stop();
       this.scene.resume('HouseScene');
     });

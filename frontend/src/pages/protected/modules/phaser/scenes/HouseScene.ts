@@ -456,18 +456,23 @@ export default class HouseScene extends BaseScene {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
-
-    this.minigameShutdownHandler = () => {
-      this.isTransitioning = false;
-    };
-
-    const minigameScene = this.scene.get('GrowYourNestMinigame');
-    if (minigameScene) {
-      minigameScene.events.on('minigameCompleted', this.minigameShutdownHandler);
-    }
     
+    // Pause this scene
     this.scene.pause('HouseScene');
+    
+    // Launch minigame
     this.scene.launch('GrowYourNestMinigame');
+    
+    // Attach event listener AFTER launching (use time.delayedCall to ensure scene is ready)
+    this.time.delayedCall(50, () => {
+      const minigameScene = this.scene.get('GrowYourNestMinigame');
+      if (minigameScene) {
+        this.minigameShutdownHandler = () => {
+          this.isTransitioning = false;
+        };
+        minigameScene.events.once('minigameCompleted', this.minigameShutdownHandler);
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -522,30 +527,44 @@ export default class HouseScene extends BaseScene {
 
   private reEnableButtons(): void {
     // Re-enable button interactivity after resume from pause
-    if (this.backButton) {
-      const buttonBg = this.backButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg) {
-        buttonBg.setInteractive({ useHandCursor: true });
+    console.log('🔄 Re-enabling buttons after resume');
+    
+    // For back button (created by ButtonBuilder.createBackButton)
+    // The interactive zone is the last child in the container
+    if (this.backButton && this.backButton.list.length > 0) {
+      const interactiveZone = this.backButton.list[this.backButton.list.length - 1];
+      if (interactiveZone && !interactiveZone.input) {
+        interactiveZone.setInteractive({ useHandCursor: true });
       }
     }
     
-    if (this.minigameButton) {
-      const buttonBg = this.minigameButton.list[0] as Phaser.GameObjects.Rectangle;
-      if (buttonBg) {
-        buttonBg.setInteractive({ useHandCursor: true });
-      }
+    // For minigame button (circular button)
+    // The hit area (circle) is in the container - find it
+    if (this.minigameButton && this.minigameButton.list.length > 0) {
+      this.minigameButton.list.forEach(child => {
+        if (child instanceof Phaser.GameObjects.Arc || child instanceof Phaser.GameObjects.Ellipse) {
+          if (!child.input) {
+            child.setInteractive({ useHandCursor: true });
+          }
+        }
+      });
     }
     
-    // Re-enable lesson card buttons
+    // For lesson card buttons
+    // The interactive rectangle is at getAt(0)
     this.lessonContainers.forEach(container => {
-      const card = container.getAt(0) as Phaser.GameObjects.Rectangle;
-      if (card) {
-        card.setInteractive({ useHandCursor: true });
+      if (container && container.list.length > 0) {
+        const card = container.getAt(0) as Phaser.GameObjects.Rectangle;
+        if (card && !card.input) {
+          card.setInteractive({ useHandCursor: true });
+        }
       }
     });
     
     // Reset transition flag
     this.isTransitioning = false;
+    
+    console.log('✅ Buttons re-enabled, isTransitioning:', this.isTransitioning);
   }
 
   private checkForLessonsUpdate(): void {
