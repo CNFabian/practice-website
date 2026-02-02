@@ -116,23 +116,24 @@ const LessonView: React.FC<LessonViewProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
 
-  // Set the background for this section
+  // Set the background for this section (like Phaser scenes do)
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
-      bgElement.style.backgroundImage = `url(${LessonViewBackground})`;
+      bgElement.style.setProperty('background', `url(${LessonViewBackground})`, 'important');
       bgElement.style.backgroundSize = 'cover';
       bgElement.style.backgroundPosition = 'center';
       bgElement.style.backgroundRepeat = 'no-repeat';
-      bgElement.className = ''; // Clear any existing classes
     }
 
     // Cleanup: reset background when component unmounts
     return () => {
       const bgElement = document.getElementById('section-background');
       if (bgElement) {
-        bgElement.style.backgroundImage = '';
-        bgElement.className = 'bg-light-background-blue';
+        bgElement.style.setProperty('background', '', 'important');
+        bgElement.style.backgroundSize = '';
+        bgElement.style.backgroundPosition = '';
+        bgElement.style.backgroundRepeat = '';
       }
     };
   }, [lesson.id]);
@@ -271,18 +272,9 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div 
-      className="h-screen flex flex-col"
-      style={{
-        backgroundImage: `url(${LessonViewBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
-      }}
-    >
+    <div className="h-screen flex flex-col bg-transparent">
       {/* Top Bar with Back Button and Toggle */}
-      <div className="border-b z-10 flex-shrink-0 bg-white/90 backdrop-blur-sm">
+      <div className="border-b border-white/20 z-10 flex-shrink-0 bg-white/70 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Back Button Section */}
@@ -297,7 +289,7 @@ const LessonView: React.FC<LessonViewProps> = ({
             </button>
 
             {/* Toggle Section */}
-            <div className="flex items-center bg-light-background-blue rounded-full p-1">
+            <div className="flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1">
               <button 
                 onClick={() => setViewMode('video')}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
@@ -322,7 +314,7 @@ const LessonView: React.FC<LessonViewProps> = ({
       {/* Scrollable Main Content Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="rounded-lg shadow-sm p-8">
+          <div className="rounded-lg p-8">
             {/* Title and Finish Button */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
@@ -393,7 +385,7 @@ const LessonView: React.FC<LessonViewProps> = ({
             {viewMode === 'video' && (
               <>
                 <div className="mb-6">
-                  <div className="bg-light-background-blue rounded-lg aspect-video flex items-center justify-center relative">
+                  <div className="rounded-lg aspect-video flex items-center justify-center relative">
                     {lesson.videoUrl ? (
                       <iframe
                         src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
@@ -537,7 +529,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                 <button
                   onClick={handleNextLesson}
                   disabled={isLoadingLesson}
-                  className="w-full px-6 py-3 bg-light-background-blue text-text-grey rounded-lg hover:bg-light-background-blue/80 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 bg-white/60 backdrop-blur-sm text-text-grey rounded-lg hover:bg-white/70 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Next: {nextLesson.title}</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

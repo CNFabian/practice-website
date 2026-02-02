@@ -575,7 +575,7 @@ const ModulesPage: React.FC = () => {
 
       {/* Lesson view */}
       {navState.currentView === 'lesson' && (
-        <div className="absolute inset-0 bg-white z-20">
+        <div className="absolute inset-0 z-20">
           {(isLoadingModules || isLoadingLessons) ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
