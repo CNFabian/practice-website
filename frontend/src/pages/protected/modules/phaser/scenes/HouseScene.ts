@@ -457,21 +457,97 @@ export default class HouseScene extends BaseScene {
 
     this.isTransitioning = true;
     
-    // Pause this scene
-    this.scene.pause('HouseScene');
-    
-    // Launch minigame
+    // Launch minigame FIRST (before sliding out)
     this.scene.launch('GrowYourNestMinigame');
     
-    // Attach event listener AFTER launching (use time.delayedCall to ensure scene is ready)
-    this.time.delayedCall(50, () => {
+    // Start sliding out HouseScene components immediately
+    this.slideOutHouseComponents();
+    
+    // Pause this scene AFTER animations complete (not during)
+    this.time.delayedCall(850, () => {
+      this.scene.pause('HouseScene');
+      
       const minigameScene = this.scene.get('GrowYourNestMinigame');
       if (minigameScene) {
         this.minigameShutdownHandler = () => {
+          // Slide components back in when returning
+          this.slideInHouseComponents();
           this.isTransitioning = false;
         };
         minigameScene.events.once('minigameCompleted', this.minigameShutdownHandler);
       }
+    });
+  }
+
+  private slideOutHouseComponents(): void {
+    const { width } = this.scale;
+    const duration = 800;
+    const ease = 'Power2';
+    
+    const allComponents: Phaser.GameObjects.GameObject[] = [];
+    
+    // Collect all components to slide
+    if (this.backButton) allComponents.push(this.backButton);
+    
+    const birdSprite = this.bird?.getSprite();
+    if (birdSprite) allComponents.push(birdSprite);
+    
+    if (this.lessonHouse) allComponents.push(this.lessonHouse);
+    
+    this.lessonContainers.forEach(container => {
+      if (container) allComponents.push(container);
+    });
+    
+    if (this.minigameButton) allComponents.push(this.minigameButton);
+    
+    // Move components FAR off-screen to the left
+    // Use 1.5x width to ensure everything is completely hidden
+    const slideDistance = width * 1.5;
+    
+    // Animate all to the left (negative x direction)
+    allComponents.forEach(component => {
+      this.tweens.add({
+        targets: component,
+        x: `-=${slideDistance}`,
+        duration: duration,
+        ease: ease
+      });
+    });
+  }
+
+  private slideInHouseComponents(): void {
+    const { width } = this.scale;
+    const duration = 800;
+    const ease = 'Power2';
+    
+    const allComponents: Phaser.GameObjects.GameObject[] = [];
+    
+    // Collect all components to slide
+    if (this.backButton) allComponents.push(this.backButton);
+    
+    const birdSprite = this.bird?.getSprite();
+    if (birdSprite) allComponents.push(birdSprite);
+    
+    if (this.lessonHouse) allComponents.push(this.lessonHouse);
+    
+    this.lessonContainers.forEach(container => {
+      if (container) allComponents.push(container);
+    });
+    
+    if (this.minigameButton) allComponents.push(this.minigameButton);
+    
+    // Move components back from far left
+    // Use same 1.5x width to match slideOut
+    const slideDistance = width * 1.5;
+    
+    // Animate all back to their original position
+    allComponents.forEach(component => {
+      this.tweens.add({
+        targets: component,
+        x: `+=${slideDistance}`,
+        duration: duration,
+        ease: ease
+      });
     });
   }
 

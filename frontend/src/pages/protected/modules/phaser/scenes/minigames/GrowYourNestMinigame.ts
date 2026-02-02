@@ -47,6 +47,11 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.createBackButton();
     this.createHeader(width);
     this.createPanels(width, height);
+    
+    // Slide-in animation: components enter from the right
+    // This happens IMMEDIATELY when scene is created
+    this.slideInMinigameComponents(width);
+    
     this.scale.on('resize', this.handleResize, this);
   }
 
@@ -140,6 +145,68 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     // Clean up resize listener
     this.scale.off('resize', this.handleResize, this);
   }
+
+  private slideInMinigameComponents(width: number): void {
+    // Start all components FAR off-screen to the right
+    // Use 1.5x width to match HouseScene's slide distance
+    const startOffset = width * 1.5;
+    
+    // Set initial positions off-screen
+    if (this.backButton) {
+      this.backButton.x += startOffset;
+    }
+    if (this.headerTitle) {
+      this.headerTitle.x += startOffset;
+    }
+    if (this.leftPanel) {
+      this.leftPanel.x += startOffset;
+    }
+    if (this.rightPanel) {
+      this.rightPanel.x += startOffset;
+    }
+    
+    // Animate all components sliding in from right
+    // Use same duration and easing as HouseScene for synchronization
+    const duration = 800;
+    const ease = 'Power2';
+    
+    if (this.backButton) {
+      this.tweens.add({
+        targets: this.backButton,
+        x: 60,
+        duration: duration,
+        ease: ease
+      });
+    }
+    
+    if (this.headerTitle) {
+      this.tweens.add({
+        targets: this.headerTitle,
+        x: width / 2,
+        duration: duration,
+        ease: ease
+      });
+    }
+    
+    if (this.leftPanel) {
+      this.tweens.add({
+        targets: this.leftPanel,
+        x: 60,
+        duration: duration,
+        ease: ease
+      });
+    }
+    
+    if (this.rightPanel) {
+      this.tweens.add({
+        targets: this.rightPanel,
+        x: width / 2 + 20,
+        duration: duration,
+        ease: ease
+      });
+    }
+  }
+
 
   private createBackButton(): void {
     this.backButton = this.add.container(60, 48);
