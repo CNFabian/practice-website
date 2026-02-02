@@ -96,7 +96,7 @@ const ModulesPage: React.FC = () => {
       currentView: 'house',
       houseId,
       moduleId: null,
-      moduleBackendId: moduleBackendId || null,  // Convert undefined to null
+      moduleBackendId: moduleBackendId || null,
       lessonId: null,
       currentHouseIndex,
     }));
@@ -107,16 +107,14 @@ const ModulesPage: React.FC = () => {
     
     console.log(`🔄 Prefetching lessons for module: ${moduleBackendId}`);
     
-    // Use queryClient to prefetch and cache the data
     queryClient.prefetchQuery({
       queryKey: queryKeys.learning.moduleLessons(moduleBackendId),
       queryFn: () => getModuleLessons(moduleBackendId),
-      staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+      staleTime: 10 * 60 * 1000,
     });
   }, [queryClient]);
 
   const handleLessonSelect = useCallback((lessonId: number, moduleBackendId?: string) => {
-    // Get the houses data to derive moduleId
     const game = GameManager.getGame();
     const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
     const backendId = moduleBackendId || navState.moduleBackendId;
@@ -214,7 +212,6 @@ const ModulesPage: React.FC = () => {
       });
     }
 
-    // CLEANUP FUNCTION - prevents memory leaks
     return () => {
       if (checkInterval) {
         clearInterval(checkInterval);
@@ -223,7 +220,23 @@ const ModulesPage: React.FC = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, []); // Keep empty dependency array - only initialize once
+  }, []);
+
+  // CRITICAL: Sync modules data to GameManager as soon as it loads
+  useEffect(() => {
+    if (modulesData && !isLoadingModules) {
+      console.log('🔄 EARLY SYNC: Updating modules data to GameManager');
+      GameManager.updateModulesData(modulesData);
+    }
+  }, [modulesData, isLoadingModules]);
+
+  // CRITICAL: Sync lessons data as soon as it loads
+  useEffect(() => {
+    if (!navState.moduleBackendId || !lessonsData || isLoadingLessons) return;
+    
+    console.log('🔄 EARLY SYNC: Updating lessons data to GameManager for:', navState.moduleBackendId);
+    GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
+  }, [lessonsData, navState.moduleBackendId, isLoadingLessons]);
 
   // Update Phaser game size when sidebar collapses/expands
   useEffect(() => {
@@ -247,7 +260,7 @@ const ModulesPage: React.FC = () => {
     }
   }, [navState.currentView, isPhaserReady]);
 
- // Set navigation handlers and sync data with GameManager
+  // Set navigation handlers and sync data with GameManager
   useEffect(() => {
     if (!isPhaserReady || !assetsLoaded || isLoadingModules) return;
 
@@ -264,7 +277,6 @@ const ModulesPage: React.FC = () => {
     if (modulesData) {
       GameManager.updateModulesData(modulesData);
       
-      // After houses are created, retry any pending lessons updates
       if (navState.moduleBackendId && lessonsData && !isLoadingLessons) {
         GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
       }
@@ -294,13 +306,6 @@ const ModulesPage: React.FC = () => {
     handlePrefetchLessons,
     dashboardModules
   ]);
-
-  // Sync lessons data with GameManager
-  useEffect(() => {
-    if (!navState.moduleBackendId || !lessonsData || isLoadingLessons) return;
-    
-    GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
-  }, [lessonsData, navState.moduleBackendId, isLoadingLessons]);
 
   // Handle scene transitions
   useEffect(() => {
@@ -346,12 +351,10 @@ const ModulesPage: React.FC = () => {
       console.log(`=== RESIZE EVENT: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
       
       game.scale.setZoom(1 / dpr);
-      
       game.scale.resize(baseWidth * dpr, baseHeight * dpr);
     };
 
     const handleResize = () => {
-      // Clear any existing debounce timers
       if (resizeDebounceTimer) {
         clearTimeout(resizeDebounceTimer);
       }
@@ -359,16 +362,13 @@ const ModulesPage: React.FC = () => {
         clearTimeout(finalResizeTimer);
       }
 
-      // Perform immediate resize
       performResize();
 
-      // Debounce subsequent resizes during rapid changes
       resizeDebounceTimer = setTimeout(() => {
         performResize();
         resizeDebounceTimer = null;
       }, 100);
 
-      // Force a final resize after everything settles
       finalResizeTimer = setTimeout(() => {
         performResize();
         finalResizeTimer = null;
@@ -379,45 +379,36 @@ const ModulesPage: React.FC = () => {
       console.log('=== FULLSCREEN CHANGE DETECTED ===');
       console.log('Is fullscreen:', document.fullscreenElement !== null);
       
-      // Clear any existing timers
       if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
       if (finalResizeTimer) clearTimeout(finalResizeTimer);
       
-      // Wait for browser to update dimensions after fullscreen change
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - PASS 1 ===');
         performResize();
       }, 100);
       
-      // Second pass after dimensions stabilize
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - PASS 2 ===');
         performResize();
       }, 250);
       
-      // Final pass to ensure everything is correct
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - FINAL ===');
         performResize();
       }, 500);
     };
 
-    // Listen for window resize
     window.addEventListener('resize', handleResize);
-
-    // Listen for fullscreen changes
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange); // Firefox
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange); // IE/Edge
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-    // Listen for DPI changes (monitor switches)
     const currentDPR = window.devicePixelRatio || 1;
     const mediaQueryList = window.matchMedia(`(resolution: ${currentDPR}dppx)`);
     
     const handleDPIChange = () => {
       console.log('=== DPI CHANGE DETECTED ===');
-      // Small delay to ensure browser has updated devicePixelRatio
       setTimeout(() => {
         handleResize();
       }, 50);
@@ -437,66 +428,107 @@ const ModulesPage: React.FC = () => {
     };
   }, [isPhaserReady, assetsLoaded]);
 
-    // Sync total coins with game registry
-    useEffect(() => {
-      const game = GameManager.getGame();
-      if (game) {
-        game.registry.set('totalCoins', totalCoins);
-      }
-    }, [totalCoins]);
+  // Sync total coins with game registry
+  useEffect(() => {
+    const game = GameManager.getGame();
+    if (game) {
+      game.registry.set('totalCoins', totalCoins);
+    }
+  }, [totalCoins]);
 
   // Get current module and lesson from GameManager
   const currentModule = useMemo(() => {
-    if (!navState.moduleId || !navState.moduleBackendId) return null;
-    return GameManager.getCurrentModule(navState.moduleId, navState.moduleBackendId);
-  }, [navState.moduleId, navState.moduleBackendId]);
+    console.log('🔍 Computing currentModule:', {
+      moduleId: navState.moduleId,
+      moduleBackendId: navState.moduleBackendId,
+      isLoadingModules,
+      hasModulesData: modulesData?.length || 0
+    });
+    
+    if (!navState.moduleId || !navState.moduleBackendId) {
+      console.log('❌ Missing moduleId or moduleBackendId');
+      return null;
+    }
+    
+    // CRITICAL: Don't try to get module if data is still loading
+    if (isLoadingModules) {
+      console.log('⏳ Still loading modules data');
+      return null;
+    }
+    
+    // CRITICAL: Ensure GameManager has the data before querying
+    if (modulesData && modulesData.length > 0) {
+      GameManager.updateModulesData(modulesData);
+    }
+    
+    const module = GameManager.getCurrentModule(navState.moduleId, navState.moduleBackendId);
+    console.log('🔍 Found module:', module ? 'YES' : 'NO');
+    
+    return module;
+  }, [navState.moduleId, navState.moduleBackendId, isLoadingModules, modulesData]);
 
   const currentLesson = useMemo(() => {
     console.log('🔍 Computing currentLesson:', {
       lessonId: navState.lessonId,
       moduleBackendId: navState.moduleBackendId,
+      isLoadingLessons,
       hasLessonsData: GameManager.hasLessonsData(navState.moduleBackendId || '')
     });
     
-    if (!navState.lessonId || !navState.moduleBackendId) return null;
+    if (!navState.lessonId || !navState.moduleBackendId) {
+      console.log('❌ Missing lessonId or moduleBackendId');
+      return null;
+    }
+    
+    // CRITICAL: Don't try to get lesson if data is still loading
+    if (isLoadingLessons) {
+      console.log('⏳ Still loading lessons data');
+      return null;
+    }
+    
+    // CRITICAL: Ensure GameManager has the lessons data
+    if (lessonsData && lessonsData.length > 0 && modulesData && modulesData.length > 0) {
+      GameManager.updateModulesData(modulesData); // Need this for house lookup
+      GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
+    }
     
     const lesson = GameManager.getCurrentLesson(navState.moduleBackendId, navState.lessonId);
-    console.log('🔍 Found lesson:', lesson);
+    console.log('🔍 Found lesson:', lesson ? 'YES' : 'NO');
     
     return lesson;
-  }, [navState.lessonId, navState.moduleBackendId]);
+  }, [navState.lessonId, navState.moduleBackendId, isLoadingLessons, lessonsData, modulesData]);
 
   const showPhaserCanvas = ['map', 'neighborhood', 'house'].includes(navState.currentView);
 
   const getBackgroundStyle = () => {
-  switch (navState.currentView) {
-    case 'map':
-      return {
-        backgroundImage: `
-          linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
-          url(${NeighborhoodMap})
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      };
-    case 'neighborhood':
-      return {
-        backgroundImage: `url(${NeighborhoodBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      };
-    case 'house':
-      return {
-        backgroundImage: `url(${HouseBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    default:
-      return {};
-  }
-};
+    switch (navState.currentView) {
+      case 'map':
+        return {
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)),
+            url(${NeighborhoodMap})
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        };
+      case 'neighborhood':
+        return {
+          backgroundImage: `url(${NeighborhoodBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        };
+      case 'house':
+        return {
+          backgroundImage: `url(${HouseBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      default:
+        return {};
+    }
+  };
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
@@ -542,29 +574,47 @@ const ModulesPage: React.FC = () => {
       />
 
       {/* Lesson view */}
-     {navState.currentView === 'lesson' && (
-      <div className="absolute inset-0 bg-white z-20">
-        {currentLesson && currentModule ? (
-          <LessonView
-            lesson={currentLesson}
-            module={currentModule}
-            onBack={handleBackToHouse}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full p-8">
-            <p className="text-2xl font-bold text-status-red mb-4">Lesson not found</p>
-            <div className="bg-light-background-blue p-4 rounded text-left">
-              <p><strong>navState.lessonId:</strong> {navState.lessonId}</p>
-              <p><strong>navState.moduleId:</strong> {navState.moduleId}</p>
-              <p><strong>navState.moduleBackendId:</strong> {navState.moduleBackendId}</p>
-              <p><strong>currentLesson:</strong> {currentLesson ? 'EXISTS' : 'NULL'}</p>
-              <p><strong>currentModule:</strong> {currentModule ? 'EXISTS' : 'NULL'}</p>
-              <p><strong>GameManager has lessons data:</strong> {GameManager.hasLessonsData(navState.moduleBackendId || '') ? 'YES' : 'NO'}</p>
+      {navState.currentView === 'lesson' && (
+        <div className="absolute inset-0 bg-white z-20">
+          {(isLoadingModules || isLoadingLessons) ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin h-12 w-12 border-4 border-logo-blue border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-text-grey">
+                  {isLoadingModules ? 'Loading module data...' : 'Loading lesson data...'}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    )}
+          ) : currentLesson && currentModule ? (
+            <LessonView
+              lesson={currentLesson}
+              module={currentModule}
+              onBack={handleBackToHouse}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8">
+              <p className="text-2xl font-bold text-status-red mb-4">Lesson not found</p>
+              <div className="bg-light-background-blue p-4 rounded text-left space-y-1 text-sm">
+                <p><strong>navState.lessonId:</strong> {navState.lessonId}</p>
+                <p><strong>navState.moduleId:</strong> {navState.moduleId}</p>
+                <p><strong>navState.moduleBackendId:</strong> {navState.moduleBackendId}</p>
+                <p><strong>currentLesson:</strong> {currentLesson ? 'EXISTS' : 'NULL'}</p>
+                <p><strong>currentModule:</strong> {currentModule ? 'EXISTS' : 'NULL'}</p>
+                <p><strong>isLoadingModules:</strong> {isLoadingModules ? 'YES' : 'NO'}</p>
+                <p><strong>isLoadingLessons:</strong> {isLoadingLessons ? 'YES' : 'NO'}</p>
+                <p><strong>modulesData count:</strong> {modulesData?.length || 0}</p>
+                <p><strong>GameManager has lessons:</strong> {GameManager.hasLessonsData(navState.moduleBackendId || '') ? 'YES' : 'NO'}</p>
+              </div>
+              <button
+                onClick={handleBackToMap}
+                className="mt-4 px-6 py-2 bg-logo-blue text-white rounded-lg hover:bg-elegant-blue"
+              >
+                Back to Map
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

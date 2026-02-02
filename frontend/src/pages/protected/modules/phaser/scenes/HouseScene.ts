@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { BaseScene } from './BaseScene';
-import { scaleFontSize } from '../../../../../utils/scaleHelper';
+import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { SCENE_KEYS } from '../constants/SceneKeys';
 import { ASSET_KEYS } from '../constants/AssetKeys';
 import { COLORS } from '../constants/Colors';
@@ -187,34 +187,107 @@ export default class HouseScene extends BaseScene {
   }
 
   private createBackButton(): void {
-  this.backButton = ButtonBuilder.createBackButton(
-    this,
-    () => this.handleBackToNeighborhood()
-  );
-  this.backButton.setDepth(10);
-}
+    this.backButton = ButtonBuilder.createBackButton(
+      this,
+      () => this.handleBackToNeighborhood()
+    );
+    this.backButton.setDepth(10);
+  }
 
   private createMinigameButton(): void {
     const { width, height } = this.scale;
 
-    const buttonWidth = width * 0.12;
-    const buttonHeight = height * 0.05;
-    const buttonX = width - (width * 0.08);
-    const buttonY = height - (height * 0.05);
+    // Position: below and to the right of coin counter
+    // Coin counter is at: width - (width * 0.08), height * 0.05
+    const buttonX = width - (width * 0.08) + scale(20); // 20px to the right of coin counter
+    const buttonY = height * 0.05 + scale(60); // 60px below coin counter
     
-    this.minigameButton = ButtonBuilder.createButton({
-      scene: this,
-      x: buttonX,
-      y: buttonY,
-      width: buttonWidth,
-      height: buttonHeight,
-      text: 'Minigame',
-      fontSize: Math.min(width, height) * 0.016,
-      backgroundColor: COLORS.LOGO_BLUE,
-      hoverColor: COLORS.ELEGANT_BLUE,
-      onClick: () => this.handleMinigameSelect(),
+    this.minigameButton = this.createCircularMinigameButton(buttonX, buttonY);
+    this.minigameButton.setDepth(100); // Same depth as coin counter
+  }
+
+  private createCircularMinigameButton(x: number, y: number): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    
+    const circleRadius = scale(24); // Slightly larger than HouseProgressCard's scale(16)
+    
+    // Calculate progress based on completed lessons
+    const completedLessons = this.module?.lessons.filter(l => l.completed).length || 0;
+    const totalLessons = this.module?.lessons.length || 0;
+    let progressPercent = 0;
+    
+    if (totalLessons > 0 && completedLessons > 0) {
+      progressPercent = (completedLessons / totalLessons) * 100;
+    }
+    
+    // Background circle (light gray)
+    const bgCircle = this.add.graphics();
+    bgCircle.lineStyle(scale(4), COLORS.UNAVAILABLE_BUTTON, 1);
+    bgCircle.strokeCircle(0, 0, circleRadius);
+    container.add(bgCircle);
+    
+    // Progress arc (green) - drawn clockwise from top
+    if (progressPercent > 0) {
+      const progressArc = this.add.graphics();
+      progressArc.lineStyle(scale(4), COLORS.STATUS_GREEN, 1);
+      
+      const startAngle = Phaser.Math.DegToRad(270); // Start from top
+      const endAngle = Phaser.Math.DegToRad(270 + (360 * progressPercent / 100));
+      
+      progressArc.beginPath();
+      progressArc.arc(0, 0, circleRadius, startAngle, endAngle, false);
+      progressArc.strokePath();
+      container.add(progressArc);
+    }
+    
+    // Determine tree stage (1-7) based on progress
+    let treeStage: number;
+    if (progressPercent === 0) {
+      treeStage = 1;
+    } else if (progressPercent === 100) {
+      treeStage = 7;
+    } else {
+      treeStage = Math.floor((progressPercent / 100) * 5) + 2;
+      treeStage = Math.min(treeStage, 6);
+    }
+    
+    // Tree image
+    const treeIcon = this.add.image(0, 0, `tree_stage_${treeStage}`);
+    const targetSize = scale(42); // Fit tree inside circle
+    const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
+    treeIcon.setScale(treeScale);
+    treeIcon.setOrigin(0.5);
+    container.add(treeIcon);
+    
+    // Invisible hit area for interaction (slightly larger than visible circle)
+    const hitArea = this.add.circle(0, 0, circleRadius + scale(5), 0x000000, 0);
+    hitArea.setInteractive({ useHandCursor: true });
+    container.add(hitArea);
+    
+    // Hover effects
+    hitArea.on('pointerover', () => {
+      this.tweens.add({
+        targets: container,
+        scale: 1.1,
+        duration: 200,
+        ease: 'Power2'
+      });
     });
-    this.minigameButton.setDepth(10);
+    
+    hitArea.on('pointerout', () => {
+      this.tweens.add({
+        targets: container,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+    
+    hitArea.on('pointerdown', () => {
+      this.handleMinigameSelect();
+    });
+    
+    return container;
   }
 
   private createLessonCards(): void {
@@ -229,10 +302,10 @@ export default class HouseScene extends BaseScene {
     const { width, height } = this.scale;
 
     const defaultPositions = [
-      { x: 26, y: 31 },
-      { x: 77, y: 31 },
-      { x: 31, y: 74 },
-      { x: 63, y: 72 },
+      { x: 29, y: 32 },
+      { x: 76.5, y: 31.5 },
+      { x: 29, y: 70 },
+      { x: 63, y: 70 },
     ];
 
     const defaultPos = defaultPositions[index] || { x: 50, y: 50 };
@@ -240,8 +313,8 @@ export default class HouseScene extends BaseScene {
     const x = lesson.x !== undefined ? (lesson.x / 100) * width : (defaultPos.x / 100) * width;
     const y = lesson.y !== undefined ? (lesson.y / 100) * height : (defaultPos.y / 100) * height;
 
-    const cardWidth = width * 0.1875;
-    const cardHeight = height * 0.1875;
+    const cardWidth = width * 0.24;
+    const cardHeight = height * 0.175;
 
     const lessonContainer = this.add.container(x, y);
     lessonContainer.setDepth(10);
@@ -405,34 +478,27 @@ export default class HouseScene extends BaseScene {
     const birdTravelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
     const returningFromLesson = this.registry.get('returningFromLesson');
 
-    const finalX = width * 0.2;
-    const finalY = height * 0.65;
+    const finalX = width * 0.1;
+    const finalY = height * 0.92;
 
     this.bird = new BirdCharacter(this);
 
     if (!birdTravelInfo || !birdTravelInfo.traveled || returningFromLesson) {
       // Static entrance - no travel animation needed
       this.bird.createStatic(finalX, finalY);
+      this.bird.forceVisible();
       this.bird.startIdleAnimation();
       this.registry.set('returningFromLesson', false);
       return;
     }
 
-    // Determine travel type and direction based on distance
-    const distance = Math.abs(birdTravelInfo.currentHouseIndex - birdTravelInfo.previousHouseIndex);
+    // Determine direction based on house indices
     const comingFromLeft = birdTravelInfo.currentHouseIndex > birdTravelInfo.previousHouseIndex;
 
-    if (distance > 1) {
-      // Long distance - use flying entrance
-      this.bird.createWithFlyingEntrance(finalX, finalY, comingFromLeft, () => {
-        this.bird!.startIdleAnimation();
-      });
-    } else {
-      // Short distance - use hopping entrance
-      this.bird.createWithHoppingEntrance(finalX, finalY, comingFromLeft, () => {
-        this.bird!.startIdleAnimation();
-      });
-    }
+    // Always use flying entrance (removed hopping logic)
+    this.bird.createWithFlyingEntrance(finalX, finalY, comingFromLeft, () => {
+      this.bird!.startIdleAnimation();
+    });
 
     // Clear travel info after use
     this.registry.set('birdTravelInfo', undefined);
@@ -514,23 +580,24 @@ export default class HouseScene extends BaseScene {
     // Handle coin counter resize (inherited from BaseScene)
     this.handleCoinCounterResize();
 
+    // Destroy and recreate back button (like NeighborhoodScene does)
+    if (this.backButton) {
+      this.backButton.destroy();
+    }
+    this.createBackButton();
+
+    // Destroy and recreate minigame button
+    if (this.minigameButton) {
+      this.minigameButton.destroy();
+    }
+    this.createMinigameButton();
+
     // Recreate lesson cards
     this.lessonContainers.forEach(container => container.destroy());
     this.lessonContainers = [];
     
     if (this.module && this.module.lessons.length > 0) {
       this.createLessonCards();
-    }
-
-    // Reposition buttons
-    if (this.backButton) {
-      const { width, height } = this.scale;
-      this.backButton.setPosition(width * 0.08, height * 0.05);
-    }
-
-    if (this.minigameButton) {
-      const { width, height } = this.scale;
-      this.minigameButton.setPosition(width - (width * 0.08), height - (height * 0.05));
     }
 
     // Reposition environment

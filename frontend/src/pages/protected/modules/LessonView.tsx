@@ -4,6 +4,7 @@ import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
 import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
+import { LessonViewBackground } from '../../../assets';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -119,9 +120,21 @@ const LessonView: React.FC<LessonViewProps> = ({
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
-      bgElement.className = 'bg-light-background-blue';
+      bgElement.style.backgroundImage = `url(${LessonViewBackground})`;
       bgElement.style.backgroundSize = 'cover';
+      bgElement.style.backgroundPosition = 'center';
+      bgElement.style.backgroundRepeat = 'no-repeat';
+      bgElement.className = ''; // Clear any existing classes
     }
+
+    // Cleanup: reset background when component unmounts
+    return () => {
+      const bgElement = document.getElementById('section-background');
+      if (bgElement) {
+        bgElement.style.backgroundImage = '';
+        bgElement.className = 'bg-light-background-blue';
+      }
+    };
   }, [lesson.id]);
 
   if (!lesson || !module) {
@@ -258,9 +271,18 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div className="h-screen flex flex-col">
+    <div 
+      className="h-screen flex flex-col"
+      style={{
+        backgroundImage: `url(${LessonViewBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* Top Bar with Back Button and Toggle */}
-      <div className="border-b z-10 flex-shrink-0">
+      <div className="border-b z-10 flex-shrink-0 bg-white/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Back Button Section */}

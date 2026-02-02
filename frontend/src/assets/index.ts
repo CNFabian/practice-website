@@ -124,10 +124,12 @@ export {default as stage5Tree} from './images/phaser/tree_stages/stage_5.png'
 export {default as stage6Tree} from './images/phaser/tree_stages/stage_6.png'
 export {default as stage7Tree} from './images/phaser/tree_stages/stage_7.png'
 
-
 // Onboarding Images
 export { default as OnboardingImage1 } from './images/onboarding/onboarding_1.png'
 export { default as OnboardingImage2 } from './images/onboarding/onboarding_2.png'
 export { default as OnboardingImage3_5 } from './images/onboarding/onboarding_3_5.png'
 export { default as OnboardingImage4 } from './images/onboarding/onboarding_4.png'
 export { default as TextBox } from './images/onboarding/text_box.png'
+
+// Background Images
+export {  default as LessonViewBackground } from './images/backgrounds/lessonView_background.png'
