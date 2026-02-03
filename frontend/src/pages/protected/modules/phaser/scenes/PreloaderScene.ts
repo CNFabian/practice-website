@@ -66,11 +66,9 @@ export default class PreloaderScene extends Phaser.Scene {
     console.log('PreloaderScene.preload: Starting asset load');
 
     // ═══════════════════════════════════════════════════════════
-    // LOAD ONEST FONTS
+    // FONTS ARE LOADED BY fonts.css - NO DUPLICATE LOADING NEEDED
+    // The broken loadOnestFonts() method has been REMOVED
     // ═══════════════════════════════════════════════════════════
-    
-    // Load Onest font variants
-    this.loadOnestFonts();
     
     // Create loading UI
     const width = this.cameras.main.width;
@@ -159,63 +157,6 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.WATERING_CAN_POURING, WateringCanWatering);
   }
 
-  /**
-   * Load Onest font family in all required weights
-   */
-  private loadOnestFonts(): void {
-    // Phaser doesn't have built-in font loading like CSS
-    // We use a WebFont loader or create a CSS @font-face
-    
-    // METHOD 1: Inject CSS @font-face (Recommended for Phaser)
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @font-face {
-        font-family: 'Onest';
-        src: url('/assets/fonts/onest/Onest-Light.woff2') format('woff2');
-        font-weight: 300;
-        font-style: normal;
-        font-display: swap;
-      }
-      
-      @font-face {
-        font-family: 'Onest';
-        src: url('/assets/fonts/onest/Onest-Medium.woff2') format('woff2');
-        font-weight: 500;
-        font-style: normal;
-        font-display: swap;
-      }
-      
-      @font-face {
-        font-family: 'Onest';
-        src: url('/assets/fonts/onest/Onest-Bold.woff2') format('woff2');
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Wait for fonts to load before proceeding
-    this.waitForFonts();
-  }
-  
-  /**
-   * Wait for fonts to be loaded before continuing
-   */
-  private async waitForFonts(): Promise<void> {
-    try {
-      // Use Font Loading API to detect when fonts are ready
-      await document.fonts.load('300 20px Onest');
-      await document.fonts.load('500 20px Onest');
-      await document.fonts.load('700 20px Onest');
-      
-      console.log('✓ Onest fonts loaded successfully');
-    } catch (error) {
-      console.warn('Font loading warning:', error);
-      // Continue anyway - will fallback to Arial
-    }
-  }
-
   create(): void {
     if (this.shouldLoad) {
       console.log('✓ PreloaderScene.create: Assets loaded');
@@ -225,8 +166,9 @@ export default class PreloaderScene extends Phaser.Scene {
     
     this.registry.set('assetsLoaded', true);
     
-    // Ensure fonts are loaded before starting game
+    // Wait for fonts loaded by fonts.css to be ready
     document.fonts.ready.then(() => {
+      console.log('✓ Onest fonts ready from fonts.css');
       // Start game after fonts are ready
       this.scene.stop();
       console.log('✓ PreloaderScene stopped, textures remain in cache');

@@ -27,6 +27,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private progressText!: Phaser.GameObjects.Text;
   private plantGraphics!: Phaser.GameObjects.Container;
   private stageText!: Phaser.GameObjects.Text;
+  private totalCountText!: Phaser.GameObjects.Text;
   private backButton?: Phaser.GameObjects.Container;
   private headerTitle?: Phaser.GameObjects.Text;
   private completionReturnButton?: Phaser.GameObjects.Container;
@@ -347,6 +348,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.plantGraphics = this.add.container(panelWidth / 2, panelHeight / 2 + 20);
     this.leftPanel.add(this.plantGraphics);
 
+    // Delay text creation to ensure fonts are loaded
+    this.time.delayedCall(100, () => {
+      this.createProgressSection(panelWidth, panelHeight);
+    });
+  }
+
+  private createProgressSection(panelWidth: number, panelHeight: number): void {
     // Bottom section - stage text and progress bar styled like the image
     const bottomY = panelHeight - 80;
     const leftMargin = 20;
@@ -391,7 +399,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.leftPanel.setData('progressBarHeight', progressBarHeight);
     this.leftPanel.setData('progressBarRadius', progressBarRadius);
 
-    // Progress text on the right inside container
+    // Progress text on the right inside container - NOW with fonts loaded
     const progressTextX = panelWidth - rightMargin - 15;
     this.progressText = this.add.text(progressTextX, bottomY, '0 / 100',
       createTextStyle('BODY_MEDIUM', COLORS.TEXT_PURE_WHITE, { fontSize: '16px' })
@@ -399,7 +407,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.progressText.setOrigin(1, 0.5);
     this.leftPanel.add(this.progressText);
     
-    // Stage text at top LEFT corner - large, blue with white stroke, half outside container
+    // Stage text at top LEFT corner - large, blue with white stroke, half outside container - NOW with fonts loaded
     const stageTextX = leftMargin + 10;
     const stageTextY = containerY - 10; // Position half outside the top of the container
     this.stageText = this.add.text(stageTextX, stageTextY, 'Stage 1', {
@@ -414,6 +422,22 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.stageText.setOrigin(0, 0.5); // Left-aligned, vertically centered
     this.leftPanel.add(this.stageText);
     
+    // Total count text at top RIGHT corner - matching stage text styling - NOW with fonts loaded
+    const totalCountTextX = panelWidth - rightMargin - 10;
+    const totalCountTextY = containerY - 10; // Same Y position as stage text
+    this.totalCountText = this.add.text(totalCountTextX, totalCountTextY, '0/100', {
+      fontFamily: 'Onest',
+      fontSize: '48px',
+      color: '#3658EC', // LogoBlue
+      align: 'center',
+      fontStyle: 'bold',
+      stroke: '#FFFFFF', // White stroke
+      strokeThickness: 3
+    });
+    this.totalCountText.setOrigin(1, 0.5); // Right-aligned, vertically centered
+    this.leftPanel.add(this.totalCountText);
+    
+    // Trigger initial plant growth update
     this.updatePlantGrowth();
   }
 
@@ -880,6 +904,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const totalQuestions = this.questions.length;
     const progress = (this.score / totalQuestions) * 100;
     this.progressText.setText(`${Math.round(progress)} / 100`);
+    
+    // Update total count text
+    this.totalCountText.setText(`${this.score}/${totalQuestions}`);
     
     // Get stored progress bar data
     const progressBarFillGraphics = this.leftPanel.getData('progressBarFill') as Phaser.GameObjects.Graphics;
