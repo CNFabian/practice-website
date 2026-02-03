@@ -34,7 +34,10 @@ import {
   DocumentProgressIcon,
   ProgressStarIcon,
   FrontGrass,
-  BackgroundCloud
+  BackgroundCloud,
+  GrowYourNestBackground,
+  WateringCanStill,
+  WateringCanWatering
 } from '../../../../../assets';
 
 export default class PreloaderScene extends Phaser.Scene {
@@ -113,6 +116,7 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.LOCK_ICON, LockIcon);
     this.load.image(ASSET_KEYS.ROADBLOCK_ICON, RoadblockIcon);
     this.load.image(ASSET_KEYS.NOTICE_BIRD_ICON, NoticeBirdIcon);
+    this.load.image(ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND, GrowYourNestBackground);
     
     // Neighborhoods
     this.load.image(ASSET_KEYS.NEIGHBORHOOD_1, Neighborhood1);
@@ -142,13 +146,17 @@ export default class PreloaderScene extends Phaser.Scene {
     this.load.image(ASSET_KEYS.COIN_ICON, CoinCounterIcon);
     
     // Trees
-    this.load.image('tree_stage_1', stage1Tree);
-    this.load.image('tree_stage_2', stage2Tree);
-    this.load.image('tree_stage_3', stage3Tree);
-    this.load.image('tree_stage_4', stage4Tree);
-    this.load.image('tree_stage_5', stage5Tree);
-    this.load.image('tree_stage_6', stage6Tree);
-    this.load.image('tree_stage_7', stage7Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_1, stage1Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_2, stage2Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_3, stage3Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_4, stage4Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_5, stage5Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_6, stage6Tree);
+    this.load.image(ASSET_KEYS.TREE_STAGE_7, stage7Tree);
+
+    //Minigame Assets
+    this.load.image(ASSET_KEYS.WATERING_CAN_STILL, WateringCanStill);
+    this.load.image(ASSET_KEYS.WATERING_CAN_POURING, WateringCanWatering);
   }
 
   /**

@@ -133,3 +133,8 @@ export { default as TextBox } from './images/onboarding/text_box.png'
 
 // Background Images
 export {  default as LessonViewBackground } from './images/backgrounds/lessonView_background.png'
+
+//Minigame Images
+export { default as GrowYourNestBackground } from './images/phaser/minigames/GrowYourNestTree_background.png'
+export { default as WateringCanStill } from './images/phaser/minigames/wateringCan_Still.png'
+export { default as WateringCanWatering } from './images/phaser/minigames/wateringCan_watering.png'

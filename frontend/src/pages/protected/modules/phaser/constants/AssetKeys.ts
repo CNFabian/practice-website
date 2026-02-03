@@ -2,6 +2,7 @@ export const ASSET_KEYS = {
   // Backgrounds
   SUBURBAN_BACKGROUND: 'suburbanBackground',
   NEIGHBORHOOD_MAP_BACKGROUND: 'neighborhoodMapBackground',
+  GROW_YOUR_NEST_BACKGROUND: 'growYourNestBackground',
 
   // Neighborhoods
   NEIGHBORHOOD_1: 'neighborhood1',
@@ -34,6 +35,19 @@ export const ASSET_KEYS = {
 
   // UI
   COIN_ICON: 'coinIcon',
+
+  // Trees
+  TREE_STAGE_1: 'tree_stage_1',
+  TREE_STAGE_2: 'tree_stage_2',
+  TREE_STAGE_3: 'tree_stage_3',
+  TREE_STAGE_4: 'tree_stage_4',
+  TREE_STAGE_5: 'tree_stage_5',
+  TREE_STAGE_6: 'tree_stage_6',
+  TREE_STAGE_7: 'tree_stage_7',
+
+  // Minigame Assets
+  WATERING_CAN_STILL: 'watering_can_still',
+  WATERING_CAN_POURING: 'watering_can_pouring',
 } as const;
 
 // Type for asset keys

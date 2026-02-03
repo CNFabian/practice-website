@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { createTextStyle } from '../../constants/Typography';
 import { COLORS } from '../../constants/Colors';
+import { ASSET_KEYS } from '../../constants/AssetKeys';
 
 interface QuizQuestion {
   id: number;
@@ -29,17 +30,25 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private backButton?: Phaser.GameObjects.Container;
   private headerTitle?: Phaser.GameObjects.Text;
   private completionReturnButton?: Phaser.GameObjects.Container;
+  private showingStartScreen: boolean = true; // NEW: Track if showing start screen
+  private moduleNumber: number = 1; // NEW: Track module number
+  private leftPanelBackground?: Phaser.GameObjects.Image; // NEW: Track background image
+  private floatingTween?: Phaser.Tweens.Tween; // NEW: Track floating animation for cleanup
+  private wateringCanImage?: Phaser.GameObjects.Image; // NEW: Track watering can image
+  private isWateringAnimationPlaying: boolean = false; // NEW: Track if watering animation is active
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
   }
 
-  init(data: { questions?: QuizQuestion[] }) {
+  init(data: { questions?: QuizQuestion[]; moduleNumber?: number }) {
     this.questions = data.questions || this.getDefaultQuestions();
+    this.moduleNumber = data.moduleNumber || 1; // NEW: Get module number
     this.currentQuestionIndex = 0;
     this.selectedAnswer = null;
     this.score = 0;
     this.optionButtons = [];
+    this.showingStartScreen = true; // NEW: Start with start screen
   }
 
   create() {
@@ -105,6 +114,19 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   shutdown() {
     // Kill all tweens
     this.tweens.killAll();
+    
+    // Kill floating animation specifically
+    if (this.floatingTween) {
+      this.floatingTween.stop();
+      this.floatingTween = undefined;
+    }
+    
+    // Clean up watering can if it exists
+    if (this.wateringCanImage) {
+      this.wateringCanImage.destroy();
+      this.wateringCanImage = undefined;
+    }
+    this.isWateringAnimationPlaying = false;
     
     // Clean up back button
     if (this.backButton) {
@@ -193,7 +215,29 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         targets: this.leftPanel,
         x: 60,
         duration: duration,
-        ease: ease
+        ease: ease,
+        onUpdate: () => {
+          // Update the mask position as the panel moves
+          if (this.leftPanelBackground && this.leftPanelBackground.mask) {
+            const maskShape = this.leftPanelBackground.mask as Phaser.Display.Masks.GeometryMask;
+            const graphics = maskShape.geometryMask as Phaser.GameObjects.Graphics;
+            if (graphics) {
+              const panelWidth = this.leftPanel.getData('panelWidth');
+              const panelHeight = this.leftPanel.getData('panelHeight');
+              const cornerRadius = 16;
+              
+              graphics.clear();
+              graphics.fillStyle(0xffffff);
+              graphics.fillRoundedRect(
+                this.leftPanel.x, 
+                this.leftPanel.y, 
+                panelWidth, 
+                panelHeight, 
+                cornerRadius
+              );
+            }
+          }
+        }
       });
     }
     
@@ -255,6 +299,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private createLeftPanel(x: number, y: number, panelWidth: number, panelHeight: number): void {
     this.leftPanel = this.add.container(x, y);
     this.leftPanel.setDepth(5);
+    
+    // Store panel dimensions for mask updates
+    this.leftPanel.setData('panelWidth', panelWidth);
+    this.leftPanel.setData('panelHeight', panelHeight);
 
     // Use graphics instead of rectangle for rounded corners
     const panelBg = this.add.graphics();
@@ -265,6 +313,31 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     panelBg.strokeRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
     this.leftPanel.add(panelBg);
 
+    // Add background image for the tree area - AFTER the white panel background
+    if (this.textures.exists(ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND)) {
+      // Create background image at the panel's center (relative to container)
+      this.leftPanelBackground = this.add.image(panelWidth / 2, panelHeight / 2, ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND);
+      
+      // Scale the background to fit the panel while maintaining aspect ratio
+      const scaleX = panelWidth / this.leftPanelBackground.width;
+      const scaleY = panelHeight / this.leftPanelBackground.height;
+      const scale = Math.max(scaleX, scaleY); // Use max to cover the entire panel
+      
+      this.leftPanelBackground.setScale(scale);
+      
+      // Create a mask to clip the background to the rounded rectangle
+      // Mask needs world coordinates, so we use x + offset
+      const maskShape = this.make.graphics({});
+      maskShape.fillStyle(0xffffff);
+      maskShape.fillRoundedRect(x, y, panelWidth, panelHeight, cornerRadius);
+      
+      const mask = maskShape.createGeometryMask();
+      this.leftPanelBackground.setMask(mask);
+      
+      // Add to panel container so it moves with the panel during slide animation
+      this.leftPanel.add(this.leftPanelBackground);
+    }
+
     const title = this.add.text(panelWidth / 2, 40, 'Growth',
       createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
     );
@@ -274,36 +347,72 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.plantGraphics = this.add.container(panelWidth / 2, panelHeight / 2 + 20);
     this.leftPanel.add(this.plantGraphics);
 
-    // Bottom section - stage text and progress bar on same line
-    const bottomY = panelHeight - 40;
-    const leftMargin = 30;
-    const rightMargin = 30;
+    // Bottom section - stage text and progress bar styled like the image
+    const bottomY = panelHeight - 80;
+    const leftMargin = 20;
+    const rightMargin = 20;
     
-    this.stageText = this.add.text(leftMargin, bottomY, 'Stage 1',
-      createTextStyle('BODY_BOLD', COLORS.TEXT_SECONDARY, { fontSize: '20px' })
+    // Create orange rounded container background
+    const containerWidth = panelWidth - leftMargin - rightMargin;
+    const containerHeight = 96;
+    const containerRadius = 24;
+    const containerY = bottomY - containerHeight / 2;
+    
+    const orangeContainer = this.add.graphics();
+    orangeContainer.fillStyle(0xFFA726, 1); // Orange color
+    orangeContainer.fillRoundedRect(leftMargin, containerY, containerWidth, containerHeight, containerRadius);
+    this.leftPanel.add(orangeContainer);
+    
+    // Progress bar container (light gray rounded background)
+    const progressBarStartX = leftMargin + 20;
+    const progressBarWidth = containerWidth - 120 - 40; // Leave space for progress text on right
+    const progressBarHeight = 28;
+    const progressBarRadius = 14;
+    
+    // Light gray background for progress bar
+    const progressBarBg = this.add.graphics();
+    progressBarBg.fillStyle(0xE0E0E0, 1); // Light gray
+    progressBarBg.fillRoundedRect(
+      progressBarStartX, 
+      bottomY - progressBarHeight / 2, 
+      progressBarWidth, 
+      progressBarHeight, 
+      progressBarRadius
     );
-    this.stageText.setOrigin(0, 0.5);
-    this.leftPanel.add(this.stageText);
-
-    // Progress bar on the right (after stage text)
-    const progressBarStartX = leftMargin + 80;
-    const progressBarWidth = panelWidth - progressBarStartX - rightMargin;
-    
-    const progressBarBg = this.add.rectangle(progressBarStartX + progressBarWidth / 2, bottomY, progressBarWidth, 12, COLORS.UNAVAILABLE_BUTTON);
-    progressBarBg.setStrokeStyle(1, COLORS.UNAVAILABLE_BUTTON);
     this.leftPanel.add(progressBarBg);
 
-    const progressBarFill = this.add.rectangle(progressBarStartX, bottomY, 0, 12, COLORS.STATUS_GREEN);
-    progressBarFill.setOrigin(0, 0.5);
-    this.leftPanel.add(progressBarFill);
-    this.leftPanel.setData('progressBar', progressBarFill);
+    // Blue progress fill (starts empty)
+    const progressBarFillGraphics = this.add.graphics();
+    this.leftPanel.add(progressBarFillGraphics);
+    this.leftPanel.setData('progressBarFill', progressBarFillGraphics);
+    this.leftPanel.setData('progressBarStartX', progressBarStartX);
+    this.leftPanel.setData('progressBarY', bottomY - progressBarHeight / 2);
     this.leftPanel.setData('progressBarWidth', progressBarWidth);
+    this.leftPanel.setData('progressBarHeight', progressBarHeight);
+    this.leftPanel.setData('progressBarRadius', progressBarRadius);
 
-    this.progressText = this.add.text(panelWidth - rightMargin, bottomY, '0 / 100',
-      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, { fontSize: '16px' })
+    // Progress text on the right inside container
+    const progressTextX = panelWidth - rightMargin - 15;
+    this.progressText = this.add.text(progressTextX, bottomY, '0 / 100',
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_PURE_WHITE, { fontSize: '16px' })
     );
     this.progressText.setOrigin(1, 0.5);
     this.leftPanel.add(this.progressText);
+    
+    // Stage text at top LEFT corner - large, blue with white stroke, half outside container
+    const stageTextX = leftMargin + 10;
+    const stageTextY = containerY - 10; // Position half outside the top of the container
+    this.stageText = this.add.text(stageTextX, stageTextY, 'Stage 1', {
+      fontFamily: 'Onest',
+      fontSize: '48px', // Much larger
+      color: '#3658EC', // LogoBlue
+      align: 'center',
+      fontStyle: 'bold',
+      stroke: '#FFFFFF', // White stroke
+      strokeThickness: 3
+    });
+    this.stageText.setOrigin(0, 0.5); // Left-aligned, vertically centered
+    this.leftPanel.add(this.stageText);
     
     this.updatePlantGrowth();
   }
@@ -328,36 +437,269 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.rightPanel.add(title);
     this.rightPanel.setData('panelWidth', panelWidth);
     this.rightPanel.setData('panelHeight', panelHeight);
-    this.updateQuestion();
+    
+    // NEW: Show start screen instead of questions initially
+    if (this.showingStartScreen) {
+      this.showStartScreen();
+    } else {
+      this.updateQuestion();
+    }
+  }
+
+  // NEW: Show the start screen in the right panel
+  private showStartScreen(): void {
+    const panelWidth = this.rightPanel.getData('panelWidth') as number;
+    const panelHeight = this.rightPanel.getData('panelHeight') as number;
+    
+    const HORIZONTAL_PADDING = panelWidth * 0.08;
+    const contentWidth = panelWidth - (HORIZONTAL_PADDING * 2);
+    
+    // Blue bird illustration
+    const birdSize = Math.min(220, panelWidth * 0.45);
+    const birdY = panelHeight * 0.35;
+    
+    let birdGraphic: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
+    
+    // Check if bird image exists, otherwise create placeholder
+    if (this.textures.exists('bird_celebration')) {
+      birdGraphic = this.add.image(panelWidth / 2, birdY, 'bird_celebration');
+      (birdGraphic as Phaser.GameObjects.Image).setDisplaySize(birdSize, birdSize);
+    } else {
+      // Placeholder bird
+      birdGraphic = this.add.graphics();
+      (birdGraphic as Phaser.GameObjects.Graphics).fillStyle(COLORS.ELEGANT_BLUE, 0.3);
+      (birdGraphic as Phaser.GameObjects.Graphics).fillCircle(panelWidth / 2, birdY, birdSize / 2);
+    }
+    this.rightPanel.add(birdGraphic);
+    
+    // Emoji placeholder on top of graphic if no image
+    if (!this.textures.exists('bird_celebration')) {
+      const birdEmoji = this.add.text(panelWidth / 2, birdY, '🐦',
+        { fontSize: `${birdSize * 0.6}px` }
+      );
+      birdEmoji.setOrigin(0.5, 0.5);
+      this.rightPanel.add(birdEmoji);
+    }
+    
+    // Description text
+    const descriptionY = birdY + birdSize / 2 + (panelHeight * 0.08);
+    const descriptionFontSize = Math.round(panelWidth * 0.038);
+    
+    const description = this.add.text(
+      panelWidth / 2,
+      descriptionY,
+      `Answer questions to earn water and fertilizer to grow your tree of Module ${this.moduleNumber}!`,
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
+        fontSize: `${descriptionFontSize}px`,
+        align: 'center',
+        wordWrap: { width: contentWidth },
+        lineSpacing: descriptionFontSize * 0.4
+      })
+    );
+    description.setOrigin(0.5, 0.5);
+    this.rightPanel.add(description);
+    
+    // Buttons at bottom
+    const buttonsY = panelHeight - (panelHeight * 0.12);
+    const buttonGap = panelWidth * 0.03;
+    const buttonWidth = (contentWidth - buttonGap) / 2;
+    const buttonHeight = panelHeight * 0.08;
+    const buttonRadius = buttonHeight * 0.3;
+    
+    // "DO IT LATER" button
+    const laterButtonX = HORIZONTAL_PADDING;
+    const laterButton = this.createStartScreenButton(
+      laterButtonX,
+      buttonsY,
+      buttonWidth,
+      buttonHeight,
+      buttonRadius,
+      'DO IT LATER',
+      false, // Not primary button
+      () => {
+        // Return to HouseScene
+        this.events.emit('minigameCompleted');
+        this.scene.stop();
+        this.scene.resume('HouseScene');
+      }
+    );
+    this.rightPanel.add(laterButton);
+    
+    // "LET'S GO" button
+    const goButtonX = laterButtonX + buttonWidth + buttonGap;
+    const goButton = this.createStartScreenButton(
+      goButtonX,
+      buttonsY,
+      buttonWidth,
+      buttonHeight,
+      buttonRadius,
+      "LET'S GO",
+      true, // Primary button
+      () => {
+        // Clear start screen and show questions
+        this.clearStartScreen();
+        this.showingStartScreen = false;
+        this.updateQuestion();
+      }
+    );
+    this.rightPanel.add(goButton);
+  }
+
+  // NEW: Create button for start screen
+  private createStartScreenButton(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+    text: string,
+    isPrimary: boolean,
+    onClick: () => void
+  ): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    
+    // Button background
+    const bg = this.add.graphics();
+    if (isPrimary) {
+      bg.fillStyle(COLORS.LOGO_BLUE, 1);
+    } else {
+      bg.fillStyle(COLORS.PURE_WHITE, 0); // Transparent
+    }
+    bg.fillRoundedRect(0, -height / 2, width, height, radius);
+    container.add(bg);
+    
+    // Button text
+    const fontSize = Math.round(width * 0.065);
+    const textColor = isPrimary ? COLORS.TEXT_PURE_WHITE : COLORS.TEXT_SECONDARY;
+    const buttonText = this.add.text(
+      width / 2,
+      0,
+      text,
+      createTextStyle('BUTTON', textColor, { fontSize: `${fontSize}px` })
+    );
+    buttonText.setOrigin(0.5, 0.5);
+    container.add(buttonText);
+    
+    // Arrow for primary button
+    if (isPrimary) {
+      const arrowSize = Math.round(fontSize * 1.2);
+      const arrow = this.add.text(
+        width * 0.85,
+        0,
+        '→',
+        createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${arrowSize}px` })
+      );
+      arrow.setOrigin(0.5, 0.5);
+      container.add(arrow);
+      container.setData('arrow', arrow);
+    }
+    
+    // Hit area
+    const hitArea = this.add.rectangle(width / 2, 0, width, height, 0x000000, 0);
+    hitArea.setInteractive({ useHandCursor: true });
+    
+    // Store references
+    container.setData('bg', bg);
+    container.setData('text', buttonText);
+    container.setData('width', width);
+    container.setData('height', height);
+    container.setData('radius', radius);
+    container.setData('isPrimary', isPrimary);
+    container.setData('hitArea', hitArea);
+    
+    // Hover effects
+    hitArea.on('pointerover', () => {
+      bg.clear();
+      if (isPrimary) {
+        bg.fillStyle(COLORS.LOGO_BLUE, 0.9);
+      } else {
+        bg.fillStyle(COLORS.LIGHT_BACKGROUND_BLUE, 1);
+      }
+      bg.fillRoundedRect(0, -height / 2, width, height, radius);
+    });
+    
+    hitArea.on('pointerout', () => {
+      bg.clear();
+      if (isPrimary) {
+        bg.fillStyle(COLORS.LOGO_BLUE, 1);
+      } else {
+        bg.fillStyle(COLORS.PURE_WHITE, 0);
+      }
+      bg.fillRoundedRect(0, -height / 2, width, height, radius);
+    });
+    
+    // Click handler
+    hitArea.on('pointerdown', onClick);
+    
+    container.add(hitArea);
+    container.sendToBack(hitArea);
+    
+    return container;
+  }
+
+  // NEW: Clear the start screen content
+  private clearStartScreen(): void {
+    // Remove all children except the background (index 0) and title (index 1)
+    const children = this.rightPanel.getAll();
+    for (let i = children.length - 1; i >= 2; i--) {
+      const child = children[i];
+      
+      // Clean up interactive elements
+      if (child instanceof Phaser.GameObjects.Container) {
+        const hitArea = child.getData('hitArea') as Phaser.GameObjects.Rectangle;
+        if (hitArea && hitArea.input) {
+          hitArea.removeAllListeners();
+          hitArea.disableInteractive();
+        }
+      }
+      
+      child.destroy();
+    }
   }
 
   private updatePlantGrowth(): void {
+    // Kill any existing floating animation
+    if (this.floatingTween) {
+      this.floatingTween.stop();
+      this.floatingTween = undefined;
+    }
+    
     // Clear existing plant graphics
     this.plantGraphics.removeAll(true);
     
-    // Calculate which stage we're on (1-7 based on progress)
+    // Calculate which stage we're on (1-7 based on CORRECT ANSWERS)
     const totalQuestions = this.questions.length;
-    const questionsAnswered = this.currentQuestionIndex;
+    const correctAnswers = this.score; // Changed from currentQuestionIndex to score
     
-    // Map progress to 7 stages
+    console.log('🌱 updatePlantGrowth:', {
+      correctAnswers,
+      totalQuestions,
+      currentQuestionIndex: this.currentQuestionIndex,
+      note: 'Tree grows based on CORRECT answers only!'
+    });
+    
+    // Map progress to 7 stages based on correct answers
     let stage: number;
-    if (questionsAnswered === 0) {
-      stage = 1;
-    } else if (questionsAnswered === totalQuestions) {
-      stage = 7; // Final stage when all questions completed
+    if (correctAnswers === 0) {
+      stage = 1; // Start stage - no correct answers yet
+    } else if (correctAnswers === totalQuestions) {
+      stage = 7; // Final stage when all questions answered correctly
     } else {
-      // Stages 2-6 for questions in progress
-      const progressPercent = questionsAnswered / totalQuestions;
+      // Stages 2-6 for correct answers in progress
+      const progressPercent = correctAnswers / totalQuestions;
       stage = Math.floor(progressPercent * 5) + 2; // Maps to stages 2-6
       stage = Math.min(stage, 6); // Cap at stage 6 until completion
     }
     
+    console.log(`🌳 Tree stage: ${stage} (based on ${correctAnswers}/${totalQuestions} correct)`);
+    
     // Display the appropriate tree stage image
     const treeImage = this.add.image(0, 0, `tree_stage_${stage}`);
     
-    // Scale the tree to fit nicely in the panel
-    const maxTreeHeight = 250;
-    const maxTreeWidth = 200;
+    // Scale the tree LARGER to fit nicely in the panel
+    // Increased from 250/200 to 350/280 for ~40% larger size
+    const maxTreeHeight = 350;
+    const maxTreeWidth = 280;
     
     const scaleX = maxTreeWidth / treeImage.width;
     const scaleY = maxTreeHeight / treeImage.height;
@@ -366,18 +708,203 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     treeImage.setScale(scale);
     this.plantGraphics.add(treeImage);
     
+    // Add subtle floating animation
+    // Small vertical movement (8 pixels) with smooth easing
+    this.floatingTween = this.tweens.add({
+      targets: treeImage,
+      y: -8, // Float up 8 pixels
+      duration: 2000, // 2 seconds up
+      ease: 'Sine.easeInOut', // Smooth easing
+      yoyo: true, // Return to original position
+      repeat: -1 // Infinite loop
+    });
+    
     // Update stage text
     this.stageText.setText(`Stage ${stage}`);
+  }
+
+  // NEW: Play watering can animation when answer is correct
+  private playWateringAnimation(): void {
+    // Prevent multiple animations from playing at once
+    if (this.isWateringAnimationPlaying) return;
+    
+    // Check if watering can textures exist
+    if (!this.textures.exists(ASSET_KEYS.WATERING_CAN_STILL)) {
+      console.warn('⚠️ Watering can animation skipped: WATERING_CAN_STILL texture not loaded');
+      return;
+    }
+    if (!this.textures.exists(ASSET_KEYS.WATERING_CAN_POURING)) {
+      console.warn('⚠️ Watering can animation skipped: WATERING_CAN_POURING texture not loaded');
+      return;
+    }
+    
+    console.log('🌊 Playing watering can animation!');
+    this.isWateringAnimationPlaying = true;
+
+    // Get panel dimensions for positioning
+    const panelWidth = this.leftPanel.getData('panelWidth') as number;
+    const panelHeight = this.leftPanel.getData('panelHeight') as number;
+
+    // Position watering can above and to the right of the tree
+    const startX = panelWidth * 0.7; // Right side of panel
+    const startY = panelHeight * 0.45; // Upper portion
+    const pouringX = panelWidth * 0.65; // Move slightly left
+    const pouringY = panelHeight * 0.50; // Move slightly down
+
+    // Create watering can image (still position initially)
+    this.wateringCanImage = this.add.image(startX, startY, ASSET_KEYS.WATERING_CAN_STILL);
+    this.wateringCanImage.setScale(1.5); // Adjust size as needed
+    this.wateringCanImage.setAlpha(0); // Start invisible
+    this.leftPanel.add(this.wateringCanImage);
+
+    // Animation sequence using chained tweens
+    // Step 1: Fade in the watering can
+    this.tweens.add({
+      targets: this.wateringCanImage,
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2',
+      onComplete: () => {
+        if (!this.wateringCanImage) return;
+        
+        // Step 2: Move to pouring position
+        this.tweens.add({
+          targets: this.wateringCanImage,
+          x: pouringX,
+          y: pouringY,
+          duration: 400,
+          ease: 'Power2',
+          onComplete: () => {
+            if (!this.wateringCanImage) return;
+            
+            // Step 3: Switch to pouring frame and tilt
+            this.wateringCanImage.setTexture(ASSET_KEYS.WATERING_CAN_POURING);
+            this.wateringCanImage.setAngle(15);
+            
+            // NEW: Show "+1 Water" text animation
+            this.showWaterText(pouringX, pouringY, panelWidth);
+            
+            // Step 4: Hold the pouring position
+            this.time.delayedCall(1200, () => {
+              if (!this.wateringCanImage) return;
+              
+              // Step 5: Switch back to still frame and straighten
+              this.wateringCanImage.setTexture(ASSET_KEYS.WATERING_CAN_STILL);
+              this.wateringCanImage.setAngle(0);
+              
+              // Step 6: Move back to start position
+              this.tweens.add({
+                targets: this.wateringCanImage,
+                x: startX,
+                y: startY,
+                duration: 400,
+                ease: 'Power2',
+                onComplete: () => {
+                  if (!this.wateringCanImage) return;
+                  
+                  // Step 7: Fade out and cleanup
+                  this.tweens.add({
+                    targets: this.wateringCanImage,
+                    alpha: 0,
+                    duration: 300,
+                    ease: 'Power2',
+                    onComplete: () => {
+                      if (this.wateringCanImage) {
+                        this.wateringCanImage.destroy();
+                        this.wateringCanImage = undefined;
+                      }
+                      this.isWateringAnimationPlaying = false;
+                      console.log('✅ Watering can animation complete!');
+                    }
+                  });
+                }
+              });
+            });
+          }
+        });
+      }
+    });
+  }
+
+  private showWaterText(x: number, y: number, panelWidth: number): void {
+    // Create the "+1 Water" text
+    const fontSize = Math.round(panelWidth * 0.08);
+    const waterText = this.add.text(
+      x - 175, // Position near the watering can spout
+      y - 100, // Below the watering can
+      '+1 Water',
+      createTextStyle('BODY_BOLD', `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`, {
+        fontSize: `${fontSize}px`
+      })
+    );
+    waterText.setOrigin(0.5, 0.5);
+    waterText.setAlpha(0); // Start invisible
+    waterText.setScale(0.5); // Start small
+    this.leftPanel.add(waterText);
+
+    // Animation sequence: Pop up, float up, and fade out
+    // Step 1: Pop in and scale up
+    this.tweens.add({
+      targets: waterText,
+      alpha: 1,
+      scale: 1.2, // Slightly larger than final size for bounce effect
+      duration: 200,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // Step 2: Settle to normal size
+        this.tweens.add({
+          targets: waterText,
+          scale: 1,
+          duration: 150,
+          ease: 'Power2',
+          onComplete: () => {
+            // Step 3: Float up and fade out
+            this.tweens.add({
+              targets: waterText,
+              y: y + 30, // Float upward
+              alpha: 0,
+              duration: 800,
+              ease: 'Power2',
+              delay: 200, // Hold for a moment before fading
+              onComplete: () => {
+                waterText.destroy();
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   private updateProgress(): void {
     const totalQuestions = this.questions.length;
     const progress = (this.score / totalQuestions) * 100;
     this.progressText.setText(`${Math.round(progress)} / 100`);
-    const progressBar = this.leftPanel.getData('progressBar') as Phaser.GameObjects.Rectangle;
+    
+    // Get stored progress bar data
+    const progressBarFillGraphics = this.leftPanel.getData('progressBarFill') as Phaser.GameObjects.Graphics;
+    const progressBarStartX = this.leftPanel.getData('progressBarStartX') as number;
+    const progressBarY = this.leftPanel.getData('progressBarY') as number;
     const progressBarWidth = this.leftPanel.getData('progressBarWidth') as number;
-    if (progressBar) {
-      progressBar.width = (progress / 100) * progressBarWidth;
+    const progressBarHeight = this.leftPanel.getData('progressBarHeight') as number;
+    const progressBarRadius = this.leftPanel.getData('progressBarRadius') as number;
+    
+    if (progressBarFillGraphics) {
+      // Clear and redraw the blue progress fill
+      progressBarFillGraphics.clear();
+      
+      const fillWidth = (progress / 100) * progressBarWidth;
+      
+      if (fillWidth > 0) {
+        progressBarFillGraphics.fillStyle(0x3F51B5, 1); // Blue color
+        progressBarFillGraphics.fillRoundedRect(
+          progressBarStartX,
+          progressBarY,
+          fillWidth,
+          progressBarHeight,
+          progressBarRadius
+        );
+      }
     }
   }
 
@@ -629,10 +1156,25 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private handleNext(): void {
     if (!this.nextButton.getData('enabled')) return;
+    
     const question = this.questions[this.currentQuestionIndex];
-    if (this.selectedAnswer === question.correctAnswer) {
+    console.log('🔍 handleNext called:', {
+      currentQuestionIndex: this.currentQuestionIndex,
+      selectedAnswer: this.selectedAnswer,
+      correctAnswer: question.correctAnswer,
+      question: question.question
+    });
+    
+    const isCorrect = this.selectedAnswer === question.correctAnswer;
+    console.log('✅ Answer check:', isCorrect ? 'CORRECT ✓' : 'INCORRECT ✗');
+    
+    if (isCorrect) {
       this.score++;
+      console.log('💧 Triggering watering animation...');
+      // Play watering animation when answer is correct
+      this.playWateringAnimation();
     }
+    
     this.currentQuestionIndex++;
     this.selectedAnswer = null;
     this.updateNextButton(false);
