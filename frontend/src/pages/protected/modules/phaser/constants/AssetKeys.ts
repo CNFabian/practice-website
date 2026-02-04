@@ -44,6 +44,7 @@ export const ASSET_KEYS = {
   TREE_STAGE_5: 'tree_stage_5',
   TREE_STAGE_6: 'tree_stage_6',
   TREE_STAGE_7: 'tree_stage_7',
+  TREE_SHADOW: 'tree_shadow',
 
   // Minigame Assets
   WATERING_CAN_STILL: 'watering_can_still',

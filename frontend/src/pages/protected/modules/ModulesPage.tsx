@@ -222,7 +222,6 @@ const ModulesPage: React.FC = () => {
     };
   }, []);
 
-  // CRITICAL: Sync modules data to GameManager as soon as it loads
   useEffect(() => {
     if (modulesData && !isLoadingModules) {
       console.log('🔄 EARLY SYNC: Updating modules data to GameManager');
@@ -230,7 +229,6 @@ const ModulesPage: React.FC = () => {
     }
   }, [modulesData, isLoadingModules]);
 
-  // CRITICAL: Sync lessons data as soon as it loads
   useEffect(() => {
     if (!navState.moduleBackendId || !lessonsData || isLoadingLessons) return;
     
@@ -450,13 +448,11 @@ const ModulesPage: React.FC = () => {
       return null;
     }
     
-    // CRITICAL: Don't try to get module if data is still loading
     if (isLoadingModules) {
       console.log('⏳ Still loading modules data');
       return null;
     }
     
-    // CRITICAL: Ensure GameManager has the data before querying
     if (modulesData && modulesData.length > 0) {
       GameManager.updateModulesData(modulesData);
     }
@@ -480,13 +476,11 @@ const ModulesPage: React.FC = () => {
       return null;
     }
     
-    // CRITICAL: Don't try to get lesson if data is still loading
     if (isLoadingLessons) {
       console.log('⏳ Still loading lessons data');
       return null;
     }
     
-    // CRITICAL: Ensure GameManager has the lessons data
     if (lessonsData && lessonsData.length > 0 && modulesData && modulesData.length > 0) {
       GameManager.updateModulesData(modulesData); // Need this for house lookup
       GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);

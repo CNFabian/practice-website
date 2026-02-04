@@ -141,7 +141,6 @@ export default class HouseScene extends BaseScene {
       // Fallback: Set gradient background on DOM
       const bgElement = document.getElementById('section-background');
       if (bgElement) {
-        // Use CardGradientColor: linear-gradient(133.93deg, #EEF1FF 24.22%, #FAFBFF 79%)
         bgElement.style.setProperty(
           'background', 
           'linear-gradient(133.93deg, #EEF1FF 24.22%, #FAFBFF 79%)', 
@@ -151,7 +150,6 @@ export default class HouseScene extends BaseScene {
     }
 
     // Layer 1 (depth 2): Lesson house image with transparent background
-    // NOTE: Changed from depth 2 to depth 1 since we removed the gradient layer
     this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
     this.lessonHouse.setDepth(1);
     const houseScale = Math.min(width, height) * 0.00121;

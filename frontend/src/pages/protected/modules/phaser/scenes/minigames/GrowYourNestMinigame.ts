@@ -24,19 +24,18 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private questionNumber!: Phaser.GameObjects.Text;
   private optionButtons: Phaser.GameObjects.Container[] = [];
   private nextButton!: Phaser.GameObjects.Container;
-  private progressText!: Phaser.GameObjects.Text;
   private plantGraphics!: Phaser.GameObjects.Container;
   private stageText!: Phaser.GameObjects.Text;
-  private totalCountText!: Phaser.GameObjects.Text;
+  private progressPercentText!: Phaser.GameObjects.Text;
   private backButton?: Phaser.GameObjects.Container;
   private headerTitle?: Phaser.GameObjects.Text;
   private completionReturnButton?: Phaser.GameObjects.Container;
-  private showingStartScreen: boolean = true; // NEW: Track if showing start screen
-  private moduleNumber: number = 1; // NEW: Track module number
-  private leftPanelBackground?: Phaser.GameObjects.Image; // NEW: Track background image
-  private floatingTween?: Phaser.Tweens.Tween; // NEW: Track floating animation for cleanup
-  private wateringCanImage?: Phaser.GameObjects.Image; // NEW: Track watering can image
-  private isWateringAnimationPlaying: boolean = false; // NEW: Track if watering animation is active
+  private showingStartScreen: boolean = true;
+  private moduleNumber: number = 1;
+  private leftPanelBackground?: Phaser.GameObjects.Image;
+  private floatingTween?: Phaser.Tweens.Tween;
+  private wateringCanImage?: Phaser.GameObjects.Image;
+  private isWateringAnimationPlaying: boolean = false;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -44,12 +43,12 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   init(data: { questions?: QuizQuestion[]; moduleNumber?: number }) {
     this.questions = data.questions || this.getDefaultQuestions();
-    this.moduleNumber = data.moduleNumber || 1; // NEW: Get module number
+    this.moduleNumber = data.moduleNumber || 1;
     this.currentQuestionIndex = 0;
     this.selectedAnswer = null;
     this.score = 0;
     this.optionButtons = [];
-    this.showingStartScreen = true; // NEW: Start with start screen
+    this.showingStartScreen = true;
   }
 
   create() {
@@ -373,7 +372,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     // Progress bar container (light gray rounded background)
     const progressBarStartX = leftMargin + 20;
-    const progressBarWidth = containerWidth - 120 - 40; // Leave space for progress text on right
+    const progressBarWidth = containerWidth - 40;
     const progressBarHeight = 28;
     const progressBarRadius = 14;
     
@@ -398,16 +397,8 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.leftPanel.setData('progressBarWidth', progressBarWidth);
     this.leftPanel.setData('progressBarHeight', progressBarHeight);
     this.leftPanel.setData('progressBarRadius', progressBarRadius);
-
-    // Progress text on the right inside container - NOW with fonts loaded
-    const progressTextX = panelWidth - rightMargin - 15;
-    this.progressText = this.add.text(progressTextX, bottomY, '0 / 100',
-      createTextStyle('BODY_MEDIUM', COLORS.TEXT_PURE_WHITE, { fontSize: '16px' })
-    );
-    this.progressText.setOrigin(1, 0.5);
-    this.leftPanel.add(this.progressText);
     
-    // Stage text at top LEFT corner - large, blue with white stroke, half outside container - NOW with fonts loaded
+    // Stage text at top LEFT corner - large, blue with white stroke, half outside container
     const stageTextX = leftMargin + 10;
     const stageTextY = containerY - 10; // Position half outside the top of the container
     this.stageText = this.add.text(stageTextX, stageTextY, 'Stage 1', {
@@ -422,10 +413,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.stageText.setOrigin(0, 0.5); // Left-aligned, vertically centered
     this.leftPanel.add(this.stageText);
     
-    // Total count text at top RIGHT corner - matching stage text styling - NOW with fonts loaded
-    const totalCountTextX = panelWidth - rightMargin - 10;
-    const totalCountTextY = containerY - 10; // Same Y position as stage text
-    this.totalCountText = this.add.text(totalCountTextX, totalCountTextY, '0/100', {
+    const progressPercentTextX = panelWidth - rightMargin - 10;
+    const progressPercentTextY = containerY - 10; // Same Y position as stage text
+    this.progressPercentText = this.add.text(progressPercentTextX, progressPercentTextY, '0%', {
       fontFamily: 'Onest',
       fontSize: '48px',
       color: '#3658EC', // LogoBlue
@@ -434,8 +424,8 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       stroke: '#FFFFFF', // White stroke
       strokeThickness: 3
     });
-    this.totalCountText.setOrigin(1, 0.5); // Right-aligned, vertically centered
-    this.leftPanel.add(this.totalCountText);
+    this.progressPercentText.setOrigin(1, 0.5); // Right-aligned, vertically centered
+    this.leftPanel.add(this.progressPercentText);
     
     // Trigger initial plant growth update
     this.updatePlantGrowth();
@@ -462,7 +452,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.rightPanel.setData('panelWidth', panelWidth);
     this.rightPanel.setData('panelHeight', panelHeight);
     
-    // NEW: Show start screen instead of questions initially
     if (this.showingStartScreen) {
       this.showStartScreen();
     } else {
@@ -470,7 +459,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
   }
 
-  // NEW: Show the start screen in the right panel
   private showStartScreen(): void {
     const panelWidth = this.rightPanel.getData('panelWidth') as number;
     const panelHeight = this.rightPanel.getData('panelHeight') as number;
@@ -569,7 +557,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.rightPanel.add(goButton);
   }
 
-  // NEW: Create button for start screen
   private createStartScreenButton(
     x: number,
     y: number,
@@ -661,7 +648,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     return container;
   }
 
-  // NEW: Clear the start screen content
   private clearStartScreen(): void {
     // Remove all children except the background (index 0) and title (index 1)
     const children = this.rightPanel.getAll();
@@ -693,7 +679,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     // Calculate which stage we're on (1-7 based on CORRECT ANSWERS)
     const totalQuestions = this.questions.length;
-    const correctAnswers = this.score; // Changed from currentQuestionIndex to score
+    const correctAnswers = this.score;
     
     console.log('🌱 updatePlantGrowth:', {
       correctAnswers,
@@ -717,22 +703,83 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     
     console.log(`🌳 Tree stage: ${stage} (based on ${correctAnswers}/${totalQuestions} correct)`);
     
+    // Calculate progressive scaling multiplier FIRST (needed for both tree and shadow positioning)
+    // Stage 1: 1.0x (100%), Stage 7: 2.0x (200%)
+    const stageScaleMultiplier = 1.0 + ((stage - 1) / 6) * 1.0; // Linear growth from 1.0 to 2.0
+    
+    // Add shadow FIRST (so it appears behind the tree)
+    console.log('🔍 Checking for tree shadow texture:', ASSET_KEYS.TREE_SHADOW);
+    console.log('🔍 Shadow texture exists?', this.textures.exists(ASSET_KEYS.TREE_SHADOW));
+    
+    if (this.textures.exists(ASSET_KEYS.TREE_SHADOW)) {
+      // Shadow Y position needs to move down as tree grows
+      // Base position: 80, increases with stage to stay under the growing tree
+      const shadowYOffset = 200 + ((stage - 1) * 30); // Moves down 30 pixels per stage
+      const treeShadow = this.add.image(0, shadowYOffset, ASSET_KEYS.TREE_SHADOW);
+      
+      console.log('✅ Tree shadow created:', {
+        stage,
+        shadowYOffset,
+        x: treeShadow.x,
+        y: treeShadow.y,
+        width: treeShadow.width,
+        height: treeShadow.height,
+        visible: treeShadow.visible,
+        alpha: treeShadow.alpha
+      });
+      
+      // Calculate shadow scale based on tree stage (grows with tree)
+      // Stage 1: 0.8x, Stage 7: 1.5x (87.5% increase)
+      const shadowBaseScale = 0.8 + ((stage - 1) / 6) * 0.7; // Linear growth from 0.8 to 1.5
+      treeShadow.setScale(shadowBaseScale);
+      treeShadow.setAlpha(1);
+      this.plantGraphics.add(treeShadow);
+      
+      // Shadow animation: when tree goes up, shadow gets smaller (mimics distance)
+      this.tweens.add({
+        targets: treeShadow,
+        scaleX: shadowBaseScale * 0.85, // Shrink to 85% of base scale
+        scaleY: shadowBaseScale * 0.85,
+        duration: 2000,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1
+      });
+    } else {
+      console.warn('⚠️ Tree shadow texture not found! Key:', ASSET_KEYS.TREE_SHADOW);
+    }
+    
     // Display the appropriate tree stage image
     const treeImage = this.add.image(0, 0, `tree_stage_${stage}`);
     
-    // Scale the tree LARGER to fit nicely in the panel
-    // Increased from 250/200 to 350/280 for ~40% larger size
+    // Progressive tree scaling: Stage 1 is smallest, Stage 7 is largest
+    // Stage 1: Base size (100%), Stage 7: Much larger (200%)
     const maxTreeHeight = 350;
     const maxTreeWidth = 280;
     
+    // Calculate base scale to fit the panel
     const scaleX = maxTreeWidth / treeImage.width;
     const scaleY = maxTreeHeight / treeImage.height;
-    const scale = Math.min(scaleX, scaleY);
+    const baseScale = Math.min(scaleX, scaleY);
     
-    treeImage.setScale(scale);
+    // Apply progressive scaling multiplier based on stage
+    const finalScale = baseScale * stageScaleMultiplier;
+    
+    console.log('🌳 Tree scaling:', {
+      stage,
+      baseScale,
+      stageScaleMultiplier,
+      finalScale,
+      percentageOfStage1: Math.round(stageScaleMultiplier * 100) + '%'
+    });
+    
+    treeImage.setScale(finalScale);
     this.plantGraphics.add(treeImage);
     
-    // Add subtle floating animation
+    treeImage.setScale(finalScale);
+    this.plantGraphics.add(treeImage);
+    
+    // Add subtle floating animation to tree
     // Small vertical movement (8 pixels) with smooth easing
     this.floatingTween = this.tweens.add({
       targets: treeImage,
@@ -747,18 +794,19 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.stageText.setText(`Stage ${stage}`);
   }
 
-  // NEW: Play watering can animation when answer is correct
-  private playWateringAnimation(): void {
+  private playWateringAnimation(onComplete?: () => void): void {
     // Prevent multiple animations from playing at once
     if (this.isWateringAnimationPlaying) return;
     
     // Check if watering can textures exist
     if (!this.textures.exists(ASSET_KEYS.WATERING_CAN_STILL)) {
       console.warn('⚠️ Watering can animation skipped: WATERING_CAN_STILL texture not loaded');
+      if (onComplete) onComplete();
       return;
     }
     if (!this.textures.exists(ASSET_KEYS.WATERING_CAN_POURING)) {
       console.warn('⚠️ Watering can animation skipped: WATERING_CAN_POURING texture not loaded');
+      if (onComplete) onComplete();
       return;
     }
     
@@ -805,7 +853,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
             this.wateringCanImage.setTexture(ASSET_KEYS.WATERING_CAN_POURING);
             this.wateringCanImage.setAngle(15);
             
-            // NEW: Show "+1 Water" text animation
+            // Show "+1 Water" text animation
             this.showWaterText(pouringX, pouringY, panelWidth);
             
             // Step 4: Hold the pouring position
@@ -839,6 +887,11 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
                       }
                       this.isWateringAnimationPlaying = false;
                       console.log('✅ Watering can animation complete!');
+                      
+                      // Call the completion callback AFTER animation finishes
+                      if (onComplete) {
+                        onComplete();
+                      }
                     }
                   });
                 }
@@ -885,7 +938,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
             // Step 3: Float up and fade out
             this.tweens.add({
               targets: waterText,
-              y: y + 30, // Float upward
+              y: y - 130, // Float upward (negative to go UP)
               alpha: 0,
               duration: 800,
               ease: 'Power2',
@@ -903,10 +956,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private updateProgress(): void {
     const totalQuestions = this.questions.length;
     const progress = (this.score / totalQuestions) * 100;
-    this.progressText.setText(`${Math.round(progress)} / 100`);
     
-    // Update total count text
-    this.totalCountText.setText(`${this.score}/${totalQuestions}`);
+    // Update progress percentage text to show rounded percentage
+    this.progressPercentText.setText(`${Math.round(progress)}%`);
     
     // Get stored progress bar data
     const progressBarFillGraphics = this.leftPanel.getData('progressBarFill') as Phaser.GameObjects.Graphics;
@@ -1195,19 +1247,26 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const isCorrect = this.selectedAnswer === question.correctAnswer;
     console.log('✅ Answer check:', isCorrect ? 'CORRECT ✓' : 'INCORRECT ✗');
     
-    if (isCorrect) {
-      this.score++;
-      console.log('💧 Triggering watering animation...');
-      // Play watering animation when answer is correct
-      this.playWateringAnimation();
-    }
-    
     this.currentQuestionIndex++;
     this.selectedAnswer = null;
     this.updateNextButton(false);
-    this.updatePlantGrowth();
-    this.updateProgress();
-    this.updateQuestion();
+    
+    if (isCorrect) {
+      this.score++;
+      console.log('💧 Triggering watering animation...');
+      // Play watering animation when answer is correct, then grow tree
+      this.playWateringAnimation(() => {
+        // Tree grows AFTER watering animation completes
+        this.updatePlantGrowth();
+        this.updateProgress();
+        this.updateQuestion();
+      });
+    } else {
+      // If incorrect, just update immediately without animation
+      this.updatePlantGrowth();
+      this.updateProgress();
+      this.updateQuestion();
+    }
   }
 
   private showCompletion(): void {
@@ -1266,7 +1325,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     waterText.setOrigin(0.5, 0.5);
     this.rightPanel.add(waterText);
     
-    const waterValue = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.68, 'Water +6\nFertilizer +2',
+    // Calculate actual water earned (1 water per correct answer)
+    const waterEarned = this.score;
+    
+    const waterValue = this.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `Water +${waterEarned}`,
       createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
         fontSize: `${boxValueFontSize}px`,
         align: 'center',
@@ -1282,13 +1344,30 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
     this.rightPanel.add(rightBoxBg);
     
-    const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, 'Amazing!',
+    // Calculate accuracy percentage
+    const accuracy = Math.round((this.score / this.questions.length) * 100);
+    
+    // Determine appropriate accuracy message based on performance
+    let accuracyMessage: string;
+    if (accuracy === 100) {
+      accuracyMessage = 'Perfect!';
+    } else if (accuracy >= 80) {
+      accuracyMessage = 'Amazing!';
+    } else if (accuracy >= 60) {
+      accuracyMessage = 'Great Job!';
+    } else if (accuracy >= 40) {
+      accuracyMessage = 'Good Effort!';
+    } else if (accuracy > 0) {
+      accuracyMessage = 'Keep Trying!';
+    } else {
+      accuracyMessage = 'Try Again!';
+    }
+    
+    const accuracyText = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, accuracyMessage,
       createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxTitleFontSize}px` })
     );
     accuracyText.setOrigin(0.5, 0.5);
     this.rightPanel.add(accuracyText);
-    
-    const accuracy = Math.round((this.score / this.questions.length) * 100);
     
     const accuracyValue = this.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`,
       createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxValueFontSize}px` })
@@ -1305,7 +1384,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     coinButton.fillRoundedRect(panelWidth / 2 - coinButtonWidth / 2, coinButtonY, coinButtonWidth, coinButtonHeight, coinButtonRadius);
     this.rightPanel.add(coinButton);
     
-    const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, 'You earned 15\nNest Coins!',
+    // Calculate actual coins earned (5 coins per correct answer)
+    const coinsEarned = this.score * 5;
+    
+    const coinText = this.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, `You earned ${coinsEarned}\nNest Coins!`,
       createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
         fontSize: `${coinButtonFontSize}px`,
         align: 'center',

@@ -9,7 +9,7 @@ interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
-  onNextLesson?: (lessonId: number, moduleBackendId: string) => void; // NEW: Accept navigation handler
+  onNextLesson?: (lessonId: number, moduleBackendId: string) => void;
 }
 
 interface BackendQuizAnswer {
@@ -112,7 +112,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   lesson, 
   module, 
   onBack,
-  onNextLesson // NEW: Use this for navigation
+  onNextLesson
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
   const scrollContainerRef = useRef<HTMLDivElement>(null); // Add ref for scrollable container
@@ -205,7 +205,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     [module.lessons, currentLessonIndex]
   );
 
-  // FIXED: Use onNextLesson prop for navigation
   const handleCompleteLesson = useCallback(() => {
     console.log('🔄 Complete lesson called');
     console.log('Next lesson:', nextLesson);
@@ -275,7 +274,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   return (
     <div className="h-screen flex flex-col bg-transparent">
       {/* Scrollable Main Content Container */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">{/* Added ref here */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-7 py-2">
           <div className="flex items-center justify-between">
             <button

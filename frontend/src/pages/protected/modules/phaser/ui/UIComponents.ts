@@ -31,7 +31,7 @@ export class UIComponents {
     coinIcon.setOrigin(0.5);
     container.add(coinIcon);
 
-    // Coin text (on the right) - UPDATED to use Onest
+    // Coin text (on the right)
     const coinText = scene.add.text(scale(15), 0, coins.toString(),
       createTextStyle('H2', COLORS.TEXT_PURE_WHITE)
     ).setOrigin(0.5);
@@ -57,7 +57,7 @@ export class UIComponents {
     badge.setStrokeStyle(scale(1), COLORS.PURE_WHITE);
     container.add(badge);
 
-    // Badge text - UPDATED
+    // Badge text
     const badgeText = scene.add.text(0, 0, text, 
       createTextStyle('BADGE', textColor)
     ).setOrigin(0.5);
@@ -82,7 +82,7 @@ export class UIComponents {
     const circle = scene.add.circle(0, 0, scale(radius), backgroundColor);
     container.add(circle);
 
-    // Icon - UPDATED (icons often need medium weight for clarity)
+    // Icon
     const iconText = scene.add.text(0, 0, icon, {
       fontSize: `${scaleFontSize(32)}px`,
       fontFamily: FONT_FAMILY,
@@ -137,7 +137,7 @@ export class UIComponents {
     const tagBg = scene.add.rectangle(0, 0, scale(120), scale(24), COLORS.UNAVAILABLE_BUTTON);
     container.add(tagBg);
 
-    // Tag text - UPDATED
+    // Tag text
     const tagText = scene.add.text(0, 0, type,
       createTextStyle('TAG', COLORS.TEXT_SECONDARY)
     ).setOrigin(0.5);
@@ -216,7 +216,7 @@ export class UIComponents {
     // Progress bar (fill)
     const progressBar = scene.add.graphics();
 
-    // Percentage text - UPDATED
+    // Percentage text
     const percentText = scene.add.text(x, y, '0%',
       createTextStyle('LABEL', COLORS.TEXT_WHITE_HEX)
     ).setOrigin(0.5);

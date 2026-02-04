@@ -862,7 +862,7 @@ export default class NeighborhoodScene extends BaseScene {
         coinReward: house.coinReward,
         isLocked: false,
         status: getModuleStatus(),
-        completedLessons: moduleProgress?.lessons_completed || 0, // ⭐ NEW: Pass completed lessons count
+        completedLessons: moduleProgress?.lessons_completed || 0,
       };
 
       const progressCard = HouseProgressCard.createProgressCard(
@@ -912,7 +912,6 @@ export default class NeighborhoodScene extends BaseScene {
     
     container.add(houseImage);
     
-    // ADD HOVERING ANIMATION - minimal floating effect with random delay
     const randomDelay = Math.random() * 1500; // Random delay between 0-1500ms
     
     this.tweens.add({
@@ -1125,7 +1124,6 @@ export default class NeighborhoodScene extends BaseScene {
     
     if (this.bird) {
       this.bird.fadeIn(fadeDuration, () => {
-        // ⭐ FORCE bird to be fully visible after fade-in completes
         if (this.bird) {
           this.bird.forceVisible(); // This ensures alpha=1 and depth=1000
         }

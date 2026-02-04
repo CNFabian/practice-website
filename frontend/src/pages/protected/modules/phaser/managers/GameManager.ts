@@ -293,7 +293,7 @@ class GameManager {
    */
   setNavigationHandlers(handlers: {
     handleNeighborhoodSelect: (neighborhoodId: string) => void;
-    handleHouseSelect: (houseId: string, moduleBackendId?: string) => void; // CHANGED: removed moduleId, made moduleBackendId optional
+    handleHouseSelect: (houseId: string, moduleBackendId?: string) => void;
     handleLessonSelect: (lessonId: number, moduleBackendId?: string) => void;
     handleMinigameSelect: () => void;
     handleBackToMap: () => void;

@@ -66,7 +66,7 @@ export class HouseProgressCard {
       colorStart: string,
       colorEnd: string,
       key: string,
-      roundedCorners: 'all' | 'bottom' = 'all' // NEW: specify which corners to round
+      roundedCorners: 'all' | 'bottom' = 'all'
     ): Phaser.GameObjects.Image => {
       // Create a canvas with the gradient
       const canvas = document.createElement('canvas');
@@ -150,7 +150,7 @@ export class HouseProgressCard {
     gradientBar.setOrigin(0.5, 0.5);
     container.add(gradientBar);
 
-    // Function to draw the glow - TONED DOWN
+    // Function to draw the glow
     const drawGlow = (height: number, alpha: number = 0) => {
       glowGraphics.clear();
       if (alpha > 0) {
@@ -190,8 +190,6 @@ export class HouseProgressCard {
     ).setOrigin(0, 0.5);
     container.add(title);
 
-    // Duration (top right) - CHANGED: Using LinearBlue1 start color
-    // Note: Using hex string format since createTextStyle expects string
     const duration = scene.add.text(cardWidth / 2 - scale(20), titleY, data.duration,
       createTextStyle('BODY_LIGHT', '#1D3CC6', { // LinearBlue1 start color
         fontSize: scaleFontSize(14),
@@ -207,7 +205,6 @@ export class HouseProgressCard {
       progressContainer.setAlpha(0); // Start hidden
       container.add(progressContainer);
 
-      // TIGHTER SPACING - progress bar closer to title
       const progressY = scale(-5);
 
       // Progress bar background
@@ -228,7 +225,7 @@ export class HouseProgressCard {
       const completedLessons = data.completedLessons || 0;
       const totalLessons = data.lessonCount || 0;
       
-      // Progress bar fill - CHANGED: Using LinearBlue1 gradient instead of LogoBlue
+      // Progress bar fill
       // ONLY SHOW IF THERE ARE COMPLETED LESSONS
       let progressFillWidth = 0;
       if (totalLessons > 0 && completedLessons > 0) {
@@ -260,7 +257,6 @@ export class HouseProgressCard {
       // Star icons on progress bar - ONLY RENDER FOR COMPLETED LESSONS
       // Stars positioned at the END of each lesson segment
       if (totalLessons > 0 && completedLessons > 0) {
-        // Calculate spacing for stars along the progress bar
         const starSpacing = progressBarWidth / totalLessons;
         
         // Render stars for each completed lesson at the END of each segment
@@ -277,7 +273,6 @@ export class HouseProgressCard {
       // Bottom section with icons and button
       const bottomY = progressY + scale(35);
 
-      // Move all icons MORE TO THE LEFT (changed from 60 to 40)
       // Lesson count (video icon)
       const videoIcon = scene.add.image(-cardWidth / 2 + scale(40), bottomY, 'videoProgressIcon');
       videoIcon.setDisplaySize(scale(24), scale(24));
@@ -375,13 +370,13 @@ export class HouseProgressCard {
 
       const buttonText = getButtonText();
 
-      // Continue/Start button - CHANGED: Using ElegantBlue for button background and text
+      // Continue/Start button
       const buttonWidth = scale(120);
       const buttonHeight = scale(36);
       const buttonX = cardWidth / 2 - scale(20) - buttonWidth / 2;
 
       const continueButton = scene.add.graphics();
-      continueButton.fillStyle(COLORS.ELEGANT_BLUE, 1); // CHANGED: ElegantBlue for button background
+      continueButton.fillStyle(COLORS.ELEGANT_BLUE, 1);
       continueButton.fillRoundedRect(
         buttonX - buttonWidth / 2,
         bottomY - buttonHeight / 2,
