@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { getModuleLessons } from '../../../services/learningAPI';
 import { useSidebar } from '../../../contexts/SidebarContext';
+import { useWalkthrough } from '../../../contexts/WalkthroughContext';
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
@@ -33,6 +34,7 @@ const ModulesPage: React.FC = () => {
   const totalCoins = coinBalanceData?.current_balance || 0;
   const queryClient = useQueryClient();
   const { isCollapsed } = useSidebar();
+  const { isWalkthroughActive } = useWalkthrough();
 
   // Calculate sidebar offset based on collapsed state
   const sidebarOffset = isCollapsed ? 80 : 192;
@@ -56,6 +58,21 @@ const ModulesPage: React.FC = () => {
       currentHouseIndex: 0,
     };
   });
+
+  // When walkthrough becomes active, reset navState to map so background updates
+  useEffect(() => {
+    if (isWalkthroughActive && navState.currentView !== 'map') {
+      setNavState({
+        currentView: 'map',
+        neighborhoodId: null,
+        houseId: null,
+        moduleId: null,
+        moduleBackendId: null,
+        lessonId: null,
+        currentHouseIndex: 0,
+      });
+    }
+  }, [isWalkthroughActive]);
 
   const { 
     data: modulesData, 

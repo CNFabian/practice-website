@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { OnestFont } from '../../../assets';
+import GameManager from '../../../pages/protected/modules/phaser/managers/GameManager';
 
 // Import assets
 import { 
@@ -51,6 +52,7 @@ const walkthroughSteps: WalkthroughStep[] = [
       description: "We're happy to be with you through your home-buying journey!",
       buttonText: 'CONTINUE',
     },
+    sceneTransition: 'MapScene',
   },
   {
     id: 'earn-coins',
@@ -124,6 +126,16 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
 
   const currentStep = walkthroughSteps[currentStepIndex];
   const isLastStep = currentStepIndex === walkthroughSteps.length - 1;
+
+  // When walkthrough becomes active, immediately transition to the first step's scene
+  useEffect(() => {
+    if (isActive && onSceneTransition) {
+      const firstStep = walkthroughSteps[0];
+      if (firstStep.sceneTransition) {
+        onSceneTransition(firstStep.sceneTransition);
+      }
+    }
+  }, [isActive, onSceneTransition]);
 
   // Calculate highlight position for highlight-type steps
   const updateHighlightPosition = useCallback(() => {
@@ -212,6 +224,30 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     setCurrentStepIndex(0);
     onExit();
   };
+
+  // When house-intro step is shown, trigger progress card expand on first house
+  useEffect(() => {
+    if (!isActive) return;
+    
+    if (currentStep.id === 'house-intro') {
+      // First clear any previous value so changedata event fires reliably
+      const game = GameManager.getGame();
+      if (game) {
+        game.registry.set('walkthroughExpandCard', null);
+      }
+      
+      // Delay to let NeighborhoodScene fully render after transition
+      const timer = setTimeout(() => {
+        const game = GameManager.getGame();
+        if (game) {
+          console.log('🎯 Walkthrough: triggering card expand');
+          game.registry.set('walkthroughExpandCard', 0); // Expand first house's card
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, currentStepIndex]);
 
   // Block all keyboard events from reaching Phaser when walkthrough is active
   useEffect(() => {
