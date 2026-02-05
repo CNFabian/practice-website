@@ -533,7 +533,7 @@ export default class MapScene extends BaseScene {
 
     // Bird icon - positioned half outside the left border
     const birdIcon = this.add.image(-modalWidth / 2, 0, ASSET_KEYS.NOTICE_BIRD_ICON);
-    birdIcon.setScale(scale(0.3));
+    birdIcon.setScale(scale(0.08));
     birdIcon.setOrigin(0.5, 0.5); // Center the bird so it's half in, half out
     modalContainer.add(birdIcon);
 

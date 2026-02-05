@@ -10,13 +10,13 @@ import {
 } from '../../../assets';
 import {
   getOnboardingOptions,
-  completeStep1,
   completeStep2,
   completeStep3,
   completeStep4,
   completeStep5,
   type OnboardingOptions
 } from '../../../services/onBoardingAPI';
+import { searchCities as searchCitiesAPI } from '../../../services';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 
 interface OnBoardingPageProps {
@@ -49,11 +49,12 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     zipcode: ''
   });
 
-  // Zipcode validation state
-  const [zipcodeInput, setZipcodeInput] = useState('');
-  const [isValidatingZipcode, setIsValidatingZipcode] = useState(false);
-  const [zipcodeData, setZipcodeData] = useState<ZipcodeData | null>(null);
-  const [zipcodeError, setZipcodeError] = useState<string | null>(null);
+  // City validation state
+  const [cityInput, setCityInput] = useState('');
+  const [isValidatingCity, setIsValidatingCity] = useState(false);
+  const [cityResults, setCityResults] = useState<ZipcodeData[]>([]);
+  const [selectedCities, setSelectedCities] = useState<ZipcodeData[]>([]);
+  const [cityError, setCityError] = useState<string | null>(null);
 
   // Load onboarding options on mount
   useEffect(() => {
@@ -72,54 +73,50 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Validate zipcode when user types
+  // Search cities when user types - NOW USES BACKEND API
   useEffect(() => {
-    const validateZipcode = async () => {
-      // Only validate if input is exactly 5 digits
-      if (zipcodeInput.length !== 5 || !/^\d{5}$/.test(zipcodeInput)) {
-        setZipcodeData(null);
-        setZipcodeError(null);
-        setFormData({ ...formData, zipcode: '' });
+    const searchCities = async () => {
+      // Only search if input is at least 2 characters
+      if (cityInput.length < 2) {
+        setCityResults([]);
+        setCityError(null);
         return;
       }
 
-      setIsValidatingZipcode(true);
-      setZipcodeError(null);
+      setIsValidatingCity(true);
+      setCityError(null);
 
       try {
-        const response = await fetch(`https://api.zippopotam.us/us/${zipcodeInput}`);
-        
-        if (!response.ok) {
-          throw new Error('Invalid zipcode');
+        // ✅ Call backend API instead of Google directly
+        const cities = await searchCitiesAPI(cityInput);
+
+        if (cities.length === 0) {
+          setCityResults([]);
+          setCityError('No cities found. Try a different search.');
+          return;
         }
 
-        const data = await response.json();
-        
-        // Extract city and state from response
-        const place = data.places[0];
-        const zipcodeInfo: ZipcodeData = {
-          city: place['place name'],
-          state: place['state abbreviation'],
-          zipcode: zipcodeInput
-        };
-
-        setZipcodeData(zipcodeInfo);
-        setFormData({ ...formData, zipcode: zipcodeInput });
-        setZipcodeError(null);
+        setCityResults(cities);
+        setCityError(null);
       } catch (err) {
-        console.error('Zipcode validation error:', err);
-        setZipcodeData(null);
-        setZipcodeError('Invalid zipcode. Please enter a valid US zipcode.');
-        setFormData({ ...formData, zipcode: '' });
+        console.error('City search error:', err);
+        setCityResults([]);
+        
+        // Show user-friendly error message
+        if (err instanceof Error) {
+          setCityError(err.message);
+        } else {
+          setCityError('Failed to search cities. Please try again.');
+        }
       } finally {
-        setIsValidatingZipcode(false);
+        setIsValidatingCity(false);
       }
     };
 
-    // Debounce the validation
-    const timeoutId = setTimeout(validateZipcode, 500);
+    // Debounce for better UX (300ms already optimal)
+    const timeoutId = setTimeout(searchCities, 300);
     return () => clearTimeout(timeoutId);
-  }, [zipcodeInput]);
+  }, [cityInput]);
 
   // Progress calculation (6 total steps)
   const progress = ((currentStep + 1) / 6) * 100;
@@ -144,7 +141,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
       case 4: // Timeline
         return formData.homeownership_timeline_months > 0;
       case 5: // City/Zipcode
-        return formData.zipcode !== '' && zipcodeData !== null;
+        return selectedCities.length > 0;
       default:
         return false;
     }
@@ -158,11 +155,6 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
     try {
       // Call individual step endpoints
       
-      // Step 1: Avatar selection (using default for now)
-      await completeStep1({
-        selected_avatar: 'avatar_1'
-      });
-
       // Step 2: Professionals (has_realtor, has_loan_officer)
       await completeStep2({
         has_realtor: formData.has_realtor ?? false,
@@ -179,9 +171,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
         homeownership_timeline_months: formData.homeownership_timeline_months
       });
 
-      // Step 5: Zipcode
+      // Step 5: Zipcode - send the first selected city's zipcode (or you can modify backend to accept multiple)
       await completeStep5({
-        zipcode: formData.zipcode
+        zipcode: selectedCities[0].zipcode // Sending first city's zipcode for now
       });
 
       console.log('All onboarding steps completed successfully');
@@ -530,7 +522,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          {/* Screen 6: Zipcode */}
+          {/* Screen 6: City Search */}
           {currentStep === 5 && (
             <div className="text-center space-y-8 animate-fadeIn">
               <div className="flex items-center justify-center gap-4 mb-8">
@@ -542,78 +534,157 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
 
               <div className="max-w-xl mx-auto space-y-4">
                 <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue">
-                  Enter your zipcode
+                  Search and select cities you're interested in
                 </OnestFont>
                 
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="e.g., 94102"
-                    value={zipcodeInput}
+                    placeholder="e.g., San Francisco, Los Angeles"
+                    value={cityInput}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-                      setZipcodeInput(value);
+                      setCityInput(e.target.value);
                     }}
-                    maxLength={5}
                     className={`w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-elegant-blue text-lg transition-colors ${
-                      zipcodeData 
+                      selectedCities.length > 0 
                         ? 'border-status-green' 
-                        : zipcodeError 
+                        : cityError 
                         ? 'border-status-red' 
                         : 'border-elegant-blue'
                     }`}
                   />
                   
                   {/* Loading Spinner */}
-                  {isValidatingZipcode && (
+                  {isValidatingCity && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
                       <div className="w-6 h-6 border-2 border-elegant-blue border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   )}
                   
                   {/* Success Checkmark */}
-                  {zipcodeData && !isValidatingZipcode && (
+                  {selectedCities.length > 0 && !isValidatingCity && !cityInput && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-status-green text-2xl">
                       ✓
                     </div>
                   )}
                   
                   {/* Error X */}
-                  {zipcodeError && !isValidatingZipcode && zipcodeInput.length === 5 && (
+                  {cityError && !isValidatingCity && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-status-red text-2xl">
                       ✕
                     </div>
                   )}
                 </div>
 
-                {/* Validated City Display */}
-                {zipcodeData && (
-                  <div className="bg-status-green/10 border-2 border-status-green rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-status-green">
-                      <span className="text-xl">✓</span>
-                      <div className="text-left">
-                        <OnestFont weight={700} lineHeight="relaxed" className="text-lg">
-                          {zipcodeData.city}, {zipcodeData.state}
+                {/* City Results - Show search results */}
+                {cityResults.length > 0 && !isValidatingCity && (
+                  <div className="border-2 border-elegant-blue rounded-xl overflow-hidden">
+                    <div className="bg-light-background-blue px-4 py-2 border-b-2 border-elegant-blue">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                        Click to add cities:
+                      </OnestFont>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {cityResults.map((city, index) => {
+                        const isSelected = selectedCities.some(
+                          (selected) => selected.city === city.city && selected.state === city.state
+                        );
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              if (isSelected) {
+                                // Remove city
+                                setSelectedCities(selectedCities.filter(
+                                  (selected) => !(selected.city === city.city && selected.state === city.state)
+                                ));
+                              } else {
+                                // Add city
+                                setSelectedCities([...selectedCities, city]);
+                              }
+                            }}
+                            className={`w-full px-4 py-3 text-left transition-colors border-b border-light-background-blue last:border-b-0 flex items-center justify-between ${
+                              isSelected 
+                                ? 'bg-elegant-blue/10' 
+                                : 'bg-pure-white hover:bg-light-background-blue'
+                            }`}
+                          >
+                            <div>
+                              <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                                {city.city}, {city.state}
+                              </OnestFont>
+                              <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                                Zipcode: {city.zipcode}
+                              </OnestFont>
+                            </div>
+                            {isSelected && (
+                              <div className="text-status-green text-xl">✓</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Cities Display */}
+                {selectedCities.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                        Selected Cities ({selectedCities.length})
+                      </OnestFont>
+                      <button
+                        onClick={() => setSelectedCities([])}
+                        className="text-elegant-blue hover:underline"
+                      >
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                          Clear All
                         </OnestFont>
-                        <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-status-green">
-                          Zipcode: {zipcodeData.zipcode}
-                        </OnestFont>
-                      </div>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedCities.map((city, index) => (
+                        <div
+                          key={index}
+                          className="bg-status-green/10 border-2 border-status-green rounded-xl p-3 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 text-status-green">
+                            <span className="text-sm">✓</span>
+                            <div>
+                              <OnestFont weight={700} lineHeight="relaxed" className="text-sm">
+                                {city.city}, {city.state}
+                              </OnestFont>
+                              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-status-green">
+                                Zipcode: {city.zipcode}
+                              </OnestFont>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedCities(selectedCities.filter((_, i) => i !== index));
+                            }}
+                            className="text-status-green hover:text-status-green/80 text-xl leading-none"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Error Message */}
-                {zipcodeError && (
+                {cityError && (
                   <OnestFont weight={300} lineHeight="relaxed" className="text-status-red text-sm">
-                    {zipcodeError}
+                    {cityError}
                   </OnestFont>
                 )}
 
                 {/* Helper Text */}
-                {!zipcodeInput && (
+                {!cityInput && selectedCities.length === 0 && (
                   <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-                    Please enter a valid 5-digit US zipcode
+                    Start typing to search for cities
                   </OnestFont>
                 )}
               </div>

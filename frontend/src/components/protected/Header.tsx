@@ -97,7 +97,7 @@ const Header: React.FC = () => {
         {/* Right Section - Coins, Notifications, Profile */}
         <div className="flex items-center space-x-4">
           {/* Coins Counter with Animation */}
-          <div className={`flex items-center space-x-2 rounded-full px-3 py-2 transition-all duration-500 ${
+          <div data-walkthrough="coin-display" className={`flex items-center space-x-2 rounded-full px-3 py-2 transition-all duration-500 ${
             isAnimating ? 'scale-110 bg-logo-yellow/20' : 'scale-100'
           }`}>
             <OnestFont 

@@ -4,7 +4,6 @@ export { default as Typography } from '../components/common/Typography';
 
 // Icons
 export { default as Logo } from './images/icons/nest-logo.svg'
-export { default as CoinIcon } from './images/icons/nest-coin.svg'
 export { default as BellIcon } from './images/icons/bell-icon.svg'
 export { default as ProfileIcon } from './images/icons/profile-icon.svg'
 export { default as HomeIcon } from './images/icons/home-icon.svg'
@@ -24,12 +23,6 @@ export { default as LinkedInIcon } from './images/icons/linkedin.svg'
 export { default as YouTubeIcon } from './images/icons/youtube.svg'
 export { default as LoadingIcon } from './images/icons/loading-icon.svg'
 export { default as TestResultIcon } from './images/icons/test-results.svg'
-export { default as CoinCounterIcon } from './images/icons/coins/coin_counter.svg'
-export { default as Coin1} from './images/icons/coins/coin1.svg'
-export { default as Coin2} from './images/icons/coins/coin2.svg'
-export { default as Coin3} from './images/icons/coins/coin3.svg'
-export { default as Coin4} from './images/icons/coins/coin4.svg'
-export { default as Coin5} from './images/icons/coins/coin5.svg'
 export { default as Confetti } from './images/icons/confetti.svg'
 export { default as BadgeMedal } from './images/icons/badge.svg'
 export { default as CalculatorIcon } from './images/icons/calculator.svg'
@@ -47,6 +40,17 @@ export { default as DocumentDarkIcon } from './images/icons/document_dark.svg'
 export { default as ChecklistDarkIcon } from './images/icons/checklist_dark.svg'
 export { default as ControllerIcon } from './images/icons/controller.svg'
 export { default as ControllerDarkIcon } from './images/icons/controller_dark.svg'
+
+// Coin Icons
+export { default as CoinIcon } from './images/icons/nest-coin.svg'
+export { default as CoinCounterIcon } from './images/icons/coins/coin_counter.svg'
+export { default as Coin1} from './images/icons/coins/coin1.svg'
+export { default as Coin2} from './images/icons/coins/coin2.svg'
+export { default as Coin3} from './images/icons/coins/coin3.svg'
+export { default as Coin4} from './images/icons/coins/coin4.svg'
+export { default as Coin5} from './images/icons/coins/coin5.svg'
+export { default as CoinStack } from './images/icons/coins/coin_stack.png'
+export { default as TreasureChest } from './images/icons/coins/treasureChest.png'
 
 // Badge Icons
 export { default as BadgeFinance } from './images/icons/badge-finance.svg'
@@ -78,9 +82,6 @@ export  { default as InfoPurple } from './images/icons/InfoColors/QM_Purple.svg'
 export { default as AccessibilityDoc } from './downloadables/Accessibility_Statement.pdf?url'
 export { default as PrivacyPolicyDoc } from './downloadables/Privacy_Policy.pdf?url'  
 export { default as TermsConditionsDoc } from './downloadables/Terms_Conditions.pdf?url'
-
-// Fonts
-export { default as RobotoFont } from './fonts'
 
 // Suburban Neighborhood Background for Phaser Scenes
 export { default as Neighborhood1 } from './images/phaser/neighborhoods/neighborhood_1.png'

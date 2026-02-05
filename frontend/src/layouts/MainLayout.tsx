@@ -2,9 +2,23 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from '../components/index'
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
+import { useWalkthrough } from '../contexts/WalkthroughContext'
+import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
+import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
+  const { isWalkthroughActive, exitWalkthrough, completeWalkthrough } = useWalkthrough();
+
+  // Handle scene transitions for walkthrough
+  const handleSceneTransition = (scene: 'MapScene' | 'NeighborhoodScene') => {
+    if (scene === 'NeighborhoodScene') {
+      // Transition to the first neighborhood (Home-Buying Knowledge)
+      GameManager.transitionToNeighborhood('downtown', 0);
+    } else if (scene === 'MapScene') {
+      GameManager.transitionToMap();
+    }
+  };
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -21,6 +35,13 @@ const MainLayoutContent: React.FC = () => {
       >
         <Outlet />
       </main>
+      
+      <ModuleWalkthrough
+        isActive={isWalkthroughActive}
+        onExit={exitWalkthrough}
+        onComplete={completeWalkthrough}
+        onSceneTransition={handleSceneTransition}
+      />
     </div>
   )
 }

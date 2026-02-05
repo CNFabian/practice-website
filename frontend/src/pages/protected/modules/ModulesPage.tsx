@@ -562,6 +562,7 @@ const ModulesPage: React.FC = () => {
       {/* Phaser container */}
       <div
         ref={containerRef}
+        data-walkthrough="phaser-container"
         className={`w-full h-full relative z-10 transition-opacity duration-300 ${
           showPhaserCanvas ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}

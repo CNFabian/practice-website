@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Disclosure, Transition } from '@headlessui/react';
 import { 
   HomeIcon, 
@@ -18,11 +18,14 @@ import {
 } from '../../assets';
 import OnBoardingPage from './onboarding/OnBoardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useWalkthrough } from '../../contexts/WalkthroughContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
+  const { startWalkthrough, isWalkthroughActive } = useWalkthrough();
 
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app', icon: HomeIcon },
@@ -67,9 +70,23 @@ const Sidebar: React.FC = () => {
     return location.pathname === path || location.pathname.startsWith(path.split('?')[0]);
   };
 
+  // Handle starting the walkthrough - navigate to modules first if not there
+  const handleStartWalkthrough = () => {
+    if (location.pathname !== '/app/modules') {
+      navigate('/app/modules');
+      // Small delay to ensure navigation completes before starting walkthrough
+      setTimeout(() => {
+        startWalkthrough();
+      }, 300);
+    } else {
+      startWalkthrough();
+    }
+  };
+
   return (
     <>
       <aside 
+        data-walkthrough="modules-nav"
         className={`fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50 transition-all duration-300 ease-in-out bg-gradient-to-b from-light-background-blue to-tab-active ${
           isCollapsed ? 'w-16' : 'w-44'
         }`}
@@ -135,35 +152,35 @@ const Sidebar: React.FC = () => {
                       <svg
                         className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
                         fill="none"
-                        stroke="currentColor"
                         viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </Disclosure.Button>
                     <Transition
                       enter="transition duration-200 ease-out"
-                      enterFrom="transform scale-95 opacity-0 max-h-0"
-                      enterTo="transform scale-100 opacity-100 max-h-96"
+                      enterFrom="transform opacity-0 -translate-y-2"
+                      enterTo="transform opacity-100 translate-y-0"
                       leave="transition duration-150 ease-in"
-                      leaveFrom="transform scale-100 opacity-100 max-h-96"
-                      leaveTo="transform scale-95 opacity-0 max-h-0"
+                      leaveFrom="transform opacity-100 translate-y-0"
+                      leaveTo="transform opacity-0 -translate-y-2"
                     >
-                      <Disclosure.Panel className="space-y-1 mt-1 overflow-hidden">
+                      <Disclosure.Panel className="pl-4 mt-1 space-y-1">
                         {materialSubItems.map((subItem) => (
                           <Link
                             key={subItem.id}
                             to={subItem.path}
                             className={`
-                              flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200
+                              flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200
                               ${isActive(subItem.path)
-                                ? 'font-medium bg-pure-white/60'
-                                : 'hover:bg-pure-white/40'
+                                ? 'bg-tab-active font-medium' 
+                                : 'hover:bg-pure-white/50'
                               } text-text-blue-black hover:text-text-blue-black
                             `}
                           >
-                            <img src={subItem.icon} alt={subItem.label} className="w-4 h-4" />
-                            <OnestFont weight={500} lineHeight="relaxed">
+                            <img src={subItem.icon} alt={subItem.label} className="w-4 h-4 flex-shrink-0" />
+                            <OnestFont weight={300} lineHeight="relaxed" className="text-sm">
                               {subItem.label}
                             </OnestFont>
                           </Link>
@@ -175,12 +192,12 @@ const Sidebar: React.FC = () => {
               </Disclosure>
             )}
 
-            {/* Collapsed Materials Icon Only */}
+            {/* Collapsed Materials Icon */}
             {isCollapsed && (
               <Link
                 to="/app/materials"
                 className={`
-                  flex items-center justify-center rounded-2xl transition-all duration-200 px-2 py-3
+                  flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-200
                   ${location.pathname.startsWith('/app/materials')
                     ? 'bg-tab-active font-medium shadow-sm' 
                     : 'hover:bg-pure-white/50'
@@ -196,6 +213,64 @@ const Sidebar: React.FC = () => {
         {/* Bottom Navigation */}
         <div className="border-t border-pure-white/20 px-3 py-3">
           <div className="space-y-1">
+            {/* MODULE WALKTHROUGH BUTTON */}
+            {!isCollapsed && (
+              <button
+                onClick={handleStartWalkthrough}
+                disabled={isWalkthroughActive}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 ${
+                  isWalkthroughActive 
+                    ? 'bg-unavailable-button/50 cursor-not-allowed' 
+                    : 'bg-logo-blue hover:opacity-90'
+                } text-pure-white font-medium`}
+              >
+                <svg 
+                  className="w-4 h-4" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" 
+                  />
+                </svg>
+                <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                  Module Tour
+                </OnestFont>
+              </button>
+            )}
+
+            {/* Collapsed Walkthrough Icon */}
+            {isCollapsed && (
+              <button
+                onClick={handleStartWalkthrough}
+                disabled={isWalkthroughActive}
+                title="Start Module Tour"
+                className={`w-full flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-200 ${
+                  isWalkthroughActive 
+                    ? 'bg-unavailable-button/50 cursor-not-allowed' 
+                    : 'bg-logo-blue hover:opacity-90'
+                } text-pure-white`}
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" 
+                  />
+                </svg>
+              </button>
+            )}
+
             {/* TEMPORARY TESTING BUTTON */}
             {!isCollapsed && (
               <button
