@@ -5,19 +5,61 @@ import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
 import { useWalkthrough } from '../contexts/WalkthroughContext'
 import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
 import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
+import { getModuleLessons } from '../services/learningAPI';
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
   const { isWalkthroughActive, exitWalkthrough, completeWalkthrough } = useWalkthrough();
 
   // Handle scene transitions for walkthrough
-  const handleSceneTransition = (scene: 'MapScene' | 'NeighborhoodScene') => {
+  const handleSceneTransition = (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView') => {
     if (scene === 'NeighborhoodScene') {
-      // Transition to the first neighborhood (Home-Buying Knowledge)
       GameManager.transitionToNeighborhood('downtown', 0);
     } else if (scene === 'MapScene') {
       GameManager.transitionToMap();
+    } else if (scene === 'HouseScene') {
+      const game = GameManager.getGame();
+      const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
+      if (houses.length > 0) {
+        const firstHouse = houses[0];
+        
+        if (firstHouse.moduleBackendId && !GameManager.hasLessonsData(firstHouse.moduleBackendId)) {
+          getModuleLessons(firstHouse.moduleBackendId).then((lessonsData) => {
+            if (lessonsData && Array.isArray(lessonsData)) {
+              GameManager.updateLessonsData(firstHouse.moduleBackendId, lessonsData);
+            }
+            GameManager.transitionToHouse(firstHouse.id, firstHouse.moduleBackendId);
+          }).catch(() => {
+            GameManager.transitionToHouse(firstHouse.id, firstHouse.moduleBackendId);
+          });
+        } else {
+          GameManager.transitionToHouse(firstHouse.id, firstHouse.moduleBackendId);
+        }
+      }
+    } else if (scene === 'LessonView') {
+      // Trigger lesson select for the first lesson of the first module
+      const game = GameManager.getGame();
+      const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
+      if (houses.length > 0) {
+        const firstHouse = houses[0];
+        const moduleBackendId = firstHouse.moduleBackendId;
+        
+        if (moduleBackendId) {
+          const moduleLessonsData = game?.registry.get('moduleLessonsData') || {};
+          const moduleData = moduleLessonsData[moduleBackendId];
+          
+          if (moduleData && moduleData.lessons && moduleData.lessons.length > 0) {
+            const firstLesson = moduleData.lessons[0];
+            // Call handleLessonSelect through the registry
+            const handleLessonSelect = game?.registry.get('handleLessonSelect');
+            if (handleLessonSelect) {
+              handleLessonSelect(firstLesson.id, moduleBackendId);
+            }
+          }
+        }
+      }
     }
+    
   };
 
   return (

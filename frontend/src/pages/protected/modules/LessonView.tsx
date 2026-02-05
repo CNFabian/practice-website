@@ -639,7 +639,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               <span className="text-l">Back</span>
             </button>
 
-            <div className="flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1">
+            <div data-walkthrough="lesson-view-toggle" className="flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1">
               <button 
                 onClick={() => setViewMode('video')}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${

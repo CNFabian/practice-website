@@ -31,14 +31,14 @@ interface WalkthroughStep {
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right';
   highlightPadding?: number;
   // Scene to transition to before showing this step
-  sceneTransition?: 'MapScene' | 'NeighborhoodScene';
+  sceneTransition?: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView';
 }
 
 interface ModuleWalkthroughProps {
   isActive: boolean;
   onExit: () => void;
   onComplete: () => void;
-  onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene') => void;
+  onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView') => void;
 }
 
 // Walkthrough steps
@@ -111,7 +111,56 @@ const walkthroughSteps: WalkthroughStep[] = [
     highlightPadding: 16,
     sceneTransition: 'NeighborhoodScene',
   },
-  // More steps will be added here as we design them together
+  {
+    id: 'module-welcome',
+    type: 'fullscreen',
+    content: {
+      title: '',
+      description: "Welcome to the first module! This is where you'll learn everything you'll need to buy your first home.",
+      buttonText: 'CONTINUE',
+    },
+    sceneTransition: 'HouseScene',
+  },
+  {
+    id: 'module-lessons',
+    type: 'highlight',
+    content: {
+      title: '',
+      description: "You can read lessons and watch videos here.",
+      buttonText: 'CONTINUE',
+    },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      // First lesson card - top left of house (position x:29%, y:32%)
+      region: { x: 16, y: 16, width: 30, height: 30 },
+    },
+    tooltipPosition: 'right',
+    highlightPadding: 12,
+  },
+  {
+    id: 'lesson-video-reading',
+    type: 'highlight',
+    content: {
+      title: '',
+      description: "Each lesson includes a video walkthrough and a reading version. Use this toggle to switch between watching the video or reading at your own pace.",
+      buttonText: 'CONTINUE',
+    },
+    sceneTransition: 'LessonView',
+    highlight: {
+      selector: '[data-walkthrough="lesson-view-toggle"]',
+    },
+    tooltipPosition: 'bottom',
+    highlightPadding: 8,
+  },
+  {
+    id: 'module-minigame',
+    type: 'fullscreen',
+    content: {
+      title: '',
+      description: "Once you've completed your lessons, head back to the house and play a minigame to grow your tree and earn Nest Coins. Coins can be redeemed in the rewards shop for real-world perks and discounts!",
+      buttonText: "LET'S GO",
+    },
+  },
 ];
 
 const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
@@ -381,9 +430,11 @@ useEffect(() => {
           onMouseUp={blockEvent}
         />
 
-        {/* Modal container with LinearBlue1 gradient */}
+        {/* Modal container with LinearBlue1 gradient - compact when no image */}
         <div 
-          className={`relative w-full max-w-3xl h-[85vh] max-h-[700px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${
+          className={`relative w-full ${
+            currentStep.content.image ? 'max-w-3xl h-[85vh] max-h-[700px]' : 'max-w-sm'
+          } rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
           style={{
@@ -410,33 +461,43 @@ useEffect(() => {
             </svg>
           </button>
 
-          {/* Content centered in modal */}
-          <div className="flex flex-col items-center justify-center h-full px-8 text-center">
+         {/* Content centered in modal */}
+          <div className={`flex flex-col items-center justify-center ${
+            currentStep.content.image ? 'h-full px-8' : 'px-6 py-8'
+          } text-center`}>
             {renderStepImage()}
 
             <OnestFont 
-              as="h1" 
-              weight={700} 
-              lineHeight="tight" 
-              className="text-3xl text-pure-white mb-4 max-w-lg"
+              as={currentStep.content.image ? 'h1' : 'p'}
+              weight={currentStep.content.image ? 700 : 500} 
+              lineHeight={currentStep.content.image ? 'tight' : 'relaxed'}
+              className={`${
+                currentStep.content.image ? 'text-3xl mb-4 max-w-lg' : 'text-base mb-6'
+              } text-pure-white`}
             >
-              {content.title}
+              {currentStep.content.image ? content.title : renderDescription(content.description)}
             </OnestFont>
 
-            <OnestFont 
-              weight={300} 
-              lineHeight="relaxed" 
-              className="text-lg text-pure-white/90 mb-10 max-w-md"
-            >
-              {renderDescription(content.description)}
-            </OnestFont>
+            {currentStep.content.image && (
+              <OnestFont 
+                weight={300} 
+                lineHeight="relaxed" 
+                className="text-lg text-pure-white/90 mb-10 max-w-md"
+              >
+                {renderDescription(content.description)}
+              </OnestFont>
+            )}
 
             <button
               onClick={handleNext}
               onMouseDown={blockEvent}
-              className="px-12 py-4 bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg"
+              className={`${
+                currentStep.content.image ? 'px-12 py-4' : 'px-10 py-3'
+              } bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg`}
             >
-              <OnestFont weight={500} lineHeight="relaxed" className="text-base tracking-wide">
+              <OnestFont weight={500} lineHeight="relaxed" className={`${
+                currentStep.content.image ? 'text-base' : 'text-sm'
+              } tracking-wide`}>
                 {content.buttonText}
               </OnestFont>
             </button>
@@ -465,33 +526,49 @@ useEffect(() => {
       const tooltipHeight = 200;
       const offset = 24;
 
+      const viewportPadding = 16;
+      let top: number | undefined;
+      let left: number | undefined;
+      let bottom: number | undefined;
+      let right: number | undefined;
+
       switch (currentStep.tooltipPosition) {
         case 'top':
-          return {
-            bottom: window.innerHeight - highlightRect.top + padding + offset,
-            left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
-          };
+          bottom = window.innerHeight - highlightRect.top + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
+          break;
         case 'bottom':
-          return {
-            top: highlightRect.bottom + padding + offset,
-            left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
-          };
+          top = highlightRect.bottom + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
+          break;
         case 'left':
-          return {
-            top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
-            right: window.innerWidth - highlightRect.left + padding + offset,
-          };
+          top = highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2;
+          right = window.innerWidth - highlightRect.left + padding + offset;
+          break;
         case 'right':
-          return {
-            top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
-            left: highlightRect.right + padding + offset,
-          };
+          top = highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2;
+          left = highlightRect.right + padding + offset;
+          break;
         default:
-          return {
-            top: highlightRect.bottom + padding + offset,
-            left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
-          };
+          top = highlightRect.bottom + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
       }
+
+      // Clamp to viewport bounds
+      if (left !== undefined) {
+        left = Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipWidth - viewportPadding));
+      }
+      if (top !== undefined) {
+        top = Math.max(viewportPadding, Math.min(top, window.innerHeight - tooltipHeight - viewportPadding));
+      }
+
+      const style: React.CSSProperties = {};
+      if (top !== undefined) style.top = top;
+      if (left !== undefined) style.left = left;
+      if (bottom !== undefined) style.bottom = bottom;
+      if (right !== undefined) style.right = right;
+
+      return style;
     };
 
     return (
