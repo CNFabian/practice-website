@@ -226,28 +226,28 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
   };
 
   // When house-intro step is shown, trigger progress card expand on first house
-  useEffect(() => {
-    if (!isActive) return;
-    
-    if (currentStep.id === 'house-intro') {
-      // First clear any previous value so changedata event fires reliably
+useEffect(() => {
+  if (!isActive) return;
+  
+  if (currentStep.id === 'house-intro') {
+    // Delay to let NeighborhoodScene fully render after transition
+    const timer = setTimeout(() => {
       const game = GameManager.getGame();
       if (game) {
-        game.registry.set('walkthroughExpandCard', null);
-      }
-      
-      // Delay to let NeighborhoodScene fully render after transition
-      const timer = setTimeout(() => {
-        const game = GameManager.getGame();
-        if (game) {
-          console.log('🎯 Walkthrough: triggering card expand');
-          game.registry.set('walkthroughExpandCard', 0); // Expand first house's card
+        console.log('🎯 Walkthrough: calling expandProgressCard directly');
+        
+        const neighborhoodScene = game.scene.getScene('NeighborhoodScene') as any;
+        if (neighborhoodScene && neighborhoodScene.expandProgressCard) {
+          neighborhoodScene.expandProgressCard(0);
+        } else {
+          console.error('❌ NeighborhoodScene or expandProgressCard method not found!');
         }
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isActive, currentStepIndex]);
+      }
+    }, 700);
+    
+    return () => clearTimeout(timer);
+  }
+}, [isActive, currentStepIndex]);
 
   // Block all keyboard events from reaching Phaser when walkthrough is active
   useEffect(() => {

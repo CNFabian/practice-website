@@ -48,7 +48,7 @@ export default class NeighborhoodScene extends BaseScene {
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private cloudOverlays: Phaser.GameObjects.Image[] = []; // Track cloud overlays separately
   private transitionManager: SceneTransitionManager;
-  private progressCards: Phaser.GameObjects.Container[] = [];
+  private progressCards: Map<number, Phaser.GameObjects.Container> = new Map();
   private moduleProgressMap?: Map<string, any>;
   private lockedTooltips: Map<string, Phaser.GameObjects.Container> = new Map();
   private grassLayer?: Phaser.GameObjects.TileSprite;
@@ -337,7 +337,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     this.tweens.killAll();
     this.progressCards.forEach(card => card.destroy());
-    this.progressCards = [];
+    this.progressCards.clear();
     this.lockedTooltips.forEach(tooltip => tooltip.destroy());
     this.lockedTooltips.clear();
     this.cleanupEventListeners();
@@ -348,8 +348,34 @@ export default class NeighborhoodScene extends BaseScene {
   // SETUP METHODS
   // ═══════════════════════════════════════════════════════════
   private setupEventListeners(): void {
-    this.scale.on('resize', this.handleResize, this);
+  this.scale.on('resize', this.handleResize, this);
+  
+  // No longer using registry events - will use direct method call instead
+  console.log('✅ NeighborhoodScene: Setup complete, ready for walkthrough');
+}
+
+// PUBLIC METHOD for walkthrough to call directly
+public expandProgressCard(houseIndex: number): void {
+  console.log(`🎯 NeighborhoodScene: expandProgressCard called for house ${houseIndex}`);
+  console.log(`📊 progressCards Map size: ${this.progressCards.size}`);
+  console.log(`📋 Available card indices:`, Array.from(this.progressCards.keys()));
+  
+  const targetCard = this.progressCards.get(houseIndex);
+  
+  if (targetCard) {
+    console.log(`✅ Found progress card for house ${houseIndex}`);
+    const hoverZone = targetCard.list[targetCard.list.length - 1] as Phaser.GameObjects.Zone;
+    
+    if (hoverZone && hoverZone.input) {
+      console.log(`✅ Triggering expand on house ${houseIndex}'s card`);
+      hoverZone.emit('pointerover');
+    } else {
+      console.warn(`⚠️ Hover zone not interactive`);
+    }
+  } else {
+    console.warn(`⚠️ No progress card for house ${houseIndex}`);
   }
+}
 
   private cleanupEventListeners(): void {
     this.scale.off('resize', this.handleResize, this);
@@ -883,12 +909,11 @@ export default class NeighborhoodScene extends BaseScene {
       progressCard.setAlpha(0); // Start invisible for fade-in
       progressCard.setDepth(3); // Above houses
       
-      // Store the progress card for fade-in animation
-      if (!this.progressCards) {
-        this.progressCards = [];
-      }
-      this.progressCards.push(progressCard);
+      // Store the progress card with house index as key
+      this.progressCards.set(index, progressCard);
+      console.log(`💾 Stored progress card for house ${index} (${house.name})`);
     } else {
+      console.log(`🔒 House ${index} (${house.name}) is locked - no progress card created`);
       // For locked houses, create hover tooltip
       houseContainer.setAlpha(OPACITY.MEDIUM);
       this.createLockedHouseTooltip(houseContainer, house, index, x, y);
@@ -1316,7 +1341,7 @@ export default class NeighborhoodScene extends BaseScene {
     this.tweens.killAll();
     
     this.progressCards.forEach(card => card.destroy());
-    this.progressCards = [];
+    this.progressCards.clear();
     
     this.houseImages = [];
     
