@@ -5,6 +5,42 @@ import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
 
+// YouTube Player Type Definitions
+interface YouTubePlayer {
+  playVideo(): void;
+  pauseVideo(): void;
+  stopVideo(): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  getCurrentTime(): number;
+  getDuration(): number;
+  getPlayerState(): number;
+  getPlaybackRate(): number;
+  setPlaybackRate(rate: number): void;
+  getVideoUrl(): string;
+  destroy(): void;
+}
+
+interface YouTubePlayerEvent {
+  target: YouTubePlayer;
+  data: number;
+}
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
+const YT_PLAYER_STATES = {
+  UNSTARTED: -1,
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+  BUFFERING: 3,
+  CUED: 5
+};
+
 interface LessonViewProps {
   lesson: Lesson;
   module: Module;
@@ -108,6 +144,42 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
   });
 };
 
+// Extract YouTube video ID from URL
+const extractYouTubeVideoId = (url: string): string | null => {
+  if (!url) return null;
+  
+  console.log('🔍 [YouTube] Extracting video ID from URL:', url);
+  
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      console.log('✅ [YouTube] Extracted video ID:', match[1]);
+      return match[1];
+    }
+  }
+  
+  console.warn('⚠️ [YouTube] Could not extract video ID from URL:', url);
+  return null;
+};
+
+// Helper function to get player state name
+const getPlayerStateName = (state: number): string => {
+  const stateNames: { [key: number]: string } = {
+    [-1]: 'UNSTARTED',
+    [0]: 'ENDED',
+    [1]: 'PLAYING',
+    [2]: 'PAUSED',
+    [3]: 'BUFFERING',
+    [5]: 'CUED'
+  };
+  return stateNames[state] || 'UNKNOWN';
+};
+
 const LessonView: React.FC<LessonViewProps> = ({ 
   lesson, 
   module, 
@@ -115,7 +187,19 @@ const LessonView: React.FC<LessonViewProps> = ({
   onNextLesson
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
-  const scrollContainerRef = useRef<HTMLDivElement>(null); // Add ref for scrollable container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // YouTube Player state and refs
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isYouTubeAPIReady, setIsYouTubeAPIReady] = useState(false);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [currentVideoTime, setCurrentVideoTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [playerState, setPlayerState] = useState<number>(YT_PLAYER_STATES.UNSTARTED);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [videoCompleted, setVideoCompleted] = useState(false); // Track if video is complete
 
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
@@ -125,6 +209,9 @@ const LessonView: React.FC<LessonViewProps> = ({
       bgElement.style.backgroundPosition = 'center';
       bgElement.style.backgroundRepeat = 'no-repeat';
     }
+
+    // Reset video completion state when lesson changes
+    setVideoCompleted(false);
 
     return () => {
       const bgElement = document.getElementById('section-background');
@@ -136,6 +223,42 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     };
   }, [lesson.id]);
+
+  // Load YouTube IFrame API
+  useEffect(() => {
+    console.log('🎬 [YouTube API] Initializing YouTube IFrame API...');
+    
+    if (window.YT && window.YT.Player) {
+      console.log('✅ [YouTube API] API already loaded');
+      setIsYouTubeAPIReady(true);
+      return;
+    }
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    
+    tag.onload = () => {
+      console.log('📦 [YouTube API] Script loaded successfully');
+    };
+    
+    tag.onerror = () => {
+      console.error('❌ [YouTube API] Failed to load script');
+    };
+
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+    window.onYouTubeIframeAPIReady = () => {
+      console.log('✅ [YouTube API] API is ready!');
+      setIsYouTubeAPIReady(true);
+    };
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
 
   if (!lesson || !module) {
     console.error('❌ LessonView: Missing required props!');
@@ -205,18 +328,272 @@ const LessonView: React.FC<LessonViewProps> = ({
     [module.lessons, currentLessonIndex]
   );
 
+  // Extract YouTube video ID
+  const videoUrl = backendLessonData?.video_url || lesson.videoUrl;
+  const youtubeVideoId = useMemo(() => {
+    return extractYouTubeVideoId(videoUrl || '');
+  }, [videoUrl]);
+
+  // Define handleVideoProgress before YouTube event handlers that use it
+  const handleVideoProgress = useCallback((seconds: number) => {
+    if (!isValidBackendId || !module?.backendId) {
+      console.warn('⚠️ Cannot update progress - invalid backend IDs');
+      return;
+    }
+    
+    console.log('📈 [Progress Update] Updating backend with progress:', seconds, 'seconds');
+    
+    updateLessonProgressMutation({ 
+      lessonId: lesson.backendId!, 
+      videoProgressSeconds: seconds 
+    }, {
+      onSuccess: () => {
+        console.log('✅ [Progress Update] Backend updated successfully');
+      },
+      onError: (error: Error) => {
+        console.error('❌ [Progress Update] Failed to update backend:', error);
+      }
+    });
+  }, [isValidBackendId, module?.backendId, updateLessonProgressMutation, lesson?.backendId]);
+
+  // YouTube Player Event Handlers
+  const onPlayerReady = useCallback((event: YouTubePlayerEvent) => {
+    console.log('🎉 [YouTube Player] Player is ready!');
+    
+    const player = event.target;
+    const duration = player.getDuration();
+    const videoUrl = player.getVideoUrl();
+    
+    console.log('⏱️ [YouTube Player] Video duration:', duration, 'seconds');
+    console.log('🔗 [YouTube Player] Video URL:', videoUrl);
+    
+    setVideoDuration(duration);
+    setIsPlayerReady(true);
+    setVideoCompleted(false); // Reset on player ready
+
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+
+    progressIntervalRef.current = setInterval(() => {
+      if (player && player.getCurrentTime) {
+        const currentTime = player.getCurrentTime();
+        const duration = player.getDuration();
+        const state = player.getPlayerState();
+        
+        // Stop video 3 seconds before end to prevent recommendations, then hide player
+        if (duration > 0 && currentTime >= duration - 3 && state === YT_PLAYER_STATES.PLAYING) {
+          console.log('🛑 [YouTube Player] Stopping video at', currentTime.toFixed(2), 'to prevent recommendations');
+          player.pauseVideo();
+          
+          // Mark as complete and hide player
+          setVideoCompleted(true);
+          console.log('✅ [YouTube Player] VIDEO COMPLETED - Player hidden!');
+          console.log('🎯 [YouTube Player] Final time:', currentTime.toFixed(2), 'seconds');
+          console.log('🏁 [YouTube Player] Total duration:', duration.toFixed(2), 'seconds');
+          
+          // Update progress to full duration
+          handleVideoProgress(Math.floor(duration));
+          
+          // Mark lesson as complete on backend
+          if (isValidBackendId && module?.backendId) {
+            console.log('📝 [YouTube Player] Marking lesson as complete on backend');
+            completeLessonMutation({ lessonId: lesson.backendId! }, {
+              onSuccess: () => {
+                console.log('✅ [YouTube Player] Lesson marked complete successfully');
+              },
+              onError: (error: Error) => {
+                console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
+              }
+            });
+          }
+          
+          return;
+        }
+        
+        // Only log when playing to avoid spam
+        if (state === YT_PLAYER_STATES.PLAYING) {
+          console.log('⏯️ [YouTube Player] Progress - Time:', currentTime.toFixed(2), 'State:', getPlayerStateName(state));
+        }
+        
+        setCurrentVideoTime(currentTime);
+      }
+    }, 1000); // Update every second
+
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId]);
+
+  const onPlayerStateChange = useCallback((event: YouTubePlayerEvent) => {
+    const state = event.data;
+    const stateName = getPlayerStateName(state);
+    
+    console.log('🔄 [YouTube Player] State changed to:', stateName, '(', state, ')');
+    setPlayerState(state);
+
+    const player = event.target;
+    const currentTime = player?.getCurrentTime() || 0;
+    const duration = player?.getDuration() || 0;
+    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+    console.log('📊 [YouTube Player] Current position:', currentTime.toFixed(2), '/', duration.toFixed(2), 'seconds (', progressPercent.toFixed(1), '%)');
+
+    switch (state) {
+      case YT_PLAYER_STATES.UNSTARTED:
+        console.log('⚪ [YouTube Player] Video has not started yet');
+        break;
+        
+      case YT_PLAYER_STATES.ENDED:
+        console.log('✅ [YouTube Player] VIDEO COMPLETED!');
+        console.log('🎯 [YouTube Player] Final time:', currentTime.toFixed(2), 'seconds');
+        console.log('🏁 [YouTube Player] Total duration:', duration.toFixed(2), 'seconds');
+        setVideoCompleted(true); // Hide player immediately
+        handleVideoProgress(Math.floor(duration)); // Send full duration as progress
+        
+        // Mark lesson as complete on backend
+        if (isValidBackendId && module?.backendId) {
+          console.log('📝 [YouTube Player] Marking lesson as complete on backend');
+          completeLessonMutation({ lessonId: lesson.backendId! }, {
+            onSuccess: () => {
+              console.log('✅ [YouTube Player] Lesson marked complete successfully');
+            },
+            onError: (error: Error) => {
+              console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
+            }
+          });
+        }
+        break;
+        
+      case YT_PLAYER_STATES.PLAYING:
+        console.log('▶️ [YouTube Player] Video is playing');
+        console.log('🎵 [YouTube Player] Playback rate:', player.getPlaybackRate(), 'x');
+        setPlaybackRate(player.getPlaybackRate());
+        break;
+        
+      case YT_PLAYER_STATES.PAUSED:
+        console.log('⏸️ [YouTube Player] Video is paused at', currentTime.toFixed(2), 'seconds');
+        handleVideoProgress(Math.floor(currentTime));
+        break;
+        
+      case YT_PLAYER_STATES.BUFFERING:
+        console.log('⏳ [YouTube Player] Video is buffering...');
+        break;
+        
+      case YT_PLAYER_STATES.CUED:
+        console.log('📋 [YouTube Player] Video is cued');
+        break;
+    }
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId]);
+
+  const onPlayerError = useCallback((event: any) => {
+    const errorCode = event.data;
+    console.error('❌ [YouTube Player] Error occurred!');
+    console.error('🔢 [YouTube Player] Error code:', errorCode);
+    
+    switch (errorCode) {
+      case 2:
+        console.error('🚫 [YouTube Player] Invalid parameter value');
+        break;
+      case 5:
+        console.error('🚫 [YouTube Player] HTML5 player error');
+        break;
+      case 100:
+        console.error('🚫 [YouTube Player] Video not found');
+        break;
+      case 101:
+      case 150:
+        console.error('🚫 [YouTube Player] Video cannot be embedded');
+        break;
+      default:
+        console.error('🚫 [YouTube Player] Unknown error');
+    }
+  }, []);
+
+  const onPlaybackRateChange = useCallback((event: any) => {
+    const rate = event.data;
+    console.log('⚡ [YouTube Player] Playback rate changed to:', rate, 'x');
+    setPlaybackRate(rate);
+  }, []);
+
+  const onPlaybackQualityChange = useCallback((event: any) => {
+    const quality = event.data;
+    console.log('🎥 [YouTube Player] Playback quality changed to:', quality);
+  }, []);
+
+  // Initialize YouTube Player
+  useEffect(() => {
+    if (!isYouTubeAPIReady || !youtubeVideoId || !playerContainerRef.current) {
+      if (!youtubeVideoId) {
+        console.warn('⚠️ [YouTube Player] No video ID available, skipping player initialization');
+      }
+      return;
+    }
+
+    console.log('🎬 [YouTube Player] Initializing player for video ID:', youtubeVideoId);
+
+    try {
+      if (playerRef.current) {
+        console.log('🗑️ [YouTube Player] Destroying existing player...');
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+
+      console.log('🆕 [YouTube Player] Creating new player instance...');
+      
+      const player = new window.YT.Player(playerContainerRef.current, {
+        videoId: youtubeVideoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,              // Don't show related videos
+          showinfo: 0,
+          fs: 1,
+          cc_load_policy: 0,
+          iv_load_policy: 3,
+          autohide: 0,
+          disablekb: 0,        // Keep keyboard controls enabled
+          enablejsapi: 1,      // Enable JS API
+          origin: window.location.origin,
+          widget_referrer: window.location.origin
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+          onError: onPlayerError,
+          onPlaybackRateChange: onPlaybackRateChange,
+          onPlaybackQualityChange: onPlaybackQualityChange
+        }
+      });
+
+      playerRef.current = player;
+      console.log('✅ [YouTube Player] Player instance created successfully');
+
+    } catch (error) {
+      console.error('❌ [YouTube Player] Failed to create player:', error);
+    }
+
+    return () => {
+      if (playerRef.current) {
+        console.log('🧹 [YouTube Player] Cleaning up player on unmount...');
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [isYouTubeAPIReady, youtubeVideoId, onPlayerReady, onPlayerStateChange, onPlayerError, onPlaybackRateChange, onPlaybackQualityChange]);
+
   const handleCompleteLesson = useCallback(() => {
     console.log('🔄 Complete lesson called');
     console.log('Next lesson:', nextLesson);
     console.log('Module backend ID:', module.backendId);
     
-    // First, try to complete the lesson on backend (if valid IDs exist)
     if (isValidBackendId && module?.backendId) {
       completeLessonMutation({ lessonId: lesson.backendId! }, {
         onSuccess: () => {
           console.log('✅ Lesson completed successfully on backend');
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           console.error('❌ Failed to complete lesson on backend:', error);
         }
       });
@@ -224,44 +601,21 @@ const LessonView: React.FC<LessonViewProps> = ({
       console.warn('⚠️ Skipping backend completion - invalid backend IDs');
     }
     
-    // Navigate based on whether there's a next lesson
     if (nextLesson && onNextLesson && module.backendId) {
       console.log('✅ Navigating to next lesson:', nextLesson.id, 'in module:', module.backendId);
       
-      // Scroll the content container to very top instantly
       if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0; // Instant scroll to top
+        scrollContainerRef.current.scrollTop = 0;
       }
       
-      // Navigate to next lesson
       onNextLesson(nextLesson.id, module.backendId);
     } else if (!nextLesson) {
       console.log('✅ No next lesson - navigating back to house');
-      // Navigate back to house when final lesson is completed
       onBack();
     } else if (!onNextLesson) {
       console.error('❌ No navigation handler provided');
     }
   }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId]);
-
-  const handleVideoProgress = useCallback((seconds: number) => {
-    if (!isValidBackendId || !module?.backendId) {
-      console.warn('⚠️ Cannot update progress - invalid backend IDs');
-      return;
-    }
-    
-    updateLessonProgressMutation({ 
-      lessonId: lesson.backendId!, 
-      videoProgressSeconds: seconds 
-    }, {
-      onSuccess: () => {
-        console.log('✅ Progress updated:', seconds, 'seconds');
-      },
-      onError: (error) => {
-        console.error('❌ Failed to update progress:', error);
-      }
-    });
-  }, [isValidBackendId, module?.backendId, updateLessonProgressMutation, lesson?.backendId]);
 
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
@@ -342,6 +696,25 @@ const LessonView: React.FC<LessonViewProps> = ({
                       ✓ Connected to server
                     </p>
                   )}
+
+                  {/* YouTube Player Status */}
+                  {viewMode === 'video' && youtubeVideoId && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-logo-blue">
+                        🎬 YouTube Player: {isPlayerReady ? '✅ Ready' : '⏳ Loading...'}
+                      </p>
+                      {isPlayerReady && (
+                        <>
+                          <p className="text-xs text-text-grey">
+                            State: {getPlayerStateName(playerState)} | Time: {currentVideoTime.toFixed(0)}s / {videoDuration.toFixed(0)}s | Speed: {playbackRate}x
+                          </p>
+                          <p className="text-xs text-text-grey">
+                            Progress: {videoDuration > 0 ? ((currentVideoTime / videoDuration) * 100).toFixed(1) : 0}%
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -375,15 +748,73 @@ const LessonView: React.FC<LessonViewProps> = ({
               <>
                 <div className="mb-6">
                   <div className="rounded-2xl aspect-video flex items-center justify-center relative">
-                    {lesson.videoUrl ? (
-                      <iframe
-                        src={`${lesson.videoUrl}?rel=0&showinfo=0&controls=1&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
-                        title={lesson.title}
-                        className="w-full h-full rounded-2xl"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                    {youtubeVideoId ? (
+                      <>
+                        {/* YouTube Player Container - Hidden when complete */}
+                        <div 
+                          ref={playerContainerRef}
+                          className="w-full h-full rounded-2xl overflow-hidden"
+                          style={{ 
+                            display: videoCompleted ? 'none' : 'block',
+                            position: 'relative'
+                          }}
+                        />
+                        
+                        {/* CSS to hide YouTube branding and "More videos" button */}
+                        <style dangerouslySetInnerHTML={{__html: `
+                          /* Hide YouTube logo/branding */
+                          .ytp-title-channel,
+                          .ytp-chrome-top,
+                          .ytp-show-cards-title,
+                          .ytp-ce-element,
+                          .ytp-cards-teaser,
+                          .ytp-pause-overlay,
+                          .ytp-scroll-min,
+                          .ytp-watermark,
+                          .ytp-player-content {
+                            display: none !important;
+                            opacity: 0 !important;
+                            pointer-events: none !important;
+                          }
+                          
+                          /* Hide annotations and info cards */
+                          .annotation,
+                          .video-annotations,
+                          .ytp-cards-button,
+                          .ytp-cards-teaser-box {
+                            display: none !important;
+                            visibility: hidden !important;
+                          }
+                        `}} />
+                        
+                        {/* Video Completed Overlay - Blocks ALL YouTube content */}
+                        {videoCompleted && (
+                          <div className="absolute inset-0 bg-text-blue-black rounded-2xl flex flex-col items-center justify-center">
+                            <div className="text-center">
+                              <div className="w-20 h-20 bg-status-green rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <h3 className="text-2xl font-bold text-white mb-2">Video Complete!</h3>
+                              <p className="text-text-grey mb-6">Great job completing this lesson.</p>
+                              <button
+                                onClick={() => {
+                                  setVideoCompleted(false);
+                                  if (playerRef.current) {
+                                    playerRef.current.seekTo(0, true);
+                                  }
+                                }}
+                                className="px-6 py-2 bg-logo-blue text-white rounded-full hover:opacity-90 transition-colors"
+                              >
+                                Watch Again
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
+                      /* Fallback when no video URL */
                       <div className="text-center">
                         <div className="w-20 h-20 bg-unavailable-button rounded-full flex items-center justify-center mx-auto mb-4">
                           <button
