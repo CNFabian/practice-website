@@ -7,8 +7,7 @@ import GameManager from '../../../pages/protected/modules/phaser/managers/GameMa
 import { 
   NoticeBirdIcon,
   CoinStack,
-  TreasureChest // Adjust this import name based on your actual asset name
-
+  TreasureChest
 } from '../../../assets';
 
 interface WalkthroughStep {
@@ -40,6 +39,21 @@ interface ModuleWalkthroughProps {
   onComplete: () => void;
   onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => void;
 }
+
+// ═══════════════════════════════════════════════════════════
+// TRANSITION TIMING CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const TRANSITION_TIMINGS = {
+  // Walkthrough UI fade timings
+  UI_FADE_OUT: 200,          // Fade out walkthrough before transition
+  UI_FADE_IN: 300,           // Fade in walkthrough after transition
+  
+  // Scene transition timings (includes UI fade out + transition + UI fade in + buffer)
+  STANDARD: 800,             // MapScene, NeighborhoodScene, HouseScene
+  LESSON_VIEW: 1100,         // LessonView (200 fade + 500 slide + 300 fade + 100 buffer)
+  MINIGAME: 1400,            // GrowYourNestMinigame (200 fade + 500 dismiss + 500 start + 200 buffer)
+  NO_TRANSITION: 300,        // Steps without scene changes
+} as const;
 
 // Walkthrough steps
 const walkthroughSteps: WalkthroughStep[] = [
@@ -265,12 +279,12 @@ const walkthroughSteps: WalkthroughStep[] = [
 
 const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
   isActive,
-  onExit,
   onComplete,
   onSceneTransition,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isSceneTransitioning, setIsSceneTransitioning] = useState(false); // NEW: Track scene changes specifically
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
   const currentStep = walkthroughSteps[currentStepIndex];
@@ -317,6 +331,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
   }, [currentStep]);
 
   // Update highlight position on step change and resize
+  // PAUSES during transitions to prevent jitter/flicker
   useEffect(() => {
     if (!isActive) return;
 
@@ -325,16 +340,36 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     const handleResize = () => updateHighlightPosition();
     window.addEventListener('resize', handleResize);
     
-    // Also update periodically for canvas changes
-    const intervalId = setInterval(updateHighlightPosition, 500);
+    // Only update periodically when NOT transitioning to prevent visual artifacts
+    const intervalId = setInterval(() => {
+      if (!isTransitioning) {
+        updateHighlightPosition();
+      }
+    }, 500);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       clearInterval(intervalId);
     };
-  }, [isActive, currentStepIndex, updateHighlightPosition]);
+  }, [isActive, currentStepIndex, isTransitioning, updateHighlightPosition]);
 
-  // Handle next step
+  // Get the appropriate transition delay based on the scene type
+  const getTransitionDelay = (sceneType: string): number => {
+    switch (sceneType) {
+      case 'GrowYourNestMinigame':
+        return TRANSITION_TIMINGS.MINIGAME;
+      case 'LessonView':
+        return TRANSITION_TIMINGS.LESSON_VIEW;
+      case 'MapScene':
+      case 'NeighborhoodScene':
+      case 'HouseScene':
+        return TRANSITION_TIMINGS.STANDARD;
+      default:
+        return TRANSITION_TIMINGS.STANDARD;
+    }
+  };
+
+  // Handle next step with smooth pre/post transition fading
   const handleNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -347,45 +382,76 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
       // Check if the next step requires a scene transition
       if (nextStep?.sceneTransition && onSceneTransition) {
         setIsTransitioning(true);
-        onSceneTransition(nextStep.sceneTransition);
+        setIsSceneTransitioning(true); // NEW: Mark as scene transition
         
-        // GrowYourNestMinigame and MapScene (after minigame) need longer delays
-        // because they require multi-step transitions (dismiss LessonView → wait → launch minigame)
-        const transitionDelay = 
-          nextStep.sceneTransition === 'GrowYourNestMinigame' ? 1000 :
-          nextStep.sceneTransition === 'MapScene' ? 800 :
-          nextStep.sceneTransition === 'HouseScene' ? 500 :
-          300;
+        // PHASE 1: Fade out walkthrough UI (200ms)
+        // The isTransitioning state causes the UI to fade out via CSS
         
-        // Wait for scene transition to complete before showing next step
+        // PHASE 2: After UI fades, trigger the scene transition
+        setTimeout(() => {
+          onSceneTransition(nextStep.sceneTransition!);
+        }, TRANSITION_TIMINGS.UI_FADE_OUT);
+        
+        // PHASE 3: Wait for complete transition, then advance step and fade in
+        const transitionDelay = getTransitionDelay(nextStep.sceneTransition);
+        
         setTimeout(() => {
           setCurrentStepIndex((prev) => prev + 1);
-          setIsTransitioning(false);
+          // Keep isTransitioning true for a bit longer to let the new scene render
+          setTimeout(() => {
+            setIsTransitioning(false); // This triggers fade-in
+            setIsSceneTransitioning(false); // NEW: Scene transition complete
+          }, TRANSITION_TIMINGS.UI_FADE_IN);
         }, transitionDelay);
+        
       } else {
+        // No scene transition, just a simple step change
         setIsTransitioning(true);
+        setIsSceneTransitioning(false); // NEW: Not a scene transition
         setTimeout(() => {
           setCurrentStepIndex((prev) => prev + 1);
           setIsTransitioning(false);
-        }, 300);
+        }, TRANSITION_TIMINGS.NO_TRANSITION);
       }
     }
   };
 
-  // Handle exit - always redirect to MapScene
+  // Handle exit - always show final "You're All Set!" step before exiting
   const handleExit = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     
-    // Transition to MapScene so user lands on the map
-    if (onSceneTransition) {
-      onSceneTransition('MapScene');
-    }
+    const lastStepIndex = walkthroughSteps.length - 1;
     
-    setCurrentStepIndex(0);
-    onExit();
+    // If not on the last step, jump to the final step first
+    if (currentStepIndex !== lastStepIndex) {
+      setIsTransitioning(true);
+      setIsSceneTransitioning(true); // NEW: This is a scene transition
+      
+      // PHASE 1: Fade out current step
+      setTimeout(() => {
+        // PHASE 2: Transition to MapScene (since that's where the final step is)
+        if (onSceneTransition) {
+          onSceneTransition('MapScene');
+        }
+      }, TRANSITION_TIMINGS.UI_FADE_OUT);
+      
+      // PHASE 3: After scene transition, jump to last step and fade in
+      setTimeout(() => {
+        setCurrentStepIndex(lastStepIndex);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setIsSceneTransitioning(false); // NEW: Scene transition complete
+        }, TRANSITION_TIMINGS.UI_FADE_IN);
+      }, TRANSITION_TIMINGS.STANDARD);
+      
+    } else {
+      // Already on the last step, so actually exit
+      // The last step already has MapScene transition, so just complete
+      onComplete();
+    }
   };
 
   // When house-intro step is shown, trigger progress card expand on first house
@@ -393,7 +459,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     if (!isActive) return;
     
     if (currentStep.id === 'house-intro') {
-      // Delay to let NeighborhoodScene fully render after transition
+      // Wait for scene transition to complete (800ms) + small buffer (100ms)
       const timer = setTimeout(() => {
         const game = GameManager.getGame();
         if (game) {
@@ -406,7 +472,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
             console.error('❌ NeighborhoodScene or expandProgressCard method not found!');
           }
         }
-      }, 700);
+      }, 900);
       
       return () => clearTimeout(timer);
     }
@@ -417,6 +483,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     if (!isActive) return;
     
     if (currentStep.id === 'minigame-streak') {
+      // Small delay to ensure step is visible before changing minigame view
       const timer = setTimeout(() => {
         const game = GameManager.getGame();
         if (game) {
@@ -453,18 +520,30 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           // Check if the next step requires a scene transition
           if (nextStep?.sceneTransition && onSceneTransition) {
             setIsTransitioning(true);
-            onSceneTransition(nextStep.sceneTransition);
+            setIsSceneTransitioning(true); // NEW: Mark as scene transition
+            
+            // Fade out UI first
+            setTimeout(() => {
+              onSceneTransition(nextStep.sceneTransition!);
+            }, TRANSITION_TIMINGS.UI_FADE_OUT);
+            
+            const transitionDelay = getTransitionDelay(nextStep.sceneTransition);
             
             setTimeout(() => {
               setCurrentStepIndex((prev) => prev + 1);
-              setIsTransitioning(false);
-            }, 800);
+              setTimeout(() => {
+                setIsTransitioning(false);
+                setIsSceneTransitioning(false); // NEW: Scene transition complete
+              }, TRANSITION_TIMINGS.UI_FADE_IN);
+            }, transitionDelay);
+            
           } else {
             setIsTransitioning(true);
+            setIsSceneTransitioning(false); // NEW: Not a scene transition
             setTimeout(() => {
               setCurrentStepIndex((prev) => prev + 1);
               setIsTransitioning(false);
-            }, 300);
+            }, TRANSITION_TIMINGS.NO_TRANSITION);
           }
         }
       }
@@ -556,9 +635,11 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         onTouchEnd={blockEvent}
         style={{ pointerEvents: 'all' }}
       >
-        {/* Dark overlay behind modal */}
+        {/* Dark overlay behind modal - Fades ONLY during scene transitions */}
         <div 
-          className="absolute inset-0 bg-text-blue-black/60"
+          className={`absolute inset-0 bg-text-blue-black/60 transition-opacity duration-200 ${
+            isSceneTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
           onClick={(e) => {
             blockEvent(e);
             handleExit(e);
@@ -571,7 +652,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         <div 
           className={`relative w-full ${
             currentStep.content.image ? 'max-w-3xl h-[85vh] max-h-[700px]' : 'max-w-sm'
-          } rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${
+          } rounded-3xl overflow-hidden shadow-2xl transition-all duration-200 ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
           style={{
@@ -580,11 +661,13 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           onClick={blockEvent}
           onMouseDown={blockEvent}
         >
-          {/* Exit button */}
+          {/* Exit button - Fades ONLY during scene transitions */}
           <button
             onClick={handleExit}
             onMouseDown={blockEvent}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-colors flex items-center justify-center"
+            className={`absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-all duration-200 flex items-center justify-center ${
+              isSceneTransitioning ? 'opacity-0' : 'opacity-100'
+            }`}
             aria-label="Exit walkthrough"
           >
             <svg 
@@ -725,8 +808,10 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         onTouchEnd={blockEvent}
         style={{ pointerEvents: 'all' }}
       >
-        {/* Dark overlay with cutout for highlighted area */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Dark overlay with cutout for highlighted area - Fades ONLY during scene transitions */}
+        <div className={`absolute inset-0 pointer-events-none transition-opacity duration-200 ${
+          isSceneTransitioning ? 'opacity-0' : 'opacity-100'
+        }`}>
           {/* Highlighted cutout area - the boxShadow creates the dark overlay around it */}
           {highlightRect && (
             <div
@@ -752,11 +837,13 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           )}
         </div>
 
-        {/* Exit button */}
+        {/* Exit button - Fades ONLY during scene transitions */}
         <button
           onClick={handleExit}
           onMouseDown={blockEvent}
-          className="absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-colors flex items-center justify-center"
+          className={`absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-all duration-200 flex items-center justify-center ${
+            isSceneTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
           aria-label="Exit walkthrough"
         >
           <svg 
@@ -769,9 +856,9 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           </svg>
         </button>
 
-        {/* Tooltip */}
+        {/* Tooltip - ALWAYS fades during any transition */}
         <div
-          className={`absolute z-20 w-[400px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+          className={`absolute z-20 w-[400px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
           style={{
