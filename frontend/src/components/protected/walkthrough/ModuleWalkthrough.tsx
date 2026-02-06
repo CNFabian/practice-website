@@ -31,18 +31,19 @@ interface WalkthroughStep {
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right';
   highlightPadding?: number;
   // Scene to transition to before showing this step
-  sceneTransition?: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView';
+  sceneTransition?: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame';
 }
 
 interface ModuleWalkthroughProps {
   isActive: boolean;
   onExit: () => void;
   onComplete: () => void;
-  onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView') => void;
+  onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => void;
 }
 
 // Walkthrough steps
 const walkthroughSteps: WalkthroughStep[] = [
+  // ---- STEP 1: Welcome ----
   {
     id: 'welcome',
     type: 'fullscreen',
@@ -54,16 +55,18 @@ const walkthroughSteps: WalkthroughStep[] = [
     },
     sceneTransition: 'MapScene',
   },
+  // ---- STEP 2: Earn Coins ----
   {
     id: 'earn-coins',
     type: 'fullscreen',
     content: {
       image: CoinStack,
       title: 'Complete Lessons and Minigames to Earn Nest Coins',
-      description: "Coins can be spent in the rewards shop to redeem coupons for your favorite stores!",
+      description: "As you learn, you'll earn rewards! Coins can be spent in the rewards shop to redeem coupons for your favorite stores!",
       buttonText: 'CONTINUE',
     },
   },
+  // ---- STEP 3: Welcome Gift ----
   {
     id: 'welcome-gift',
     type: 'fullscreen',
@@ -75,12 +78,13 @@ const walkthroughSteps: WalkthroughStep[] = [
       buttonText: 'GET STARTED',
     },
   },
+  // ---- STEP 4: Neighborhood Intro (highlight on MapScene) ----
   {
     id: 'neighborhood-intro',
     type: 'highlight',
     content: {
       title: 'Explore Neighborhoods',
-      description: 'Each neighborhood represents a different stage of your home-buying journey. Complete all the lessons in one neighborhood to unlock the next one!',
+      description: "Now let's explore where your journey begins! Each neighborhood represents a different stage of your home-buying journey. Complete all the lessons in one neighborhood to unlock the next one!",
       buttonText: 'NEXT',
     },
     highlight: {
@@ -93,12 +97,13 @@ const walkthroughSteps: WalkthroughStep[] = [
     tooltipPosition: 'right',
     highlightPadding: 16,
   },
+  // ---- STEP 5: House Intro (highlight, transitions to NeighborhoodScene) ----
   {
     id: 'house-intro',
     type: 'highlight',
     content: {
       title: 'Welcome to Your First House!',
-      description: 'Each house contains lessons on a specific topic. Complete all the lessons in a house to earn bonus coins and unlock new content. The progress bar shows how much you\'ve completed!',
+      description: "Let's step inside this neighborhood! Each house contains lessons on a specific topic. Complete all the lessons in a house to earn bonus coins and unlock new content. The progress bar shows how much you've completed!",
       buttonText: 'GOT IT',
     },
     highlight: {
@@ -111,22 +116,24 @@ const walkthroughSteps: WalkthroughStep[] = [
     highlightPadding: 16,
     sceneTransition: 'NeighborhoodScene',
   },
+  // ---- STEP 6: Module Welcome (fullscreen, transitions to HouseScene) ----
   {
     id: 'module-welcome',
     type: 'fullscreen',
     content: {
       title: '',
-      description: "Welcome to the first module! This is where you'll learn everything you'll need to buy your first home.",
+      description: "Let's take a look inside! Welcome to the first module — this is where you'll learn everything you need to buy your first home.",
       buttonText: 'CONTINUE',
     },
     sceneTransition: 'HouseScene',
   },
+  // ---- STEP 7: Module Lessons (highlight lesson card in HouseScene) ----
   {
     id: 'module-lessons',
     type: 'highlight',
     content: {
       title: '',
-      description: "You can read lessons and watch videos here.",
+      description: "Here are your lessons! Each one covers a key topic. You can read lessons and watch videos here.",
       buttonText: 'CONTINUE',
     },
     highlight: {
@@ -137,12 +144,13 @@ const walkthroughSteps: WalkthroughStep[] = [
     tooltipPosition: 'right',
     highlightPadding: 12,
   },
+  // ---- STEP 8: Lesson Video/Reading Toggle (highlight, transitions to LessonView) ----
   {
     id: 'lesson-video-reading',
     type: 'highlight',
     content: {
       title: '',
-      description: "Each lesson includes a video walkthrough and a reading version. Use this toggle to switch between watching the video or reading at your own pace.",
+      description: "Inside each lesson you can watch or read! Use this toggle to switch between watching the video or reading at your own pace.",
       buttonText: 'CONTINUE',
     },
     sceneTransition: 'LessonView',
@@ -152,14 +160,80 @@ const walkthroughSteps: WalkthroughStep[] = [
     tooltipPosition: 'bottom',
     highlightPadding: 8,
   },
+  // ---- STEP 9: Minigame Intro — Story (transitions to GrowYourNestMinigame to show the minigame) ----
   {
-    id: 'module-minigame',
+    id: 'minigame-intro',
     type: 'fullscreen',
     content: {
-      title: '',
-      description: "Once you've completed your lessons, head back to the house and play a minigame to grow your tree and earn Nest Coins. Coins can be redeemed in the rewards shop for real-world perks and discounts!",
+      image: NoticeBirdIcon,
+      title: 'One More Thing!',
+      description: "Once you finish a lesson, it's time to help a friend! There's a little bird who needs your help — she's looking for a tree strong enough to build her nest.",
+      buttonText: 'CONTINUE',
+    },
+    sceneTransition: 'GrowYourNestMinigame',
+  },
+  // ---- STEP 10: Minigame Grow — Water Mechanic ----
+  {
+    id: 'minigame-grow',
+    type: 'fullscreen',
+    content: {
+      title: 'Grow Your Tree!',
+      description: "Answer homebuying questions to water your tree and help it grow. Every correct answer gives your tree a splash of water!",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 11: Minigame Streak — Fertilizer Bonus ----
+  {
+    id: 'minigame-streak',
+    type: 'fullscreen',
+    content: {
+      title: 'Build Your Streak!',
+      description: "Get 3 correct in a row and earn Fertilizer for a bonus growth boost! Don't worry — mistakes won't hurt your tree, they just reset your streak.",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 12: Minigame Lesson Mode ----
+  {
+    id: 'minigame-lessons',
+    type: 'fullscreen',
+    content: {
+      title: 'Play After Each Lesson',
+      description: "After each lesson, you'll play a quick 3-question round to help your tree grow. Complete all the lessons and your tree unlocks free roam — where you can answer questions from every lesson to grow it even more!",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 13: Minigame Coins ----
+  {
+    id: 'minigame-coins',
+    type: 'fullscreen',
+    content: {
+      image: CoinStack,
+      title: 'Earn Nest Coins!',
+      description: "A fully grown tree earns you up to 250 Nest Coins! Spend them in the rewards shop for real-world perks and discounts.",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 14: Minigame CTA ----
+  {
+    id: 'minigame-ready',
+    type: 'fullscreen',
+    content: {
+      image: NoticeBirdIcon,
+      title: 'Help Her Build a Nest!',
+      description: "Help your bird build the perfect nest — one answer at a time!",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 15: Back to Map — Closing ----
+  {
+    id: 'back-to-map',
+    type: 'fullscreen',
+    content: {
+      title: "You're All Set!",
+      description: "This is your home base. Everything starts here — pick a neighborhood, choose a house, and begin your first lesson whenever you're ready!",
       buttonText: "LET'S GO",
     },
+    sceneTransition: 'MapScene',
   },
 ];
 
@@ -249,11 +323,19 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         setIsTransitioning(true);
         onSceneTransition(nextStep.sceneTransition);
         
+        // GrowYourNestMinigame and MapScene (after minigame) need longer delays
+        // because they require multi-step transitions (dismiss LessonView → wait → launch minigame)
+        const transitionDelay = 
+          nextStep.sceneTransition === 'GrowYourNestMinigame' ? 1000 :
+          nextStep.sceneTransition === 'MapScene' ? 800 :
+          nextStep.sceneTransition === 'HouseScene' ? 500 :
+          300;
+        
         // Wait for scene transition to complete before showing next step
         setTimeout(() => {
           setCurrentStepIndex((prev) => prev + 1);
           setIsTransitioning(false);
-        }, 0); // Allow time for Phaser scene transition
+        }, transitionDelay);
       } else {
         setIsTransitioning(true);
         setTimeout(() => {

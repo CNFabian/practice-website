@@ -286,7 +286,8 @@ const ModulesPage: React.FC = () => {
       handleMinigameSelect,
       handleBackToMap,
       handleBackToNeighborhood,
-      handlePrefetchLessons
+      handlePrefetchLessons,
+      handleBackToHouse,
     });
 
     if (modulesData) {
