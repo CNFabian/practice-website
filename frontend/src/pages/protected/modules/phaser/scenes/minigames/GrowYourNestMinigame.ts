@@ -667,6 +667,18 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
   }
 
+  public showQuestionsForWalkthrough(): void {
+    if (!this.showingStartScreen) {
+      console.log('🎯 Minigame already showing questions, skipping');
+      return;
+    }
+    
+    console.log('🎯 Walkthrough: Switching minigame to question view');
+    this.clearStartScreen();
+    this.showingStartScreen = false;
+    this.updateQuestion();
+  }
+
   private updatePlantGrowth(): void {
     // Kill any existing floating animation
     if (this.floatingTween) {

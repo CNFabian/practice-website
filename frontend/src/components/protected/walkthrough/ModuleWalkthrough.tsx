@@ -91,7 +91,6 @@ const walkthroughSteps: WalkthroughStep[] = [
       // Target the Phaser container
       selector: '[data-walkthrough="phaser-container"]',
       // Home-Buying Knowledge neighborhood - bottom-left of the canvas
-      // Adjusted based on screenshot: neighborhood is roughly at 5-45% from left, 45-90% from top
       region: { x: 5, y: 45, width: 40, height: 45 },
     },
     tooltipPosition: 'right',
@@ -172,46 +171,73 @@ const walkthroughSteps: WalkthroughStep[] = [
     },
     sceneTransition: 'GrowYourNestMinigame',
   },
-  // ---- STEP 10: Minigame Grow — Water Mechanic ----
-  {
-    id: 'minigame-grow',
-    type: 'fullscreen',
-    content: {
-      title: 'Grow Your Tree!',
-      description: "Answer homebuying questions to water your tree and help it grow. Every correct answer gives your tree a splash of water!",
-      buttonText: 'CONTINUE',
-    },
-  },
-  // ---- STEP 11: Minigame Streak — Fertilizer Bonus ----
-  {
-    id: 'minigame-streak',
-    type: 'fullscreen',
-    content: {
-      title: 'Build Your Streak!',
-      description: "Get 3 correct in a row and earn Fertilizer for a bonus growth boost! Don't worry — mistakes won't hurt your tree, they just reset your streak.",
-      buttonText: 'CONTINUE',
-    },
-  },
-  // ---- STEP 12: Minigame Lesson Mode ----
+  // ---- STEP 10: Minigame Lesson Mode (highlight RIGHT panel - start/intro screen) ----
   {
     id: 'minigame-lessons',
-    type: 'fullscreen',
+    type: 'highlight',
     content: {
       title: 'Play After Each Lesson',
       description: "After each lesson, you'll play a quick 3-question round to help your tree grow. Complete all the lessons and your tree unlocks free roam — where you can answer questions from every lesson to grow it even more!",
       buttonText: 'CONTINUE',
     },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      // Right panel: starts at ~52% from left, takes up ~46% width
+      region: { x: 52, y: 8, width: 46, height: 88 },
+    },
+    tooltipPosition: 'left',
+    highlightPadding: 12,
   },
-  // ---- STEP 13: Minigame Coins ----
+  // ---- STEP 11: Minigame Streak — Fertilizer Bonus (highlight RIGHT panel - start/intro screen) ----
+  {
+    id: 'minigame-streak',
+    type: 'highlight',
+    content: {
+      title: 'Build Your Streak!',
+      description: "Get 3 correct in a row and earn Fertilizer for a bonus growth boost! Don't worry — mistakes won't hurt your tree, they just reset your streak.",
+      buttonText: 'CONTINUE',
+    },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      // Right panel: starts at ~52% from left, takes up ~46% width
+      region: { x: 52, y: 8, width: 46, height: 88 },
+    },
+    tooltipPosition: 'left',
+    highlightPadding: 12,
+  },
+  // ---- STEP 12: Minigame Grow — Water Mechanic (highlight LEFT panel - tree area) ----
+  {
+    id: 'minigame-grow',
+    type: 'highlight',
+    content: {
+      title: 'Grow Your Tree!',
+      description: "Answer homebuying questions to water your tree and help it grow. Every correct answer gives your tree a splash of water!",
+      buttonText: 'CONTINUE',
+    },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      // Left panel: starts at ~2% from left, takes up ~48% width
+      region: { x: 2, y: 8, width: 48, height: 88 },
+    },
+    tooltipPosition: 'right',
+    highlightPadding: 12,
+  },
+  // ---- STEP 13: Minigame Coins (highlight LEFT panel - tree area) ----
   {
     id: 'minigame-coins',
-    type: 'fullscreen',
+    type: 'highlight',
     content: {
-      image: CoinStack,
       title: 'Earn Nest Coins!',
       description: "A fully grown tree earns you up to 250 Nest Coins! Spend them in the rewards shop for real-world perks and discounts.",
       buttonText: 'CONTINUE',
     },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      // Left panel: starts at ~2% from left, takes up ~48% width
+      region: { x: 2, y: 8, width: 48, height: 88 },
+    },
+    tooltipPosition: 'right',
+    highlightPadding: 12,
   },
   // ---- STEP 14: Minigame CTA ----
   {
@@ -346,39 +372,68 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     }
   };
 
-  // Handle exit
+  // Handle exit - always redirect to MapScene
   const handleExit = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    
+    // Transition to MapScene so user lands on the map
+    if (onSceneTransition) {
+      onSceneTransition('MapScene');
+    }
+    
     setCurrentStepIndex(0);
     onExit();
   };
 
   // When house-intro step is shown, trigger progress card expand on first house
-useEffect(() => {
-  if (!isActive) return;
-  
-  if (currentStep.id === 'house-intro') {
-    // Delay to let NeighborhoodScene fully render after transition
-    const timer = setTimeout(() => {
-      const game = GameManager.getGame();
-      if (game) {
-        console.log('🎯 Walkthrough: calling expandProgressCard directly');
-        
-        const neighborhoodScene = game.scene.getScene('NeighborhoodScene') as any;
-        if (neighborhoodScene && neighborhoodScene.expandProgressCard) {
-          neighborhoodScene.expandProgressCard(0);
-        } else {
-          console.error('❌ NeighborhoodScene or expandProgressCard method not found!');
-        }
-      }
-    }, 700);
+  useEffect(() => {
+    if (!isActive) return;
     
-    return () => clearTimeout(timer);
-  }
-}, [isActive, currentStepIndex]);
+    if (currentStep.id === 'house-intro') {
+      // Delay to let NeighborhoodScene fully render after transition
+      const timer = setTimeout(() => {
+        const game = GameManager.getGame();
+        if (game) {
+          console.log('🎯 Walkthrough: calling expandProgressCard directly');
+          
+          const neighborhoodScene = game.scene.getScene('NeighborhoodScene') as any;
+          if (neighborhoodScene && neighborhoodScene.expandProgressCard) {
+            neighborhoodScene.expandProgressCard(0);
+          } else {
+            console.error('❌ NeighborhoodScene or expandProgressCard method not found!');
+          }
+        }
+      }, 700);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, currentStepIndex]);
+
+  // When minigame-streak step is shown, switch minigame from start screen to question view
+  useEffect(() => {
+    if (!isActive) return;
+    
+    if (currentStep.id === 'minigame-streak') {
+      const timer = setTimeout(() => {
+        const game = GameManager.getGame();
+        if (game) {
+          console.log('🎯 Walkthrough: switching minigame to question view for streak step');
+          
+          const minigameScene = game.scene.getScene('GrowYourNestMinigame') as any;
+          if (minigameScene && minigameScene.showQuestionsForWalkthrough) {
+            minigameScene.showQuestionsForWalkthrough();
+          } else {
+            console.error('❌ GrowYourNestMinigame or showQuestionsForWalkthrough method not found!');
+          }
+        }
+      }, 400);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, currentStepIndex]);
 
   // Block all keyboard events from reaching Phaser when walkthrough is active
   useEffect(() => {
@@ -524,9 +579,8 @@ useEffect(() => {
           }}
           onClick={blockEvent}
           onMouseDown={blockEvent}
-          onMouseUp={blockEvent}
         >
-          {/* Exit button in top right */}
+          {/* Exit button */}
           <button
             onClick={handleExit}
             onMouseDown={blockEvent}
@@ -543,38 +597,46 @@ useEffect(() => {
             </svg>
           </button>
 
-         {/* Content centered in modal */}
-          <div className={`flex flex-col items-center justify-center ${
-            currentStep.content.image ? 'h-full px-8' : 'px-6 py-8'
-          } text-center`}>
+          {/* Content - centered for image steps, compact for text-only */}
+          <div className={`flex flex-col items-center text-center ${
+            currentStep.content.image 
+              ? 'justify-center h-full px-12 py-8' 
+              : 'px-8 py-10'
+          }`}>
             {renderStepImage()}
 
-            <OnestFont 
-              as={currentStep.content.image ? 'h1' : 'p'}
-              weight={currentStep.content.image ? 700 : 500} 
-              lineHeight={currentStep.content.image ? 'tight' : 'relaxed'}
-              className={`${
-                currentStep.content.image ? 'text-3xl mb-4 max-w-lg' : 'text-base mb-6'
-              } text-pure-white`}
-            >
-              {currentStep.content.image ? content.title : renderDescription(content.description)}
-            </OnestFont>
-
-            {currentStep.content.image && (
+            {/* Title */}
+            {content.title && (
               <OnestFont 
-                weight={300} 
-                lineHeight="relaxed" 
-                className="text-lg text-pure-white/90 mb-10 max-w-md"
+                as="h2" 
+                weight={700} 
+                lineHeight="tight" 
+                className={`${
+                  currentStep.content.image ? 'text-4xl' : 'text-2xl'
+                } text-pure-white mb-4`}
               >
-                {renderDescription(content.description)}
+                {content.title}
               </OnestFont>
             )}
 
+            {/* Description */}
+            <OnestFont 
+              weight={300} 
+              lineHeight="relaxed" 
+              className={`${
+                currentStep.content.image ? 'text-lg' : 'text-base'
+              } text-pure-white/90 ${currentStep.content.image ? 'mb-10 max-w-md' : 'mb-8'}`}
+            >
+              {renderDescription(content.description)}
+            </OnestFont>
+
+            {/* Button */}
             <button
               onClick={handleNext}
               onMouseDown={blockEvent}
               className={`${
-                currentStep.content.image ? 'px-12 py-4' : 'px-10 py-3'
+                currentStep.content.image 
+                  ? 'px-12 py-4' : 'px-10 py-3'
               } bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg`}
             >
               <OnestFont weight={500} lineHeight="relaxed" className={`${

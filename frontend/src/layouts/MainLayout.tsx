@@ -16,6 +16,15 @@ const MainLayoutContent: React.FC = () => {
     console.log('🎬 Walkthrough: handleSceneTransition called with:', scene);
     
     if (scene === 'NeighborhoodScene') {
+      // Call the React navigation handler to update navState (which updates background)
+      const game = GameManager.getGame();
+      const handleNeighborhoodSelect = game?.registry.get('handleNeighborhoodSelect');
+      if (handleNeighborhoodSelect) {
+        console.log('🎬 Walkthrough: Calling handleNeighborhoodSelect to sync navState');
+        handleNeighborhoodSelect('downtown');
+      }
+      
+      // Also transition the Phaser scene
       GameManager.transitionToNeighborhood('downtown', 0);
     } else if (scene === 'MapScene') {
       const game = GameManager.getGame();
@@ -41,14 +50,17 @@ const MainLayoutContent: React.FC = () => {
       }, 100);
     } else if (scene === 'HouseScene') {
       const game = GameManager.getGame();
-      const handleBackToHouse = game?.registry.get('handleBackToHouse');
-      if (handleBackToHouse) {
-        handleBackToHouse();
-      }
-
       const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
+      
       if (houses.length > 0) {
         const firstHouse = houses[0];
+        
+        // Call the React navigation handler to update navState (which updates background)
+        const handleHouseSelect = game?.registry.get('handleHouseSelect');
+        if (handleHouseSelect) {
+          console.log('🎬 Walkthrough: Calling handleHouseSelect to sync navState');
+          handleHouseSelect(firstHouse.id, firstHouse.moduleBackendId);
+        }
         
         if (firstHouse.moduleBackendId && !GameManager.hasLessonsData(firstHouse.moduleBackendId)) {
           getModuleLessons(firstHouse.moduleBackendId).then((lessonsData) => {
