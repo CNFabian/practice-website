@@ -5,6 +5,7 @@ import { createTextStyle } from '../constants/Typography';
 
 export class BaseScene extends Phaser.Scene {
   protected coinCounter?: Phaser.GameObjects.Container;
+  protected coinTooltip?: Phaser.GameObjects.Container;
   private coinUpdateListener?: () => void;
   private coinCounterTween?: Phaser.Tweens.Tween;
 
@@ -28,10 +29,20 @@ export class BaseScene extends Phaser.Scene {
     const counterX = width - (width * 0.08); // 8% from right
     const counterY = height * 0.05; // 5% from top
     
-    // Uses UIComponents which now implements Onest typography
-    this.coinCounter = UIComponents.createCoinCounter(this, totalCoins);
-    this.coinCounter.setPosition(counterX, counterY);
+    // Create coin counter with tooltip
+    const { counter, tooltip } = UIComponents.createCoinCounterWithTooltip(
+      this, 
+      totalCoins, 
+      counterX, 
+      counterY
+    );
+    
+    this.coinCounter = counter;
+    this.coinTooltip = tooltip;
+    
+    // Make sure both don't scroll with camera
     this.coinCounter.setScrollFactor(0);
+    this.coinTooltip.setScrollFactor(0);
   }
 
   protected updateCoinCounter(): void {
@@ -74,17 +85,31 @@ export class BaseScene extends Phaser.Scene {
       this.coinCounter.destroy();
       this.coinCounter = undefined;
     }
+    
+    if (this.coinTooltip) {
+      this.coinTooltip.destroy();
+      this.coinTooltip = undefined;
+    }
   }
 
   protected handleCoinCounterResize(): void {
-    if (this.coinCounter) {
+    if (this.coinCounter || this.coinTooltip) {
       // Kill tween before destroying counter
       if (this.coinCounterTween) {
         this.coinCounterTween.stop();
         this.coinCounterTween = undefined;
       }
       
-      this.coinCounter.destroy();
+      if (this.coinCounter) {
+        this.coinCounter.destroy();
+        this.coinCounter = undefined;
+      }
+      
+      if (this.coinTooltip) {
+        this.coinTooltip.destroy();
+        this.coinTooltip = undefined;
+      }
+      
       this.createCoinCounter();
     }
   }

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../../../../../utils/scaleHelper';
 import { COLORS } from '../constants/Colors';
 import { FONT_FAMILY, createTextStyle } from '../constants/Typography';
+import { ASSET_KEYS } from '../constants/AssetKeys';
 
 export class UIComponents {
 
@@ -39,6 +40,120 @@ export class UIComponents {
     container.add(coinText);
 
     return container;
+  }
+
+  /**
+   * Create a tooltip with blue bird icon
+   */
+  static createTooltip(
+    scene: Phaser.Scene,
+    text: string,
+    x: number,
+    y: number
+  ): Phaser.GameObjects.Container {
+    const container = scene.add.container(x, y);
+    container.setDepth(200); // Higher than coin counter
+    container.setAlpha(0); // Start invisible
+    container.setName('coinTooltip');
+
+    // Tooltip background - sized for 15px font
+    const tooltipWidth = scale(320);
+    const tooltipHeight = scale(80);
+    const cornerRadius = scale(20);
+
+    const background = scene.add.graphics();
+    background.fillStyle(COLORS.PURE_WHITE, 1);
+    background.fillRoundedRect(0, 0, tooltipWidth, tooltipHeight, cornerRadius);
+    
+    // Shadow effect
+    background.lineStyle(scale(2), COLORS.UNAVAILABLE_BUTTON, 0.3);
+    background.strokeRoundedRect(0, 0, tooltipWidth, tooltipHeight, cornerRadius);
+    container.add(background);
+
+    // Blue bird celebration icon on the left
+    const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
+    birdIcon.setDisplaySize(scale(64), scale(64));
+    container.add(birdIcon);
+
+    // Tooltip text - 15px font size
+    const tooltipText = scene.add.text(
+      scale(80), 
+      tooltipHeight / 2, 
+      text,
+      {
+        fontFamily: 'Onest, Arial, sans-serif',
+        fontSize: scaleFontSize(15),
+        color: COLORS.TEXT_SECONDARY,
+        wordWrap: { width: scale(225) },
+        lineSpacing: 3
+      }
+    );
+    tooltipText.setOrigin(0, 0.5);
+    container.add(tooltipText);
+
+    return container;
+  }
+
+  /**
+   * Create a coin counter with tooltip functionality
+   */
+  static createCoinCounterWithTooltip(
+    scene: Phaser.Scene,
+    coins: number,
+    x: number,
+    y: number
+  ): { counter: Phaser.GameObjects.Container; tooltip: Phaser.GameObjects.Container } {
+    // Create coin counter
+    const counter = UIComponents.createCoinCounter(scene, coins);
+    counter.setPosition(x, y);
+    counter.setInteractive(new Phaser.Geom.Rectangle(-scale(60), -scale(20), scale(120), scale(40)), Phaser.Geom.Rectangle.Contains);
+    
+    // Calculate tooltip position to keep it on screen
+    const { width } = scene.scale;
+    const tooltipWidth = scale(320);
+    
+    // Position tooltip below and to the left of counter, but keep on screen
+    let tooltipX = x - tooltipWidth + scale(60); // Align right edge near coin counter
+    const tooltipY = y + scale(25); // Position below counter
+    
+    // Make sure tooltip doesn't go off left edge
+    if (tooltipX < scale(10)) {
+      tooltipX = scale(10);
+    }
+    
+    // Make sure tooltip doesn't go off right edge
+    if (tooltipX + tooltipWidth > width - scale(10)) {
+      tooltipX = width - tooltipWidth - scale(10);
+    }
+    
+    // Create tooltip positioned to stay on screen
+    const tooltip = UIComponents.createTooltip(
+      scene,
+      'The coins you earn can be redeemed for coupons in the rewards shop!',
+      tooltipX,
+      tooltipY
+    );
+
+    // Add hover interactions
+    counter.on('pointerover', () => {
+      scene.tweens.add({
+        targets: tooltip,
+        alpha: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    counter.on('pointerout', () => {
+      scene.tweens.add({
+        targets: tooltip,
+        alpha: 0,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    return { counter, tooltip };
   }
 
   /**
