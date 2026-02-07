@@ -125,8 +125,8 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<OverviewPage />} />
-        <Route path="modules" element={<ModulesPage />} />
+        <Route index element={<ModulesPage />} />
+        <Route path="overview" element={<OverviewPage />} />
         <Route path="materials" element={<MaterialsPage />} />
         <Route path="rewards" element={<RewardsPage />} />
         <Route path="badges" element={<BadgesPage />} />

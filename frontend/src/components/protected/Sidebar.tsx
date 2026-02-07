@@ -26,10 +26,9 @@ const Sidebar: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
   const { startWalkthrough, isWalkthroughActive } = useWalkthrough();
-
   const mainMenuItems = [
-    { id: 'overview', label: 'Overview', path: '/app', icon: HomeIcon },
-    { id: 'modules', label: 'Modules', path: '/app/modules', icon: ModuleIcon },
+    { id: 'overview', label: 'Overview', path: '/app/overview', icon: HomeIcon },
+    { id: 'modules', label: 'Modules', path: '/app', icon: ModuleIcon },
     { id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon },
     { id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon },
   ];
