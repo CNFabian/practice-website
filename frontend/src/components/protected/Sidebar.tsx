@@ -71,8 +71,8 @@ const Sidebar: React.FC = () => {
 
   // Handle starting the walkthrough - navigate to modules first if not there
   const handleStartWalkthrough = () => {
-    if (location.pathname !== '/app/modules') {
-      navigate('/app/modules');
+    if (location.pathname !== '/app') {
+      navigate('/app');
       // Small delay to ensure navigation completes before starting walkthrough
       setTimeout(() => {
         startWalkthrough();

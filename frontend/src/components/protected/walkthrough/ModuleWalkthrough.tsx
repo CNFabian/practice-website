@@ -105,7 +105,7 @@ const walkthroughSteps: WalkthroughStep[] = [
       // Target the Phaser container
       selector: '[data-walkthrough="phaser-container"]',
       // Home-Buying Knowledge neighborhood - bottom-left of the canvas
-      region: { x: 5, y: 45, width: 40, height: 45 },
+      region: { x: 3, y: 45, width: 43, height: 40 },
     },
     tooltipPosition: 'right',
     highlightPadding: 16,
@@ -123,7 +123,7 @@ const walkthroughSteps: WalkthroughStep[] = [
       // Target the Phaser container
       selector: '[data-walkthrough="phaser-container"]',
       // First house (Homebuying Fundamentals) - upper-left area of the neighborhood scene
-      region: { x: 5, y: 5, width: 50, height: 55 },
+      region: { x: 1, y: 15, width: 55, height: 40 },
     },
     tooltipPosition: 'right',
     highlightPadding: 16,
@@ -152,7 +152,7 @@ const walkthroughSteps: WalkthroughStep[] = [
     highlight: {
       selector: '[data-walkthrough="phaser-container"]',
       // First lesson card - top left of house (position x:29%, y:32%)
-      region: { x: 16, y: 16, width: 30, height: 30 },
+      region: { x: 17, y: 21, width: 25, height: 18 },
     },
     tooltipPosition: 'right',
     highlightPadding: 12,
@@ -575,7 +575,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         <OnestFont 
           weight={300} 
           lineHeight="relaxed" 
-          className="text-lg text-pure-white/90 mb-10 max-w-md"
+          className="text-base text-pure-white/90"
         >
           <span className="text-logo-yellow font-bold">225 coins</span> have been added to your balance. Get started on your home-buying journey and earn more!
         </OnestFont>
@@ -648,10 +648,10 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           onMouseUp={blockEvent}
         />
 
-        {/* Modal container with LinearBlue1 gradient - compact when no image */}
+        {/* Modal container with LinearBlue1 gradient - balanced sizing for all steps */}
         <div 
           className={`relative w-full ${
-            currentStep.content.image ? 'max-w-3xl h-[85vh] max-h-[700px]' : 'max-w-sm'
+            currentStep.content.image ? 'max-w-xl' : 'max-w-md'
           } rounded-3xl overflow-hidden shadow-2xl transition-all duration-200 ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
@@ -665,7 +665,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           <button
             onClick={handleExit}
             onMouseDown={blockEvent}
-            className={`absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-all duration-200 flex items-center justify-center ${
+            className={`absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-all duration-200 flex items-center justify-center ${
               isSceneTransitioning ? 'opacity-0' : 'opacity-100'
             }`}
             aria-label="Exit walkthrough"
@@ -683,8 +683,8 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           {/* Content - centered for image steps, compact for text-only */}
           <div className={`flex flex-col items-center text-center ${
             currentStep.content.image 
-              ? 'justify-center h-full px-12 py-8' 
-              : 'px-8 py-10'
+              ? 'justify-center px-10 py-12' 
+              : 'px-8 py-12'
           }`}>
             {renderStepImage()}
 
@@ -695,7 +695,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
                 weight={700} 
                 lineHeight="tight" 
                 className={`${
-                  currentStep.content.image ? 'text-4xl' : 'text-2xl'
+                  currentStep.content.image ? 'text-3xl' : 'text-2xl'
                 } text-pure-white mb-4`}
               >
                 {content.title}
@@ -706,9 +706,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
             <OnestFont 
               weight={300} 
               lineHeight="relaxed" 
-              className={`${
-                currentStep.content.image ? 'text-lg' : 'text-base'
-              } text-pure-white/90 ${currentStep.content.image ? 'mb-10 max-w-md' : 'mb-8'}`}
+              className="text-base text-pure-white/90 mb-8"
             >
               {renderDescription(content.description)}
             </OnestFont>
@@ -717,14 +715,9 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
             <button
               onClick={handleNext}
               onMouseDown={blockEvent}
-              className={`${
-                currentStep.content.image 
-                  ? 'px-12 py-4' : 'px-10 py-3'
-              } bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg`}
+              className="px-10 py-3 bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg"
             >
-              <OnestFont weight={500} lineHeight="relaxed" className={`${
-                currentStep.content.image ? 'text-base' : 'text-sm'
-              } tracking-wide`}>
+              <OnestFont weight={700} lineHeight="relaxed" className="text-base tracking-wide">
                 {content.buttonText}
               </OnestFont>
             </button>
@@ -895,7 +888,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
                 onMouseDown={blockEvent}
                 className="w-full px-8 py-3 bg-pure-white rounded-full text-elegant-blue hover:bg-text-white transition-colors shadow-lg"
               >
-                <OnestFont weight={500} lineHeight="relaxed" className="text-base tracking-wide">
+                <OnestFont weight={700} lineHeight="relaxed" className="text-base tracking-wide">
                   {content.buttonText}
                 </OnestFont>
               </button>
