@@ -67,7 +67,7 @@ const SignupPage: React.FC = () => {
       dispatch(setUser(userProfile));
       
       console.log('SignupPage: Redux updated, navigating to /onboarding');
-      navigate('/onboarding');
+      navigate('/', { replace: true });
     } catch (err: any) {
       console.error('SignupPage: Registration error:', err);
       

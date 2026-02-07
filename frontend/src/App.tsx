@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import type { RootState } from './store/store'
 import { setLoading, logout, setUser } from './store/slices/authSlice'
 import { getCurrentUser, checkAuthStatus, clearAuthData, isAuthenticated } from './services/authAPI'
+import { checkOnboardingStatus } from './services/learningAPI'
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
@@ -15,7 +16,8 @@ import LoadingSpinner from './components/common/LoadingSpinner'
 // Public Pages
 import SplashPage from './pages/public/SplashPage'
 import LoginPage from './pages/public/LoginPage'
-import SignupPage from './pages/public/SignupPage' 
+import SignupPage from './pages/public/SignupPage'
+import OnboardingPage from './components/protected/onboarding/OnBoardingPage'
 
 // Protected Pages
 import {
@@ -34,6 +36,7 @@ function App() {
   const dispatch = useDispatch()
   const [isMinLoadingComplete, setIsMinLoadingComplete] = useState(false)
   const [authInitialized, setAuthInitialized] = useState(false)
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null)
   
   // Add initialization guard to prevent multiple runs
   const initializationAttempted = useRef(false)
@@ -82,6 +85,25 @@ function App() {
     initAuth()
   }, [dispatch])
 
+  // Check onboarding status after auth is initialized
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (reduxIsAuthenticated && authInitialized) {
+        try {
+          const isComplete = await checkOnboardingStatus()
+          console.log('🔍 Onboarding status check:', isComplete ? 'Complete' : 'Incomplete')
+          setNeedsOnboarding(!isComplete)
+        } catch (error) {
+          console.error('Error checking onboarding:', error)
+          // If we can't check, assume onboarding is needed
+          setNeedsOnboarding(true)
+        }
+      }
+    }
+
+    checkOnboarding()
+  }, [reduxIsAuthenticated, authInitialized])
+
   const handleLoadingComplete = () => {
     setIsMinLoadingComplete(true)
   }
@@ -116,13 +138,33 @@ function App() {
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Route>
 
+      {/* Onboarding Route - Semi-protected */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Protected Routes - Main Layout */}
       <Route
         path="/app/*"
         element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
+          reduxIsAuthenticated ? (
+            needsOnboarding === true ? (
+              <Navigate to="/onboarding" replace />
+            ) : needsOnboarding === false ? (
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            ) : (
+              <LoadingSpinner minDisplayTime={500} />
+            )
+          ) : (
+            <Navigate to="/splash" replace />
+          )
         }
       >
         <Route index element={<ModulesPage />} />
@@ -139,7 +181,13 @@ function App() {
       <Route 
         path="/" 
         element={
-          reduxIsAuthenticated ? <Navigate to="/app" replace /> : <Navigate to="/splash" replace />
+          reduxIsAuthenticated 
+            ? (needsOnboarding === true 
+                ? <Navigate to="/onboarding" replace /> 
+                : needsOnboarding === false 
+                  ? <Navigate to="/app" replace />
+                  : <LoadingSpinner minDisplayTime={500} />)
+            : <Navigate to="/splash" replace />
         } 
       />
 

@@ -20,7 +20,7 @@ import { searchCities as searchCitiesAPI } from '../../../services';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 
 interface OnBoardingPageProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose?: () => void;
 }
 
@@ -30,7 +30,7 @@ interface ZipcodeData {
   zipcode: string;
 }
 
-const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
+const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose }) => {
   const nav = useNavigate();
   const { refetch: refetchOnboardingStatus } = useOnboardingStatus();
 
@@ -68,10 +68,8 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen, onClose }) => {
       }
     };
 
-    if (isOpen) {
-      loadOptions();
-    }
-  }, [isOpen]);
+    loadOptions();
+  }, []);
 
   // Search cities when user types - NOW USES BACKEND API
   useEffect(() => {

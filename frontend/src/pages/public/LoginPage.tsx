@@ -43,8 +43,8 @@ const LoginPage: React.FC = () => {
       
       dispatch(setUser(userProfile));
       
-      console.log('LoginPage: Redux updated, navigating to /app');
-      navigate('/app');
+      console.log('LoginPage: Redux updated, navigating to /');
+      navigate('/', { replace: true });
       
     } catch (err: any) {
       console.error('LoginPage: Login error:', err);

@@ -4,6 +4,8 @@ import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQuer
 import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
+import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
+import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -290,6 +292,12 @@ const LessonView: React.FC<LessonViewProps> = ({
     error: lessonError 
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
   
+  // Grow Your Nest lesson questions - fetch when lesson is completed but GYN not yet played
+  const shouldFetchGYN = backendLessonData?.is_completed && !backendLessonData?.grow_your_nest_played;
+  const { data: gynLessonData } = useGYNLessonQuestions(
+    shouldFetchGYN ? (lesson.backendId || '') : ''
+  );
+  
   const { 
     data: quizData,
     isLoading: isLoadingQuiz,
@@ -305,6 +313,30 @@ const LessonView: React.FC<LessonViewProps> = ({
     isValidBackendId ? lesson.backendId! : '', 
     module?.backendId || ''
   );
+
+  const launchGrowYourNest = useCallback(() => {
+    if (!gynLessonData || !lesson.backendId) {
+      console.warn('🌳 GYN data not available, skipping launch');
+      return;
+    }
+
+    const moduleNumber = module.id || 1;
+    const initData: GYNMinigameInitData = buildLessonModeInitData(
+      lesson.backendId,
+      typeof moduleNumber === 'number' ? moduleNumber : 1,
+      gynLessonData
+    );
+
+    // Emit event to Phaser to launch the GYN minigame
+    const phaserGame = (window as any).__phaserGame;
+    if (phaserGame) {
+      const houseScene = phaserGame.scene.getScene('HouseScene');
+      if (houseScene) {
+        houseScene.scene.pause();
+        phaserGame.scene.start('GrowYourNestMinigame', initData);
+      }
+    }
+  }, [gynLessonData, lesson.backendId, module.id]);
 
   const transformedQuizQuestions = useMemo(() => {
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
@@ -401,6 +433,9 @@ const LessonView: React.FC<LessonViewProps> = ({
             completeLessonMutation({ lessonId: lesson.backendId! }, {
               onSuccess: () => {
                 console.log('✅ [YouTube Player] Lesson marked complete successfully');
+                if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
+                  launchGrowYourNest();
+                }
               },
               onError: (error: Error) => {
                 console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -420,7 +455,7 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     }, 1000); // Update every second
 
-  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId]);
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
 
   const onPlayerStateChange = useCallback((event: YouTubePlayerEvent) => {
     const state = event.data;
@@ -454,6 +489,9 @@ const LessonView: React.FC<LessonViewProps> = ({
           completeLessonMutation({ lessonId: lesson.backendId! }, {
             onSuccess: () => {
               console.log('✅ [YouTube Player] Lesson marked complete successfully');
+              if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
+                launchGrowYourNest();
+              }
             },
             onError: (error: Error) => {
               console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -481,7 +519,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         console.log('📋 [YouTube Player] Video is cued');
         break;
     }
-  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId]);
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
 
   const onPlayerError = useCallback((event: any) => {
     const errorCode = event.data;
@@ -592,6 +630,9 @@ const LessonView: React.FC<LessonViewProps> = ({
       completeLessonMutation({ lessonId: lesson.backendId! }, {
         onSuccess: () => {
           console.log('✅ Lesson completed successfully on backend');
+          if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
+            launchGrowYourNest();
+          }
         },
         onError: (error: Error) => {
           console.error('❌ Failed to complete lesson on backend:', error);
@@ -615,7 +656,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     } else if (!onNextLesson) {
       console.error('❌ No navigation handler provided');
     }
-  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId]);
+  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
 
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;

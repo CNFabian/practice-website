@@ -16,3 +16,5 @@ export { default as HomeInspectionChecklist } from './protected/materials/HomeIn
 // Protected settings components
 export { default as ProfilePictureModal } from './protected/settings/ProfilePictureModal';
 export { default as ProfileCompletionModal } from './protected/settings/ProfileCompletionModal';
+
+export { default as OnboardingPage } from './protected/onboarding/OnBoardingPage';

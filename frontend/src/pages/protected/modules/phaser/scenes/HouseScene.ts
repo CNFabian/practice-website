@@ -8,6 +8,9 @@ import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { createTextStyle } from '../constants/Typography';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
+import { getFreeRoamQuestions, getFreeRoamState, transformGYNQuestionsForMinigame } from '../../../../../services/growYourNestAPI';
+import type { GYNMinigameInitData } from '../../../../../types/growYourNest.types';
+
 
 interface Lesson {
   id: number;
@@ -209,6 +212,54 @@ export default class HouseScene extends BaseScene {
     this.backButton.setDepth(10);
   }
 
+  private async launchFreeRoam(moduleBackendId: string, moduleNumber: number): Promise<void> {
+    try {
+      console.log('🌳 Launching Free Roam for module:', moduleBackendId);
+      
+      // Fetch questions and current state in parallel
+      const [questionsResponse, stateResponse] = await Promise.all([
+        getFreeRoamQuestions(moduleBackendId),
+        getFreeRoamState(moduleBackendId),
+      ]);
+
+      if (questionsResponse.questions.length === 0) {
+        console.warn('🌳 No free roam questions available');
+        return;
+      }
+
+      // Check if tree is already completed
+      if (stateResponse.completed) {
+        console.log('🌳 Tree is already fully grown!');
+        // Optionally show a "tree completed" message instead of launching
+        return;
+      }
+
+      const transformedQuestions = transformGYNQuestionsForMinigame(questionsResponse.questions);
+
+      const initData: GYNMinigameInitData = {
+        mode: 'freeroam',
+        moduleId: moduleBackendId,
+        questions: transformedQuestions,
+        treeState: {
+          growth_points: stateResponse.growth_points,
+          current_stage: stateResponse.current_stage,
+          total_stages: stateResponse.total_stages,
+          points_per_stage: stateResponse.points_per_stage,
+          completed: stateResponse.completed,
+        },
+        moduleNumber,
+        showStartScreen: true,
+      };
+
+      // Pause HouseScene and start GYN
+      this.scene.pause();
+      this.scene.launch('GrowYourNestMinigame', initData);
+      
+    } catch (error) {
+      console.error('🌳 Error launching free roam:', error);
+    }
+  }
+
   private createMinigameButton(): void {
     const { width, height } = this.scale;
 
@@ -297,6 +348,9 @@ export default class HouseScene extends BaseScene {
     
     hitArea.on('pointerdown', () => {
       this.handleMinigameSelect();
+      if (this.moduleBackendId) {
+        this.launchFreeRoam(this.moduleBackendId, this.module?.id || 1);
+      }
     });
     
     return container;
