@@ -62,6 +62,8 @@ export default class HouseScene extends BaseScene {
   // Hover tooltip
   private hoverTooltip?: Phaser.GameObjects.Container;
   private hoverTooltipLessonId?: number;
+  private tooltipDestroyTimer?: Phaser.Time.TimerEvent;
+  private isPointerOverTooltip: boolean = false;
   
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
@@ -85,6 +87,8 @@ export default class HouseScene extends BaseScene {
     this.roomHitZones = [];
     this.hoverTooltip = undefined;
     this.hoverTooltipLessonId = undefined;
+    this.tooltipDestroyTimer = undefined;
+    this.isPointerOverTooltip = false;
     this.moduleBackendId = data.moduleBackendId;
     
     const moduleLessonsData: Record<string, ModuleLessonsData> = this.registry.get('moduleLessonsData') || {};
@@ -133,8 +137,9 @@ export default class HouseScene extends BaseScene {
     }
     
     this.cleanupResizeHandler();
+    this.cancelTooltipDestroyTimer();
     this.destroyBird();
-    this.destroyHoverTooltip();
+    this.destroyHoverTooltip(true);
     this.lessonContainers = [];
     this.roomHitZones = [];
   }
@@ -455,13 +460,34 @@ export default class HouseScene extends BaseScene {
       this.roomHitZones.push(hitZone);
 
       hitZone.on('pointerover', () => {
+        this.cancelTooltipDestroyTimer();
         this.showHoverTooltip(lesson, zoneX, zoneY);
       });
 
       hitZone.on('pointerout', () => {
-        this.destroyHoverTooltip();
+        this.scheduleTooltipDestroy();
       });
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // TOOLTIP DESTROY TIMER (delayed destroy so button is clickable)
+  // ═══════════════════════════════════════════════════════════
+  private scheduleTooltipDestroy(): void {
+    this.cancelTooltipDestroyTimer();
+    this.tooltipDestroyTimer = this.time.delayedCall(200, () => {
+      if (!this.isPointerOverTooltip) {
+        this.destroyHoverTooltip();
+      }
+      this.tooltipDestroyTimer = undefined;
+    });
+  }
+
+  private cancelTooltipDestroyTimer(): void {
+    if (this.tooltipDestroyTimer) {
+      this.tooltipDestroyTimer.remove();
+      this.tooltipDestroyTimer = undefined;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -475,15 +501,16 @@ export default class HouseScene extends BaseScene {
     // If already showing for this lesson, skip
     if (this.hoverTooltipLessonId === lesson.id) return;
 
-    // Destroy any existing tooltip
-    this.destroyHoverTooltip();
+    // Destroy any existing tooltip immediately
+    this.destroyHoverTooltip(true);
     this.hoverTooltipLessonId = lesson.id;
+    this.isPointerOverTooltip = false;
 
     const { width, height } = this.scale;
     const minDim = Math.min(width, height);
 
-    // ── Fixed tooltip dimensions ──
-    const tooltipWidth = Math.min(width * 0.28, 320);
+    // ── Fixed tooltip dimensions (WIDER) ──
+    const tooltipWidth = Math.min(width * 0.38, 440);
     const padding = scale(20);
     const innerWidth = tooltipWidth - padding * 2;
     const cornerRadius = scale(16);
@@ -530,6 +557,19 @@ export default class HouseScene extends BaseScene {
     // All Y positions are relative to container center, so offset by half height
     const offsetY = -tooltipHeight / 2;
 
+    // ── Tooltip background hit area (keeps tooltip alive when hovered) ──
+    const tooltipBgHit = this.add.rectangle(0, 0, tooltipWidth + scale(10), tooltipHeight + scale(10), 0x000000, 0);
+    tooltipBgHit.setInteractive();
+    tooltipBgHit.on('pointerover', () => {
+      this.isPointerOverTooltip = true;
+      this.cancelTooltipDestroyTimer();
+    });
+    tooltipBgHit.on('pointerout', () => {
+      this.isPointerOverTooltip = false;
+      this.scheduleTooltipDestroy();
+    });
+    this.hoverTooltip.add(tooltipBgHit);
+
     // ── Card background ──
     const tooltipBg = this.add.graphics();
     tooltipBg.fillStyle(COLORS.PURE_WHITE, 1);
@@ -542,7 +582,7 @@ export default class HouseScene extends BaseScene {
     );
     this.hoverTooltip.add(tooltipBg);
 
-    // ── Close (X) icon (visual decoration) ──
+    // ── Close (X) icon (clickable — destroys tooltip) ──
     const closeX = tooltipWidth / 2 - scale(16);
     const closeIconY = offsetY + scale(16);
 
@@ -555,6 +595,15 @@ export default class HouseScene extends BaseScene {
       })
     ).setOrigin(0.5);
     this.hoverTooltip.add(closeText);
+
+    // Close button hit area
+    const closeHit = this.add.circle(closeX, closeIconY, closeBtnSize + scale(4), 0x000000, 0);
+    closeHit.setInteractive({ useHandCursor: true });
+    closeHit.on('pointerdown', () => {
+      this.isPointerOverTooltip = false;
+      this.destroyHoverTooltip();
+    });
+    this.hoverTooltip.add(closeHit);
 
     // ── Title (max ~2 lines, cropped if overflow) ──
     const titleY = offsetY + titleSlotY;
@@ -619,7 +668,7 @@ export default class HouseScene extends BaseScene {
       this.hoverTooltip.add(unlockMsg);
     } else {
       const activeBtnBg = this.add.graphics();
-      activeBtnBg.fillStyle(COLORS.ELEGANT_BLUE, 1);
+      activeBtnBg.fillStyle(COLORS.LOGO_BLUE, 1);
       activeBtnBg.fillRoundedRect(
         -btnWidth / 2, btnAbsY, btnWidth, btnHeight, btnCornerRadius
       );
@@ -638,14 +687,14 @@ export default class HouseScene extends BaseScene {
       btnHit.setInteractive({ useHandCursor: true });
       btnHit.on('pointerover', () => {
         activeBtnBg.clear();
-        activeBtnBg.fillStyle(COLORS.LOGO_BLUE, 1);
+        activeBtnBg.fillStyle(COLORS.ELEGANT_BLUE, 1);
         activeBtnBg.fillRoundedRect(
           -btnWidth / 2, btnAbsY, btnWidth, btnHeight, btnCornerRadius
         );
       });
       btnHit.on('pointerout', () => {
         activeBtnBg.clear();
-        activeBtnBg.fillStyle(COLORS.ELEGANT_BLUE, 1);
+        activeBtnBg.fillStyle(COLORS.LOGO_BLUE, 1);
         activeBtnBg.fillRoundedRect(
           -btnWidth / 2, btnAbsY, btnWidth, btnHeight, btnCornerRadius
         );
@@ -694,24 +743,32 @@ export default class HouseScene extends BaseScene {
     return truncated + '...';
   }
 
-  private destroyHoverTooltip(): void {
+  private destroyHoverTooltip(immediate: boolean = false): void {
+    this.cancelTooltipDestroyTimer();
+
     if (this.hoverTooltip) {
       const tooltip = this.hoverTooltip;
       this.hoverTooltip = undefined;
       this.hoverTooltipLessonId = undefined;
+      this.isPointerOverTooltip = false;
 
-      this.tweens.add({
-        targets: tooltip,
-        scale: 0.9,
-        alpha: 0,
-        duration: 120,
-        ease: 'Power2',
-        onComplete: () => {
-          tooltip.destroy();
-        }
-      });
+      if (immediate) {
+        tooltip.destroy();
+      } else {
+        this.tweens.add({
+          targets: tooltip,
+          scale: 0.9,
+          alpha: 0,
+          duration: 120,
+          ease: 'Power2',
+          onComplete: () => {
+            tooltip.destroy();
+          }
+        });
+      }
     } else {
       this.hoverTooltipLessonId = undefined;
+      this.isPointerOverTooltip = false;
     }
   }
 
@@ -734,7 +791,7 @@ export default class HouseScene extends BaseScene {
     const handleLessonSelect = this.registry.get('handleLessonSelect');
     if (handleLessonSelect) {
       this.isTransitioning = true;
-      this.destroyHoverTooltip();
+      this.destroyHoverTooltip(true);
       handleLessonSelect(lesson.id, this.moduleBackendId || '');
     }
   }
@@ -960,7 +1017,7 @@ export default class HouseScene extends BaseScene {
     this.createMinigameButton();
 
     // Destroy tooltip on resize
-    this.destroyHoverTooltip();
+    this.destroyHoverTooltip(true);
 
     // Destroy and recreate lesson cards
     this.lessonContainers.forEach(container => container.destroy());
