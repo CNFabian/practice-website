@@ -72,6 +72,43 @@ def get_modules(
                 else 0.0
             )
 
+            # Calculate module completion states
+            module_lessons = (
+                db.query(Lesson)
+                .filter(and_(Lesson.module_id == m.id, Lesson.is_active.is_(True)))
+                .all()
+            )
+            
+            lesson_ids = [lesson.id for lesson in module_lessons]
+            
+            if lesson_ids:
+                lesson_progress_records = (
+                    db.query(UserLessonProgress)
+                    .filter(
+                        and_(
+                            UserLessonProgress.user_id == current_user.id,
+                            UserLessonProgress.lesson_id.in_(lesson_ids)
+                        )
+                    )
+                    .all()
+                )
+                
+                # Check if all lessons are completed (video watched)
+                completed_count = sum(
+                    1 for lp in lesson_progress_records if lp.status == "completed"
+                )
+                all_lessons_completed = completed_count == lesson_count and lesson_count > 0
+            else:
+                all_lessons_completed = False
+            
+            # Free roam is available when all lessons (videos) are completed
+            free_roam_available = all_lessons_completed
+            
+            # Get tree state from module progress
+            tree_growth_points = getattr(prog, "tree_growth_points", 0) if prog else 0
+            tree_current_stage = getattr(prog, "tree_current_stage", 0) if prog else 0
+            tree_completed = getattr(prog, "tree_completed", False) if prog else False
+
             out.append(
                 ModuleResponse(
                     id=m.id,
@@ -84,10 +121,16 @@ def get_modules(
                     estimated_duration_minutes=getattr(
                         m, "estimated_duration_minutes", None
                     ),
-                    difficulty_level=getattr(m, "difficulty_level", None),
+                    difficulty_level=m.difficulty_level,
                     created_at=m.created_at,
                     lesson_count=lesson_count,
                     progress_percentage=pct,
+                    all_lessons_completed=all_lessons_completed,
+                    free_roam_available=free_roam_available,
+                    tree_growth_points=tree_growth_points,
+                    tree_current_stage=tree_current_stage,
+                    tree_total_stages=5,
+                    tree_completed=tree_completed,
                 )
             )
 
@@ -120,26 +163,6 @@ def get_module(
             status_code=status.HTTP_404_NOT_FOUND, detail="Module not found"
         )
 
-    # Check prerequisites
-    # if module.prerequisite_module_id:
-    #     prerequisite_progress = (
-    #         db.query(UserModuleProgress)
-    #         .filter(
-    #             and_(
-    #                 UserModuleProgress.user_id == current_user.id,
-    #                 UserModuleProgress.module_id == module.prerequisite_module_id,
-    #                 UserModuleProgress.status == "completed",
-    #             )
-    #         )
-    #         .first()
-    #     )
-
-    #     if not prerequisite_progress:
-    #         raise HTTPException(
-    #             status_code=status.HTTP_403_FORBIDDEN,
-    #             detail="Please complete the prerequisite module first",
-    #         )
-
     # Get lesson count
     lesson_count = (
         db.query(Lesson)
@@ -161,19 +184,73 @@ def get_module(
 
     progress_percentage = user_progress.completion_percentage if user_progress else 0.0
 
+    # Calculate module completion states
+    module_lessons = (
+        db.query(Lesson)
+        .filter(and_(Lesson.module_id == module.id, Lesson.is_active.is_(True)))
+        .all()
+    )
+
+    lesson_ids = [lesson.id for lesson in module_lessons]
+
+    if lesson_ids:
+        lesson_progress_records = (
+            db.query(UserLessonProgress)
+            .filter(
+                and_(
+                    UserLessonProgress.user_id == current_user.id,
+                    UserLessonProgress.lesson_id.in_(lesson_ids)
+                )
+            )
+            .all()
+        )
+        
+        # Check if all lessons are completed (video watched)
+        completed_count = sum(
+            1 for lp in lesson_progress_records if lp.status == "completed"
+        )
+        all_lessons_completed = completed_count == lesson_count and lesson_count > 0
+    else:
+        all_lessons_completed = False
+
+    # Free roam is available when all lessons (videos) are completed
+    free_roam_available = all_lessons_completed
+
+    # Get module progress for tree state
+    module_prog = (
+        db.query(UserModuleProgress)
+        .filter(
+            and_(
+                UserModuleProgress.user_id == current_user.id,
+                UserModuleProgress.module_id == module.id,
+            )
+        )
+        .first()
+    )
+
+    tree_growth_points = getattr(module_prog, "tree_growth_points", 0) if module_prog else 0
+    tree_current_stage = getattr(module_prog, "tree_current_stage", 0) if module_prog else 0
+    tree_completed = getattr(module_prog, "tree_completed", False) if module_prog else False
+
     return ModuleResponse(
         id=module.id,
         title=module.title,
         description=module.description,
-        thumbnail_url=module.thumbnail_url,
-        order_index=module.order_index,
-        is_active=module.is_active,
-        prerequisite_module_id=module.prerequisite_module_id,
-        estimated_duration_minutes=module.estimated_duration_minutes,
+        thumbnail_url=getattr(module, "thumbnail_url", None),
+        order_index=getattr(module, "order_index", 0),
+        is_active=bool(module.is_active),
+        prerequisite_module_id=getattr(module, "prerequisite_module_id", None),
+        estimated_duration_minutes=getattr(module, "estimated_duration_minutes", None),
         difficulty_level=module.difficulty_level,
         created_at=module.created_at,
         lesson_count=lesson_count,
         progress_percentage=progress_percentage,
+        all_lessons_completed=all_lessons_completed,
+        free_roam_available=free_roam_available,
+        tree_growth_points=tree_growth_points,
+        tree_current_stage=tree_current_stage,
+        tree_total_stages=5,
+        tree_completed=tree_completed,
     )
 
 
@@ -240,6 +317,8 @@ def get_module_lessons(
 
         is_completed = user_progress.status == "completed" if user_progress else False
         progress_seconds = user_progress.video_progress_seconds if user_progress else 0
+        # Check if Grow Your Nest has been played for this lesson (quiz_attempts > 0 means it was played)
+        grow_your_nest_played = user_progress.quiz_attempts > 0 if user_progress else False
 
         lesson_responses.append(
             LessonResponse(
@@ -257,6 +336,7 @@ def get_module_lessons(
                 created_at=lesson.created_at,
                 is_completed=is_completed,
                 progress_seconds=progress_seconds,
+                grow_your_nest_played=grow_your_nest_played,
             )
         )
 
@@ -316,6 +396,10 @@ def get_lesson(
 
     is_completed = user_progress.status == "completed" if user_progress else False
     progress_seconds = user_progress.video_progress_seconds if user_progress else 0
+    
+    # Check if Grow Your Nest has been played for this lesson
+    grow_your_nest_played = user_progress.quiz_attempts > 0 if user_progress else False
+
 
     # Mark lesson as started if not already
     if not user_progress:
@@ -328,21 +412,22 @@ def get_lesson(
         )
 
     return LessonResponse(
-        id=lesson.id,
-        module_id=lesson.module_id,
-        title=lesson.title,
-        description=lesson.description,
-        image_url=lesson.image_url,
-        video_url=lesson.video_url,
-        video_transcription=lesson.video_transcription,
-        order_index=lesson.order_index,
-        is_active=lesson.is_active,
-        estimated_duration_minutes=lesson.estimated_duration_minutes,
-        nest_coins_reward=lesson.nest_coins_reward,
-        created_at=lesson.created_at,
-        is_completed=is_completed,
-        progress_seconds=progress_seconds,
-    )
+    id=lesson.id,
+    module_id=lesson.module_id,
+    title=lesson.title,
+    description=lesson.description,
+    image_url=lesson.image_url,
+    video_url=lesson.video_url,
+    video_transcription=lesson.video_transcription,
+    order_index=lesson.order_index,
+    is_active=lesson.is_active,
+    estimated_duration_minutes=lesson.estimated_duration_minutes,
+    nest_coins_reward=lesson.nest_coins_reward,
+    created_at=lesson.created_at,
+    is_completed=is_completed,
+    progress_seconds=progress_seconds,
+    grow_your_nest_played=grow_your_nest_played,
+)
 
 
 @router.post("/lessons/{lesson_id}/progress", response_model=SuccessResponse)

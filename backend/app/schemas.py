@@ -177,6 +177,13 @@ class ModuleResponse(BaseSchema):
     created_at: datetime
     lesson_count: Optional[int] = None
     progress_percentage: Optional[Decimal] = None
+    all_lessons_completed: Optional[bool] = None
+    free_roam_available: Optional[bool] = None
+    # Tree state fields for Grow Your Nest
+    tree_growth_points: Optional[int] = None
+    tree_current_stage: Optional[int] = None
+    tree_total_stages: Optional[int] = 5
+    tree_completed: Optional[bool] = None
 
 
 class LessonResponse(BaseSchema):
@@ -194,6 +201,7 @@ class LessonResponse(BaseSchema):
     created_at: datetime
     is_completed: Optional[bool] = None
     progress_seconds: Optional[int] = None
+    grow_your_nest_played: Optional[bool] = None
 
 
 class QuizQuestionResponse(BaseSchema):
