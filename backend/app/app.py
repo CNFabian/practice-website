@@ -15,7 +15,8 @@ from database import get_db, engine
 from models import Base
 from routers import (
     auth, onboarding, dashboard, learning, 
-    quiz, rewards, materials, help_support, notifications, grow_your_nest
+    quiz, rewards, materials, help_support, notifications, grow_your_nest,
+    cities
 )
 
 # Configure logging
@@ -127,6 +128,7 @@ app.include_router(materials.router, prefix="/api/materials", tags=["Materials"]
 app.include_router(help_support.router, prefix="/api/help", tags=["Help & Support"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(grow_your_nest.router, prefix="/api/grow-your-nest", tags=["Grow Your Nest"])
+app.include_router(cities.router, prefix="/api/v1/cities", tags=["Cities"])
 
 @app.get("/")
 def read_root():
@@ -174,7 +176,8 @@ def api_status():
             "Materials & Resources",
             "Help & Support",
             "Notifications",
-            "Grow Your Nest Minigame"
+            "Grow Your Nest Minigame",
+            "City Search (Google Places API)"
         ]
     }
 

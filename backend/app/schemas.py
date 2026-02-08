@@ -122,6 +122,64 @@ class OnboardingStep5(BaseModel):
     )
 
 
+# City Search Schemas (for Google Places API integration)
+class CitySearchRequest(BaseModel):
+    """Request model for city search"""
+    query: str = Field(
+        ..., 
+        min_length=2, 
+        max_length=100,
+        description="City name to search for",
+        examples=["los", "san francisco", "new york"]
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "los"
+            }
+        }
+
+
+class CityData(BaseModel):
+    """Response model for a single city"""
+    city: str = Field(..., description="City name")
+    state: str = Field(..., description="State abbreviation (e.g., CA, TX)")
+    zipcode: str = Field(..., description="Postal code")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "city": "Los Angeles",
+                "state": "CA",
+                "zipcode": "90001"
+            }
+        }
+
+
+class CitySearchResponse(BaseModel):
+    """Response model for city search"""
+    cities: List[CityData] = Field(..., description="List of matching cities")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "cities": [
+                    {
+                        "city": "Los Angeles",
+                        "state": "CA",
+                        "zipcode": "90001"
+                    },
+                    {
+                        "city": "Los Banos",
+                        "state": "CA",
+                        "zipcode": "93635"
+                    }
+                ]
+            }
+        }
+
+
 class OnboardingComplete(BaseModel):
     selected_avatar: str
     has_realtor: bool
