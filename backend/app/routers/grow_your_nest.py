@@ -1,26 +1,51 @@
+"""
+Grow Your Nest router.
+
+Single API surface for the Grow Your Nest minigame:
+- Lesson mode: 3 questions per lesson, one-time play after video.
+- Free roam: All module questions, progress saved per answer, tree growth.
+- Module quiz: Full module quiz (all questions at once), attempts, stats.
+
+URL path uses kebab-case: grow-your-nest. Display name: Grow Your Nest.
+"""
 from datetime import datetime
 from typing import List, Dict, Optional
 from uuid import UUID
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, desc
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from database import get_db
 from auth import get_current_user
 from models import (
     User, Module, Lesson, UserModuleProgress, UserLessonProgress,
-    QuizQuestion, QuizAnswer
+    QuizQuestion, QuizAnswer, UserModuleQuizAttempt,
 )
-from schemas import SuccessResponse
-from utils import CoinManager, NotificationManager
+from schemas import (
+    SuccessResponse,
+    MiniGameQuestionsResponse, MiniGameSubmission, MiniGameResult,
+    MiniGameAttemptHistory,
+)
+from utils import CoinManager, NotificationManager, QuizManager
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # ================================
 # CONSTANTS
 # ================================
+
+# Display name (title case) for docs and user-facing strings
+ROUTE_TAG_GROW_YOUR_NEST = "Grow Your Nest"
+# Internal coin reason codes (snake_case)
+COIN_REASON_LESSON = "grow_your_nest_lesson"
+COIN_REASON_FREEROAM = "grow_your_nest_freeroam"
+COIN_REASON_MODULE_PASSED = "grow_your_nest_module_passed"
 
 TREE_TOTAL_STAGES = 5
 POINTS_PER_STAGE = 50
@@ -276,9 +301,9 @@ def submit_lesson_game(
                 db,
                 current_user.id,
                 coins_earned,
-                "grow_your_nest_lesson",
+                COIN_REASON_LESSON,
                 lesson_id,
-                f"Grow Your Nest - Lesson: {lesson.title}"
+                f"{ROUTE_TAG_GROW_YOUR_NEST} - Lesson: {lesson.title}"
             )
     
     return {
@@ -516,9 +541,9 @@ def save_freeroam_progress(
                 db,
                 current_user.id,
                 coins_earned,
-                "grow_your_nest_freeroam",
+                COIN_REASON_FREEROAM,
                 module_id,
-                f"Grow Your Nest - Free Roam: {module.title}"
+                f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}"
             )
     
     return {
@@ -581,4 +606,303 @@ def get_tree_state(
         "points_to_complete": max(0, (TREE_TOTAL_STAGES * POINTS_PER_STAGE) - module_progress.tree_growth_points),
         "completed": module_progress.tree_completed,
         "completed_at": module_progress.tree_completed_at
+    }
+
+
+# ================================
+# MODULE QUIZ ENDPOINTS (Grow Your Nest)
+# ================================
+
+@router.get("/module/{module_id}", response_model=MiniGameQuestionsResponse)
+def get_module_questions(
+    module_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all quiz questions for Grow Your Nest module quiz.
+    Returns consolidated questions from all lessons in the module.
+    Requires all lessons in the module to be completed first.
+    """
+    module = db.query(Module).filter(
+        and_(Module.id == module_id, Module.is_active == True)
+    ).first()
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
+
+    lessons = db.query(Lesson).filter(
+        and_(Lesson.module_id == module_id, Lesson.is_active == True)
+    ).order_by(Lesson.order_index).all()
+    if not lessons:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No lessons found in this module")
+
+    lesson_ids = [lesson.id for lesson in lessons]
+    completed_lessons = db.query(UserLessonProgress).filter(
+        and_(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id.in_(lesson_ids),
+            UserLessonProgress.status == "completed"
+        )
+    ).all()
+    completed_lesson_ids = {p.lesson_id for p in completed_lessons}
+    incomplete_lessons = [l for l in lessons if l.id not in completed_lesson_ids]
+    if incomplete_lessons:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "incomplete_lessons",
+                "message": f"Please complete all lessons before playing {ROUTE_TAG_GROW_YOUR_NEST}",
+                "incomplete_lessons": [
+                    {"id": str(l.id), "title": l.title, "order_index": l.order_index}
+                    for l in incomplete_lessons
+                ],
+                "progress": {
+                    "completed": len(completed_lesson_ids),
+                    "total": len(lessons),
+                    "percentage": round((len(completed_lesson_ids) / len(lessons)) * 100, 2) if lessons else 0
+                }
+            }
+        )
+
+    all_questions = []
+    for lesson in lessons:
+        questions = db.query(QuizQuestion).filter(
+            and_(QuizQuestion.lesson_id == lesson.id, QuizQuestion.is_active == True)
+        ).order_by(QuizQuestion.order_index).all()
+        for question in questions:
+            answers = db.query(QuizAnswer).filter(QuizAnswer.question_id == question.id).order_by(QuizAnswer.order_index).all()
+            all_questions.append({
+                "id": str(question.id),
+                "lesson_id": str(lesson.id),
+                "lesson_title": lesson.title,
+                "question_text": question.question_text,
+                "question_type": question.question_type,
+                "order_index": question.order_index,
+                "answers": [
+                    {"id": str(a.id), "answer_text": a.answer_text, "order_index": a.order_index}
+                    for a in answers
+                ]
+            })
+    if not all_questions:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found for this module")
+
+    previous_attempts = db.query(UserModuleQuizAttempt).filter(
+        and_(
+            UserModuleQuizAttempt.user_id == current_user.id,
+            UserModuleQuizAttempt.module_id == module_id
+        )
+    ).order_by(desc(UserModuleQuizAttempt.attempt_number)).all()
+    best_score = max(float(a.score) for a in previous_attempts) if previous_attempts else None
+
+    return {
+        "module": {
+            "id": str(module.id),
+            "title": module.title,
+            "description": module.description,
+            "difficulty_level": module.difficulty_level
+        },
+        "total_lessons": len(lessons),
+        "completed_lessons": len(completed_lesson_ids),
+        "total_questions": len(all_questions),
+        "questions": all_questions,
+        "user_status": {
+            "all_lessons_completed": True,
+            "completed_lessons": len(completed_lesson_ids),
+            "total_lessons": len(lessons),
+            "completion_percentage": 100.0 if lessons else 0,
+            "total_attempts": len(previous_attempts),
+            "best_score": best_score,
+            "can_play": True
+        }
+    }
+
+
+@router.post("/module/{module_id}/submit", response_model=MiniGameResult)
+@limiter.limit("10/minute")
+def submit_module_quiz(
+    request: Request,
+    module_id: UUID,
+    submission: MiniGameSubmission,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Submit Grow Your Nest module quiz results.
+    Rate limited: 10 requests per minute per user.
+    """
+    if submission.module_id != module_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Module ID mismatch")
+
+    module = db.query(Module).filter(and_(Module.id == module_id, Module.is_active == True)).first()
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
+    lessons = db.query(Lesson).filter(and_(Lesson.module_id == module_id, Lesson.is_active == True)).all()
+    lesson_ids = [l.id for l in lessons]
+    all_questions = db.query(QuizQuestion).filter(
+        and_(QuizQuestion.lesson_id.in_(lesson_ids), QuizQuestion.is_active == True)
+    ).all()
+    question_ids = {q.id for q in all_questions}
+
+    if len(submission.answers) != len(all_questions):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Expected {len(all_questions)} answers, got {len(submission.answers)}"
+        )
+
+    correct_answers = 0
+    for answer_data in submission.answers:
+        qid = UUID(list(answer_data.keys())[0])
+        aid = UUID(list(answer_data.values())[0])
+        if qid not in question_ids:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid question ID")
+        ans = db.query(QuizAnswer).filter(
+            and_(QuizAnswer.id == aid, QuizAnswer.question_id == qid)
+        ).first()
+        if ans and ans.is_correct:
+            correct_answers += 1
+
+    attempt_number = db.query(UserModuleQuizAttempt).filter(
+        and_(
+            UserModuleQuizAttempt.user_id == current_user.id,
+            UserModuleQuizAttempt.module_id == module_id
+        )
+    ).count() + 1
+    score = QuizManager.calculate_quiz_score(correct_answers, len(all_questions))
+    passed = QuizManager.determine_quiz_pass(score)
+
+    attempt = UserModuleQuizAttempt(
+        user_id=current_user.id,
+        module_id=module_id,
+        attempt_number=attempt_number,
+        score=score,
+        total_questions=len(all_questions),
+        correct_answers=correct_answers,
+        time_taken_seconds=submission.time_taken_seconds,
+        passed=passed,
+        game_data=submission.game_data
+    )
+    db.add(attempt)
+    db.commit()
+    db.refresh(attempt)
+
+    EventTracker.track_minigame_attempted(db, current_user.id, module_id, attempt_number)
+    EventTracker.track_minigame_result(db, current_user.id, module_id, float(score), passed)
+
+    coins_earned = 0
+    badges_earned = []
+    module_completed = False
+    if passed:
+        total_lesson_coins = sum(l.nest_coins_reward for l in lessons)
+        coins_earned = QuizManager.calculate_coin_reward(total_lesson_coins, score)
+        if coins_earned > 0:
+            CoinManager.award_coins(
+                db, current_user.id, coins_earned,
+                COIN_REASON_MODULE_PASSED, attempt.id,
+                f"{ROUTE_TAG_GROW_YOUR_NEST} - {module.title}"
+            )
+        module_progress = db.query(UserModuleProgress).filter(
+            and_(
+                UserModuleProgress.user_id == current_user.id,
+                UserModuleProgress.module_id == module_id
+            )
+        ).first()
+        if not module_progress:
+            module_progress = UserModuleProgress(
+                user_id=current_user.id,
+                module_id=module_id,
+                total_lessons=len(lessons),
+                first_started_at=datetime.now()
+            )
+            db.add(module_progress)
+            db.flush()
+        was_already_completed = module_progress.minigame_completed
+        module_progress.minigame_completed = True
+        module_progress.minigame_attempts = attempt_number
+        module_progress.minigame_best_score = max(
+            score, module_progress.minigame_best_score or Decimal("0.00")
+        )
+        if not was_already_completed:
+            module_progress.status = "completed"
+            module_progress.completed_at = datetime.now()
+            module_progress.completion_percentage = Decimal("100.00")
+            module_completed = True
+            EventTracker.track_module_completed(db, current_user.id, module_id, module.title)
+    db.commit()
+
+    return MiniGameResult(
+        attempt_id=attempt.id,
+        module_id=module_id,
+        module_title=module.title,
+        score=score,
+        total_questions=len(all_questions),
+        correct_answers=correct_answers,
+        passed=passed,
+        coins_earned=coins_earned,
+        badges_earned=badges_earned,
+        time_taken_seconds=submission.time_taken_seconds,
+        attempt_number=attempt_number,
+        module_completed=module_completed
+    )
+
+
+@router.get("/module/{module_id}/attempts", response_model=List[MiniGameAttemptHistory])
+def get_module_attempts(
+    module_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get user's previous Grow Your Nest module quiz attempts for a module."""
+    attempts = db.query(UserModuleQuizAttempt).filter(
+        and_(
+            UserModuleQuizAttempt.user_id == current_user.id,
+            UserModuleQuizAttempt.module_id == module_id
+        )
+    ).order_by(desc(UserModuleQuizAttempt.completed_at)).all()
+    return [
+        MiniGameAttemptHistory(
+            id=a.id,
+            attempt_number=a.attempt_number,
+            score=a.score,
+            passed=a.passed,
+            completed_at=a.completed_at
+        )
+        for a in attempts
+    ]
+
+
+@router.get("/stats")
+def get_module_quiz_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get user's overall Grow Your Nest module quiz statistics."""
+    attempts = db.query(UserModuleQuizAttempt).filter(
+        UserModuleQuizAttempt.user_id == current_user.id
+    ).all()
+    if not attempts:
+        return {
+            "total_attempts": 0,
+            "total_passed": 0,
+            "total_failed": 0,
+            "pass_rate": 0.0,
+            "average_score": 0.0,
+            "best_score": 0.0,
+            "modules_completed": 0
+        }
+    total_attempts = len(attempts)
+    passed_attempts = [a for a in attempts if a.passed]
+    total_passed = len(passed_attempts)
+    total_failed = total_attempts - total_passed
+    pass_rate = (total_passed / total_attempts * 100) if total_attempts > 0 else 0
+    average_score = sum(float(a.score) for a in attempts) / len(attempts)
+    best_score = max(float(a.score) for a in attempts)
+    modules_completed = len(set(a.module_id for a in passed_attempts))
+    return {
+        "total_attempts": total_attempts,
+        "total_passed": total_passed,
+        "total_failed": total_failed,
+        "pass_rate": round(pass_rate, 2),
+        "average_score": round(average_score, 2),
+        "best_score": round(best_score, 2),
+        "modules_completed": modules_completed
     }

@@ -12,6 +12,7 @@ from models import User, FAQ, SupportTicket
 from schemas import (
     FAQResponse, SupportTicketCreate, SupportTicketResponse, SuccessResponse
 )
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
 
@@ -119,6 +120,12 @@ def submit_support_ticket(
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
+    
+    # Track support ticket creation event (only if user is logged in)
+    if current_user:
+        EventTracker.track_support_ticket_created(
+            db, current_user.id, ticket.id, ticket.subject, ticket.category or "general"
+        )
     
     return SupportTicketResponse(
         id=ticket.id,

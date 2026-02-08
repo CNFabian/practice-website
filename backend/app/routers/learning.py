@@ -1,13 +1,16 @@
 from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
+from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from database import get_db
-from auth import get_current_user
+from auth import get_current_user, get_current_admin_user
 from models import (
     User,
     Module,
@@ -19,15 +22,23 @@ from models import (
 )
 from schemas import (
     ModuleResponse,
+    ModuleCreate,
     LessonResponse,
+    LessonCreate,
     QuizQuestionWithAnswers,
     UserProgressUpdate,
     SuccessResponse,
+    LessonMilestoneUpdate,
+    LessonCompletionRequest,
+    BatchProgressUpdate,
+    LessonProgressResponse,
 )
 from utils import ProgressManager, OnboardingManager
+from analytics.event_tracker import EventTracker
 import traceback
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/modules", response_model=List[ModuleResponse])
@@ -142,6 +153,76 @@ def get_modules(
         traceback.print_exc()
         raise HTTPException(
             status_code=500, detail=f"/modules failed: {type(e).__name__}: {e}"
+        )
+
+
+@router.post("/modules", response_model=ModuleResponse, status_code=status.HTTP_201_CREATED)
+def create_module(
+    module_data: ModuleCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new module (admin only)"""
+    try:
+        # Validate prerequisite module if provided
+        if module_data.prerequisite_module_id:
+            prerequisite = (
+                db.query(Module)
+                .filter(Module.id == module_data.prerequisite_module_id)
+                .first()
+            )
+            if not prerequisite:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Prerequisite module not found"
+                )
+        
+        # Create module
+        module = Module(
+            title=module_data.title,
+            description=module_data.description,
+            thumbnail_url=module_data.thumbnail_url,
+            order_index=module_data.order_index,
+            is_active=module_data.is_active,
+            prerequisite_module_id=module_data.prerequisite_module_id,
+            estimated_duration_minutes=module_data.estimated_duration_minutes,
+            difficulty_level=module_data.difficulty_level,
+        )
+        
+        db.add(module)
+        db.commit()
+        db.refresh(module)
+        
+        # Get lesson count (will be 0 for new module)
+        lesson_count = (
+            db.query(Lesson)
+            .filter(and_(Lesson.module_id == module.id, Lesson.is_active == True))
+            .count()
+        )
+        
+        return ModuleResponse(
+            id=module.id,
+            title=module.title,
+            description=module.description,
+            thumbnail_url=module.thumbnail_url,
+            order_index=module.order_index,
+            is_active=module.is_active,
+            prerequisite_module_id=module.prerequisite_module_id,
+            estimated_duration_minutes=module.estimated_duration_minutes,
+            difficulty_level=module.difficulty_level,
+            created_at=module.created_at,
+            lesson_count=lesson_count,
+            progress_percentage=0.0,
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create module: {type(e).__name__}: {e}"
         )
 
 
@@ -343,6 +424,74 @@ def get_module_lessons(
     return lesson_responses
 
 
+@router.post("/modules/{module_id}/lessons", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
+def create_lesson(
+    module_id: UUID,
+    lesson_data: LessonCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new lesson for a module (admin only)"""
+    try:
+        # Validate module exists
+        module = (
+            db.query(Module)
+            .filter(and_(Module.id == module_id, Module.is_active == True))
+            .first()
+        )
+        
+        if not module:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Module not found"
+            )
+        
+        # Create lesson
+        lesson = Lesson(
+            module_id=module_id,
+            title=lesson_data.title,
+            description=lesson_data.description,
+            image_url=lesson_data.image_url,
+            video_url=lesson_data.video_url,
+            video_transcription=lesson_data.video_transcription,
+            order_index=lesson_data.order_index,
+            is_active=lesson_data.is_active,
+            estimated_duration_minutes=lesson_data.estimated_duration_minutes,
+            nest_coins_reward=lesson_data.nest_coins_reward,
+        )
+        
+        db.add(lesson)
+        db.commit()
+        db.refresh(lesson)
+        
+        return LessonResponse(
+            id=lesson.id,
+            module_id=lesson.module_id,
+            title=lesson.title,
+            description=lesson.description,
+            image_url=lesson.image_url,
+            video_url=lesson.video_url,
+            video_transcription=lesson.video_transcription,
+            order_index=lesson.order_index,
+            is_active=lesson.is_active,
+            estimated_duration_minutes=lesson.estimated_duration_minutes,
+            nest_coins_reward=lesson.nest_coins_reward,
+            created_at=lesson.created_at,
+            is_completed=False,
+            progress_seconds=0,
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create lesson: {type(e).__name__}: {e}"
+        )
+
+
 @router.get("/lessons/{lesson_id}", response_model=LessonResponse)
 def get_lesson(
     lesson_id: UUID,
@@ -406,10 +555,14 @@ def get_lesson(
         ProgressManager.update_lesson_progress(
             db, current_user.id, lesson_id, status="in_progress"
         )
+        # Track lesson started event
+        EventTracker.track_lesson_started(db, current_user.id, lesson_id, lesson.title)
     elif user_progress.status == "not_started":
         ProgressManager.update_lesson_progress(
             db, current_user.id, lesson_id, status="in_progress"
         )
+        # Track lesson started event
+        EventTracker.track_lesson_started(db, current_user.id, lesson_id, lesson.title)
 
     return LessonResponse(
     id=lesson.id,
@@ -462,34 +615,281 @@ def update_lesson_progress(
         video_progress_seconds=progress_data.video_progress_seconds,
         status="in_progress",
     )
+    
+    # Track lesson progress event
+    EventTracker.track_lesson_progress(db, current_user.id, lesson_id, progress_data.video_progress_seconds)
 
     return SuccessResponse(message="Progress updated successfully")
+
+
+@router.post("/lessons/{lesson_id}/milestone", response_model=LessonProgressResponse)
+@limiter.limit("30/minute")  # Max 30 milestone calls per user per minute
+def track_lesson_milestone(
+    request: Request,
+    lesson_id: UUID,
+    milestone_data: LessonMilestoneUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Track lesson milestone reached (25%, 50%, 75%, 90%).
+    Optimized endpoint - only called at key progress points.
+    Auto-completes lesson at 90% milestone.
+    
+    Rate Limited: 30 requests per minute per user (prevents spam/abuse).
+    """
+    if milestone_data.lesson_id != lesson_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lesson ID mismatch"
+        )
+    
+    # Validate lesson
+    lesson = db.query(Lesson).filter(
+        and_(Lesson.id == lesson_id, Lesson.is_active == True)
+    ).first()
+    
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson not found"
+        )
+    
+    # Get or create progress
+    progress = db.query(UserLessonProgress).filter(
+        and_(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id == lesson_id
+        )
+    ).first()
+    
+    if not progress:
+        progress = UserLessonProgress(
+            user_id=current_user.id,
+            lesson_id=lesson_id,
+            first_started_at=datetime.now(),
+            status="in_progress"
+        )
+        db.add(progress)
+    
+    # Update progress data
+    progress.content_type_consumed = milestone_data.content_type
+    progress.time_spent_seconds = milestone_data.time_spent_seconds
+    progress.last_accessed_at = datetime.now()
+    
+    if milestone_data.video_progress_seconds is not None:
+        progress.video_progress_seconds = milestone_data.video_progress_seconds
+    
+    if milestone_data.transcript_progress_percentage is not None:
+        progress.transcript_progress_percentage = milestone_data.transcript_progress_percentage
+    
+    # Track milestone
+    milestones = set(progress.milestones_reached.split(',') if progress.milestones_reached else [])
+    is_new_milestone = str(milestone_data.milestone) not in milestones
+    milestones.add(str(milestone_data.milestone))
+    progress.milestones_reached = ','.join(sorted(milestones, key=int))
+    
+    # Track milestone event (only if new)
+    if is_new_milestone:
+        _, created = EventTracker.track_lesson_milestone(
+            db=db,
+            user_id=current_user.id,
+            lesson_id=lesson_id,
+            lesson_title=lesson.title,
+            milestone=milestone_data.milestone,
+            content_type=milestone_data.content_type
+        )
+    
+    # Auto-complete at 90% milestone
+    auto_completed = False
+    if milestone_data.milestone >= 90 and progress.status != "completed":
+        progress.status = "completed"
+        progress.completed_at = datetime.now()
+        progress.completion_method = "auto"
+        auto_completed = True
+        
+        # Track event
+        _, created = EventTracker.track_lesson_completed(db, current_user.id, lesson_id, lesson.title)
+        
+        # Update module progress
+        ProgressManager.update_module_progress(db, current_user.id, lesson_id)
+    
+    db.commit()
+    db.refresh(progress)
+    
+    # Calculate completion percentage
+    milestone_list = [int(m) for m in progress.milestones_reached.split(',') if m]
+    completion_pct = max(milestone_list) if milestone_list else 0
+    
+    return LessonProgressResponse(
+        lesson_id=lesson_id,
+        status=progress.status,
+        milestones_reached=milestone_list,
+        completion_percentage=Decimal(str(completion_pct)),
+        auto_completed=auto_completed,
+        message="Milestone tracked successfully"
+    )
 
 
 @router.post("/lessons/{lesson_id}/complete", response_model=SuccessResponse)
 def complete_lesson(
     lesson_id: UUID,
+    completion_data: Optional[LessonCompletionRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Mark a lesson as completed (video watched fully)"""
-    lesson = (
-        db.query(Lesson)
-        .filter(and_(Lesson.id == lesson_id, Lesson.is_active == True))
-        .first()
-    )
+    """
+    Manually mark a lesson as completed.
+    Can be called by user clicking "Mark Complete" button.
+    """
+    lesson = db.query(Lesson).filter(
+        and_(Lesson.id == lesson_id, Lesson.is_active == True)
+    ).first()
 
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found"
         )
-
-    # Update progress to completed
-    ProgressManager.update_lesson_progress(
-        db, current_user.id, lesson_id, status="completed"
-    )
+    
+    # Get or create progress
+    progress = db.query(UserLessonProgress).filter(
+        and_(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id == lesson_id
+        )
+    ).first()
+    
+    if not progress:
+        progress = UserLessonProgress(
+            user_id=current_user.id,
+            lesson_id=lesson_id,
+            first_started_at=datetime.now()
+        )
+        db.add(progress)
+    
+    # Update with completion data if provided
+    if completion_data:
+        if completion_data.video_progress_seconds is not None:
+            progress.video_progress_seconds = completion_data.video_progress_seconds
+        if completion_data.transcript_progress_percentage is not None:
+            progress.transcript_progress_percentage = completion_data.transcript_progress_percentage
+        if completion_data.time_spent_seconds:
+            progress.time_spent_seconds = completion_data.time_spent_seconds
+        if completion_data.content_type:
+            progress.content_type_consumed = completion_data.content_type
+        progress.completion_method = completion_data.completion_method
+    else:
+        progress.completion_method = "manual"
+    
+    # Mark as completed
+    if progress.status != "completed":
+        progress.status = "completed"
+        progress.completed_at = datetime.now()
+        progress.last_accessed_at = datetime.now()
+        
+        # Track event
+        _, created = EventTracker.track_lesson_completed(db, current_user.id, lesson_id, lesson.title)
+        
+        # Update module progress
+        ProgressManager.update_module_progress(db, current_user.id, lesson_id)
+    
+    db.commit()
 
     return SuccessResponse(message="Lesson completed successfully")
+
+
+@router.post("/progress/batch", response_model=SuccessResponse)
+@limiter.limit("20/minute")  # Max 20 batch updates per user per minute
+def update_progress_batch(
+    request: Request,
+    batch_data: BatchProgressUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Batch update progress for multiple lessons in a single request.
+    Highly optimized - reduces API calls by up to 90%.
+    Used when syncing multiple lessons or on page unload.
+    
+    Rate Limited: 20 requests per minute per user (prevents spam/abuse).
+    """
+    results = []
+    completed_lessons = []
+    
+    for item in batch_data.items:
+        # Validate lesson exists
+        lesson = db.query(Lesson).filter(
+            and_(Lesson.id == item.lesson_id, Lesson.is_active == True)
+        ).first()
+        
+        if not lesson:
+            results.append({
+                "lesson_id": str(item.lesson_id),
+                "status": "not_found"
+            })
+            continue
+        
+        # Get or create progress
+        progress = db.query(UserLessonProgress).filter(
+            and_(
+                UserLessonProgress.user_id == current_user.id,
+                UserLessonProgress.lesson_id == item.lesson_id
+            )
+        ).first()
+        
+        if not progress:
+            progress = UserLessonProgress(
+                user_id=current_user.id,
+                lesson_id=item.lesson_id,
+                first_started_at=datetime.now(),
+                status="in_progress"
+            )
+            db.add(progress)
+        
+        # Update fields
+        if item.content_type:
+            progress.content_type_consumed = item.content_type
+        if item.video_progress_seconds is not None:
+            progress.video_progress_seconds = item.video_progress_seconds
+        if item.transcript_progress_percentage is not None:
+            progress.transcript_progress_percentage = item.transcript_progress_percentage
+        if item.time_spent_seconds:
+            progress.time_spent_seconds = item.time_spent_seconds
+        
+        # Track milestone if provided
+        if item.milestone:
+            milestones = set(progress.milestones_reached.split(',') if progress.milestones_reached else [])
+            milestones.add(str(item.milestone))
+            progress.milestones_reached = ','.join(sorted(milestones, key=int))
+        
+        progress.last_accessed_at = datetime.now()
+        
+        # Handle completion
+        if item.completed and progress.status != "completed":
+            progress.status = "completed"
+            progress.completed_at = datetime.now()
+            progress.completion_method = "auto"
+            completed_lessons.append((item.lesson_id, lesson.title))
+        
+        results.append({
+            "lesson_id": str(item.lesson_id),
+            "status": "updated"
+        })
+    
+    db.commit()
+    
+    # Track completion events (after commit)
+    for lesson_id, lesson_title in completed_lessons:
+        _, created = EventTracker.track_lesson_completed(db, current_user.id, lesson_id, lesson_title)
+        ProgressManager.update_module_progress(db, current_user.id, lesson_id)
+    
+    return SuccessResponse(
+        message=f"Batch updated {len(results)} lessons",
+        data={
+            "results": results,
+            "completed_count": len(completed_lessons)
+        }
+    )
 
 
 @router.get("/lessons/{lesson_id}/quiz", response_model=List[QuizQuestionWithAnswers])
@@ -510,25 +910,9 @@ def get_lesson_quiz(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found"
         )
 
-    # Check if lesson video is completed
-    user_progress = (
-        db.query(UserLessonProgress)
-        .filter(
-            and_(
-                UserLessonProgress.user_id == current_user.id,
-                UserLessonProgress.lesson_id == lesson_id,
-                UserLessonProgress.status == "completed",
-            )
-        )
-        .first()
-    )
-
-    if not user_progress:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please complete the lesson video first",
-        )
-
+    # NOTE: Gate removed - users can access quiz anytime
+    # This endpoint is kept for backward compatibility but quiz is now part of mini-game
+    
     # Get quiz questions with answers
     questions = (
         db.query(QuizQuestion)

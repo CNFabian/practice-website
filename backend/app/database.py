@@ -16,8 +16,15 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 # Create database URL
 DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
-# Create engine
-engine = create_engine(DATABASE_URL, echo=True)
+# Create engine with production-ready settings
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,  # Disable SQL query logging for production
+    pool_pre_ping=True,  # Verify connections before using them
+    pool_size=10,  # Connection pool size
+    max_overflow=20,  # Max overflow connections
+    pool_recycle=3600  # Recycle connections after 1 hour
+)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

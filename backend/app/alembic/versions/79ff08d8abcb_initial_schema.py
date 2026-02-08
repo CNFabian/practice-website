@@ -1,8 +1,8 @@
-"""Initial migration
+"""initial_schema
 
-Revision ID: 3a23cbd446f3
+Revision ID: 79ff08d8abcb
 Revises: 
-Create Date: 2025-09-10 00:49:17.291949
+Create Date: 2026-02-06 07:23:28.620827
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '3a23cbd446f3'
+revision = '79ff08d8abcb'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,6 +27,35 @@ def upgrade() -> None:
     sa.Column('rarity', sa.String(length=20), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('faqs',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('question', sa.Text(), nullable=False),
+    sa.Column('answer', sa.Text(), nullable=False),
+    sa.Column('category', sa.String(length=100), nullable=True),
+    sa.Column('order_index', sa.Integer(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('view_count', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('material_resources',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('resource_type', sa.String(length=50), nullable=False),
+    sa.Column('file_url', sa.Text(), nullable=True),
+    sa.Column('external_url', sa.Text(), nullable=True),
+    sa.Column('thumbnail_url', sa.Text(), nullable=True),
+    sa.Column('category', sa.String(length=100), nullable=True),
+    sa.Column('tags', sa.JSON(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('download_count', sa.Integer(), nullable=False),
+    sa.Column('order_index', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('modules',
@@ -74,6 +103,7 @@ def upgrade() -> None:
     sa.Column('profile_picture_url', sa.Text(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), nullable=False),
     sa.Column('email_verification_token', sa.String(length=255), nullable=True),
     sa.Column('password_reset_token', sa.String(length=255), nullable=True),
     sa.Column('password_reset_expires_at', sa.TIMESTAMP(timezone=True), nullable=True),
@@ -94,11 +124,25 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('lead_score_history',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('snapshot_date', sa.Date(), nullable=False),
+    sa.Column('composite_score', sa.DECIMAL(precision=6, scale=2), nullable=False),
+    sa.Column('lead_temperature', sa.String(length=20), nullable=True),
+    sa.Column('intent_band', sa.String(length=20), nullable=True),
+    sa.Column('metrics_json', sa.JSON(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_lead_score_history_user_id'), 'lead_score_history', ['user_id'], unique=False)
     op.create_table('lessons',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('module_id', sa.UUID(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('lesson_summary', sa.Text(), nullable=True),
     sa.Column('image_url', sa.Text(), nullable=True),
     sa.Column('video_url', sa.Text(), nullable=True),
     sa.Column('video_transcription', sa.Text(), nullable=True),
@@ -109,6 +153,17 @@ def upgrade() -> None:
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['module_id'], ['modules.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('material_downloads',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('material_id', sa.UUID(), nullable=False),
+    sa.Column('ip_address', postgresql.INET(), nullable=True),
+    sa.Column('user_agent', sa.Text(), nullable=True),
+    sa.Column('downloaded_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['material_id'], ['material_resources.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('notifications',
@@ -124,6 +179,24 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('support_tickets',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('subject', sa.String(length=255), nullable=False),
+    sa.Column('message', sa.Text(), nullable=False),
+    sa.Column('priority', sa.String(length=20), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('category', sa.String(length=100), nullable=True),
+    sa.Column('admin_response', sa.Text(), nullable=True),
+    sa.Column('responded_at', sa.TIMESTAMP(timezone=True), nullable=True),
+    sa.Column('resolved_at', sa.TIMESTAMP(timezone=True), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('user_activity_logs',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=True),
@@ -136,6 +209,20 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user_behavior_events',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('event_type', sa.String(length=100), nullable=False),
+    sa.Column('event_category', sa.String(length=50), nullable=False),
+    sa.Column('event_data', sa.JSON(), nullable=True),
+    sa.Column('idempotency_key', sa.String(length=255), nullable=True),
+    sa.Column('event_weight', sa.Float(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_behavior_events_created_at'), 'user_behavior_events', ['created_at'], unique=False)
+    op.create_index(op.f('ix_user_behavior_events_idempotency_key'), 'user_behavior_events', ['idempotency_key'], unique=False)
     op.create_table('user_coin_balances',
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('current_balance', sa.Integer(), nullable=False),
@@ -172,6 +259,25 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('redemption_code')
     )
+    op.create_table('user_lead_scores',
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('engagement_score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('timeline_urgency_score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('help_seeking_score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('learning_velocity_score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('rewards_score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('composite_score', sa.DECIMAL(precision=6, scale=2), nullable=False),
+    sa.Column('lead_temperature', sa.String(length=20), nullable=True),
+    sa.Column('intent_band', sa.String(length=20), nullable=True),
+    sa.Column('profile_completion_pct', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('available_signals_count', sa.Integer(), nullable=False),
+    sa.Column('total_signals_count', sa.Integer(), nullable=False),
+    sa.Column('last_calculated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('last_activity_at', sa.TIMESTAMP(timezone=True), nullable=True),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('user_id')
+    )
     op.create_table('user_module_progress',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -180,6 +286,9 @@ def upgrade() -> None:
     sa.Column('total_lessons', sa.Integer(), nullable=False),
     sa.Column('completion_percentage', sa.DECIMAL(precision=5, scale=2), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('minigame_completed', sa.Boolean(), nullable=False),
+    sa.Column('minigame_best_score', sa.DECIMAL(precision=5, scale=2), nullable=True),
+    sa.Column('minigame_attempts', sa.Integer(), nullable=False),
     sa.Column('first_started_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('last_accessed_at', sa.TIMESTAMP(timezone=True), nullable=False),
@@ -188,17 +297,43 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user_module_quiz_attempts',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('module_id', sa.UUID(), nullable=False),
+    sa.Column('attempt_number', sa.Integer(), nullable=False),
+    sa.Column('score', sa.DECIMAL(precision=5, scale=2), nullable=False),
+    sa.Column('total_questions', sa.Integer(), nullable=False),
+    sa.Column('correct_answers', sa.Integer(), nullable=False),
+    sa.Column('time_taken_seconds', sa.Integer(), nullable=True),
+    sa.Column('passed', sa.Boolean(), nullable=False),
+    sa.Column('game_data', sa.JSON(), nullable=True),
+    sa.Column('started_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['module_id'], ['modules.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('user_onboarding',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('homebuying_stage', sa.String(length=50), nullable=False),
+    sa.Column('has_realtor', sa.Boolean(), nullable=False),
+    sa.Column('has_loan_officer', sa.Boolean(), nullable=False),
+    sa.Column('wants_expert_contact', sa.String(length=20), nullable=True),
+    sa.Column('homeownership_timeline_months', sa.Integer(), nullable=True),
+    sa.Column('target_cities', sa.JSON(), nullable=True),
+    sa.Column('selected_avatar', sa.String(length=100), nullable=True),
+    sa.Column('zipcode', sa.String(length=10), nullable=True),
+    sa.Column('homebuying_timeline_months', sa.Integer(), nullable=True),
+    sa.Column('learning_style', sa.String(length=50), nullable=True),
+    sa.Column('reward_interests', sa.JSON(), nullable=True),
+    sa.Column('homebuying_stage', sa.String(length=50), nullable=True),
     sa.Column('budget_range', sa.String(length=50), nullable=True),
     sa.Column('target_location', sa.String(length=255), nullable=True),
     sa.Column('timeline_to_buy', sa.String(length=50), nullable=True),
     sa.Column('first_time_buyer', sa.Boolean(), nullable=False),
-    sa.Column('has_realtor', sa.Boolean(), nullable=False),
     sa.Column('credit_score_range', sa.String(length=50), nullable=True),
-    sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=False),
+    sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -243,6 +378,11 @@ def upgrade() -> None:
     sa.Column('quiz_attempts', sa.Integer(), nullable=False),
     sa.Column('quiz_best_score', sa.DECIMAL(precision=5, scale=2), nullable=True),
     sa.Column('video_progress_seconds', sa.Integer(), nullable=False),
+    sa.Column('content_type_consumed', sa.String(length=20), nullable=True),
+    sa.Column('transcript_progress_percentage', sa.DECIMAL(precision=5, scale=2), nullable=True),
+    sa.Column('time_spent_seconds', sa.Integer(), nullable=False),
+    sa.Column('completion_method', sa.String(length=20), nullable=True),
+    sa.Column('milestones_reached', sa.String(length=50), nullable=True),
     sa.Column('first_started_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('last_accessed_at', sa.TIMESTAMP(timezone=True), nullable=False),
@@ -302,16 +442,27 @@ def downgrade() -> None:
     op.drop_table('quiz_questions')
     op.drop_table('lesson_badge_rewards')
     op.drop_table('user_onboarding')
+    op.drop_table('user_module_quiz_attempts')
     op.drop_table('user_module_progress')
+    op.drop_table('user_lead_scores')
     op.drop_table('user_coupon_redemptions')
     op.drop_table('user_coin_transactions')
     op.drop_table('user_coin_balances')
+    op.drop_index(op.f('ix_user_behavior_events_idempotency_key'), table_name='user_behavior_events')
+    op.drop_index(op.f('ix_user_behavior_events_created_at'), table_name='user_behavior_events')
+    op.drop_table('user_behavior_events')
     op.drop_table('user_activity_logs')
+    op.drop_table('support_tickets')
     op.drop_table('notifications')
+    op.drop_table('material_downloads')
     op.drop_table('lessons')
+    op.drop_index(op.f('ix_lead_score_history_user_id'), table_name='lead_score_history')
+    op.drop_table('lead_score_history')
     op.drop_table('calculator_usage')
     op.drop_table('users')
     op.drop_table('reward_coupons')
     op.drop_table('modules')
+    op.drop_table('material_resources')
+    op.drop_table('faqs')
     op.drop_table('badges')
     # ### end Alembic commands ###

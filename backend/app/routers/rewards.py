@@ -18,6 +18,7 @@ from schemas import (
     SuccessResponse
 )
 from utils import CoinManager, NotificationManager
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
 
@@ -201,6 +202,11 @@ def redeem_coupon(
     
     db.commit()
     db.refresh(redemption)
+    
+    # Track coupon redemption event
+    EventTracker.track_coupon_redeemed(
+        db, current_user.id, coupon.id, coupon.title, coupon.cost_in_coins
+    )
     
     # Send success notification
     NotificationManager.create_notification(

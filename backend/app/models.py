@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 from typing import List, Optional
+import enum
 
 from sqlalchemy import (
     Column,
@@ -15,11 +16,43 @@ from sqlalchemy import (
     DECIMAL,
     UUID,
     text,
+    Enum,
+    Float,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column, declarative_base
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, INET
 
 Base = declarative_base()
+
+
+# ================================
+# ENUMS FOR ANALYTICS
+# ================================
+
+
+class LeadTemperature(enum.Enum):
+    """Lead temperature classification"""
+    hot_lead = "hot_lead"
+    warm_lead = "warm_lead"
+    cold_lead = "cold_lead"
+    dormant = "dormant"
+
+
+class IntentBand(enum.Enum):
+    """User intent classification"""
+    low_intent = "low_intent"
+    medium_intent = "medium_intent"
+    high_intent = "high_intent"
+    very_high_intent = "very_high_intent"
+
+
+class EventCategory(enum.Enum):
+    """Categorization of user behavior events"""
+    learning = "learning"
+    engagement = "engagement"
+    help_seeking = "help_seeking"
+    goal_indication = "goal_indication"
+    rewards = "rewards"
 
 
 # ================================
@@ -42,6 +75,7 @@ class User(Base):
     profile_picture_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     email_verification_token: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True
     )
@@ -85,6 +119,9 @@ class User(Base):
     quiz_attempts: Mapped[List["UserQuizAttempt"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    module_quiz_attempts: Mapped[List["UserModuleQuizAttempt"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
     coupon_redemptions: Mapped[List["UserCouponRedemption"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -93,6 +130,17 @@ class User(Base):
     )
     activity_logs: Mapped[List["UserActivityLog"]] = relationship(back_populates="user")
     notifications: Mapped[List["Notification"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    
+    # Analytics relationships
+    lead_score: Mapped[Optional["UserLeadScore"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", uselist=False
+    )
+    behavior_events: Mapped[List["UserBehaviorEvent"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    lead_score_history: Mapped[List["LeadScoreHistory"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -108,27 +156,28 @@ class UserOnboarding(Base):
     )
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     
-    # Step 1: Avatar selection
-    selected_avatar: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    
-    # Step 2: Realtor and loan officer status
+     # Step 1: Realtor and loan officer status
     has_realtor: Mapped[bool] = mapped_column(Boolean, default=False)
     has_loan_officer: Mapped[bool] = mapped_column(Boolean, default=False)
     
-    # Step 3: Expert contact preference
+    # Step 2: Expert contact preference
     wants_expert_contact: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True
-    )  # "Yes" or "Maybe later"
+    )  # "Yes, I'd love to" or "Maybe later"
     
-    # Step 4: Homeownership timeline in months
+    # Step 3: Homeownership timeline in months
     homeownership_timeline_months: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True
     )
     
-    # Step 5: Future home location
-    zipcode: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    # Step 4: Target cities (multiple cities)
+    target_cities: Mapped[Optional[List[str]]] = mapped_column(
+        JSON, nullable=True
+    )
     
-    # Legacy fields for backward compatibility (keeping for data migration)
+    # Legacy fields for backward compatibility
+    selected_avatar: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    zipcode: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     homebuying_timeline_months: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True
     )
@@ -197,6 +246,9 @@ class Module(Base):
     progress: Mapped[List["UserModuleProgress"]] = relationship(
         back_populates="module", cascade="all, delete-orphan"
     )
+    quiz_attempts: Mapped[List["UserModuleQuizAttempt"]] = relationship(
+        back_populates="module", cascade="all, delete-orphan"
+    )
     
     def __str__(self):
         return self.title
@@ -213,6 +265,7 @@ class Lesson(Base):
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lesson_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     video_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     video_transcription: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -482,6 +535,22 @@ class UserLessonProgress(Base):
         DECIMAL(5, 2), nullable=True
     )
     video_progress_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # Enhanced tracking fields for optimized progress monitoring
+    content_type_consumed: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True
+    )  # "video" or "transcript"
+    transcript_progress_percentage: Mapped[Optional[Decimal]] = mapped_column(
+        DECIMAL(5, 2), nullable=True, default=Decimal("0.00")
+    )
+    time_spent_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    completion_method: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True
+    )  # "auto", "manual", "milestone"
+    milestones_reached: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True
+    )  # "25,50,75" - comma-separated milestone percentages
+    
     first_started_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
@@ -514,6 +583,20 @@ class UserModuleProgress(Base):
     total_lessons: Mapped[int] = mapped_column(Integer, nullable=False)
     completion_percentage: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
     status: Mapped[str] = mapped_column(String(20), default="not_started")
+    
+    # Mini-game (Grow Your Nest) tracking
+    minigame_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    minigame_best_score: Mapped[Optional[Decimal]] = mapped_column(
+        DECIMAL(5, 2), nullable=True
+    )
+    minigame_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    # Grow Your Nest tree (lesson + freeroam) state
+    tree_growth_points: Mapped[int] = mapped_column(Integer, default=0)
+    tree_current_stage: Mapped[int] = mapped_column(Integer, default=0)
+    tree_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    tree_completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
     first_started_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
@@ -593,6 +676,38 @@ class UserQuizAnswer(Base):
     )
 
 
+class UserModuleQuizAttempt(Base):
+    """Track user's mini-game (Grow Your Nest) attempts at module level"""
+    __tablename__ = "user_module_quiz_attempts"
+    
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=text("uuid_generate_v4()")
+    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    module_id: Mapped[UUID] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"))
+    
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False)
+    total_questions: Mapped[int] = mapped_column(Integer, nullable=False)
+    correct_answers: Mapped[int] = mapped_column(Integer, nullable=False)
+    time_taken_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Game-specific metadata (scores, levels, achievements in the game)
+    game_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    started_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now
+    )
+    completed_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now
+    )
+    
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="module_quiz_attempts")
+    module: Mapped["Module"] = relationship(back_populates="quiz_attempts")
+
+
 class UserCouponRedemption(Base):
     __tablename__ = "user_coupon_redemptions"
 
@@ -647,6 +762,117 @@ class CalculatorUsage(Base):
 
     # Relationships
     user: Mapped[Optional["User"]] = relationship(back_populates="calculator_usages")
+
+
+# ================================
+# ANALYTICS & LEAD SCORING
+# ================================
+
+
+class UserLeadScore(Base):
+    __tablename__ = "user_lead_scores"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    
+    # Component scores (0-100 scale)
+    engagement_score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    timeline_urgency_score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    help_seeking_score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    learning_velocity_score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    rewards_score: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    
+    # Composite score (0-1000 scale)
+    composite_score: Mapped[Decimal] = mapped_column(DECIMAL(6, 2), default=0.0)
+    
+    # Classifications
+    lead_temperature: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True
+    )  # hot_lead, warm_lead, cold_lead, dormant
+    intent_band: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True
+    )  # low_intent, medium_intent, high_intent, very_high_intent
+    
+    # Profile completion
+    profile_completion_pct: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), default=0.0)
+    available_signals_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_signals_count: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # Metadata
+    last_calculated_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now
+    )
+    last_activity_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default=datetime.datetime.now,
+        onupdate=datetime.datetime.now,
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="lead_score")
+
+
+class UserBehaviorEvent(Base):
+    __tablename__ = "user_behavior_events"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=text("uuid_generate_v4()")
+    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    
+    # Event details
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    event_category: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # learning, engagement, help_seeking, goal_indication, rewards
+    event_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    # Idempotency support for deduplication
+    idempotency_key: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, index=True
+    )
+    
+    # Scoring impact
+    event_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    
+    # Timestamps
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now, index=True
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="behavior_events")
+
+
+class LeadScoreHistory(Base):
+    __tablename__ = "lead_score_history"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=text("uuid_generate_v4()")
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    
+    # Snapshot data
+    snapshot_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    composite_score: Mapped[Decimal] = mapped_column(DECIMAL(6, 2), nullable=False)
+    lead_temperature: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    intent_band: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    
+    # Full metrics snapshot
+    metrics_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="lead_score_history")
 
 
 # ================================

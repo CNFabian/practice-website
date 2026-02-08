@@ -14,6 +14,17 @@ from models import (
     UserOnboarding, UserCouponRedemption
 )
 
+# Import will be used after class definitions to avoid circular imports
+_EventTracker = None
+
+def _get_event_tracker():
+    """Lazy import to avoid circular dependency"""
+    global _EventTracker
+    if _EventTracker is None:
+        from analytics.event_tracker import EventTracker
+        _EventTracker = EventTracker
+    return _EventTracker
+
 
 class NotificationManager:
     """Manages user notifications"""
@@ -123,6 +134,10 @@ class CoinManager:
         db.commit()
         db.refresh(transaction)
         
+        # Track coins earned event
+        EventTracker = _get_event_tracker()
+        EventTracker.track_coins_earned(db, user_id, amount, source_type)
+        
         # Send notification
         NotificationManager.create_notification(
             db,
@@ -169,6 +184,10 @@ class CoinManager:
         db.commit()
         db.refresh(transaction)
         
+        # Track coins spent event
+        EventTracker = _get_event_tracker()
+        EventTracker.track_coins_spent(db, user_id, amount, source_type)
+        
         # Send notification
         NotificationManager.create_notification(
             db,
@@ -214,6 +233,10 @@ class BadgeManager:
         # Get badge details for notification
         badge = db.query(Badge).filter(Badge.id == badge_id).first()
         if badge:
+            # Track badge earned event
+            EventTracker = _get_event_tracker()
+            EventTracker.track_badge_earned(db, user_id, badge_id, badge.name, badge.rarity)
+            
             NotificationManager.create_notification(
                 db,
                 user_id,
@@ -302,6 +325,7 @@ class ProgressManager:
             and_(UserModuleProgress.user_id == user_id, UserModuleProgress.module_id == module_id)
         ).first()
         
+        is_new_module = False
         if not module_progress:
             # Count total lessons in module
             total_lessons = db.query(Lesson).filter(
@@ -315,6 +339,7 @@ class ProgressManager:
                 first_started_at=datetime.now()
             )
             db.add(module_progress)
+            is_new_module = True
         
         # Count completed lessons
         completed_lessons = db.query(UserLessonProgress).join(Lesson).filter(
@@ -331,13 +356,21 @@ class ProgressManager:
             (completed_lessons / module_progress.total_lessons * 100) if module_progress.total_lessons > 0 else 0
         )
         
-        # Update status
+        # Track previous status
+        previous_status = module_progress.status if not is_new_module else "not_started"
+        
+        # Update status (FIXED: Don't mark as "completed" until mini-game is passed)
         if completed_lessons == 0:
             module_progress.status = "not_started"
         elif completed_lessons == module_progress.total_lessons:
-            module_progress.status = "completed"
-            if not module_progress.completed_at:
-                module_progress.completed_at = datetime.now()
+            # All lessons done, but module only "completed" if mini-game passed
+            if module_progress.minigame_completed:
+                module_progress.status = "completed"
+                if not module_progress.completed_at:
+                    module_progress.completed_at = datetime.now()
+            else:
+                # New status: lessons done but mini-game not passed yet
+                module_progress.status = "lessons_complete"
         else:
             module_progress.status = "in_progress"
         
@@ -345,7 +378,16 @@ class ProgressManager:
         module_progress.updated_at = datetime.now()
         
         db.commit()
-
+        
+        # Track module events
+        EventTracker = _get_event_tracker()
+        module = db.query(Module).filter(Module.id == module_id).first()
+        if module:
+            # Track module started (when first transitioning to in_progress)
+            if is_new_module and module_progress.status == "in_progress":
+                EventTracker.track_module_started(db, user_id, module_id, module.title)
+            # NOTE: Module completion event is tracked in grow_your_nest router
+            # when user passes the module quiz, preventing duplicate events
 
 class QuizManager:
     """Manages quiz scoring and results"""
@@ -488,8 +530,6 @@ class OnboardingManager:
         if not onboarding:
             onboarding = UserOnboarding(user_id=user_id)
             db.add(onboarding)
-            db.commit()
-            db.refresh(onboarding)
         return onboarding
     
     @staticmethod

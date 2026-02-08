@@ -13,13 +13,13 @@ from schemas import (
     OnboardingStep2,
     OnboardingStep3,
     OnboardingStep4,
-    OnboardingStep5,
     OnboardingComplete,
     OnboardingResponse,
     SuccessResponse,
     OnboardingStatusPayload,
 )
 from utils import OnboardingManager
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
 
@@ -36,133 +36,97 @@ def get_onboarding_status(
     )
 
     if not onboarding:
-        return {"completed": False, "step": 1, "total_steps": 5, "data": None}
+        return {"completed": False, "step": 1, "total_steps": 4, "data": None}
 
-    # Determine current step based on completed fields for new 5-step flow
+    # Determine current step based on completed fields
     step = 1
-    if onboarding.selected_avatar:
-        step = 2
     if onboarding.has_realtor is not None and onboarding.has_loan_officer is not None:
-        step = 3
+        step = 2
     if onboarding.wants_expert_contact:
-        step = 4
+        step = 3
     if onboarding.homeownership_timeline_months is not None:
-        step = 5
-    if onboarding.zipcode:
-        step = 6  # Completed
+        step = 4
+    if onboarding.target_cities and len(onboarding.target_cities) > 0:
+        step = 5  # Completed
 
     is_completed = OnboardingManager.is_onboarding_complete(db, current_user.id)
 
     return {
         "completed": is_completed,
-        "step": step if not is_completed else 6,
-        "total_steps": 5,
+        "step": step if not is_completed else 5,
+        "total_steps": 4,
         "data": {
-            "selected_avatar": onboarding.selected_avatar,
             "has_realtor": onboarding.has_realtor,
             "has_loan_officer": onboarding.has_loan_officer,
             "wants_expert_contact": onboarding.wants_expert_contact,
             "homeownership_timeline_months": onboarding.homeownership_timeline_months,
-            "zipcode": onboarding.zipcode,
+            "target_cities": onboarding.target_cities,
         },
     }
 
 
 @router.post("/step1", response_model=SuccessResponse)
-def complete_step1_avatar(
+def complete_step1_professionals(
     step_data: OnboardingStep1,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Complete step 1: Avatar selection"""
-    # Validate avatar selection
-    valid_avatars = ["avatar_1", "avatar_2", "avatar_3", "avatar_4", "avatar_5"]
-    if step_data.selected_avatar not in valid_avatars:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid avatar selection"
-        )
-
+    """Complete step 1: Realtor and loan officer status"""
     onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
 
-    onboarding.selected_avatar = step_data.selected_avatar
+    # Convert string responses to boolean
+    onboarding.has_realtor = (step_data.has_realtor == "Yes, I am")
+    onboarding.has_loan_officer = (step_data.has_loan_officer == "Yes, I am")
     onboarding.updated_at = datetime.now()
 
     db.commit()
-
-    return SuccessResponse(message="Avatar selected successfully")
-
-
-@router.post("/step2", response_model=SuccessResponse)
-def complete_step2_professionals(
-    step_data: OnboardingStep2,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Complete step 2: Realtor and loan officer status"""
-    onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
-
-    if not onboarding.selected_avatar:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please complete step 1 first",
-        )
-
-    onboarding.has_realtor = step_data.has_realtor
-    onboarding.has_loan_officer = step_data.has_loan_officer
-    onboarding.updated_at = datetime.now()
-
-    db.commit()
+    
+    # Track professional status update
+    EventTracker.track_professional_status_updated(
+        db, current_user.id, onboarding.has_realtor, onboarding.has_loan_officer
+    )
 
     return SuccessResponse(message="Professional status updated successfully")
 
 
-@router.post("/step3", response_model=SuccessResponse)
-def complete_step3_expert_contact(
-    step_data: OnboardingStep3,
+@router.post("/step2", response_model=SuccessResponse)
+def complete_step2_expert_contact(
+    step_data: OnboardingStep2,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Complete step 3: Expert contact preference"""
-    # Validate expert contact preference
-    valid_options = ["Yes", "Maybe later"]
-    if step_data.wants_expert_contact not in valid_options:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid expert contact preference",
-        )
-
+    """Complete step 2: Expert contact preference"""
     onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
 
-    if (
-        not onboarding.selected_avatar
-        or onboarding.has_realtor is None
-        or onboarding.has_loan_officer is None
-    ):
+    if onboarding.has_realtor is None or onboarding.has_loan_officer is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please complete previous steps first",
+            detail="Please complete step 1 first",
         )
 
     onboarding.wants_expert_contact = step_data.wants_expert_contact
     onboarding.updated_at = datetime.now()
 
     db.commit()
+    
+    # Track expert contact request
+    if step_data.wants_expert_contact == "Yes, I'd love to":
+        EventTracker.track_expert_contact_requested(db, current_user.id, "onboarding")
 
     return SuccessResponse(message="Expert contact preference set successfully")
 
 
-@router.post("/step4", response_model=SuccessResponse)
-def complete_step4_timeline(
-    step_data: OnboardingStep4,
+@router.post("/step3", response_model=SuccessResponse)
+def complete_step3_timeline(
+    step_data: OnboardingStep3,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Complete step 4: Homeownership timeline"""
+    """Complete step 3: Homeownership timeline"""
     onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
 
     if (
-        not onboarding.selected_avatar
-        or onboarding.has_realtor is None
+        onboarding.has_realtor is None
         or onboarding.has_loan_officer is None
         or not onboarding.wants_expert_contact
     ):
@@ -171,39 +135,29 @@ def complete_step4_timeline(
             detail="Please complete previous steps first",
         )
 
+    old_timeline = onboarding.homeownership_timeline_months
     onboarding.homeownership_timeline_months = step_data.homeownership_timeline_months
     onboarding.updated_at = datetime.now()
 
     db.commit()
+    
+    # Track timeline update
+    EventTracker.track_timeline_updated(db, current_user.id, old_timeline, step_data.homeownership_timeline_months)
 
     return SuccessResponse(message="Homeownership timeline set successfully")
 
 
-@router.post("/step5", response_model=SuccessResponse)
-def complete_step5_zipcode(
-    step_data: OnboardingStep5,
+@router.post("/step4", response_model=SuccessResponse)
+def complete_step4_cities(
+    step_data: OnboardingStep4,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Complete step 5: Future home location (zipcode)"""
-    # Additional zipcode validation for security
-    import re
-
-    zipcode_pattern = re.compile(r"^[0-9]{5}(-[0-9]{4})?$")
-    if not zipcode_pattern.match(step_data.zipcode):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid zipcode format. Please use 5-digit or 5+4 format.",
-        )
-
-    # Sanitize zipcode (remove any potential harmful characters)
-    sanitized_zipcode = re.sub(r"[^0-9-]", "", step_data.zipcode)
-
+    """Complete step 4: Target cities for future home"""
     onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
 
     if (
-        not onboarding.selected_avatar
-        or onboarding.has_realtor is None
+        onboarding.has_realtor is None
         or onboarding.has_loan_officer is None
         or not onboarding.wants_expert_contact
         or onboarding.homeownership_timeline_months is None
@@ -213,24 +167,30 @@ def complete_step5_zipcode(
             detail="Please complete previous steps first",
         )
 
-    onboarding.zipcode = sanitized_zipcode
+    onboarding.target_cities = step_data.target_cities
     onboarding.updated_at = datetime.now()
+    
+    # Track location provided
+    EventTracker.track_location_provided(db, current_user.id, ", ".join(step_data.target_cities))
 
     # Mark onboarding as complete and award welcome bonus
     completed_onboarding = OnboardingManager.complete_onboarding(db, current_user.id)
     is_completed = bool(completed_onboarding.completed_at)
-    step = 6 if is_completed else 5
+    step = 5 if is_completed else 4
+    
+    # Track onboarding completion
+    if is_completed:
+        EventTracker.track_onboarding_completed(db, current_user.id)
 
     payload = OnboardingStatusPayload(
         user_id=current_user.id,
         completed=is_completed,
         step=step,
-        selected_avatar=onboarding.selected_avatar,
         has_realtor=onboarding.has_realtor,
         has_loan_officer=onboarding.has_loan_officer,
         wants_expert_contact=onboarding.wants_expert_contact,
         homeownership_timeline_months=onboarding.homeownership_timeline_months,
-        zipcode=onboarding.zipcode,
+        target_cities=onboarding.target_cities,
         completed_at=completed_onboarding.completed_at,
     )
 
@@ -238,7 +198,7 @@ def complete_step5_zipcode(
         message=(
             "Onboarding completed successfully! Welcome bonus awarded."
             if is_completed
-            else "Step 5 saved."
+            else "Step 4 saved."
         ),
         data=payload.model_dump(mode="json"),
     )
@@ -251,41 +211,14 @@ def complete_onboarding_all_at_once(
     db: Session = Depends(get_db),
 ):
     """Complete all onboarding steps at once"""
-    # Validate all inputs for security
-    valid_avatars = ["avatar_1", "avatar_2", "avatar_3", "avatar_4", "avatar_5"]
-    if onboarding_data.selected_avatar not in valid_avatars:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid avatar selection"
-        )
-
-    valid_expert_options = ["Yes", "Maybe later"]
-    if onboarding_data.wants_expert_contact not in valid_expert_options:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid expert contact preference",
-        )
-
-    # Validate zipcode
-    import re
-
-    zipcode_pattern = re.compile(r"^[0-9]{5}(-[0-9]{4})?$")
-    if not zipcode_pattern.match(onboarding_data.zipcode):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid zipcode format. Please use 5-digit or 5+4 format.",
-        )
-
     onboarding = OnboardingManager.get_or_create_onboarding(db, current_user.id)
 
-    # Update all fields for new 5-step flow
-    onboarding.selected_avatar = onboarding_data.selected_avatar
-    onboarding.has_realtor = onboarding_data.has_realtor
-    onboarding.has_loan_officer = onboarding_data.has_loan_officer
+    # Update all fields
+    onboarding.has_realtor = (onboarding_data.has_realtor == "Yes, I am")
+    onboarding.has_loan_officer = (onboarding_data.has_loan_officer == "Yes, I am")
     onboarding.wants_expert_contact = onboarding_data.wants_expert_contact
-    onboarding.homeownership_timeline_months = (
-        onboarding_data.homeownership_timeline_months
-    )
-    onboarding.zipcode = re.sub(r"[^0-9-]", "", onboarding_data.zipcode)  # Sanitize
+    onboarding.homeownership_timeline_months = onboarding_data.homeownership_timeline_months
+    onboarding.target_cities = onboarding_data.target_cities
     onboarding.updated_at = datetime.now()
     
     # Commit the field updates first
@@ -294,18 +227,17 @@ def complete_onboarding_all_at_once(
     # Mark as complete and award welcome bonus
     completed_onboarding = OnboardingManager.complete_onboarding(db, current_user.id)
     is_completed = bool(completed_onboarding.completed_at)
-    step = 6 if is_completed else 5
+    step = 5 if is_completed else 4
 
     payload = OnboardingStatusPayload(
         user_id=current_user.id,
         completed=is_completed,
         step=step,
-        selected_avatar=onboarding.selected_avatar,
         has_realtor=onboarding.has_realtor,
         has_loan_officer=onboarding.has_loan_officer,
         wants_expert_contact=onboarding.wants_expert_contact,
         homeownership_timeline_months=onboarding.homeownership_timeline_months,
-        zipcode=onboarding.zipcode,
+        target_cities=onboarding.target_cities,
         completed_at=completed_onboarding.completed_at,
     )
 
@@ -334,12 +266,11 @@ def get_onboarding_data(
     return OnboardingResponse(
         id=onboarding.id,
         user_id=onboarding.user_id,
-        selected_avatar=onboarding.selected_avatar,
         has_realtor=onboarding.has_realtor,
         has_loan_officer=onboarding.has_loan_officer,
         wants_expert_contact=onboarding.wants_expert_contact,
         homeownership_timeline_months=onboarding.homeownership_timeline_months,
-        zipcode=onboarding.zipcode,
+        target_cities=onboarding.target_cities,
         completed_at=onboarding.completed_at,
         updated_at=onboarding.updated_at,
     )
@@ -349,36 +280,13 @@ def get_onboarding_data(
 def get_onboarding_options():
     """Get available options for onboarding steps"""
     return {
-        "avatars": [
-            {
-                "id": "avatar_1",
-                "name": "Professional",
-                "image_url": "/avatars/professional.png",
-            },
-            {"id": "avatar_2", "name": "Student", "image_url": "/avatars/student.png"},
-            {"id": "avatar_3", "name": "Family", "image_url": "/avatars/family.png"},
-            {
-                "id": "avatar_4",
-                "name": "Young Professional",
-                "image_url": "/avatars/young-professional.png",
-            },
-            {
-                "id": "avatar_5",
-                "name": "Entrepreneur",
-                "image_url": "/avatars/entrepreneur.png",
-            },
+        "professional_status_options": [
+            {"id": "Yes, I am", "label": "Yes, I am"},
+            {"id": "Not yet", "label": "Not yet"},
         ],
         "expert_contact_options": [
-            {
-                "id": "Yes",
-                "name": "Yes",
-                "description": "I would like to get in contact with an expert",
-            },
-            {
-                "id": "Maybe later",
-                "name": "Maybe later",
-                "description": "I might be interested in expert contact later",
-            },
+            {"id": "Yes, I'd love to", "label": "Yes, I'd love to"},
+            {"id": "Maybe later", "label": "Maybe later"},
         ],
         "timeline_options": [
             {"months": 3, "label": "0-3 months"},
@@ -388,8 +296,9 @@ def get_onboarding_options():
             {"months": 36, "label": "2+ years"},
             {"months": 120, "label": "Just learning for now"},
         ],
-        "zipcode_validation": {
-            "pattern": "^[0-9]{5}(-[0-9]{4})?$",
-            "description": "Enter a valid US zipcode (5 digits or 5+4 format)",
+        "cities_info": {
+            "min_cities": 1,
+            "max_cities": 10,
+            "description": "Select cities you're interested in for your future home",
         },
     }

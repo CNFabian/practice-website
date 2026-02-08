@@ -17,7 +17,22 @@ from schemas import UserResponse
 
 
 # Security configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    ENV = os.getenv("ENVIRONMENT", "development").lower()
+    if ENV in ["production", "prod"]:
+        raise ValueError(
+            "SECRET_KEY environment variable must be set in production. "
+            "Please set SECRET_KEY in your environment variables."
+        )
+    # Use a default only in development
+    SECRET_KEY = "your-secret-key-here-change-in-production"
+    import warnings
+    warnings.warn(
+        "Using default SECRET_KEY. This is insecure for production. "
+        "Please set SECRET_KEY environment variable.",
+        UserWarning
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -27,6 +42,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Token security
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 class AuthManager:
@@ -166,7 +182,7 @@ def get_current_user(
 
 
 def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get the current user if authenticated, otherwise return None"""
@@ -174,8 +190,19 @@ def get_optional_user(
         return None
     
     try:
-        return get_current_user(credentials, db)
-    except HTTPException:
+        payload = AuthManager.verify_token(credentials.credentials)
+        user_id: str = payload.get("sub")
+        token_type: str = payload.get("token_type")
+        
+        if user_id is None or token_type != "access":
+            return None
+        
+        user = AuthManager.get_user_by_id(db, UUID(user_id))
+        if user is None or not user.is_active:
+            return None
+        
+        return user
+    except (HTTPException, ValueError, JWTError):
         return None
 
 
@@ -195,6 +222,16 @@ def get_current_verified_user(current_user: User = Depends(get_current_user)) ->
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Please verify your email address"
+        )
+    return current_user
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """Get the current admin user"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
         )
     return current_user
 

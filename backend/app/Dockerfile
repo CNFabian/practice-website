@@ -27,5 +27,5 @@ ENV PATH="/usr/local/bin:$PATH"
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Define the command to run the app
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--reload"]
+# Define the command to run the app (no --reload in production)
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

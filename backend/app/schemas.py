@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # ================================
@@ -70,36 +70,32 @@ class PasswordResetConfirm(BaseModel):
 
 
 class OnboardingStep1(BaseModel):
-    """Avatar selection"""
+    """Step 1: Realtor and loan officer status"""
 
-    selected_avatar: str = Field(
-        ..., min_length=1, max_length=100, description="Avatar identifier"
+    has_realtor: str = Field(
+        ..., 
+        pattern="^(Yes, I am|Not yet)$",
+        description="Are you working with a real estate officer?"
+    )
+    has_loan_officer: str = Field(
+        ..., 
+        pattern="^(Yes, I am|Not yet)$",
+        description="Are you working with a loan officer?"
     )
 
 
 class OnboardingStep2(BaseModel):
-    """Realtor and loan officer status"""
+    """Step 2: Expert contact preference"""
 
-    has_realtor: bool = Field(
-        ..., description="Are you working with a real estate officer/agent?"
-    )
-    has_loan_officer: bool = Field(
-        ..., description="Are you working with a loan officer?"
+    wants_expert_contact: str = Field(
+        ...,
+        pattern="^(Yes, I'd love to|Maybe later)$",
+        description="Would you like to get in contact with experts?",
     )
 
 
 class OnboardingStep3(BaseModel):
-    """Expert contact preference"""
-
-    wants_expert_contact: str = Field(
-        ...,
-        pattern="^(Yes|Maybe later)$",
-        description="Would you like to get in contact with an expert?",
-    )
-
-
-class OnboardingStep4(BaseModel):
-    """Homeownership timeline"""
+    """Step 3: Homeownership timeline"""
 
     homeownership_timeline_months: int = Field(
         ...,
@@ -109,20 +105,65 @@ class OnboardingStep4(BaseModel):
     )
 
 
-class OnboardingStep5(BaseModel):
-    """Future home location"""
+class OnboardingStep4(BaseModel):
+    """Step 4: Target cities for future home"""
 
-    zipcode: str = Field(
+    target_cities: List[str] = Field(
         ...,
-        min_length=5,
+        min_length=1,
         max_length=10,
-        pattern="^[0-9]{5}(-[0-9]{4})?$",
         description="Add your zipcode",
         examples=["12345", "12345-6789"],
     )
+    
+    @validator('target_cities', each_item=True)
+    def validate_zipcode_format(cls, v):
+        import re
+        if not re.match(r'^[0-9]{5}(-[0-9]{4})?$', v):
+            raise ValueError('Invalid zipcode format. Use 12345 or 12345-6789')
+        return v
+
+class OnboardingComplete(BaseModel):
+    """Complete all onboarding steps at once"""
+    has_realtor: str
+    has_loan_officer: str
+    wants_expert_contact: str
+    homeownership_timeline_months: int
+    target_cities: List[str]
 
 
-# City Search Schemas (for Google Places API integration)
+class OnboardingResponse(BaseSchema):
+    """Onboarding data response"""
+    id: UUID
+    user_id: UUID
+    has_realtor: bool
+    has_loan_officer: bool
+    wants_expert_contact: Optional[str]
+    homeownership_timeline_months: Optional[int]
+    target_cities: Optional[List[str]]
+    completed_at: Optional[datetime]
+    updated_at: datetime
+
+
+class OnboardingStatusPayload(BaseModel):
+    """Onboarding status payload"""
+    user_id: UUID
+    completed: bool
+    step: int
+    total_steps: int = 4
+
+    has_realtor: Optional[bool] = None
+    has_loan_officer: Optional[bool] = None
+    wants_expert_contact: Optional[str] = None
+    homeownership_timeline_months: Optional[int] = None
+    target_cities: Optional[List[str]] = None
+    completed_at: Optional[datetime] = None
+    
+# ================================
+# CITY SEARCH SCHEMAS (Static Database)
+# ================================
+
+
 class CitySearchRequest(BaseModel):
     """Request model for city search"""
     query: str = Field(
@@ -180,43 +221,6 @@ class CitySearchResponse(BaseModel):
         }
 
 
-class OnboardingComplete(BaseModel):
-    selected_avatar: str
-    has_realtor: bool
-    has_loan_officer: bool
-    wants_expert_contact: str
-    homeownership_timeline_months: int
-    zipcode: str
-
-
-class OnboardingResponse(BaseSchema):
-    id: UUID
-    user_id: UUID
-    selected_avatar: Optional[str]
-    has_realtor: bool
-    has_loan_officer: bool
-    wants_expert_contact: Optional[str]
-    homeownership_timeline_months: Optional[int]
-    zipcode: Optional[str]
-    completed_at: Optional[datetime]
-    updated_at: datetime
-
-
-class OnboardingStatusPayload(BaseModel):
-    user_id: UUID
-    completed: bool
-    step: int
-    total_steps: int = 5
-
-    selected_avatar: Optional[str] = None
-    has_realtor: Optional[bool] = None
-    has_loan_officer: Optional[bool] = None
-    wants_expert_contact: Optional[str] = None
-    homeownership_timeline_months: Optional[int] = None
-    zipcode: Optional[str] = None
-    completed_at: Optional[datetime] = None
-
-
 # ================================
 # LEARNING CONTENT SCHEMAS
 # ================================
@@ -244,11 +248,34 @@ class ModuleResponse(BaseSchema):
     tree_completed: Optional[bool] = None
 
 
+class ModuleCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    order_index: int = Field(..., ge=0)
+    is_active: bool = True
+    prerequisite_module_id: Optional[UUID] = None
+    estimated_duration_minutes: Optional[int] = Field(None, ge=1)
+    difficulty_level: str = Field(default="beginner", pattern="^(beginner|intermediate|advanced)$")
+
+
+class ModuleCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    order_index: int = Field(..., ge=0)
+    is_active: bool = True
+    prerequisite_module_id: Optional[UUID] = None
+    estimated_duration_minutes: Optional[int] = Field(None, ge=1)
+    difficulty_level: str = Field(default="beginner", pattern="^(beginner|intermediate|advanced)$")
+
+
 class LessonResponse(BaseSchema):
     id: UUID
     module_id: UUID
     title: str
     description: Optional[str]
+    lesson_summary: Optional[str]
     image_url: Optional[str]
     video_url: Optional[str]
     video_transcription: Optional[str]
@@ -260,6 +287,32 @@ class LessonResponse(BaseSchema):
     is_completed: Optional[bool] = None
     progress_seconds: Optional[int] = None
     grow_your_nest_played: Optional[bool] = None
+
+
+class LessonCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    lesson_summary: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    video_transcription: Optional[str] = None
+    order_index: int = Field(..., ge=0)
+    is_active: bool = True
+    estimated_duration_minutes: Optional[int] = Field(None, ge=1)
+    nest_coins_reward: int = Field(default=0, ge=0)
+
+
+class LessonCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    lesson_summary: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    video_transcription: Optional[str] = None
+    order_index: int = Field(..., ge=0)
+    is_active: bool = True
+    estimated_duration_minutes: Optional[int] = Field(None, ge=1)
+    nest_coins_reward: int = Field(default=0, ge=0)
 
 
 class QuizQuestionResponse(BaseSchema):
@@ -283,6 +336,21 @@ class QuizQuestionWithAnswers(QuizQuestionResponse):
     answers: List[QuizAnswerResponse]
 
 
+class QuizQuestionCreate(BaseModel):
+    lesson_id: UUID
+    question_text: str = Field(..., min_length=1)
+    question_type: str = Field(default="multiple_choice", pattern="^(multiple_choice|true_false|short_answer)$")
+    explanation: Optional[str] = None
+    order_index: int = Field(..., ge=0)
+    is_active: bool = True
+
+
+class QuizAnswerCreate(BaseModel):
+    answer_text: str = Field(..., min_length=1)
+    is_correct: bool = False
+    order_index: int = Field(..., ge=0)
+
+
 class QuizSubmission(BaseModel):
     lesson_id: UUID
     answers: List[Dict[str, UUID]]  # [{"question_id": "answer_id"}]
@@ -303,6 +371,57 @@ class QuizResult(BaseModel):
 class UserProgressUpdate(BaseModel):
     lesson_id: UUID
     video_progress_seconds: int
+
+
+# ================================
+# OPTIMIZED PROGRESS TRACKING SCHEMAS
+# ================================
+
+
+class LessonMilestoneUpdate(BaseModel):
+    """Track lesson milestone reached (25%, 50%, 75%)"""
+    lesson_id: UUID
+    milestone: int = Field(..., ge=0, le=100)  # 25, 50, 75, 90
+    content_type: str = Field(..., pattern="^(video|transcript)$")
+    video_progress_seconds: Optional[int] = Field(None, ge=0)
+    transcript_progress_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
+    time_spent_seconds: int = Field(..., ge=0)
+
+
+class LessonCompletionRequest(BaseModel):
+    """Mark lesson as complete (auto or manual)"""
+    lesson_id: UUID
+    completion_method: str = Field(default="manual", pattern="^(auto|manual|milestone)$")
+    video_progress_seconds: Optional[int] = Field(None, ge=0)
+    transcript_progress_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
+    time_spent_seconds: int = Field(..., ge=0)
+    content_type: Optional[str] = Field(None, pattern="^(video|transcript)$")
+
+
+class BatchProgressItem(BaseModel):
+    """Single lesson progress item for batch update"""
+    lesson_id: UUID
+    milestone: Optional[int] = Field(None, ge=0, le=100)
+    content_type: Optional[str] = Field(None, pattern="^(video|transcript)$")
+    video_progress_seconds: Optional[int] = Field(None, ge=0)
+    transcript_progress_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
+    time_spent_seconds: int = Field(..., ge=0)
+    completed: bool = False
+
+
+class BatchProgressUpdate(BaseModel):
+    """Batch update multiple lessons in single request"""
+    items: List[BatchProgressItem] = Field(..., min_items=1, max_items=50)
+
+
+class LessonProgressResponse(BaseModel):
+    """Response after progress update"""
+    lesson_id: UUID
+    status: str
+    milestones_reached: List[int]
+    completion_percentage: Decimal
+    auto_completed: bool = False
+    message: str
 
 
 # ================================
@@ -484,6 +603,65 @@ class NotificationUpdate(BaseModel):
 
 
 # ================================
+# MINI-GAME (GROW YOUR NEST) SCHEMAS
+# ================================
+
+
+class MiniGameQuestion(BaseModel):
+    """Single question for mini-game"""
+    id: str
+    lesson_id: str
+    lesson_title: str
+    question_text: str
+    question_type: str
+    order_index: int
+    answers: List[Dict[str, Any]]  # [{"id": "uuid", "answer_text": "...", "order_index": 0}]
+
+
+class MiniGameQuestionsResponse(BaseModel):
+    """Response with all questions for the module mini-game"""
+    module: Dict[str, Any]  # Module info
+    total_lessons: int
+    completed_lessons: int
+    total_questions: int
+    questions: List[MiniGameQuestion]  # Flat list of all questions from all lessons
+    user_status: Dict[str, Any]  # User's progress and attempt history
+
+
+class MiniGameSubmission(BaseModel):
+    """Submit mini-game answers"""
+    module_id: UUID
+    answers: List[Dict[str, UUID]]  # [{"question_id": "answer_id"}]
+    time_taken_seconds: Optional[int] = None
+    game_data: Optional[Dict[str, Any]] = None  # Store game-specific data (score, level, etc.)
+
+
+class MiniGameResult(BaseModel):
+    """Mini-game results"""
+    attempt_id: UUID
+    module_id: UUID
+    module_title: str
+    score: Decimal
+    total_questions: int
+    correct_answers: int
+    passed: bool
+    coins_earned: int
+    badges_earned: List[str]
+    time_taken_seconds: Optional[int]
+    attempt_number: int
+    module_completed: bool  # Whether this attempt completed the module
+
+
+class MiniGameAttemptHistory(BaseModel):
+    """Previous attempt summary"""
+    id: UUID
+    attempt_number: int
+    score: Decimal
+    passed: bool
+    completed_at: datetime
+
+
+# ================================
 # COMMON RESPONSE SCHEMAS
 # ================================
 
@@ -535,3 +713,117 @@ class ProfileUpdate(BaseModel):
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None  # YYYY-MM-DD format
     profile_picture_url: Optional[str] = None
+
+
+# ================================
+# ANALYTICS SCHEMAS
+# ================================
+
+
+class LeadScoreResponse(BaseSchema):
+    """Lead score details"""
+    user_id: UUID
+    engagement_score: float
+    timeline_urgency_score: float
+    help_seeking_score: float
+    learning_velocity_score: float
+    rewards_score: float
+    composite_score: float
+    lead_temperature: Optional[str]
+    intent_band: Optional[str]
+    profile_completion_pct: float
+    available_signals_count: int
+    total_signals_count: int
+    last_calculated_at: datetime
+    last_activity_at: Optional[datetime]
+
+
+class LeadSummary(BaseModel):
+    """Simplified lead summary for list views"""
+    user_id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    composite_score: float
+    lead_temperature: Optional[str]
+    temperature_label: Optional[str]
+    intent_band: Optional[str]
+    intent_label: Optional[str]
+    profile_completion_pct: float
+    last_activity_at: Optional[datetime]
+    created_at: datetime
+
+
+class LeadDetailResponse(BaseModel):
+    """Detailed lead information with user data and scores"""
+    user_id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    phone: Optional[str]
+    created_at: datetime
+    last_login_at: Optional[datetime]
+    
+    # Scores
+    scores: LeadScoreResponse
+    
+    # Classification
+    temperature: Optional[str]
+    temperature_label: Optional[str]
+    intent_band: Optional[str]
+    intent_label: Optional[str]
+    classification_reasoning: Optional[str]
+    
+    # Recommended actions
+    recommended_actions: Optional[Dict[str, Any]]
+    
+    # Onboarding data
+    onboarding_data: Optional[Dict[str, Any]]
+
+
+class LeadScoreHistoryResponse(BaseModel):
+    """Historical lead score snapshot"""
+    snapshot_date: str
+    composite_score: float
+    lead_temperature: Optional[str]
+    intent_band: Optional[str]
+    metrics: Optional[Dict[str, Any]]
+
+
+class AnalyticsInsightsResponse(BaseModel):
+    """Aggregate analytics insights"""
+    total_leads: int
+    temperature_distribution: Dict[str, Any]
+    intent_distribution: Dict[str, Any]
+    average_composite_score: float
+    average_profile_completion: float
+    high_priority_leads: int
+    actionable_leads: int
+
+
+class UserProgressResponse(BaseModel):
+    """User's own progress metrics (non-sensitive)"""
+    user_id: UUID
+    engagement_level: str  # Low, Medium, High
+    progress_percentage: float
+    lessons_completed: int
+    modules_completed: int
+    badges_earned: int
+    coins_balance: int
+    recent_achievements: List[str]
+
+
+class RecalculationRequest(BaseModel):
+    """Request to recalculate scores"""
+    user_ids: Optional[List[UUID]] = None  # None = all users
+    force: bool = False  # Force recalculation even if recent
+
+
+class RecalculationResponse(BaseModel):
+    """Response from recalculation operation"""
+    success: bool
+    message: str
+    total_users: int
+    successful: int
+    failed: int
+    execution_time_seconds: float

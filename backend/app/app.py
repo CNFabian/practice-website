@@ -7,6 +7,9 @@ from mangum import Mangum
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from admin import setup_admin
 import logging
 import os
@@ -14,10 +17,11 @@ import os
 from database import get_db, engine
 from models import Base
 from routers import (
-    auth, onboarding, dashboard, learning, 
-    quiz, rewards, materials, help_support, notifications, grow_your_nest,
-    cities
+    auth, onboarding, dashboard, learning,
+    quiz, rewards, materials, help_support, notifications,
+    analytics, grow_your_nest, cities, minigame
 )
+from analytics.scheduler import start_scheduler, stop_scheduler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -78,7 +82,8 @@ else:
         "localhost",
         "127.0.0.1",
         "0.0.0.0",
-        "host.docker.internal"
+        "host.docker.internal",
+        "testserver",  # Starlette/httpx TestClient default host
     ]
     app.add_middleware(
         TrustedHostMiddleware, 
@@ -113,9 +118,38 @@ app.add_middleware(
     https_only=(ENVIRONMENT == "production"),
 )
 
+# Rate Limiting Configuration
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+logger.info("Rate limiting enabled for high-volume endpoints")
 
 # Setup admin interface
 setup_admin(app)
+
+# Startup event: Initialize scheduler
+@app.on_event("startup")
+async def startup_event():
+    """Initialize background scheduler on application startup"""
+    try:
+        logger.info("Starting analytics scheduler...")
+        # Use APScheduler for development, Celery for production
+        use_apscheduler = os.getenv("USE_APSCHEDULER", "true").lower() == "true"
+        start_scheduler(use_apscheduler=use_apscheduler)
+        logger.info("Analytics scheduler started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}", exc_info=True)
+
+# Shutdown event: Stop scheduler gracefully
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop scheduler on application shutdown"""
+    try:
+        logger.info("Stopping analytics scheduler...")
+        stop_scheduler()
+        logger.info("Analytics scheduler stopped")
+    except Exception as e:
+        logger.error(f"Error stopping scheduler: {e}", exc_info=True)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
@@ -123,12 +157,22 @@ app.include_router(onboarding.router, prefix="/api/onboarding", tags=["Onboardin
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(learning.router, prefix="/api/learning", tags=["Learning"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["Quiz"])
+app.include_router(minigame.router, prefix="/api/minigame", tags=["Mini-Game"])
 app.include_router(rewards.router, prefix="/api/rewards", tags=["Rewards"])
 app.include_router(materials.router, prefix="/api/materials", tags=["Materials"])
 app.include_router(help_support.router, prefix="/api/help", tags=["Help & Support"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(grow_your_nest.router, prefix="/api/grow-your-nest", tags=["Grow Your Nest"])
 app.include_router(cities.router, prefix="/api/v1/cities", tags=["Cities"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
+# Single route for Grow Your Nest
+API_ROUTE_GROW_YOUR_NEST = "grow-your-nest"
+ROUTE_TAG_GROW_YOUR_NEST = "Grow Your Nest"
+app.include_router(
+    grow_your_nest.router,
+    prefix=f"/api/{API_ROUTE_GROW_YOUR_NEST}",
+    tags=[ROUTE_TAG_GROW_YOUR_NEST],
+)
 
 @app.get("/")
 def read_root():

@@ -8,17 +8,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc
 
 from database import get_db
-from auth import get_current_user
+from auth import get_current_user, get_current_admin_user
 from models import (
     User, Lesson, UserLessonProgress, QuizQuestion, QuizAnswer,
-    UserQuizAttempt, UserQuizAnswer
+    UserQuizAttempt, UserQuizAnswer, UserCoinTransaction
 )
 from schemas import (
-    QuizSubmission, QuizResult, SuccessResponse
+    QuizSubmission, QuizResult, SuccessResponse, QuizQuestionCreate,
+    QuizAnswerCreate, QuizQuestionResponse, QuizAnswerResponse
 )
 from utils import (
     QuizManager, CoinManager, BadgeManager, ProgressManager, NotificationManager
 )
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
 
@@ -40,20 +42,28 @@ def submit_quiz(
             detail="Lesson not found"
         )
     
-    # Check if lesson is completed (video watched)
+    # NOTE: Gate removed - users can take quiz anytime
+    # This endpoint is kept for backward compatibility
+    # New flow uses mini-game endpoint for module-level quiz
+    
+    # Get or create lesson progress
     lesson_progress = db.query(UserLessonProgress).filter(
         and_(
             UserLessonProgress.user_id == current_user.id,
-            UserLessonProgress.lesson_id == quiz_data.lesson_id,
-            UserLessonProgress.status == "completed"
+            UserLessonProgress.lesson_id == quiz_data.lesson_id
         )
     ).first()
     
     if not lesson_progress:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please complete the lesson video first"
+        # Create progress record if it doesn't exist
+        lesson_progress = UserLessonProgress(
+            user_id=current_user.id,
+            lesson_id=quiz_data.lesson_id,
+            status="in_progress"
         )
+        db.add(lesson_progress)
+        db.commit()
+        db.refresh(lesson_progress)
     
     # Get quiz questions
     questions = db.query(QuizQuestion).filter(
@@ -173,6 +183,14 @@ def submit_quiz(
     db.add(quiz_attempt)
     db.commit()
     db.refresh(quiz_attempt)
+    
+    # Track quiz attempt event
+    EventTracker.track_quiz_attempted(db, current_user.id, quiz_data.lesson_id, attempt_number)
+    
+    # Track quiz result event
+    EventTracker.track_quiz_result(
+        db, current_user.id, quiz_data.lesson_id, float(score), passed, attempt_number
+    )
     
     # Save individual answers
     for answer_data in quiz_answers:
@@ -481,3 +499,104 @@ def get_quiz_leaderboard(
         ],
         "current_user_rank": user_rank
     }
+
+
+@router.post("/questions", response_model=QuizQuestionResponse, status_code=status.HTTP_201_CREATED)
+def create_quiz_question(
+    question_data: QuizQuestionCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new quiz question (admin only)"""
+    try:
+        # Validate lesson exists
+        lesson = db.query(Lesson).filter(
+            and_(Lesson.id == question_data.lesson_id, Lesson.is_active == True)
+        ).first()
+        
+        if not lesson:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found"
+            )
+        
+        # Create question
+        question = QuizQuestion(
+            lesson_id=question_data.lesson_id,
+            question_text=question_data.question_text,
+            question_type=question_data.question_type,
+            explanation=question_data.explanation,
+            order_index=question_data.order_index,
+            is_active=question_data.is_active,
+        )
+        
+        db.add(question)
+        db.commit()
+        db.refresh(question)
+        
+        return QuizQuestionResponse(
+            id=question.id,
+            lesson_id=question.lesson_id,
+            question_text=question.question_text,
+            question_type=question.question_type,
+            explanation=question.explanation,
+            order_index=question.order_index,
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create quiz question: {type(e).__name__}: {e}"
+        )
+
+
+@router.post("/questions/{question_id}/answers", response_model=List[QuizAnswerResponse], status_code=status.HTTP_201_CREATED)
+def create_quiz_answer(
+    question_id: UUID,
+    answer_data: QuizAnswerCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new answer for a quiz question (admin only)"""
+    try:
+        # Validate question exists
+        question = db.query(QuizQuestion).filter(
+            and_(QuizQuestion.id == question_id, QuizQuestion.is_active == True)
+        ).first()
+        
+        if not question:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quiz question not found"
+            )
+        
+        # Create answer
+        answer = QuizAnswer(
+            question_id=question_id,
+            answer_text=answer_data.answer_text,
+            is_correct=answer_data.is_correct,
+            order_index=answer_data.order_index,
+        )
+        
+        db.add(answer)
+        db.commit()
+        db.refresh(answer)
+        
+        return [QuizAnswerResponse(
+            id=answer.id,
+            question_id=answer.question_id,
+            answer_text=answer.answer_text,
+            order_index=answer.order_index,
+        )]
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create quiz answer: {type(e).__name__}: {e}"
+        )

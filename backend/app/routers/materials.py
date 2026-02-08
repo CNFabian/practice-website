@@ -14,6 +14,7 @@ from models import (
 from schemas import (
     MaterialResourceResponse, CalculatorInput, CalculatorResult, SuccessResponse
 )
+from analytics.event_tracker import EventTracker
 
 router = APIRouter()
 
@@ -126,6 +127,12 @@ def download_material(
     material.download_count += 1
     
     db.commit()
+    
+    # Track material download event (only if user is logged in)
+    if current_user:
+        EventTracker.track_material_downloaded(
+            db, current_user.id, material.id, material.title, material.resource_type
+        )
     
     download_url = material.file_url if material.file_url else material.external_url
     
@@ -247,6 +254,10 @@ def calculate(
     
     db.add(usage_record)
     db.commit()
+    
+    # Track calculator usage event (only if user is logged in)
+    if current_user:
+        EventTracker.track_calculator_used(db, current_user.id, calculator_type, input_data)
     
     return CalculatorResult(
         calculator_type=calculator_type,

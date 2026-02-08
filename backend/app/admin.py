@@ -2,7 +2,10 @@ from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
-from models import Module, Lesson, QuizQuestion, QuizAnswer, RewardCoupon, Badge, User
+from models import (
+    Module, Lesson, QuizQuestion, QuizAnswer, RewardCoupon, Badge, User,
+    UserLeadScore, UserBehaviorEvent, LeadScoreHistory
+)
 from database import engine
 from auth import AuthManager
 import os
@@ -221,9 +224,189 @@ class UserAdmin(ModelView, model=User):
     icon = "fa-solid fa-users"
 
 
+# ================================
+# ANALYTICS ADMIN VIEWS
+# ================================
+
+
+class LeadScoreAdmin(ModelView, model=UserLeadScore):
+    """Admin view for lead scores"""
+    column_list = [
+        "user",
+        UserLeadScore.composite_score,
+        UserLeadScore.lead_temperature,
+        UserLeadScore.intent_band,
+        UserLeadScore.profile_completion_pct,
+        UserLeadScore.engagement_score,
+        UserLeadScore.timeline_urgency_score,
+        UserLeadScore.help_seeking_score,
+        UserLeadScore.last_calculated_at
+    ]
+    
+    column_searchable_list = []  # Can't search by user directly in SQLAdmin easily
+    column_sortable_list = [
+        UserLeadScore.composite_score,
+        UserLeadScore.profile_completion_pct,
+        UserLeadScore.last_calculated_at
+    ]
+    column_default_sort = [(UserLeadScore.composite_score, True)]  # Descending
+    
+    column_formatters = {
+        UserLeadScore.composite_score: lambda m, a: f"{float(m.composite_score):.2f}",
+        UserLeadScore.profile_completion_pct: lambda m, a: f"{float(m.profile_completion_pct):.1f}%",
+        UserLeadScore.engagement_score: lambda m, a: f"{float(m.engagement_score):.1f}",
+        UserLeadScore.timeline_urgency_score: lambda m, a: f"{float(m.timeline_urgency_score):.1f}",
+        UserLeadScore.help_seeking_score: lambda m, a: f"{float(m.help_seeking_score):.1f}",
+        UserLeadScore.lead_temperature: lambda m, a: {
+            "hot_lead": "🔥 Hot",
+            "warm_lead": "🌡️ Warm",
+            "cold_lead": "❄️ Cold",
+            "dormant": "💤 Dormant"
+        }.get(m.lead_temperature, m.lead_temperature),
+        UserLeadScore.intent_band: lambda m, a: {
+            "very_high_intent": "🚀 Very High",
+            "high_intent": "⬆️ High",
+            "medium_intent": "➡️ Medium",
+            "low_intent": "⬇️ Low"
+        }.get(m.intent_band, m.intent_band)
+    }
+    
+    column_labels = {
+        "user": "User",
+        "composite_score": "Score",
+        "lead_temperature": "Temperature",
+        "intent_band": "Intent",
+        "profile_completion_pct": "Profile %",
+        "engagement_score": "Engagement",
+        "timeline_urgency_score": "Urgency",
+        "help_seeking_score": "Help-Seeking",
+        "learning_velocity_score": "Velocity",
+        "rewards_score": "Rewards",
+        "available_signals_count": "Available Signals",
+        "total_signals_count": "Total Signals",
+        "last_calculated_at": "Last Calculated",
+        "last_activity_at": "Last Activity"
+    }
+    
+    can_create = False  # Scores are auto-calculated, not manually created
+    can_delete = False  # Don't allow deletion
+    can_edit = False  # Read-only view
+    
+    name = "Lead Score"
+    name_plural = "Lead Scores"
+    icon = "fa-solid fa-chart-line"
+
+
+class BehaviorEventAdmin(ModelView, model=UserBehaviorEvent):
+    """Admin view for behavior events"""
+    column_list = [
+        UserBehaviorEvent.id,
+        "user",
+        UserBehaviorEvent.event_type,
+        UserBehaviorEvent.event_category,
+        UserBehaviorEvent.event_weight,
+        UserBehaviorEvent.created_at
+    ]
+    
+    column_sortable_list = [UserBehaviorEvent.created_at, UserBehaviorEvent.event_weight]
+    column_default_sort = [(UserBehaviorEvent.created_at, True)]  # Descending
+    
+    # Use searchable list instead of filters for string columns to avoid SQLAdmin issues
+    column_searchable_list = [UserBehaviorEvent.event_type]
+    
+    column_formatters = {
+        UserBehaviorEvent.event_weight: lambda m, a: f"{m.event_weight:.1f}" if m.event_weight else "N/A",
+        UserBehaviorEvent.event_category: lambda m, a: {
+            "learning": "📚 Learning",
+            "engagement": "⚡ Engagement",
+            "help_seeking": "🆘 Help-Seeking",
+            "goal_indication": "🎯 Goal",
+            "rewards": "🎁 Rewards"
+        }.get(m.event_category, m.event_category)
+    }
+    
+    column_labels = {
+        "user": "User",
+        "event_type": "Event Type",
+        "event_category": "Category",
+        "event_data": "Metadata",
+        "event_weight": "Weight",
+        "created_at": "Timestamp"
+    }
+    
+    can_create = False  # Events are auto-logged
+    can_delete = True   # Allow deletion for cleanup
+    can_edit = False    # Read-only
+    
+    name = "Behavior Event"
+    name_plural = "Behavior Events"
+    icon = "fa-solid fa-stream"
+
+
+class LeadScoreHistoryAdmin(ModelView, model=LeadScoreHistory):
+    """Admin view for lead score history"""
+    column_list = [
+        LeadScoreHistory.id,
+        "user",
+        LeadScoreHistory.snapshot_date,
+        LeadScoreHistory.composite_score,
+        LeadScoreHistory.lead_temperature,
+        LeadScoreHistory.intent_band,
+        LeadScoreHistory.created_at
+    ]
+    
+    column_sortable_list = [
+        LeadScoreHistory.snapshot_date,
+        LeadScoreHistory.composite_score,
+        LeadScoreHistory.created_at
+    ]
+    column_default_sort = [(LeadScoreHistory.snapshot_date, True)]  # Descending
+    
+    column_formatters = {
+        LeadScoreHistory.composite_score: lambda m, a: f"{float(m.composite_score):.2f}",
+        LeadScoreHistory.lead_temperature: lambda m, a: {
+            "hot_lead": "🔥 Hot",
+            "warm_lead": "🌡️ Warm",
+            "cold_lead": "❄️ Cold",
+            "dormant": "💤 Dormant"
+        }.get(m.lead_temperature, m.lead_temperature) if m.lead_temperature else "N/A",
+        LeadScoreHistory.intent_band: lambda m, a: {
+            "very_high_intent": "🚀 Very High",
+            "high_intent": "⬆️ High",
+            "medium_intent": "➡️ Medium",
+            "low_intent": "⬇️ Low"
+        }.get(m.intent_band, m.intent_band) if m.intent_band else "N/A"
+    }
+    
+    column_labels = {
+        "user": "User",
+        "snapshot_date": "Date",
+        "composite_score": "Score",
+        "lead_temperature": "Temperature",
+        "intent_band": "Intent",
+        "metrics_json": "Metrics",
+        "created_at": "Created"
+    }
+    
+    can_create = False  # Snapshots are auto-created
+    can_delete = True   # Allow deletion for cleanup
+    can_edit = False    # Read-only
+    
+    name = "Lead Score History"
+    name_plural = "Lead Score History"
+    icon = "fa-solid fa-history"
+
+
 def setup_admin(app):
     """Setup admin interface"""
-    authentication_backend = AdminAuth(secret_key=os.getenv("SECRET_KEY", "your-secret-key-change-this"))
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        raise ValueError(
+            "SECRET_KEY environment variable must be set for admin authentication. "
+            "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
+    
+    authentication_backend = AdminAuth(secret_key=secret_key)
     
     admin = Admin(
         app,
@@ -233,7 +416,7 @@ def setup_admin(app):
         base_url="/admin"
     )
     
-    # Register all admin views
+    # Register content management views
     admin.add_view(ModuleAdmin)
     admin.add_view(LessonAdmin)
     admin.add_view(QuizQuestionAdmin)
@@ -241,5 +424,10 @@ def setup_admin(app):
     admin.add_view(RewardCouponAdmin)
     admin.add_view(BadgeAdmin)
     admin.add_view(UserAdmin)
+    
+    # Register analytics views
+    admin.add_view(LeadScoreAdmin)
+    admin.add_view(BehaviorEventAdmin)
+    admin.add_view(LeadScoreHistoryAdmin)
     
     return admin
