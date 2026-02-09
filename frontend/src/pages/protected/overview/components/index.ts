@@ -3,3 +3,6 @@ export { default as WelcomeCard } from './WelcomeCard';
 export { default as LessonCard } from './LessonCard';
 export { default as LeaderboardCard } from './LeaderboardCard';
 export { default as SupportCard } from './SupportCard';
+export { default as StatisticsSummary } from './StatisticsSummary';
+export { default as RecentActivityFeed } from './RecentActivityFeed';
+export { default as ProgressRing } from './ProgressRing';

@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { RewardsHeader, RewardsNavigation, RewardCard } from './components';
 import { NavigationButton } from './types/rewards.types';
 import { type Coupon } from '../../../services';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useRedeemCoupon } from '../../../hooks/mutations/useRedeemCoupon';
 import { useCoupons, useMyRedemptions } from '../../../hooks/queries/useRewardsQueries';
+import {
+  RewardsHeader,
+  RewardsNavigation,
+  RewardCard,
+  CategoryFilter,
+  CoinTransactionHistory,
+} from "./components";
 
 // Fallback mock data for when API is empty or fails
 const FALLBACK_COUPONS: Coupon[] = [
@@ -78,17 +84,20 @@ const FALLBACK_COUPONS: Coupon[] = [
 const RewardsPage: React.FC = () => {
   
   useEffect(() => {
-  const bgElement = document.getElementById('section-background');
-  if (bgElement) {
-    bgElement.className = 'bg-light-background-blue';
-    bgElement.style.backgroundSize = 'cover';
-  }
-}, []);
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.className = 'bg-light-background-blue';
+      bgElement.style.backgroundSize = 'cover';
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState('browse');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const { data: coinBalanceData, isLoading: coinsLoading } = useCoinBalance();
-  const { data: couponsData, isLoading: couponsLoading } = useCoupons();
+  const { data: couponsData, isLoading: couponsLoading } = useCoupons(
+    selectedCategory ? { category: selectedCategory } : undefined
+  );
   const { data: redemptionHistory = [], isLoading: redemptionsLoading, refetch: refetchRedemptions } = useMyRedemptions();
   const { mutate: redeemCoupon, isPending: isRedeeming } = useRedeemCoupon();
 
@@ -106,6 +115,11 @@ const RewardsPage: React.FC = () => {
       label: 'Purchase History',
       isActive: activeTab === 'history',
       onClick: () => setActiveTab('history')
+    },
+    {
+      label: 'Coin History',
+      isActive: activeTab === 'transactions',
+      onClick: () => setActiveTab('transactions')
     }
   ];
 
@@ -166,14 +180,20 @@ const RewardsPage: React.FC = () => {
       <RewardsNavigation buttons={navigationButtons} />
 
       {activeTab === 'browse' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
-          {coupons.map((coupon) => (
-            <RewardCard
-              key={coupon.id}
-              coupon={coupon}
-              onClick={() => handleRewardClick(coupon)}
-            />
-          ))}
+        <div className="max-w-7xl mx-auto mb-8">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {coupons.map((coupon) => (
+              <RewardCard
+                key={coupon.id}
+                coupon={coupon}
+                onClick={() => handleRewardClick(coupon)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -224,6 +244,12 @@ const RewardsPage: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'transactions' && (
+        <div className="max-w-7xl mx-auto">
+          <CoinTransactionHistory />
         </div>
       )}
     </div>

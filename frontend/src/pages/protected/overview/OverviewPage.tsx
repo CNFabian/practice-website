@@ -10,6 +10,9 @@ import {
   LessonCard,
   LeaderboardCard,
   SupportCard,
+  StatisticsSummary,
+  RecentActivityFeed,
+  ProgressRing,
 } from "./components";
 import {
   Task,
@@ -350,6 +353,12 @@ const OverviewPage: React.FC = () => {
                 isExpanded={isWelcomeExpanded}
                 onToggleExpand={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
               />
+              
+                {/* Progress Ring */}
+                <ProgressRing />
+
+                {/* Statistics Summary */}
+                <StatisticsSummary />
 
               {/* Continue Lesson Section */}
               {continueLesson && (
@@ -471,6 +480,9 @@ const OverviewPage: React.FC = () => {
                 entries={leaderboard}
                 onMenuClick={handleLeaderboardMenu}
               />
+
+              {/* Recent Activity */}
+              <RecentActivityFeed />
 
               <div className="flex flex-col gap-4">
                 {supportCards.map((card) => (
