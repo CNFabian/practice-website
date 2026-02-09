@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Disclosure, Transition } from '@headlessui/react';
 import { 
@@ -26,11 +27,14 @@ const Sidebar: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
   const { startWalkthrough, isWalkthroughActive } = useWalkthrough();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.unread_count ?? 0;
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app/overview', icon: HomeIcon },
     { id: 'modules', label: 'Modules', path: '/app', icon: ModuleIcon },
     { id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon },
     { id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon },
+    { id: 'notifications', label: 'Notifications', path: '/app/notifications', icon: GetHelpIcon },
   ];
 
   const materialSubItems = [
@@ -117,7 +121,14 @@ const Sidebar: React.FC = () => {
                 `}
               >
                 {/* Icon */}
-                <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
+                <div className="relative flex-shrink-0">
+                  <img src={item.icon} alt={item.label} className="w-5 h-5" />
+                  {item.id === 'notifications' && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-status-red text-pure-white text-[10px] font-semibold rounded-full min-w-[16px] h-[16px] flex items-center justify-center leading-none px-0.5">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
                 <OnestFont 
                   weight={500}
                   lineHeight="relaxed"

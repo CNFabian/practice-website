@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { OnestFont } from "../../../../assets";
 import { useRecentActivity } from "../../../../hooks/queries/useRecentActivity";
 
@@ -91,8 +91,11 @@ const EmptyState: React.FC = () => (
 // Component
 // ────────────────────────────────────────────────────────
 
+const COLLAPSED_COUNT = 5;
+
 const RecentActivityFeed: React.FC = () => {
-  const { data, isLoading } = useRecentActivity(8);
+  const [expanded, setExpanded] = useState(false);
+  const { data, isLoading } = useRecentActivity(expanded ? 20 : 8);
 
   if (isLoading) return <SkeletonFeed />;
 
@@ -117,7 +120,7 @@ const RecentActivityFeed: React.FC = () => {
           {/* Timeline line */}
           <div className="absolute left-[15px] top-0 bottom-0 border-l-2 border-light-background-blue" />
 
-          {activities.map((item, idx) => {
+          {(expanded ? activities : activities.slice(0, COLLAPSED_COUNT)).map((item, idx) => {
             const style = getStyle(item.activity_type);
             const coinsEarned = item.metadata?.coins_earned;
 
@@ -167,6 +170,21 @@ const RecentActivityFeed: React.FC = () => {
               </div>
             );
           })}
+       </div>
+      )}
+
+      {/* View All / Show Less toggle */}
+      {activities.length > COLLAPSED_COUNT && (
+        <div className="mt-3 text-center">
+          <OnestFont
+            as="span"
+            weight={500}
+            lineHeight="relaxed"
+            className="text-logo-blue text-sm cursor-pointer hover:opacity-80"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? 'Show Less' : `View All (${activities.length})`}
+          </OnestFont>
         </div>
       )}
     </div>

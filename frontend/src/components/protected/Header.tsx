@@ -7,6 +7,7 @@ import { logout } from '../../store/slices/authSlice';
 import { logoutUser } from '../../services/authAPI';
 import { useCoinSystem } from '../../hooks/useCoinSystem';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
+import { useMyProgress } from '../../hooks/queries/useMyProgress';
 import { 
   Logo, 
   CoinIcon, 
@@ -24,6 +25,7 @@ const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { data: progressData } = useMyProgress();
 
   // Use the new frontend coin system instead of backend
   const { currentBalance, isAnimating } = useCoinSystem();
@@ -113,6 +115,34 @@ const Header: React.FC = () => {
               isAnimating ? 'rotate-12' : ''
             }`} />
           </div>
+
+          {/* Engagement Level Badge */}
+          {progressData?.engagement_level && (
+            <div
+              className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${
+                progressData.engagement_level === 'High'
+                  ? 'bg-status-green/10 text-status-green'
+                  : progressData.engagement_level === 'Medium'
+                  ? 'bg-status-yellow/10 text-status-yellow'
+                  : 'bg-logo-blue/10 text-logo-blue'
+              }`}
+            >
+              <span>
+                {progressData.engagement_level === 'High'
+                  ? '🔥'
+                  : progressData.engagement_level === 'Medium'
+                  ? '⚡'
+                  : '🌱'}
+              </span>
+              <span className="font-medium">
+                {progressData.engagement_level === 'High'
+                  ? 'High'
+                  : progressData.engagement_level === 'Medium'
+                  ? 'Momentum'
+                  : 'Growing'}
+              </span>
+            </div>
+          )}
 
           {/* Notification Bell with Headless UI Dropdown */}
           <Menu as="div" className="relative">

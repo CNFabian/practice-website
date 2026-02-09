@@ -3,6 +3,7 @@ import { NavigationButton } from './types/rewards.types';
 import { type Coupon } from '../../../services';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useRedeemCoupon } from '../../../hooks/mutations/useRedeemCoupon';
+import { useMarkRedemptionUsed } from '../../../hooks/mutations/useMarkRedemptionUsed';
 import { useCoupons, useMyRedemptions } from '../../../hooks/queries/useRewardsQueries';
 import {
   RewardsHeader,
@@ -10,6 +11,7 @@ import {
   RewardCard,
   CategoryFilter,
   CoinTransactionHistory,
+  RewardStatsSummary,
 } from "./components";
 
 // Fallback mock data for when API is empty or fails
@@ -100,7 +102,7 @@ const RewardsPage: React.FC = () => {
   );
   const { data: redemptionHistory = [], isLoading: redemptionsLoading, refetch: refetchRedemptions } = useMyRedemptions();
   const { mutate: redeemCoupon, isPending: isRedeeming } = useRedeemCoupon();
-
+  const { mutate: markUsed, isPending: isMarkingUsed } = useMarkRedemptionUsed();
   const coinBalance = coinBalanceData?.current_balance || 50;
   const coupons = couponsData && couponsData.length > 0 ? couponsData : FALLBACK_COUPONS;
   const loading = (activeTab === 'browse' && couponsLoading) || (activeTab === 'history' && redemptionsLoading) || coinsLoading;
@@ -176,7 +178,11 @@ const RewardsPage: React.FC = () => {
           </div>
         </div>
       )}
+
       <RewardsHeader coinBalance={coinBalance} />
+        <div className="max-w-7xl mx-auto">
+          <RewardStatsSummary />
+        </div>
       <RewardsNavigation buttons={navigationButtons} />
 
       {activeTab === 'browse' && (
@@ -229,10 +235,23 @@ const RewardsPage: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-logo-blue">{redemption.coins_spent} coins</p>
-                      {redemption.is_active ? (
-                        <span className="inline-block mt-2 px-3 py-1 bg-status-green/10 text-status-green rounded-full text-xs">
-                          Active
-                        </span>
+                     {redemption.is_active ? (
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="inline-block px-3 py-1 bg-status-green/10 text-status-green rounded-full text-xs">
+                            Active
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Mark this coupon as used? This cannot be undone.')) {
+                                markUsed(redemption.id);
+                              }
+                            }}
+                            disabled={isMarkingUsed}
+                            className="px-3 py-1 bg-logo-blue text-pure-white rounded-lg text-xs hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            {isMarkingUsed ? 'Marking...' : 'Mark as Used'}
+                          </button>
+                        </div>
                       ) : (
                         <span className="inline-block mt-2 px-3 py-1 bg-light-background-blue text-text-grey rounded-full text-xs">
                           Used

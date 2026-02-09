@@ -60,6 +60,12 @@ export const useRedeemCoupon = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.rewards.redemptions(),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.transactions(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.rewards.statistics(),
+      });
     },
   });
 };
