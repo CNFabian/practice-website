@@ -11,3 +11,4 @@ export * from './notificationsAPI';
 export * from './growYourNestAPI';  
 export * from './onBoardingAPI';
 export * from './minigameAPI';
+export * from './analyticsAPI';

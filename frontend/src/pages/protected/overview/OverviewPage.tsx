@@ -21,6 +21,8 @@ import { Icons, Images } from './images';
 import { useCoinBalance } from "../../../hooks/queries/useCoinBalance";
 import { useDashboardOverview } from "../../../hooks/queries/useDashboardOverview";
 import { useDashboardModules } from "../../../hooks/queries/useDashboardModules";
+import { useQuizLeaderboard } from "../../../hooks/queries/useQuizLeaderboard";
+import type { QuizLeaderboardEntry } from "../../../hooks/queries/useQuizLeaderboard";
 
 // Helper functions to transform API data to UI types
 const transformAchievementsToTasks = (achievements: string[]): Task[] => {
@@ -89,14 +91,23 @@ const transformModuleToLesson = (moduleProgress: any): Lesson => {
   };
 };
 
-const generateMockLeaderboard = (): LeaderboardEntry[] => {
-  return [
-    { id: '1', name: 'Alex Johnson', avatar: Icons.GenericAvatar, coins: 1250, rank: 1 },
-    { id: '2', name: 'Sarah Chen', avatar: Icons.GenericAvatar, coins: 1100, rank: 2 },
-    { id: '3', name: 'Mike Rodriguez', avatar: Icons.GenericAvatar, coins: 980, rank: 3 },
-    { id: '4', name: 'Emma Davis', avatar: Icons.GenericAvatar, coins: 850, rank: 4 },
-    { id: '5', name: 'You', avatar: Icons.GenericAvatar, coins: 750, rank: 5 },
-  ];
+const MOCK_LEADERBOARD: LeaderboardEntry[] = [
+  { id: '1', name: 'Alex Johnson', avatar: Icons.GenericAvatar, coins: 1250, rank: 1 },
+  { id: '2', name: 'Sarah Chen', avatar: Icons.GenericAvatar, coins: 1100, rank: 2 },
+  { id: '3', name: 'Mike Rodriguez', avatar: Icons.GenericAvatar, coins: 980, rank: 3 },
+  { id: '4', name: 'Emma Davis', avatar: Icons.GenericAvatar, coins: 850, rank: 4 },
+  { id: '5', name: 'You', avatar: Icons.GenericAvatar, coins: 750, rank: 5 },
+ ];
+const transformLeaderboardData = (
+  entries: QuizLeaderboardEntry[]
+): LeaderboardEntry[] => {
+  return entries.map((entry) => ({
+    id: entry.user_id,
+    name: entry.is_current_user ? 'You' : entry.name,
+    avatar: Icons.GenericAvatar,
+    coins: Math.round(entry.average_score),
+    rank: entry.rank,
+  }));
 };
 
 const MOCK_TASKS: Task[] = [
@@ -156,6 +167,7 @@ const OverviewPage: React.FC = () => {
   const { data: onboardingStatus, isLoading: isOnboardingLoading } = useOnboardingStatus();
   const { data: overviewData, isLoading: isOverviewLoading, error: overviewError } = useDashboardOverview();
   const { data: modulesData, isLoading: isModulesLoading, error: modulesError } = useDashboardModules();
+  const { data: leaderboardData } = useQuizLeaderboard(5);
 
   const isLoading = isOverviewLoading || isModulesLoading;
   const error = overviewError || modulesError;
@@ -174,7 +186,9 @@ const OverviewPage: React.FC = () => {
     ? modulesData.map(transformModuleToLesson).slice(0, 3)
     : MOCK_LEARNING_MODULES;
 
-  const leaderboard = generateMockLeaderboard();
+  const leaderboard = leaderboardData?.leaderboard && leaderboardData.leaderboard.length > 0
+    ? transformLeaderboardData(leaderboardData.leaderboard)
+    : MOCK_LEADERBOARD;
 
   const [supportCards] = useState<SupportCardType[]>([
     {

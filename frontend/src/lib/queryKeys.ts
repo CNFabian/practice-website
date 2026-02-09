@@ -567,6 +567,78 @@ export const queryKeys = {
     attempts: (moduleId: string) => ['minigame', 'attempts', moduleId] as const,
     statistics: () => ['minigame', 'statistics'] as const,
   },
+  // ════════════════════════════════════════════════════════════════
+  // ANALYTICS - User Progress & Admin Lead Management
+  // ════════════════════════════════════════════════════════════════
+  analytics: {
+    /**
+     * Base key for all analytics queries
+     * Use for invalidating all analytics data
+     */
+    all: ['analytics'] as const,
+
+    /**
+     * Current user's own progress metrics (non-sensitive)
+     * Called on: Dashboard, OverviewPage (optional enhancement)
+     * staleTime: 2 minutes (engagement level changes with activity)
+     * Invalidated by: completeLesson, submitQuiz, submitMinigame
+     */
+    myProgress: () => [...queryKeys.analytics.all, 'myProgress'] as const,
+
+    // ── Admin-only keys (for future admin dashboard) ──
+
+    /**
+     * All leads list with optional filters
+     * staleTime: 30 seconds (admin real-time view)
+     */
+    leads: (filters?: Record<string, any>) =>
+      filters
+        ? [...queryKeys.analytics.all, 'leads', filters] as const
+        : [...queryKeys.analytics.all, 'leads'] as const,
+
+    /**
+     * Hot leads quick access
+     * staleTime: 30 seconds
+     */
+    hotLeads: (limit?: number) =>
+      limit
+        ? [...queryKeys.analytics.all, 'leads', 'hot', limit] as const
+        : [...queryKeys.analytics.all, 'leads', 'hot'] as const,
+
+    /**
+     * Single lead detail
+     * staleTime: 1 minute
+     */
+    leadDetail: (userId: string) =>
+      [...queryKeys.analytics.all, 'leads', userId] as const,
+
+    /**
+     * Lead score history for specific user
+     * staleTime: 5 minutes
+     */
+    leadHistory: (userId: string, limit?: number) =>
+      limit
+        ? [...queryKeys.analytics.all, 'leads', userId, 'history', limit] as const
+        : [...queryKeys.analytics.all, 'leads', userId, 'history'] as const,
+
+    /**
+     * Aggregate analytics insights
+     * staleTime: 1 minute
+     */
+    insights: () => [...queryKeys.analytics.all, 'insights'] as const,
+
+    /**
+     * Comprehensive analytics dashboard
+     * staleTime: 1 minute
+     */
+    dashboard: () => [...queryKeys.analytics.all, 'dashboard'] as const,
+
+    /**
+     * Scheduler status
+     * staleTime: 30 seconds
+     */
+    schedulerStatus: () => [...queryKeys.analytics.all, 'scheduler', 'status'] as const,
+  },
 } as const;
 
 /**
