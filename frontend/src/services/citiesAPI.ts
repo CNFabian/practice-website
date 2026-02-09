@@ -1,56 +1,9 @@
+// ==================== CITIES API ====================
+// Phase 1: Standardized to use shared fetchWithAuth from authAPI.ts
+
+import { fetchWithAuth } from './authAPI';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-/**
- * Get authentication token from localStorage
- */
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('access_token');
-};
-
-/**
- * Make authenticated fetch request
- */
-const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const token = getAuthToken();
-  
-  if (!token) {
-    console.error('No authentication token found');
-    throw new Error('No authentication token found');
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers,
-  };
-
-  try {
-    console.log(`Making request to: ${url}`);
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    if (response.status === 401) {
-      console.error('Authentication failed - token may be expired');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/auth/login';
-      throw new Error('Authentication failed - please log in again');
-    }
-
-    if (!response.ok) {
-      const responseClone = response.clone();
-      const errorText = await responseClone.text();
-      console.error(`API Error - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
-    }
-    
-    return response;
-  } catch (error) {
-    console.error(`Network error for ${url}:`, error);
-    throw error;
-  }
-};
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -113,40 +66,28 @@ export const searchCities = async (query: string): Promise<CityData[]> => {
     }
     
     const data: CitySearchResponse = await response.json();
-    console.log(`Found ${data.cities.length} cities for query: ${query}`);
-    
-    return data.cities;
+    console.log(`Found ${data.cities?.length || 0} cities for query: ${query}`);
+    return data.cities || [];
   } catch (error) {
     console.error('Error searching cities:', error);
-    
-    // Re-throw with user-friendly message
-    if (error instanceof Error) {
-      throw error;
-    }
-    
-    throw new Error('Failed to search cities. Please try again.');
+    throw error;
   }
 };
 
 /**
- * Check health of cities API service
- * Useful for debugging and monitoring
+ * Format a city result for display
+ * @param city - CityData object
+ * @returns Formatted string like "Los Angeles, CA 90001"
  */
-export const checkCitiesHealth = async (): Promise<any> => {
-  try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/cities/health`, {
-      method: 'GET'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Cities service health:', data);
-    return data;
-  } catch (error) {
-    console.error('Error checking cities health:', error);
-    throw error;
-  }
+export const formatCityDisplay = (city: CityData): string => {
+  return `${city.city}, ${city.state} ${city.zipcode}`;
+};
+
+/**
+ * Format a city result for a shorter display
+ * @param city - CityData object
+ * @returns Formatted string like "Los Angeles, CA"
+ */
+export const formatCityShort = (city: CityData): string => {
+  return `${city.city}, ${city.state}`;
 };

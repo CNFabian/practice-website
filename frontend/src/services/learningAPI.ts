@@ -1,83 +1,21 @@
+// ==================== LEARNING API ====================
+// Phase 1: Standardized to use shared fetchWithAuth from authAPI.ts
+// Re-exports fetchWithAuth for backward compatibility with any remaining consumers
+
+import { fetchWithAuth } from './authAPI';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Re-export fetchWithAuth for backward compatibility
+// (Other files that previously imported from learningAPI will still work)
 export { fetchWithAuth };
 
-const getHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('access_token');
-  
-  if (!token) {
-    console.warn('No authentication token found in localStorage.');
-    throw new Error('No authentication token found');
-  }
-  
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
-  };
-};
-
-// Helper function to refresh token
-const refreshAccessToken = async (): Promise<boolean> => {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) {
-    console.error('No refresh token available');
-    return false;
-  }
-  
+// GET /api/learning/modules - Get all modules (with onboarding check)
+export const getModules = async (): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/refresh?refresh_token=${refreshToken}`, {
-      method: 'POST'
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
+      method: 'GET'
     });
-    
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      console.log('Token refreshed successfully');
-      return true;
-    } else {
-      console.error('Token refresh failed:', response.status);
-      return false;
-    }
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    return false;
-  }
-};
-
-const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  try {
-    console.log(`Making request to: ${url}`);
-    
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...getHeaders(),
-        ...options.headers
-      }
-    });
-    
-    console.log(`Response status: ${response.status} for ${url}`);
-    
-    // Handle unauthorized
-    if (response.status === 401) {
-      console.log('Received 401, attempting token refresh...');
-      const refreshed = await refreshAccessToken();
-      
-      if (refreshed) {
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers: {
-            ...getHeaders(),
-            ...options.headers
-          }
-        });
-        console.log(`Retry response status: ${retryResponse.status} for ${url}`);
-        return retryResponse;
-      } else {
-        console.error('Token refresh failed. User needs to re-authenticate.');
-        throw new Error('Authentication failed - please log in again');
-      }
-    }
     
     // Handle onboarding requirement
     if (response.status === 400) {
@@ -97,36 +35,6 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Re
         }
       }
     }
-    
-    // Handle other error statuses
-    if (!response.ok) {
-      const responseClone = response.clone();
-      const errorText = await responseClone.text();
-      console.error(`API Error - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.detail) {
-          console.error('Validation errors:', errorData.detail);
-        }
-      } catch (parseError) {
-        console.error('Could not parse error response as JSON');
-      }
-    }
-    
-    return response;
-  } catch (error) {
-    console.error(`Network error for ${url}:`, error);
-    throw error;
-  }
-};
-
-// GET /api/learning/modules - Get all modules (with onboarding check)
-export const getModules = async (): Promise<any> => {
-  try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/modules`, {
-      method: 'GET'
-    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -284,27 +192,152 @@ export const updateLessonProgress = async (lessonId: string, videoProgressSecond
 };
 
 // POST /api/learning/lessons/{lesson_id}/complete - Mark lesson as completed
-export const completeLesson = async (lessonId: string): Promise<any> => {
+export const completeLesson = async (
+  lessonId: string,
+  completionData?: {
+    completionMethod?: 'auto' | 'manual' | 'milestone';
+    videoProgressSeconds?: number | null;
+    transcriptProgressPercentage?: number | null;
+    timeSpentSeconds?: number;
+    contentType?: 'video' | 'transcript' | null;
+  }
+): Promise<any> => {
   try {
     if (/^\d+$/.test(lessonId)) {
       console.warn(`⚠️ Complete Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
       return { success: false, message: 'Frontend ID used instead of UUID' };
     }
-    
+
+    // Build request body matching backend LessonCompletionRequest schema
+    const body: LessonCompletionRequest = {
+      lesson_id: lessonId,
+      completion_method: completionData?.completionMethod ?? 'manual',
+      video_progress_seconds: completionData?.videoProgressSeconds ?? null,
+      transcript_progress_percentage: completionData?.transcriptProgressPercentage ?? null,
+      time_spent_seconds: completionData?.timeSpentSeconds ?? 0,
+      content_type: completionData?.contentType ?? null,
+    };
+
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/complete`, {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify(body),
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error completing lesson:', error);
     throw error;
   }
 };
+
+
+export interface LessonMilestoneRequest {
+  lesson_id: string;
+  milestone: number; // 25, 50, 75, 90
+  content_type: 'video' | 'transcript';
+  video_progress_seconds?: number | null;
+  transcript_progress_percentage?: number | null;
+  time_spent_seconds: number;
+}
+
+export interface LessonMilestoneResponse {
+  lesson_id: string;
+  status: string;
+  milestones_reached: number[];
+  completion_percentage: string;
+  auto_completed: boolean;
+  message: string;
+}
+
+export interface LessonCompletionRequest {
+  lesson_id: string;
+  completion_method?: 'auto' | 'manual' | 'milestone';
+  video_progress_seconds?: number | null;
+  transcript_progress_percentage?: number | null;
+  time_spent_seconds: number;
+  content_type?: 'video' | 'transcript' | null;
+}
+
+export interface BatchProgressItem {
+  lesson_id: string;
+  milestone?: number | null;
+  content_type?: 'video' | 'transcript' | null;
+  video_progress_seconds?: number | null;
+  transcript_progress_percentage?: number | null;
+  time_spent_seconds: number;
+  completed?: boolean;
+}
+
+export interface BatchProgressRequest {
+  items: BatchProgressItem[];
+}
+
+export interface BatchProgressResponse {
+  success: boolean;
+  message: string;
+  data: {
+    results: Array<{
+      lesson_id: string;
+      status: string;
+    }>;
+    completed_count: number;
+  };
+}
+
+// POST /api/learning/lessons/{lesson_id}/milestone
+// Called at 25%, 50%, 75%, 90% progress points instead of continuous progress updates
+// Rate Limited: 30 requests per minute per user
+export const trackLessonMilestone = async (
+  lessonId: string,
+  milestone: number,
+  contentType: 'video' | 'transcript',
+  videoProgressSeconds?: number | null,
+  transcriptProgressPercentage?: number | null,
+  timeSpentSeconds: number = 0
+): Promise<LessonMilestoneResponse> => {
+  const response = await fetchWithAuth(`/api/learning/lessons/${lessonId}/milestone`, {
+    method: 'POST',
+    body: JSON.stringify({
+      lesson_id: lessonId,
+      milestone,
+      content_type: contentType,
+      video_progress_seconds: videoProgressSeconds ?? null,
+      transcript_progress_percentage: transcriptProgressPercentage ?? null,
+      time_spent_seconds: timeSpentSeconds,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to track lesson milestone: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// POST /api/learning/progress/batch
+// Called on page unload/tab close to sync all pending progress
+// Rate Limited: 20 requests per minute per user
+export const batchUpdateProgress = async (
+  items: BatchProgressItem[]
+): Promise<BatchProgressResponse> => {
+  const response = await fetchWithAuth('/api/learning/progress/batch', {
+    method: 'POST',
+    body: JSON.stringify({
+      items,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to batch update progress: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
 
 // GET /api/learning/lessons/{lesson_id}/quiz - Get quiz for lesson
 export const getLessonQuiz = async (lessonId: string): Promise<any> => {

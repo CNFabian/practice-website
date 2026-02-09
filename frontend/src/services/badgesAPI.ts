@@ -1,4 +1,7 @@
-import { fetchWithAuth } from './learningAPI';
+// ==================== BADGES API ====================
+// Phase 1: Standardized to use shared fetchWithAuth from authAPI.ts
+
+import { fetchWithAuth } from './authAPI';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -118,50 +121,13 @@ const MOCK_BADGE_DATA: Badge[] = [
     category: 'module'
   },
   {
-    id: 'savings-specialist',
-    name: 'Savings Specialist',
-    description: 'Master of savings strategies and financial planning',
-    type: 'module',
-    rarity: 'rare',
-    requirement: 'Complete: Savings & Financial Planning',
-    icon: 'badge-savings',
-    isEarned: false,
-    isLocked: true,
-    category: 'module'
-  },
-  {
-    id: 'insurance-expert',
-    name: 'Insurance Expert',
-    description: 'Understand insurance options and protection strategies',
-    type: 'module',
-    rarity: 'rare',
-    requirement: 'Complete: Insurance & Protection',
-    icon: 'badge-insurance',
-    isEarned: false,
-    isLocked: true,
-    category: 'module'
-  },
-  {
-    id: 'welcome-aboard',
-    name: 'Welcome Aboard',
-    description: 'Completed the onboarding process',
+    id: 'first-lesson',
+    name: 'First Lesson',
+    description: 'Complete your first lesson',
     type: 'achievement',
     rarity: 'common',
-    requirement: 'Sign up and complete profile',
-    icon: 'badge-rocket',
-    isEarned: true,
-    isLocked: false,
-    earnedDate: 'Sep 10, 2025',
-    category: 'achievement'
-  },
-  {
-    id: 'profile-master',
-    name: 'Profile Master',
-    description: 'Complete all profile information',
-    type: 'achievement',
-    rarity: 'common',
-    requirement: 'Complete all profile info',
-    icon: 'temp-profile',
+    requirement: 'Complete any lesson',
+    icon: 'badge-star',
     isEarned: false,
     isLocked: true,
     category: 'achievement'
@@ -169,11 +135,11 @@ const MOCK_BADGE_DATA: Badge[] = [
   {
     id: 'quiz-master',
     name: 'Quiz Master',
-    description: 'Complete all available quizzes',
+    description: 'Ace your first quiz',
     type: 'achievement',
     rarity: 'uncommon',
-    requirement: 'Complete all quizzes',
-    icon: 'badge-prize',
+    requirement: 'Score 100% on any quiz',
+    icon: 'badge-trophy',
     isEarned: false,
     isLocked: true,
     category: 'achievement'

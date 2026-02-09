@@ -611,9 +611,6 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                               <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
                                 {city.city}, {city.state}
                               </OnestFont>
-                              <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-                                Zipcode: {city.zipcode}
-                              </OnestFont>
                             </div>
                             {isSelected && (
                               <div className="text-status-green text-xl">✓</div>
@@ -652,9 +649,6 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                             <div>
                               <OnestFont weight={700} lineHeight="relaxed" className="text-sm">
                                 {city.city}, {city.state}
-                              </OnestFont>
-                              <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-status-green">
-                                Zipcode: {city.zipcode}
                               </OnestFont>
                             </div>
                           </div>

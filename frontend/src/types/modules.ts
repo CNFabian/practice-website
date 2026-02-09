@@ -52,6 +52,12 @@ export interface Lesson {
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
   prerequisites?: number[];     // Lesson IDs that must be completed first
   bonusReward?: number;        // Extra coins for perfect completion
+
+  // BACKEND INTEGRATION FIELDS (Phase 1, Step 3)
+  /** Brief summary of the lesson content from backend */
+  lesson_summary?: string;
+  /** Whether Grow Your Nest has been played for this lesson (one-time only) */
+  grow_your_nest_played?: boolean | null;
 }
 
 export interface Module {
@@ -78,6 +84,20 @@ export interface Module {
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
   estimatedDuration?: number;    // Estimated time to complete (in minutes)
   prerequisites?: number[];      // Module IDs that must be completed first
+
+  // BACKEND INTEGRATION FIELDS (Phase 1, Step 3)
+  /** Whether all lessons in this module are completed */
+  all_lessons_completed?: boolean | null;
+  /** Whether free roam mode is available for this module */
+  free_roam_available?: boolean | null;
+  /** Current tree growth points for this module */
+  tree_growth_points?: number | null;
+  /** Current tree stage (0-5) */
+  tree_current_stage?: number | null;
+  /** Total tree stages (always 5) */
+  tree_total_stages?: number | null;
+  /** Whether the tree is fully grown */
+  tree_completed?: boolean | null;
 }
 
 // ═══════════════════════════════════════════════════════════════

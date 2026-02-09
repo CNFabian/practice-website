@@ -1,3 +1,4 @@
+export * from './authAPI';          
 export * from './learningAPI';
 export * from './materialsAPI';
 export * from './helpAPI';
@@ -5,3 +6,8 @@ export * from './badgesAPI';
 export * from './rewardsAPI';
 export * from './dashboardAPI';
 export * from './citiesAPI';
+export * from './quizAPI';
+export * from './notificationsAPI'; 
+export * from './growYourNestAPI';  
+export * from './onBoardingAPI';
+export * from './minigameAPI';

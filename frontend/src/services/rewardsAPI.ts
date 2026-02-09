@@ -1,3 +1,5 @@
+import { fetchWithAuth } from './authAPI';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // API Response Types - these belong to the API layer
@@ -37,61 +39,6 @@ export interface ApiResponse<T = any> {
   message: string;
   data: T;
 }
-
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('access_token');
-};
-
-const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const token = getAuthToken();
-  
-  if (!token) {
-    console.error('No authentication token found');
-    throw new Error('No authentication token found');
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers,
-  };
-
-  try {
-    console.log(`Making request to: ${url}`);
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    if (response.status === 401) {
-      console.error('Authentication failed - token may be expired');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/login';
-      throw new Error('Authentication failed - please log in again');
-    }
-
-    if (!response.ok) {
-      const responseClone = response.clone();
-      const errorText = await responseClone.text();
-      console.error(`API Error - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.detail) {
-          console.error('Validation errors:', errorData.detail);
-        }
-      } catch (parseError) {
-        console.error('Could not parse error response as JSON');
-      }
-    }
-    
-    return response;
-  } catch (error) {
-    console.error(`Network error for ${url}:`, error);
-    throw error;
-  }
-};
 
 export const rewardsAPI = {
   async getCoupons(params?: {

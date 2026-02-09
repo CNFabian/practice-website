@@ -24,8 +24,8 @@ export const useNotifications = (params?: NotificationsParams) => {
   });
 };
 
-export const useUnreadCount = () => {
-  return useQuery({
+ export const useUnreadCount = () => {
+  return useQuery<{ unread_count: number }>({
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: getUnreadCount,
 

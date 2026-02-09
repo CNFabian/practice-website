@@ -56,6 +56,8 @@ export const queryKeys = {
      * Base key for all learning queries
      */
     all: ['learning'] as const,
+    milestone: (lessonId: string) => ['learning', 'milestone', lessonId] as const,
+    batchProgress: () => ['learning', 'progress', 'batch'] as const,
 
     /**
      * All modules list
@@ -161,6 +163,36 @@ export const queryKeys = {
      * Invalidated by: submitQuiz (badge unlock)
      */
     badges: () => [...queryKeys.dashboard.all, 'badges'] as const,
+
+    /**
+     * User's coin transaction history
+     * Called on: RewardsPage, TransactionHistory
+     * staleTime: 2 minutes
+     * Invalidated by: completeLesson, submitQuiz, redeemCoupon
+     */
+    transactions: (params?: { limit?: number; offset?: number }) =>
+      params
+        ? [...queryKeys.dashboard.all, 'transactions', params] as const
+        : [...queryKeys.dashboard.all, 'transactions'] as const,
+
+    /**
+     * Comprehensive user statistics
+     * Called on: OverviewPage, StatisticsSection
+     * staleTime: 5 minutes
+     * Invalidated by: completeLesson, submitQuiz
+     */
+    statistics: () => [...queryKeys.dashboard.all, 'statistics'] as const,
+
+    /**
+     * Recent user activity feed
+     * Called on: OverviewPage, ActivityFeed
+     * staleTime: 1 minute
+     * Invalidated by: completeLesson, submitQuiz, redeemCoupon
+     */
+    activity: (limit?: number) =>
+      limit
+        ? [...queryKeys.dashboard.all, 'activity', limit] as const
+        : [...queryKeys.dashboard.all, 'activity'] as const,
   },
 
   // ════════════════════════════════════════════════════════════════
@@ -529,6 +561,11 @@ export const queryKeys = {
      * staleTime: Infinity (immutable)
      */
     options: () => [...queryKeys.onboarding.all, 'options'] as const,
+  },
+  minigame: {
+    module: (moduleId: string) => ['minigame', 'module', moduleId] as const,
+    attempts: (moduleId: string) => ['minigame', 'attempts', moduleId] as const,
+    statistics: () => ['minigame', 'statistics'] as const,
   },
 } as const;
 

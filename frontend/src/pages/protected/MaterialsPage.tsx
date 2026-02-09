@@ -333,8 +333,7 @@ const MaterialsPage: React.FC = () => {
   };
 
   const handleWorksheetDownload = (worksheetId: string) => {
-    const backendItem = backendWorksheets?.find(item => item.id === worksheetId);
-    if (backendItem && backendItem.id) {
+    const backendItem = backendWorksheets?.find((item: any) => item.id === worksheetId);    if (backendItem && backendItem.id) {
       trackDownloadMutation(
         { resourceId: backendItem.id },
         {

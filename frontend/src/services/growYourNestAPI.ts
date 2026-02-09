@@ -1,12 +1,4 @@
-/**
- * growYourNestAPI.ts
- * 
- * API service for the "Grow Your Nest" minigame endpoints.
- * Handles lesson mode (one-time play after lesson completion) and
- * free roam mode (available after all lessons in a module are completed).
- */
-
-import { fetchWithAuth } from './learningAPI';
+import { fetchWithAuth } from './authAPI';
 import type {
   GrowYourNestQuestion,
   LessonQuestionsResponse,
