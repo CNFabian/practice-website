@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   completeStep1,
+  completeStep2,
   completeStep3,
   completeStep4,
-  completeStep5,
   completeOnboardingAllSteps,
   getOnboardingData,
   getOnboardingProgress
@@ -86,12 +86,11 @@ export const useOnboarding = (): OnboardingState => {
         console.log('useOnboarding: Existing data:', existingData)
 
         const mappedAnswers: OnboardingAnswers = {}
-        if (existingData.selected_avatar) mappedAnswers.avatar = existingData.selected_avatar
         if (existingData.wants_expert_contact) mappedAnswers.expert_contact = existingData.wants_expert_contact
         if (existingData.homeownership_timeline_months) mappedAnswers['Home Ownership'] = String(existingData.homeownership_timeline_months)
-        if (existingData.zipcode) mappedAnswers.city = existingData.zipcode
-        if (existingData.has_realtor !== undefined) mappedAnswers.has_realtor = existingData.has_realtor
-        if (existingData.has_loan_officer !== undefined) mappedAnswers.has_loan_officer = existingData.has_loan_officer
+        if (existingData.target_cities && existingData.target_cities.length > 0) mappedAnswers.city = existingData.target_cities[0]
+        if (existingData.has_realtor !== undefined) mappedAnswers.has_realtor = existingData.has_realtor === 'Yes, I am'
+        if (existingData.has_loan_officer !== undefined) mappedAnswers.has_loan_officer = existingData.has_loan_officer === 'Yes, I am'
 
         setAnswers(mappedAnswers)
       }
@@ -119,30 +118,31 @@ export const useOnboarding = (): OnboardingState => {
       console.log(`useOnboarding: Completing step ${currentStep}...`)
       
       switch (currentStep) {
-        case 0: // Avatar step
-          if (answers.avatar) {
-            await completeStep1({ selected_avatar: answers.avatar })
-          }
+        case 0: // Professionals step → API step1
+          await completeStep1({
+            has_realtor: answers.has_realtor ? 'Yes, I am' : 'Not yet',
+            has_loan_officer: answers.has_loan_officer ? 'Yes, I am' : 'Not yet'
+          })
           break
           
-        case 1: // Expert contact step
+        case 1: // Expert contact step → API step2
           if (answers.expert_contact) {
-            await completeStep3({ wants_expert_contact: answers.expert_contact })
+            await completeStep2({ wants_expert_contact: answers.expert_contact })
           }
           break
           
-        case 2: // Timeline step
+        case 2: // Timeline step → API step3
           if (answers['Home Ownership']) {
-            await completeStep4({ 
+            await completeStep3({ 
               homeownership_timeline_months: parseInt(answers['Home Ownership']) 
             })
           }
           break
           
-        case 3: // City step
+        case 3: // City step → API step4
           if (answers.city) {
             const zipcode = answers.city.match(/\d{5}/)?.[0] || answers.city
-            await completeStep5({ zipcode })
+            await completeStep4({ target_cities: [zipcode] })
           }
           break
           
@@ -176,12 +176,11 @@ export const useOnboarding = (): OnboardingState => {
       console.log('useOnboarding: Completing all steps...')
       
       const onboardingData = {
-        selected_avatar: answers.avatar || '',
-        has_realtor: answers.has_realtor || false,
-        has_loan_officer: answers.has_loan_officer || false,
+        has_realtor: answers.has_realtor ? 'Yes, I am' : 'Not yet',
+        has_loan_officer: answers.has_loan_officer ? 'Yes, I am' : 'Not yet',
         wants_expert_contact: answers.expert_contact || '',
         homeownership_timeline_months: parseInt(answers['Home Ownership'] || '0'),
-        zipcode: answers.city?.match(/\d{5}/)?.[0] || answers.city || ''
+        target_cities: [answers.city?.match(/\d{5}/)?.[0] || answers.city || '']
       }
       
       await completeOnboardingAllSteps(onboardingData)

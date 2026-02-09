@@ -14,44 +14,38 @@ export interface OnboardingStatus {
 export interface OnboardingData {
   id: string;
   user_id: string;
-  selected_avatar: string;
-  has_realtor: boolean;
-  has_loan_officer: boolean;
+  has_realtor: string;
+  has_loan_officer: string;
   wants_expert_contact: string;
   homeownership_timeline_months: number;
-  zipcode: string;
+  target_cities: string[];
   completed_at: string;
   updated_at: string;
 }
 
 export interface Step1Data {
-  selected_avatar: string;
+  has_realtor: string;
+  has_loan_officer: string;
 }
 
 export interface Step2Data {
-  has_realtor: boolean;
-  has_loan_officer: boolean;
+  wants_expert_contact: string;
 }
 
 export interface Step3Data {
-  wants_expert_contact: string;
+  homeownership_timeline_months: number;
 }
 
 export interface Step4Data {
-  homeownership_timeline_months: number;
-}
-
-export interface Step5Data {
-  zipcode: string;
+  target_cities: string[];
 }
 
 export interface CompleteOnboardingData {
-  selected_avatar: string;
-  has_realtor: boolean;
-  has_loan_officer: boolean;
+  has_realtor: string;
+  has_loan_officer: string;
   wants_expert_contact: string;
   homeownership_timeline_months: number;
-  zipcode: string;
+  target_cities: string[];
 }
 
 export interface Avatar {
@@ -62,8 +56,7 @@ export interface Avatar {
 
 export interface ExpertContactOption {
   id: string;
-  name: string;
-  description: string;
+  label: string;
 }
 
 export interface TimelineOption {
@@ -151,7 +144,7 @@ export const getOnboardingOptions = async (): Promise<OnboardingOptions> => {
   }
 };
 
-// POST /api/onboarding/step1 - Complete step 1: Avatar selection
+// POST /api/onboarding/step1 - Complete step 1: Professionals
 export const completeStep1 = async (data: Step1Data): Promise<{ success: boolean; message: string; data: any }> => {
   try {
     console.log('Completing step 1 with data:', data);
@@ -175,7 +168,7 @@ export const completeStep1 = async (data: Step1Data): Promise<{ success: boolean
   }
 };
 
-// POST /api/onboarding/step2 - Complete step 2: Professionals
+// POST /api/onboarding/step2 - Complete step 2: Expert contact
 export const completeStep2 = async (data: Step2Data): Promise<{ success: boolean; message: string; data: any }> => {
   try {
     console.log('Completing step 2 with data:', data);
@@ -199,7 +192,7 @@ export const completeStep2 = async (data: Step2Data): Promise<{ success: boolean
   }
 };
 
-// POST /api/onboarding/step3 - Complete step 3: Expert contact
+// POST /api/onboarding/step3 - Complete step 3: Timeline
 export const completeStep3 = async (data: Step3Data): Promise<{ success: boolean; message: string; data: any }> => {
   try {
     console.log('Completing step 3 with data:', data);
@@ -223,7 +216,7 @@ export const completeStep3 = async (data: Step3Data): Promise<{ success: boolean
   }
 };
 
-// POST /api/onboarding/step4 - Complete step 4: Timeline
+// POST /api/onboarding/step4 - Complete step 4: Target cities
 export const completeStep4 = async (data: Step4Data): Promise<{ success: boolean; message: string; data: any }> => {
   try {
     console.log('Completing step 4 with data:', data);
@@ -243,30 +236,6 @@ export const completeStep4 = async (data: Step4Data): Promise<{ success: boolean
     return result;
   } catch (error) {
     console.error('Error completing step 4:', error);
-    throw error;
-  }
-};
-
-// POST /api/onboarding/step5 - Complete step 5: Zipcode
-export const completeStep5 = async (data: Step5Data): Promise<{ success: boolean; message: string; data: any }> => {
-  try {
-    console.log('Completing step 5 with data:', data);
-    
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/onboarding/step5`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Step 5 completed successfully:', result);
-    return result;
-  } catch (error) {
-    console.error('Error completing step 5:', error);
     throw error;
   }
 };
@@ -346,13 +315,8 @@ export const saveStep3ToLocalStorage = (data: Step3Data) => {
 };
 
 export const saveStep4ToLocalStorage = (data: Step4Data) => {
-  saveOnboardingDataToLocalStorage(data);
+  saveOnboardingDataToLocalStorage({ target_cities: [String(data.target_cities)] });
   console.log('Saved step 4 to localStorage:', data);
-};
-
-export const saveStep5ToLocalStorage = (data: Step5Data) => {
-  saveOnboardingDataToLocalStorage(data);
-  console.log('Saved step 5 to localStorage:', data);
 };
 
 // Current step management
@@ -379,42 +343,33 @@ export const saveCurrentStepToLocalStorage = (step: number) => {
 
 // ==================== VALIDATION FUNCTIONS ====================
 
-// Validate onboarding step data before submission
 export const validateStep1Data = (data: Step1Data): boolean => {
-  return !!(data.selected_avatar && data.selected_avatar.trim().length > 0);
+  return !!(data.has_realtor && data.has_loan_officer);
 };
 
 export const validateStep2Data = (data: Step2Data): boolean => {
-  return typeof data.has_realtor === 'boolean' && typeof data.has_loan_officer === 'boolean';
+  return !!(data.wants_expert_contact && data.wants_expert_contact.trim().length > 0);
 };
 
 export const validateStep3Data = (data: Step3Data): boolean => {
-  const validOptions = ['Yes', 'Maybe later'];
-  return !!(data.wants_expert_contact && validOptions.includes(data.wants_expert_contact));
+  return typeof data.homeownership_timeline_months === 'number' && data.homeownership_timeline_months >= 0;
 };
 
 export const validateStep4Data = (data: Step4Data): boolean => {
-  return !!(typeof data.homeownership_timeline_months === 'number' && data.homeownership_timeline_months >= 0);
-};
-
-export const validateStep5Data = (data: Step5Data, pattern?: string): boolean => {
-  const zipcodeRegex = new RegExp(pattern || '^[0-9]{5}(-[0-9]{4})?$');
-  return !!(data.zipcode && zipcodeRegex.test(data.zipcode));
+  return typeof data.target_cities === 'number' && data.target_cities > 0;
 };
 
 export const validateCompleteOnboardingData = (data: CompleteOnboardingData): boolean => {
   return (
-    validateStep1Data({ selected_avatar: data.selected_avatar }) &&
-    validateStep2Data({ has_realtor: data.has_realtor, has_loan_officer: data.has_loan_officer }) &&
-    validateStep3Data({ wants_expert_contact: data.wants_expert_contact }) &&
-    validateStep4Data({ homeownership_timeline_months: data.homeownership_timeline_months }) &&
-    validateStep5Data({ zipcode: data.zipcode })
+    validateStep1Data({ has_realtor: data.has_realtor, has_loan_officer: data.has_loan_officer }) &&
+    validateStep2Data({ wants_expert_contact: data.wants_expert_contact }) &&
+    validateStep3Data({ homeownership_timeline_months: data.homeownership_timeline_months }) &&
+    data.target_cities.length > 0
   );
 };
 
 // ==================== UTILITY FUNCTIONS ====================
 
-// Helper function to determine next step based on current onboarding status
 export const getNextOnboardingStep = (status: OnboardingStatus): number => {
   if (status.completed) {
     return 0;
@@ -429,12 +384,11 @@ export const isStepCompleted = (status: OnboardingStatus, step: number): boolean
   return (status.step || 0) > step;
 };
 
-// Get completion percentage
 export const getOnboardingProgress = (status: OnboardingStatus): number => {
   if (status.completed) return 100;
   
   const currentStep = status.step || 0;
-  const totalSteps = status.total_steps || 5;
+  const totalSteps = status.total_steps || 4;
   
   return Math.round((currentStep / totalSteps) * 100);
 };

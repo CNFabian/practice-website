@@ -10,10 +10,10 @@ import {
 } from '../../../assets';
 import {
   getOnboardingOptions,
+  completeStep1,
   completeStep2,
   completeStep3,
   completeStep4,
-  completeStep5,
   type OnboardingOptions
 } from '../../../services/onBoardingAPI';
 import { searchCities as searchCitiesAPI } from '../../../services';
@@ -151,27 +151,27 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
     setError(null);
 
     try {
-      // Call individual step endpoints
-      
-      // Step 2: Professionals (has_realtor, has_loan_officer)
-      await completeStep2({
-        has_realtor: formData.has_realtor ?? false,
-        has_loan_officer: formData.has_loan_officer ?? false
+      // Step 1: Professionals (strings, not booleans)
+      await completeStep1({
+        has_realtor: formData.has_realtor ? 'Yes, I am' : 'Not yet',
+        has_loan_officer: formData.has_loan_officer ? 'Yes, I am' : 'Not yet'
       });
 
-      // Step 3: Expert Contact
-      await completeStep3({
+    console.log('formData at submission:', formData);
+    console.log('expert contact value:', formData.wants_expert_contact);
+      // Step 2: Expert Contact
+      await completeStep2({
         wants_expert_contact: formData.wants_expert_contact
       });
 
-      // Step 4: Timeline
-      await completeStep4({
+      // Step 3: Timeline
+      await completeStep3({
         homeownership_timeline_months: formData.homeownership_timeline_months
       });
 
-      // Step 5: Zipcode - send the first selected city's zipcode (or you can modify backend to accept multiple)
-      await completeStep5({
-        zipcode: selectedCities[0].zipcode // Sending first city's zipcode for now
+      // Step 4: Target Cities (zipcode as number)
+      await completeStep4({
+        target_cities: selectedCities.map(c => c.zipcode)
       });
 
       console.log('All onboarding steps completed successfully');
@@ -405,19 +405,20 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                 </OnestFont>
               </div>
 
+
               <div className="space-y-4 max-w-md mx-auto">
                 {onboardingOptions?.expert_contact_options.map((option) => (
                   <button
                     key={option.id}
-                    onClick={() => setFormData({ ...formData, wants_expert_contact: option.name })}
+                    onClick={() => setFormData({ ...formData, wants_expert_contact: option.id })}
                     className={`w-full px-8 py-4 rounded-xl border-2 transition-all ${
-                      formData.wants_expert_contact === option.name 
+                      formData.wants_expert_contact === option.id    
                         ? 'bg-elegant-blue/10 border-elegant-blue' 
                         : 'bg-pure-white border-light-background-blue'
                     }`}
                   >
                     <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
-                      {option.name}
+                      {option.label}
                     </OnestFont>
                   </button>
                 ))}
