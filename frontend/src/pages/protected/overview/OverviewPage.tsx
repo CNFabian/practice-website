@@ -25,6 +25,7 @@ import { useCoinBalance } from "../../../hooks/queries/useCoinBalance";
 import { useDashboardOverview } from "../../../hooks/queries/useDashboardOverview";
 import { useDashboardModules } from "../../../hooks/queries/useDashboardModules";
 import { useQuizLeaderboard } from "../../../hooks/queries/useQuizLeaderboard";
+import { useMyProgress } from "../../../hooks/queries/useMyProgress";
 import type { QuizLeaderboardEntry } from "../../../hooks/queries/useQuizLeaderboard";
 
 // Helper functions to transform API data to UI types
@@ -171,14 +172,22 @@ const OverviewPage: React.FC = () => {
   const { data: overviewData, isLoading: isOverviewLoading, error: overviewError } = useDashboardOverview();
   const { data: modulesData, isLoading: isModulesLoading, error: modulesError } = useDashboardModules();
   const { data: leaderboardData } = useQuizLeaderboard(5);
+  const { data: progressData } = useMyProgress();
 
   const isLoading = isOverviewLoading || isModulesLoading;
   const error = overviewError || modulesError;
 
-  const tasks = overviewData
-    ? (transformAchievementsToTasks(overviewData.recent_achievements || []).length > 0
-        ? transformAchievementsToTasks(overviewData.recent_achievements || [])
-        : MOCK_TASKS)
+  // Step A1: Merge achievements from both dashboard overview AND analytics my-progress
+  const allAchievements = [
+    ...(overviewData?.recent_achievements || []),
+    ...(progressData?.recent_achievements || [])
+  ];
+  
+  // Remove duplicates
+  const uniqueAchievements = Array.from(new Set(allAchievements));
+
+  const tasks = uniqueAchievements.length > 0
+    ? transformAchievementsToTasks(uniqueAchievements)
     : MOCK_TASKS;
 
   const continueLesson = overviewData

@@ -16,6 +16,7 @@ export interface SerializableUser {
   
   // Account status
   isActive: boolean
+  isAdmin: boolean
   
   // Timestamps
   lastLoginAt: string | null
@@ -120,4 +121,8 @@ export const selectIsProfileComplete = (user: SerializableUser | null): boolean 
     user.email &&
     user.emailVerified
   )
+}
+
+export const selectIsAdmin = (user: SerializableUser | null): boolean => {
+  return user?.isAdmin ?? false
 }

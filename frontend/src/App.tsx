@@ -6,20 +6,18 @@ import { setLoading, logout, setUser } from './store/slices/authSlice'
 import { getCurrentUser, checkAuthStatus, clearAuthData, isAuthenticated } from './services/authAPI'
 import { checkOnboardingStatus } from './services/learningAPI'
 
-// Layouts
 import AuthLayout from './layouts/AuthLayout'
 import PublicLayout from './layouts/PublicLayout'
 import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import AdminRoute from './components/common/AdminRoute'
 import LoadingSpinner from './components/common/LoadingSpinner'
 
-// Public Pages
 import SplashPage from './pages/public/SplashPage'
 import LoginPage from './pages/public/LoginPage'
 import SignupPage from './pages/public/SignupPage'
 import OnboardingPage from './components/protected/onboarding/OnBoardingPage'
 
-// Protected Pages
 import {
   OverviewPage,
   ModulesPage,
@@ -30,6 +28,7 @@ import {
   NotificationsPage
 } from './pages'
 import { BadgesPage } from './pages/protected/badges'
+import AdminDashboardPage from './pages/protected/admin/AdminDashboardPage'
 
 function App() {
   const { isAuthenticated: reduxIsAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
@@ -38,12 +37,9 @@ function App() {
   const [authInitialized, setAuthInitialized] = useState(false)
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null)
   
-  // Add initialization guard to prevent multiple runs
   const initializationAttempted = useRef(false)
 
-  // Initialize auth state on app load
   useEffect(() => {
-    // Prevent multiple initialization attempts (especially in StrictMode)
     if (initializationAttempted.current) {
       return
     }
@@ -53,18 +49,15 @@ function App() {
       try {
         dispatch(setLoading(true))
         
-        // Check if we have tokens in localStorage
         if (!isAuthenticated()) {
           dispatch(logout())
           setAuthInitialized(true)
           return
         }
         
-        // Validate tokens with backend
         const isAuth = await checkAuthStatus()
         
         if (isAuth) {
-          // Fetch current user data
           const userData = await getCurrentUser()
           dispatch(setUser(userData))
         } else {
@@ -73,7 +66,6 @@ function App() {
       } catch (error) {
         console.error('App: Auth initialization error:', error)
         
-        // Clear any potentially corrupted auth data
         clearAuthData()
         dispatch(logout())
       } finally {
@@ -85,7 +77,6 @@ function App() {
     initAuth()
   }, [dispatch])
 
-  // Check onboarding status after auth is initialized
   useEffect(() => {
     const checkOnboarding = async () => {
       if (reduxIsAuthenticated && authInitialized) {
@@ -95,7 +86,6 @@ function App() {
           setNeedsOnboarding(!isComplete)
         } catch (error) {
           console.error('Error checking onboarding:', error)
-          // If we can't check, assume onboarding is needed
           setNeedsOnboarding(true)
         }
       }
@@ -120,7 +110,6 @@ function App() {
 
   return (
     <Routes>
-      {/* Public Routes - Auth Layout */}
       <Route path="/splash" element={
         reduxIsAuthenticated ? <Navigate to="/app" replace /> : (
           <AuthLayout>
@@ -129,7 +118,6 @@ function App() {
         )
       } />
 
-      {/* Public Routes - Public Layout */}
       <Route path="/auth/*" element={
         reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
       }>
@@ -138,7 +126,6 @@ function App() {
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Route>
 
-      {/* Onboarding Route - Semi-protected */}
       <Route
         path="/onboarding"
         element={
@@ -148,7 +135,6 @@ function App() {
         }
       />
 
-      {/* Protected Routes - Main Layout */}
       <Route
         path="/app/*"
         element={
@@ -175,9 +161,13 @@ function App() {
         <Route path="help" element={<HelpPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="admin/*" element={
+          <AdminRoute>
+            <AdminDashboardPage />
+          </AdminRoute>
+        } />
       </Route>
 
-      {/* Root redirect */}
       <Route 
         path="/" 
         element={
@@ -191,7 +181,6 @@ function App() {
         } 
       />
 
-      {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

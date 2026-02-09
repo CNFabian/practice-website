@@ -1,6 +1,7 @@
 import React from "react";
 import { OnestFont } from "../../../../assets";
 import { useUserStatistics } from "../../../../hooks/queries/useUserStatistics";
+import { useMyProgress } from "../../../../hooks/queries/useMyProgress";
 
 // ────────────────────────────────────────────────────────
 // Helpers
@@ -77,7 +78,7 @@ interface StatCardConfig {
   label: string;
   icon: string;
   iconColor: string;
-  getValue: (s: ReturnType<typeof extractStats>) => string;
+  getValue: (s: ReturnType<typeof extractStats>, progress?: any) => string;
 }
 
 const STAT_CARDS: StatCardConfig[] = [
@@ -123,6 +124,20 @@ const STAT_CARDS: StatCardConfig[] = [
     iconColor: "text-logo-blue",
     getValue: (s) => `${s.modulesCompleted} / ${s.totalModules}`,
   },
+  {
+    key: "engagement",
+    label: "Engagement",
+    icon: "📊",
+    iconColor: "text-logo-blue",
+    getValue: (_s, progress) => progress?.engagement_level ?? "—",
+  },
+  {
+    key: "overallProgress",
+    label: "Overall Progress",
+    icon: "🎯",
+    iconColor: "text-status-green",
+    getValue: (_s, progress) => `${Math.round(progress?.progress_percentage ?? 0)}%`,
+  },
 ];
 
 // ────────────────────────────────────────────────────────
@@ -139,7 +154,7 @@ const StatCardSkeleton: React.FC = () => (
 
 const SkeletonRow: React.FC = () => (
   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
-    {Array.from({ length: 6 }).map((_, i) => (
+    {Array.from({ length: 8 }).map((_, i) => (
       <StatCardSkeleton key={i} />
     ))}
   </div>
@@ -151,6 +166,7 @@ const SkeletonRow: React.FC = () => (
 
 const StatisticsSummary: React.FC = () => {
   const { data, isLoading } = useUserStatistics();
+  const { data: progressData } = useMyProgress();
 
   if (isLoading) return <SkeletonRow />;
 
@@ -171,7 +187,7 @@ const StatisticsSummary: React.FC = () => {
             lineHeight="tight"
             className="text-text-blue-black text-lg mt-1"
           >
-            {card.getValue(stats)}
+            {card.getValue(stats, progressData)}
           </OnestFont>
 
           <OnestFont

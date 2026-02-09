@@ -78,9 +78,10 @@ export const markFAQHelpful = async (faqId: string): Promise<any> => {
 // GET /api/help/faqs/categories - Get FAQ categories
 export const getFAQCategories = async (): Promise<any> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/faqs/categories`, {
-      method: 'GET'
-    });
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/faq-categories`, 
+      { 
+        method: 'GET'
+      });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

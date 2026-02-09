@@ -9,6 +9,7 @@ import LessonView from './LessonView';
 import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
 import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
+import { useMyProgress } from '../../../hooks/queries/useMyProgress';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { getModuleLessons } from '../../../services/learningAPI';
@@ -33,6 +34,7 @@ const ModulesPage: React.FC = () => {
   const { data: dashboardModules } = useDashboardModules();
   const { data: coinBalanceData } = useCoinBalance();
   const totalCoins = coinBalanceData?.current_balance || 0;
+  const { data: progressData } = useMyProgress();
   const queryClient = useQueryClient();
   const { isCollapsed } = useSidebar();
   const { isWalkthroughActive } = useWalkthrough();
@@ -453,6 +455,16 @@ const ModulesPage: React.FC = () => {
       game.registry.set('totalCoins', totalCoins);
     }
   }, [totalCoins]);
+
+  // Step A4: Coin balance verification
+  useEffect(() => {
+    if (progressData?.coins_balance !== undefined && totalCoins !== undefined) {
+      const diff = Math.abs(progressData.coins_balance - totalCoins);
+      if (diff > 10) {
+        console.warn(`[Analytics] Coin balance mismatch: analytics=${progressData.coins_balance}, coinSystem=${totalCoins}`);
+      }
+    }
+  }, [progressData?.coins_balance, totalCoins]);
 
   // Get current module and lesson from GameManager
   const currentModule = useMemo(() => {

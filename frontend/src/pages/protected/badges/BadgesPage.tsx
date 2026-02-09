@@ -1,41 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BadgeHeader, BadgeFilters, BadgeGrid } from './components';
-import type { Badge } from '../../../services';
+import { OnestFont } from '../../../assets';
 import { useBadges } from '../../../hooks/queries/useBadges';
+import { useMyProgress } from '../../../hooks/queries/useMyProgress';
 
 const BadgesPage = () => {
   const { data: badgesData, isLoading: loading } = useBadges();
+  const { data: progressData } = useMyProgress();
 
   const [activeFilter, setActiveFilter] = useState('all');
-  const [filteredBadges, setFilteredBadges] = useState<Badge[]>([]);
 
   const badges = badgesData?.badges || [];
   const progress = badgesData?.progress || { earned: 0, total: 0 };
 
   useEffect(() => {
-  const bgElement = document.getElementById('section-background');
-  if (bgElement) {
-    bgElement.className = 'bg-light-background-blue';
-    bgElement.style.backgroundSize = 'cover';
-  }
-}, []);
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.className = 'bg-light-background-blue';
+      bgElement.style.backgroundSize = 'cover';
+    }
+  }, []);
 
-  // Filter badges when filter changes
-  useEffect(() => {
-    const filterBadges = () => {
-      const filtered = badges.filter(badge => {
-        switch (activeFilter) {
-          case 'module': return badge.category === 'module';
-          case 'achievement': return badge.category === 'achievement';
-          case 'earned': return badge.isEarned;
-          case 'locked': return badge.isLocked && !badge.isEarned;
-          default: return true;
-        }
-      });
-      setFilteredBadges(filtered);
-    };
-
-    filterBadges();
+  const filteredBadges = useMemo(() => {
+    return badges.filter(badge => {
+      switch (activeFilter) {
+        case 'module': return badge.category === 'module';
+        case 'achievement': return badge.category === 'achievement';
+        case 'earned': return badge.isEarned;
+        case 'locked': return badge.isLocked && !badge.isEarned;
+        default: return true;
+      }
+    });
   }, [activeFilter, badges]);
 
   if (loading) {
@@ -52,6 +47,24 @@ const BadgesPage = () => {
     <div className="h-full overflow-y-auto">
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <BadgeHeader progress={progress} />
+        
+        {/* Analytics-backed badge count pill */}
+        {progressData?.badges_earned !== undefined && (
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-logo-blue/10 rounded-full">
+              <span className="text-lg">📊</span>
+              <OnestFont
+                as="span"
+                weight={500}
+                lineHeight="relaxed"
+                className="text-logo-blue text-sm"
+              >
+                Analytics: {progressData.badges_earned} badge{progressData.badges_earned !== 1 ? 's' : ''} earned
+              </OnestFont>
+            </div>
+          </div>
+        )}
+        
         <BadgeFilters 
           activeFilter={activeFilter} 
           onFilterChange={setActiveFilter} 

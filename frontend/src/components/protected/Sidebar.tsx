@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Disclosure, Transition } from '@headlessui/react';
+import { RootState } from '../../store/store';
+import { selectIsAdmin } from '../../store/slices/authSlice';
 import { 
   HomeIcon, 
   ModuleIcon, 
@@ -29,6 +32,9 @@ const Sidebar: React.FC = () => {
   const { startWalkthrough, isWalkthroughActive } = useWalkthrough();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.unread_count ?? 0;
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = selectIsAdmin(user);
+
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app/overview', icon: HomeIcon },
     { id: 'modules', label: 'Modules', path: '/app', icon: ModuleIcon },
@@ -47,6 +53,7 @@ const Sidebar: React.FC = () => {
   const bottomMenuItems = [
     { id: 'help', label: 'Get Help', path: '/app/help', icon: GetHelpIcon },
     { id: 'settings', label: 'Settings', path: '/app/settings', icon: SettingsIcon },
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', path: '/app/admin', icon: SettingsIcon }] : []),
   ];
 
   const isActive = (path: string) => {
@@ -59,7 +66,6 @@ const Sidebar: React.FC = () => {
       const currentParams = new URLSearchParams(location.search);
       const linkParams = new URLSearchParams(queryString);
       
-      // Check if pathname matches and all link params are in current params
       if (location.pathname === pathname) {
         for (const [key, value] of linkParams.entries()) {
           if (currentParams.get(key) !== value) {
@@ -73,11 +79,9 @@ const Sidebar: React.FC = () => {
     return location.pathname === path || location.pathname.startsWith(path.split('?')[0]);
   };
 
-  // Handle starting the walkthrough - navigate to modules first if not there
   const handleStartWalkthrough = () => {
     if (location.pathname !== '/app') {
       navigate('/app');
-      // Small delay to ensure navigation completes before starting walkthrough
       setTimeout(() => {
         startWalkthrough();
       }, 300);
@@ -94,7 +98,6 @@ const Sidebar: React.FC = () => {
           isCollapsed ? 'w-16' : 'w-44'
         }`}
       >
-        {/* Logo at the top */}
         <div className="px-4 pt-4 flex items-center justify-center border-b border-pure-white/20">
           <button 
             onClick={toggleCollapsed}
@@ -104,7 +107,6 @@ const Sidebar: React.FC = () => {
           </button>
         </div>
 
-        {/* Main Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <div className="space-y-1">
             {mainMenuItems.map((item) => (
@@ -120,7 +122,6 @@ const Sidebar: React.FC = () => {
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
               >
-                {/* Icon */}
                 <div className="relative flex-shrink-0">
                   <img src={item.icon} alt={item.label} className="w-5 h-5" />
                   {item.id === 'notifications' && unreadCount > 0 && (
@@ -141,7 +142,6 @@ const Sidebar: React.FC = () => {
               </Link>
             ))}
 
-            {/* Materials Dropdown */}
             {!isCollapsed && (
               <Disclosure defaultOpen={location.pathname.startsWith('/app/materials')}>
                 {({ open }) => (
@@ -202,7 +202,6 @@ const Sidebar: React.FC = () => {
               </Disclosure>
             )}
 
-            {/* Collapsed Materials Icon */}
             {isCollapsed && (
               <Link
                 to="/app/materials"
@@ -220,10 +219,8 @@ const Sidebar: React.FC = () => {
           </div>
         </nav>
 
-        {/* Bottom Navigation */}
         <div className="border-t border-pure-white/20 px-3 py-3">
           <div className="space-y-1">
-            {/* MODULE WALKTHROUGH BUTTON */}
             {!isCollapsed && (
               <button
                 onClick={handleStartWalkthrough}
@@ -253,7 +250,6 @@ const Sidebar: React.FC = () => {
               </button>
             )}
 
-            {/* Collapsed Walkthrough Icon */}
             {isCollapsed && (
               <button
                 onClick={handleStartWalkthrough}
@@ -281,7 +277,6 @@ const Sidebar: React.FC = () => {
               </button>
             )}
 
-            {/* TEMPORARY TESTING BUTTON */}
             {!isCollapsed && (
               <button
                 onClick={() => setShowOnboarding(true)}
@@ -306,7 +301,6 @@ const Sidebar: React.FC = () => {
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
               >
-                {/* Icon */}
                 <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
                 <OnestFont 
                   weight={500}
@@ -317,13 +311,19 @@ const Sidebar: React.FC = () => {
                 >
                   {item.label}
                 </OnestFont>
+                {item.id === 'admin' && !isCollapsed && (
+                  <div className="ml-auto bg-status-red/10 text-status-red px-2 py-0.5 rounded-full">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-[10px]">
+                      Admin
+                    </OnestFont>
+                  </div>
+                )}
               </Link>
             ))}
           </div>
         </div>
       </aside>
 
-      {/* Onboarding Modal */}
       {showOnboarding && (
         <OnBoardingPage 
           isOpen={showOnboarding} 
