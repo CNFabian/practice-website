@@ -6,7 +6,7 @@ import string
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, func
 
 from database import get_db
 from auth import get_current_user
@@ -385,11 +385,11 @@ def get_reward_categories(
     category_list = [cat[0] for cat in categories if cat[0]]
     
     # Get coin cost ranges
-    min_cost = db.query(db.func.min(RewardCoupon.cost_in_coins)).filter(
+    min_cost = db.query(func.min(RewardCoupon.cost_in_coins)).filter(
         RewardCoupon.is_active == True
     ).scalar() or 0
     
-    max_cost = db.query(db.func.max(RewardCoupon.cost_in_coins)).filter(
+    max_cost = db.query(func.max(RewardCoupon.cost_in_coins)).filter(
         RewardCoupon.is_active == True
     ).scalar() or 1000
     
@@ -438,7 +438,7 @@ def get_reward_statistics(
     
     # Total coins spent
     total_coins_spent = db.query(
-        db.func.sum(UserCouponRedemption.coins_spent)
+        func.sum(UserCouponRedemption.coins_spent)
     ).filter(
         UserCouponRedemption.user_id == current_user.id
     ).scalar() or 0
@@ -446,7 +446,7 @@ def get_reward_statistics(
     # Favorite categories
     favorite_categories = db.query(
         RewardCoupon.partner_company,
-        db.func.count(UserCouponRedemption.id).label('count')
+        func.count(UserCouponRedemption.id).label('count')
     ).join(UserCouponRedemption).filter(
         UserCouponRedemption.user_id == current_user.id
     ).group_by(

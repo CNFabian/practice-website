@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, Integer
 
 from database import get_db
 from auth import get_current_user, get_current_admin_user
@@ -470,7 +470,7 @@ def get_quiz_leaderboard(
         User.last_name,
         func.avg(UserQuizAttempt.score).label('average_score'),
         func.count(UserQuizAttempt.id).label('total_attempts'),
-        func.sum(UserQuizAttempt.passed.cast(db.Integer)).label('total_passed')
+        func.sum(UserQuizAttempt.passed.cast(Integer)).label('total_passed')
     ).join(UserQuizAttempt).group_by(
         User.id, User.first_name, User.last_name
     ).order_by(
