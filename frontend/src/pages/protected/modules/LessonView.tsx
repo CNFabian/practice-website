@@ -6,6 +6,8 @@ import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLesso
 import { LessonViewBackground } from '../../../assets';
 import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
+import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
+import type { BatchProgressItem } from '../../../services/learningAPI';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -48,6 +50,8 @@ interface LessonViewProps {
   module: Module;
   onBack: () => void;
   onNextLesson?: (lessonId: number, moduleBackendId: string) => void;
+  addProgressItem?: (item: BatchProgressItem) => void;
+  flushProgress?: () => Promise<boolean>;
 }
 
 interface BackendQuizAnswer {
@@ -182,11 +186,16 @@ const getPlayerStateName = (state: number): string => {
   return stateNames[state] || 'UNKNOWN';
 };
 
+// Milestone thresholds for progress tracking
+const MILESTONE_THRESHOLDS = [25, 50, 75, 90];
+
 const LessonView: React.FC<LessonViewProps> = ({ 
   lesson, 
   module, 
   onBack,
-  onNextLesson
+  onNextLesson,
+  addProgressItem,
+  flushProgress
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -203,6 +212,11 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [videoCompleted, setVideoCompleted] = useState(false); // Track if video is complete
 
+  // Milestone tracking refs
+  const milestonesReachedRef = useRef<Set<number>>(new Set());
+  const lessonStartTimeRef = useRef<number>(Date.now());
+  const lastProgressSyncRef = useRef<number>(0);
+
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
@@ -212,8 +226,11 @@ const LessonView: React.FC<LessonViewProps> = ({
       bgElement.style.backgroundRepeat = 'no-repeat';
     }
 
-    // Reset video completion state when lesson changes
+    // Reset video completion state and milestones when lesson changes
     setVideoCompleted(false);
+    milestonesReachedRef.current.clear();
+    lessonStartTimeRef.current = Date.now();
+    lastProgressSyncRef.current = 0;
 
     return () => {
       const bgElement = document.getElementById('section-background');
@@ -314,6 +331,12 @@ const LessonView: React.FC<LessonViewProps> = ({
     module?.backendId || ''
   );
 
+  // Milestone tracking mutation hook (Step 5) — handles cache invalidation on auto-complete
+  const { mutate: trackMilestoneMutation } = useTrackLessonMilestone(
+    isValidBackendId ? lesson.backendId! : '',
+    module?.backendId || ''
+  );
+
   const launchGrowYourNest = useCallback(() => {
     if (!gynLessonData || !lesson.backendId) {
       console.warn('🌳 GYN data not available, skipping launch');
@@ -337,6 +360,47 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     }
   }, [gynLessonData, lesson.backendId, module.id]);
+
+  // Milestone-based progress tracking — fires at 25%, 50%, 75%, 90% instead of every second
+  const checkAndTrackMilestones = useCallback((currentTime: number, duration: number) => {
+    if (!isValidBackendId || !lesson.backendId || duration <= 0) return;
+    
+    const progressPercent = (currentTime / duration) * 100;
+    const timeSpentSeconds = Math.floor((Date.now() - lessonStartTimeRef.current) / 1000);
+    
+    for (const milestone of MILESTONE_THRESHOLDS) {
+      if (progressPercent >= milestone && !milestonesReachedRef.current.has(milestone)) {
+        milestonesReachedRef.current.add(milestone);
+        
+        console.log(`🏁 [Milestone] Reached ${milestone}% at ${currentTime.toFixed(1)}s / ${duration.toFixed(1)}s`);
+        
+        trackMilestoneMutation(
+          {
+            lessonId: lesson.backendId!,
+            milestone,
+            contentType: 'video',
+            videoProgressSeconds: Math.floor(currentTime),
+            transcriptProgressPercentage: null,
+            timeSpentSeconds,
+          },
+          {
+            onSuccess: (response) => {
+              console.log(`✅ [Milestone] ${milestone}% tracked successfully`, response);
+              
+              if (response.auto_completed) {
+                console.log('🎉 [Milestone] Lesson auto-completed at 90%!');
+              }
+            },
+            onError: (error) => {
+              console.error(`❌ [Milestone] Failed to track ${milestone}%:`, error);
+              // Remove from set so it retries next time
+              milestonesReachedRef.current.delete(milestone);
+            },
+          }
+        );
+      }
+    }
+  }, [isValidBackendId, lesson.backendId, trackMilestoneMutation]);
 
   const transformedQuizQuestions = useMemo(() => {
     if (quizData && Array.isArray(quizData) && quizData.length > 0) {
@@ -446,16 +510,37 @@ const LessonView: React.FC<LessonViewProps> = ({
           return;
         }
         
-        // Only log when playing to avoid spam
+        // Only process when playing to avoid spam
         if (state === YT_PLAYER_STATES.PLAYING) {
           console.log('⏯️ [YouTube Player] Progress - Time:', currentTime.toFixed(2), 'State:', getPlayerStateName(state));
+          
+          // Check milestone thresholds (replaces continuous progress updates)
+          checkAndTrackMilestones(currentTime, duration);
+          
+          // Reduced-frequency progress sync: every 30 seconds instead of every second
+          // Reduced-frequency progress sync: every 30 seconds instead of every second
+          const now = Date.now();
+          if (now - lastProgressSyncRef.current >= 30000) {
+            handleVideoProgress(Math.floor(currentTime));
+            lastProgressSyncRef.current = now;
+          }
+
+          // Queue for batch sync on tab close/hide (Step 13)
+          if (addProgressItem && lesson.backendId) {
+            addProgressItem({
+              lesson_id: lesson.backendId,
+              content_type: 'video',
+              video_progress_seconds: Math.floor(currentTime),
+              time_spent_seconds: Math.floor((Date.now() - lessonStartTimeRef.current) / 1000),
+            });
+          }
         }
         
         setCurrentVideoTime(currentTime);
       }
-    }, 1000); // Update every second
+    }, 1000); // Update every second for UI, but milestones + progress sync are throttled
 
-  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
+  }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest, addProgressItem]);
 
   const onPlayerStateChange = useCallback((event: YouTubePlayerEvent) => {
     const state = event.data;
@@ -621,7 +706,12 @@ const LessonView: React.FC<LessonViewProps> = ({
     };
   }, [isYouTubeAPIReady, youtubeVideoId, onPlayerReady, onPlayerStateChange, onPlayerError, onPlaybackRateChange, onPlaybackQualityChange]);
 
-  const handleCompleteLesson = useCallback(() => {
+   const handleCompleteLesson = useCallback(() => {
+    // Flush any pending batch progress before navigating (Step 13)
+    if (flushProgress) {
+      flushProgress();
+    }
+    
     console.log('🔄 Complete lesson called');
     console.log('Next lesson:', nextLesson);
     console.log('Module backend ID:', module.backendId);
@@ -656,7 +746,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     } else if (!onNextLesson) {
       console.error('❌ No navigation handler provided');
     }
-  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
+  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest, flushProgress]);
 
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;

@@ -14,6 +14,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 import { getModuleLessons } from '../../../services/learningAPI';
 import { useSidebar } from '../../../contexts/SidebarContext';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
+import { useBatchProgressSync } from '../../../hooks/queries/useBatchProgressSync';
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
@@ -35,6 +36,7 @@ const ModulesPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { isCollapsed } = useSidebar();
   const { isWalkthroughActive } = useWalkthrough();
+  const { addProgressItem, flushProgress } = useBatchProgressSync();
 
   // Calculate sidebar offset based on collapsed state
   const sidebarOffset = isCollapsed ? 80 : 192;
@@ -603,7 +605,8 @@ const ModulesPage: React.FC = () => {
               lesson={currentLesson}
               module={currentModule}
               onBack={handleBackToHouse}
-              onNextLesson={handleLessonSelect}
+              addProgressItem={addProgressItem}
+              flushProgress={flushProgress}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full p-8">

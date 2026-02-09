@@ -295,6 +295,67 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
   console.log('AuthAPI: Password reset request sent successfully');
 };
 
+// ==================== PASSWORD RESET CONFIRMATION ====================
+
+// Confirm password reset with token and new password
+// POST /api/auth/password-reset/confirm
+// Body: { token: string, new_password: string }
+// Response: { success: true, message: "Password reset successfully" }
+// NOTE: Uses fetchWithoutAuth — user is not authenticated during password reset
+export const confirmPasswordReset = async (
+  token: string,
+  newPassword: string
+): Promise<void> => {
+  console.log('AuthAPI: Confirming password reset...');
+
+  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/password-reset/confirm`, {
+    method: 'POST',
+    body: JSON.stringify({
+      token,
+      new_password: newPassword,
+    }),
+  });
+
+  console.log('AuthAPI: Password reset confirmed successfully');
+};
+
+// ==================== EMAIL VERIFICATION ====================
+
+// Verify email with token
+// POST /api/auth/verify-email?token=<token>
+// NOTE: Backend expects `token` as a QUERY PARAMETER, not in the body
+// Response: { success: true, message: "Email verified successfully" }
+// NOTE: Uses fetchWithoutAuth — user may click verification link while logged out
+export const verifyEmail = async (token: string): Promise<void> => {
+  console.log('AuthAPI: Verifying email with token...');
+
+  await fetchWithoutAuth(
+    `${API_BASE_URL}/api/auth/verify-email?token=${encodeURIComponent(token)}`,
+    {
+      method: 'POST',
+    }
+  );
+
+  console.log('AuthAPI: Email verified successfully');
+};
+
+// ==================== RESEND VERIFICATION EMAIL ====================
+
+// Resend email verification
+// POST /api/auth/resend-verification
+// No body required
+// Response: { success: true, message: "Verification email sent" }
+// NOTE: Uses fetchWithAuth — user must be logged in to request resend
+export const resendVerificationEmail = async (): Promise<void> => {
+  console.log('AuthAPI: Resending verification email...');
+
+  await fetchWithAuth(`${API_BASE_URL}/api/auth/resend-verification`, {
+    method: 'POST',
+  });
+
+  console.log('AuthAPI: Verification email resent successfully');
+};
+
 // ==================== AUTHENTICATION STATUS CHECKS ====================
 
 // Check if user is authenticated (for route protection)
@@ -344,5 +405,8 @@ export default {
   clearAuthData,
   fetchWithAuth,
   fetchWithoutAuth,
-  forceLogout
+  forceLogout,
+  confirmPasswordReset,
+  verifyEmail,
+  resendVerificationEmail,
 };
