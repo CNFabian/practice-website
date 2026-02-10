@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -34,14 +34,15 @@ def send_verification_code(body: SendVerificationCodeRequest, db: Session = Depe
         )
 
     code = AuthManager.generate_verification_code()
-    code_expires_at = datetime.now() + timedelta(minutes=15)
+    now = datetime.now(timezone.utc)
+    code_expires_at = now + timedelta(minutes=15)
 
     pending = db.query(PendingEmailVerification).filter(PendingEmailVerification.email == email).first()
     if pending:
         pending.code = code
         pending.code_expires_at = code_expires_at
         pending.verified_at = None
-        pending.updated_at = datetime.now()
+        pending.updated_at = now
     else:
         pending = PendingEmailVerification(
             email=email,
@@ -65,14 +66,15 @@ def verify_email_code(body: VerifyEmailRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired verification code",
         )
-    if pending.code != body.code or pending.code_expires_at <= datetime.now():
+    now = datetime.now(timezone.utc)
+    if pending.code != body.code or pending.code_expires_at <= now:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired verification code",
         )
 
-    pending.verified_at = datetime.now()
-    pending.updated_at = datetime.now()
+    pending.verified_at = now
+    pending.updated_at = now
     db.commit()
 
     return SuccessResponse(message="Email verified. You can now complete sign-up.")
@@ -97,11 +99,12 @@ def resend_verification_code(body: SendVerificationCodeRequest, db: Session = De
         )
 
     code = AuthManager.generate_verification_code()
-    code_expires_at = datetime.now() + timedelta(minutes=15)
+    now = datetime.now(timezone.utc)
+    code_expires_at = now + timedelta(minutes=15)
     pending.code = code
     pending.code_expires_at = code_expires_at
     pending.verified_at = None
-    pending.updated_at = datetime.now()
+    pending.updated_at = now
     db.commit()
 
     send_verification_email(email, code)
@@ -120,7 +123,8 @@ def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Please verify your email first. Request a code, then enter it before signing up.",
         )
-    cutoff = datetime.now() - timedelta(minutes=VERIFIED_EMAIL_VALID_MINUTES)
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(minutes=VERIFIED_EMAIL_VALID_MINUTES)
     if pending.verified_at < cutoff:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -198,7 +202,7 @@ def login_user(credentials: UserLogin, db: Session = Depends(get_db)):
         )
     
     # Update last login
-    user.last_login_at = datetime.now()
+    user.last_login_at = datetime.now(timezone.utc)
     db.commit()
     
     # Create tokens
@@ -262,7 +266,7 @@ def update_user_profile(
                 detail="Invalid date format. Use YYYY-MM-DD"
             )
     
-    current_user.updated_at = datetime.now()
+    current_user.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(current_user)
     
@@ -292,7 +296,8 @@ def request_password_reset(request: PasswordReset, db: Session = Depends(get_db)
     # Generate reset token
     reset_token = AuthManager.generate_password_reset_token()
     user.password_reset_token = reset_token
-    user.password_reset_expires_at = datetime.now() + timedelta(hours=1)  # 1 hour expiry
+    now = datetime.now(timezone.utc)
+    user.password_reset_expires_at = now + timedelta(hours=1)  # 1 hour expiry
     db.commit()
     
     # TODO: Send email with reset token
@@ -304,9 +309,10 @@ def request_password_reset(request: PasswordReset, db: Session = Depends(get_db)
 @router.post("/password-reset/confirm", response_model=SuccessResponse)
 def confirm_password_reset(request: PasswordResetConfirm, db: Session = Depends(get_db)):
     """Confirm password reset with token"""
+    now = datetime.now(timezone.utc)
     user = db.query(User).filter(
         User.password_reset_token == request.token,
-        User.password_reset_expires_at > datetime.now()
+        User.password_reset_expires_at > now
     ).first()
     
     if not user:
@@ -319,7 +325,7 @@ def confirm_password_reset(request: PasswordResetConfirm, db: Session = Depends(
     user.password_hash = AuthManager.get_password_hash(request.new_password)
     user.password_reset_token = None
     user.password_reset_expires_at = None
-    user.updated_at = datetime.now()
+    user.updated_at = now
     db.commit()
     
     return SuccessResponse(message="Password reset successfully")
