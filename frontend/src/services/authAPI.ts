@@ -159,16 +159,21 @@ export const fetchWithoutAuth = async (url: string, options: RequestInit = {}): 
     const errorText = await response.text();
     console.error(`AuthAPI: Request failed - Status: ${response.status}, URL: ${url}, Response: ${errorText}`);
     
+    let errorDetail = '';
     try {
       const errorData = JSON.parse(errorText);
       if (errorData.detail) {
         console.error('AuthAPI: Error details:', errorData.detail);
-        throw new Error(`Request failed: ${errorData.detail}`);
+        errorDetail = errorData.detail;
       }
     } catch (parseError) {
+      // Response wasn't JSON
     }
     
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const error = new Error(errorDetail || `HTTP error! status: ${response.status}`);
+    (error as any).detail = errorDetail;
+    (error as any).status = response.status;
+    throw error;
   }
 
   return response;
@@ -319,6 +324,57 @@ export const confirmPasswordReset = async (
   console.log('AuthAPI: Password reset confirmed successfully');
 };
 
+// ==================== PRE-REGISTRATION EMAIL VERIFICATION ====================
+
+// Send a 6-digit verification code to email (before sign-up)
+// POST /api/auth/send-verification-code
+// Body: { email: string }
+// Response: { success: true, message: "Verification code sent" }
+// NOTE: Uses fetchWithoutAuth — user is not yet registered
+export const sendVerificationCode = async (email: string): Promise<void> => {
+  console.log('AuthAPI: Sending verification code to email...');
+
+  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/send-verification-code`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+
+  console.log('AuthAPI: Verification code sent successfully');
+};
+
+// Verify the 6-digit code for an email (before sign-up)
+// POST /api/auth/verify-email-code
+// Body: { email: string, code: string }
+// Response: { success: true, message: "Email verified" }
+// NOTE: Uses fetchWithoutAuth — user is not yet registered
+// NOTE: Must call register within a short window after verification
+export const verifyEmailCode = async (email: string, code: string): Promise<void> => {
+  console.log('AuthAPI: Verifying email code...');
+
+  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/verify-email-code`, {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
+
+  console.log('AuthAPI: Email code verified successfully');
+};
+
+// Resend a 6-digit verification code (before sign-up)
+// POST /api/auth/resend-verification-code
+// Body: { email: string }
+// Response: { success: true, message: "Verification code resent" }
+// NOTE: Uses fetchWithoutAuth — user is not yet registered
+export const resendVerificationCode = async (email: string): Promise<void> => {
+  console.log('AuthAPI: Resending verification code...');
+
+  await fetchWithoutAuth(`${API_BASE_URL}/api/auth/resend-verification-code`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+
+  console.log('AuthAPI: Verification code resent successfully');
+};
+
 // ==================== EMAIL VERIFICATION ====================
 
 // Verify email with token
@@ -409,4 +465,7 @@ export default {
   confirmPasswordReset,
   verifyEmail,
   resendVerificationEmail,
+  sendVerificationCode,
+  verifyEmailCode,
+  resendVerificationCode,
 };

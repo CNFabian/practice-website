@@ -1,5 +1,6 @@
 import React from 'react';
 import { OnestFont } from '../../../assets';
+import { AdminOverview } from './components';
 
 const AdminDashboardPage: React.FC = () => {
   return (
@@ -17,14 +18,7 @@ const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-pure-white rounded-xl p-6 shadow-sm">
-          <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black text-lg mb-4">
-            Welcome to the Admin Panel
-          </OnestFont>
-          <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
-            Analytics dashboard and lead management features will be implemented in the next steps.
-          </OnestFont>
-        </div>
+        <AdminOverview />
       </div>
     </div>
   );

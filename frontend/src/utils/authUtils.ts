@@ -10,7 +10,7 @@ export interface BackendUserResponse {
   profile_picture_url: string | null
   is_active: boolean
   is_verified: boolean
-  is_admin: boolean  // ADDED for Step B1
+  is_admin: boolean
   last_login_at: string | null
   created_at: string
 }
@@ -32,7 +32,7 @@ export const mapBackendUserToReduxUser = (backendUser: BackendUserResponse): Ser
     
     // Account status
     isActive: backendUser.is_active,
-    isAdmin: backendUser.is_admin,  // ADDED for Step B1
+    isAdmin: backendUser.is_admin,
     
     // Timestamps
     lastLoginAt: backendUser.last_login_at,

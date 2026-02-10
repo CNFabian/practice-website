@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
@@ -287,11 +288,12 @@ const OverviewPage: React.FC = () => {
   const isOnboardingRequiredError = error instanceof Error && error.message === 'ONBOARDING_REQUIRED';
 
   // Render onboarding modal FIRST, before any error/loading checks
-  const onboardingModal = showOnboarding ? (
+  const onboardingModal = showOnboarding ? createPortal(
     <>
       {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
       <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
-    </>
+    </>,
+    document.body // Render directly to body, outside all layout containers
   ) : null;
 
   // Loading state
