@@ -95,7 +95,6 @@ const SignupPage: React.FC = () => {
     } catch (err: any) {
       console.error('SignupPage: Send verification code error:', err);
       const detail = getErrorDetail(err)
-      
       if (detail.toLowerCase().includes('already registered') || detail.toLowerCase().includes('already exists')) {
         setError('An account with this email already exists. Please log in instead.')
       } else {
@@ -184,20 +183,18 @@ const SignupPage: React.FC = () => {
         phone: formData.phone,
         date_of_birth: formData.dateOfBirth
       });
+
       console.log('SignupPage: Registration successful, fetching user profile...');
-      
       const userProfile = await getCurrentUser();
       console.log('SignupPage: User profile fetched:', userProfile);
-      
+
       dispatch(setUser(userProfile));
-      
       console.log('SignupPage: Redux updated, navigating to /');
       navigate('/', { replace: true });
     } catch (err: any) {
       console.error('SignupPage: Verification/Registration error:', err);
       const detail = getErrorDetail(err)
-      
-      // If backend says "verify your email first", resend code and stay on/return to code screen
+
       if (detail.toLowerCase().includes('verify your email') || detail.toLowerCase().includes('request a code')) {
         console.log('SignupPage: Email verification required, resending code...');
         setVerificationCode(['', '', '', '', '', ''])
@@ -233,7 +230,7 @@ const SignupPage: React.FC = () => {
               {verificationStep === 'code' ? 'Verify Your Email' : 'Join NestNavigate'}
             </OnestFont>
             <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-lg">
-              {verificationStep === 'code' 
+              {verificationStep === 'code'
                 ? `We sent a 6-digit code to ${formData.email}`
                 : 'Start your journey to homeownership'}
             </OnestFont>
@@ -258,7 +255,7 @@ const SignupPage: React.FC = () => {
 
           {verificationStep === 'form' ? (
             /* ==================== STEP 1: Registration Form ==================== */
-            <form onSubmit={handleSendCode} className="space-y-4">
+            <form onSubmit={handleSendCode} className="space-y-4" autoComplete="on">
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
@@ -266,56 +263,44 @@ const SignupPage: React.FC = () => {
                   placeholder="First Name"
                   value={formData.firstName}
                   onChange={handleChange}
+                  autoComplete="given-name"
                   required
                   className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
                 />
-
                 <input
                   type="text"
                   name="lastName"
                   placeholder="Last Name"
                   value={formData.lastName}
                   onChange={handleChange}
+                  autoComplete="family-name"
                   required
                   className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
                 />
               </div>
 
               <input
+                id="email"
                 type="email"
                 name="email"
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
+                autoComplete="email"
                 required
                 className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
               />
 
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone Number"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
-              />
-
-              <input
-                type="date"
-                name="dateOfBirth"
-                placeholder="Date of Birth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
-              />
-
-             <div className="relative">
+              <div className="relative">
                 <input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
+                  onPaste={(e) => e.preventDefault()}
+                  autoComplete="new-password"
                   required
                   className="w-full px-4 py-3 pr-12 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
                 />
@@ -324,8 +309,8 @@ const SignupPage: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
                 >
-                  <img 
-                    src={showPassword ? Blind : Eye} 
+                  <img
+                    src={showPassword ? Eye : Blind}
                     alt={showPassword ? "Hide password" : "Show password"}
                     className="w-5 h-5"
                   />
@@ -339,6 +324,8 @@ const SignupPage: React.FC = () => {
                   placeholder="Confirm Password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  onPaste={(e) => e.preventDefault()}
+                  autoComplete="new-password"
                   required
                   className="w-full px-4 py-3 pr-12 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
                 />
@@ -347,21 +334,42 @@ const SignupPage: React.FC = () => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
                 >
-                  <img 
-                    src={showConfirmPassword ? Blind : Eye} 
+                  <img
+                    src={showConfirmPassword ? Eye : Blind}
                     alt={showConfirmPassword ? "Hide password" : "Show password"}
                     className="w-5 h-5"
                   />
                 </button>
               </div>
 
-                {/* Terms and Conditions text */}
+              <input
+                id="phone"
+                type="tel"
+                name="phone"
+                placeholder="Phone Number"
+                value={formData.phone}
+                onChange={handleChange}
+                autoComplete="tel"
+                className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
+              />
+
+              <input
+                type="date"
+                name="dateOfBirth"
+                placeholder="Date of Birth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                autoComplete="bday"
+                className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
+              />
+
+              {/* Terms and Conditions text */}
               <div className="text-center mt-4 whitespace-nowrap">
                 <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                   By clicking Sign Up, you automatically agree to our{' '}
-                  <a 
-                    href={TermsConditionsDoc} 
-                    target="_blank" 
+                  <a
+                    href={TermsConditionsDoc}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-logo-blue hover:underline"
                   >Terms and Conditions</a>
@@ -463,15 +471,15 @@ const SignupPage: React.FC = () => {
       </div>
 
       {/* Right Side - Image */}
-     <div className="hidden lg:flex flex-1 items-center justify-center m-10">
-          <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
-            <img 
-              src={SignupImage} 
-              alt="Home ownership journey image" 
-              className="max-w-full max-h-full object-cover rounded-2xl"
-            />
-          </div>
+      <div className="hidden lg:flex flex-1 items-center justify-center m-10">
+        <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
+          <img
+            src={SignupImage}
+            alt="Home ownership journey image"
+            className="max-w-full max-h-full object-cover rounded-2xl"
+          />
         </div>
+      </div>
     </div>
   )
 }

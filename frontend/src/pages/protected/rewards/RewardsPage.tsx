@@ -12,6 +12,7 @@ import {
   CategoryFilter,
   CoinTransactionHistory,
   RewardStatsSummary,
+  RewardPreferences
 } from "./components";
 
 // Fallback mock data for when API is empty or fails
@@ -183,6 +184,7 @@ const RewardsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <RewardStatsSummary />
         </div>
+        <RewardPreferences />  
       <RewardsNavigation buttons={navigationButtons} />
 
       {activeTab === 'browse' && (

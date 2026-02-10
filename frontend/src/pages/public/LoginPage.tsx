@@ -31,24 +31,21 @@ const LoginPage: React.FC = () => {
 
     try {
       console.log('LoginPage: Starting login process...');
-      
+
       await loginUser({
         email: formData.email,
         password: formData.password
       });
+
       console.log('LoginPage: Login successful, fetching user profile...');
-      
       const userProfile = await getCurrentUser();
       console.log('LoginPage: User profile fetched:', userProfile);
-      
+
       dispatch(setUser(userProfile));
-      
       console.log('LoginPage: Redux updated, navigating to /');
       navigate('/', { replace: true });
-      
     } catch (err: any) {
       console.error('LoginPage: Login error:', err);
-      
       if (err.message.includes('401')) {
         setError('Invalid email or password');
       } else if (err.message.includes('422')) {
@@ -90,6 +87,7 @@ const LoginPage: React.FC = () => {
               placeholder="email"
               value={formData.email}
               onChange={handleChange}
+              autoComplete="email"
               required
               className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
             />
@@ -101,6 +99,8 @@ const LoginPage: React.FC = () => {
                 placeholder="password"
                 value={formData.password}
                 onChange={handleChange}
+                onPaste={(e) => e.preventDefault()}
+                autoComplete="current-password"
                 required
                 className="w-full px-4 py-3 pr-12 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
               />
@@ -109,8 +109,8 @@ const LoginPage: React.FC = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
               >
-                <img 
-                  src={showPassword ? Blind : Eye} 
+                <img
+                  src={showPassword ? Eye : Blind}
                   alt={showPassword ? "Hide password" : "Show password"}
                   className="w-5 h-5"
                 />
@@ -156,9 +156,9 @@ const LoginPage: React.FC = () => {
       {/* Right Side - Image */}
       <div className="hidden lg:flex flex-1 items-center justify-center m-10">
         <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
-          <img 
-            src={LoginImage} 
-            alt="Home ownership journey image" 
+          <img
+            src={LoginImage}
+            alt="Home ownership journey image"
             className="max-w-full max-h-full object-cover rounded-2xl"
           />
         </div>
