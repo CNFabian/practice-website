@@ -1,6 +1,7 @@
 import React from "react";
 import { OnestFont } from "../../../../assets";
 import { useMyProgress } from "../../../../hooks/queries/useMyProgress";
+import SectionError from "./SectionError";
 
 // ────────────────────────────────────────────────────────
 // Engagement level → style mapping
@@ -9,8 +10,8 @@ import { useMyProgress } from "../../../../hooks/queries/useMyProgress";
 interface EngagementStyle {
   label: string;
   emoji: string;
-  strokeColor: string; // hex for SVG stroke
-  pillBg: string;      // Tailwind classes for the label pill
+  strokeColor: string;
+  pillBg: string;
   pillText: string;
 }
 
@@ -18,21 +19,21 @@ const ENGAGEMENT_MAP: Record<string, EngagementStyle> = {
   High: {
     label: "High Engagement",
     emoji: "🔥",
-    strokeColor: "#76DC94",  // status-green
+    strokeColor: "#76DC94", // status-green
     pillBg: "bg-status-green/10",
     pillText: "text-status-green",
   },
   Medium: {
     label: "Building Momentum",
     emoji: "⚡",
-    strokeColor: "#FAC86D",  // status-yellow
+    strokeColor: "#FAC86D", // status-yellow
     pillBg: "bg-status-yellow/10",
     pillText: "text-status-yellow",
   },
   Low: {
     label: "Getting Started",
     emoji: "🌱",
-    strokeColor: "#3658EC",  // logo-blue
+    strokeColor: "#3658EC", // logo-blue
     pillBg: "bg-logo-blue/10",
     pillText: "text-logo-blue",
   },
@@ -44,6 +45,7 @@ const getEngagement = (level: string | undefined): EngagementStyle => {
   if (level && ENGAGEMENT_MAP[level]) return ENGAGEMENT_MAP[level];
   return DEFAULT_ENGAGEMENT;
 };
+
 // ────────────────────────────────────────────────────────
 // SVG ring constants
 // ────────────────────────────────────────────────────────
@@ -73,9 +75,16 @@ const Skeleton: React.FC = () => (
 // ────────────────────────────────────────────────────────
 
 const ProgressRing: React.FC = () => {
-  const { data, isLoading } = useMyProgress();
+  const { data, isLoading, isError, refetch } = useMyProgress();
 
   if (isLoading) return <Skeleton />;
+  if (isError)
+    return (
+      <SectionError
+        message="Failed to load progress data."
+        onRetry={refetch}
+      />
+    );
 
   const pct = data?.progress_percentage ?? 0;
   const engagement = getEngagement(data?.engagement_level);
@@ -84,7 +93,10 @@ const ProgressRing: React.FC = () => {
   return (
     <div className="flex items-center gap-3">
       {/* SVG Ring */}
-      <div className="relative flex-shrink-0" style={{ width: SIZE, height: SIZE }}>
+      <div
+        className="relative flex-shrink-0"
+        style={{ width: SIZE, height: SIZE }}
+      >
         <svg width={SIZE} height={SIZE} className="-rotate-90">
           {/* Track */}
           <circle

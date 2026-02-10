@@ -2,6 +2,7 @@ import React from "react";
 import { OnestFont } from "../../../../assets";
 import { useUserStatistics } from "../../../../hooks/queries/useUserStatistics";
 import { useMyProgress } from "../../../../hooks/queries/useMyProgress";
+import SectionError from "./SectionError";
 
 // ────────────────────────────────────────────────────────
 // Helpers
@@ -20,7 +21,7 @@ const formatNumber = (n: number): string => n.toLocaleString();
 
 /**
  * The backend /api/dashboard/statistics returns a NESTED structure:
- *   { coin_balance: {...}, badges: {...}, learning: {...}, quizzes: {...} }
+ * { coin_balance: {...}, badges: {...}, learning: {...}, quizzes: {...} }
  *
  * The frontend UserStatisticsResponse type was defined as FLAT.
  * This extractor handles BOTH shapes defensively so the UI never breaks.
@@ -32,15 +33,14 @@ const extractStats = (data: any) => {
       (data.quizzes?.total_taken ?? 0) > 0
         ? Math.round((data.quizzes.passed / data.quizzes.total_taken) * 100)
         : 0;
-
     return {
       lessonsCompleted: data.learning?.lessons?.completed ?? 0,
       totalLessons: data.learning?.lessons?.total ?? 0,
       quizzesPassed: data.quizzes?.passed ?? 0,
       totalQuizzesTaken: data.quizzes?.total_taken ?? 0,
       passRate,
-      totalTimeSpentMinutes: 0, // not in nested response
-      currentStreak: 0, // not in nested response
+      totalTimeSpentMinutes: 0,
+      currentStreak: 0,
       lifetimeEarned: data.coin_balance?.lifetime_earned ?? 0,
       modulesCompleted: data.learning?.modules?.completed ?? 0,
       totalModules: data.learning?.modules?.total ?? 0,
@@ -54,7 +54,6 @@ const extractStats = (data: any) => {
           ((data?.quizzes_passed ?? 0) / data.total_quizzes_taken) * 100
         )
       : 0;
-
   return {
     lessonsCompleted: data?.lessons_completed ?? 0,
     totalLessons: data?.total_lessons ?? 0,
@@ -136,7 +135,8 @@ const STAT_CARDS: StatCardConfig[] = [
     label: "Overall Progress",
     icon: "🎯",
     iconColor: "text-status-green",
-    getValue: (_s, progress) => `${Math.round(progress?.progress_percentage ?? 0)}%`,
+    getValue: (_s, progress) =>
+      `${Math.round(progress?.progress_percentage ?? 0)}%`,
   },
 ];
 
@@ -165,10 +165,17 @@ const SkeletonRow: React.FC = () => (
 // ────────────────────────────────────────────────────────
 
 const StatisticsSummary: React.FC = () => {
-  const { data, isLoading } = useUserStatistics();
+  const { data, isLoading, isError, refetch } = useUserStatistics();
   const { data: progressData } = useMyProgress();
 
   if (isLoading) return <SkeletonRow />;
+  if (isError)
+    return (
+      <SectionError
+        message="Failed to load your statistics."
+        onRetry={refetch}
+      />
+    );
 
   const stats = extractStats(data);
 

@@ -8,6 +8,7 @@ import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/q
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
+import GrowYourNestPromptModal from '../../../components/protected/modals/GrowYourNestPromptModal';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -216,6 +217,10 @@ const LessonView: React.FC<LessonViewProps> = ({
   const milestonesReachedRef = useRef<Set<number>>(new Set());
   const lessonStartTimeRef = useRef<number>(Date.now());
   const lastProgressSyncRef = useRef<number>(0);
+
+  // Grow Your Nest prompt modal state
+  const [showGYNPromptModal, setShowGYNPromptModal] = useState(false);
+  const pendingNavigationRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
@@ -498,7 +503,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               onSuccess: () => {
                 console.log('✅ [YouTube Player] Lesson marked complete successfully');
                 if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
-                  launchGrowYourNest();
+                  setShowGYNPromptModal(true);
                 }
               },
               onError: (error: Error) => {
@@ -517,7 +522,6 @@ const LessonView: React.FC<LessonViewProps> = ({
           // Check milestone thresholds (replaces continuous progress updates)
           checkAndTrackMilestones(currentTime, duration);
           
-          // Reduced-frequency progress sync: every 30 seconds instead of every second
           // Reduced-frequency progress sync: every 30 seconds instead of every second
           const now = Date.now();
           if (now - lastProgressSyncRef.current >= 30000) {
@@ -540,7 +544,7 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     }, 1000); // Update every second for UI, but milestones + progress sync are throttled
 
-  }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest, addProgressItem]);
+  }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, addProgressItem]);
 
   const onPlayerStateChange = useCallback((event: YouTubePlayerEvent) => {
     const state = event.data;
@@ -575,7 +579,7 @@ const LessonView: React.FC<LessonViewProps> = ({
             onSuccess: () => {
               console.log('✅ [YouTube Player] Lesson marked complete successfully');
               if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
-                launchGrowYourNest();
+                setShowGYNPromptModal(true);
               }
             },
             onError: (error: Error) => {
@@ -604,7 +608,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         console.log('📋 [YouTube Player] Video is cued');
         break;
     }
-  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest]);
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData]);
 
   const onPlayerError = useCallback((event: any) => {
     const errorCode = event.data;
@@ -706,32 +710,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     };
   }, [isYouTubeAPIReady, youtubeVideoId, onPlayerReady, onPlayerStateChange, onPlayerError, onPlaybackRateChange, onPlaybackQualityChange]);
 
-   const handleCompleteLesson = useCallback(() => {
-    // Flush any pending batch progress before navigating (Step 13)
-    if (flushProgress) {
-      flushProgress();
-    }
-    
-    console.log('🔄 Complete lesson called');
-    console.log('Next lesson:', nextLesson);
-    console.log('Module backend ID:', module.backendId);
-    
-    if (isValidBackendId && module?.backendId) {
-      completeLessonMutation({ lessonId: lesson.backendId! }, {
-        onSuccess: () => {
-          console.log('✅ Lesson completed successfully on backend');
-          if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
-            launchGrowYourNest();
-          }
-        },
-        onError: (error: Error) => {
-          console.error('❌ Failed to complete lesson on backend:', error);
-        }
-      });
-    } else {
-      console.warn('⚠️ Skipping backend completion - invalid backend IDs');
-    }
-    
+  const executeNavigation = useCallback(() => {
     if (nextLesson && onNextLesson && module.backendId) {
       console.log('✅ Navigating to next lesson:', nextLesson.id, 'in module:', module.backendId);
       
@@ -746,12 +725,63 @@ const LessonView: React.FC<LessonViewProps> = ({
     } else if (!onNextLesson) {
       console.error('❌ No navigation handler provided');
     }
-  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, launchGrowYourNest, flushProgress]);
+  }, [nextLesson, onNextLesson, module.backendId, onBack]);
+
+  const handleCompleteLesson = useCallback(() => {
+    // Flush any pending batch progress before navigating (Step 13)
+    if (flushProgress) {
+      flushProgress();
+    }
+    
+    console.log('🔄 Complete lesson called');
+    console.log('Next lesson:', nextLesson);
+    console.log('Module backend ID:', module.backendId);
+    
+    if (isValidBackendId && module?.backendId) {
+      completeLessonMutation({ lessonId: lesson.backendId! }, {
+        onSuccess: () => {
+          console.log('✅ Lesson completed successfully on backend');
+          if (!backendLessonData?.grow_your_nest_played && gynLessonData) {
+            // Store the pending navigation and show the GYN prompt modal
+            pendingNavigationRef.current = executeNavigation;
+            setShowGYNPromptModal(true);
+            return; // Don't navigate yet — wait for modal choice
+          }
+        },
+        onError: (error: Error) => {
+          console.error('❌ Failed to complete lesson on backend:', error);
+        }
+      });
+    } else {
+      console.warn('⚠️ Skipping backend completion - invalid backend IDs');
+    }
+    
+    // Only navigate immediately if GYN modal is NOT being shown
+    if (backendLessonData?.grow_your_nest_played || !gynLessonData) {
+      executeNavigation();
+    }
+  }, [isValidBackendId, module?.backendId, completeLessonMutation, nextLesson, onNextLesson, onBack, lesson?.backendId, backendLessonData?.grow_your_nest_played, gynLessonData, executeNavigation, flushProgress]);
 
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
     handleCompleteLesson();
   }, [nextLesson, handleCompleteLesson]);
+
+  // GYN Prompt Modal handlers
+  const handleGYNPlay = useCallback(() => {
+    setShowGYNPromptModal(false);
+    pendingNavigationRef.current = null;
+    launchGrowYourNest();
+  }, [launchGrowYourNest]);
+
+  const handleGYNDismiss = useCallback(() => {
+    setShowGYNPromptModal(false);
+    // Execute the pending navigation if there was one (from button click path)
+    if (pendingNavigationRef.current) {
+      pendingNavigationRef.current();
+      pendingNavigationRef.current = null;
+    }
+  }, []);
 
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
@@ -1080,6 +1110,14 @@ const LessonView: React.FC<LessonViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Grow Your Nest Prompt Modal */}
+      <GrowYourNestPromptModal
+        isOpen={showGYNPromptModal}
+        onPlay={handleGYNPlay}
+        onDismiss={handleGYNDismiss}
+        lessonTitle={displayTitle}
+      />
     </div>
   );
 };

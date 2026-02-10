@@ -6,3 +6,4 @@ export { default as SupportCard } from './SupportCard';
 export { default as StatisticsSummary } from './StatisticsSummary';
 export { default as RecentActivityFeed } from './RecentActivityFeed';
 export { default as ProgressRing } from './ProgressRing';
+export { default as SectionError } from './SectionError';

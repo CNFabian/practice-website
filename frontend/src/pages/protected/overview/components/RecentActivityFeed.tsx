@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { OnestFont } from "../../../../assets";
 import { useRecentActivity } from "../../../../hooks/queries/useRecentActivity";
+import SectionError from "./SectionError";
 
 // ────────────────────────────────────────────────────────
 // Activity type → icon / color mapping
@@ -13,11 +14,11 @@ interface ActivityStyle {
 
 const ACTIVITY_STYLES: Record<string, ActivityStyle> = {
   lesson_completed: { icon: "✅", dotColor: "bg-status-green" },
-  quiz_passed:      { icon: "🏆", dotColor: "bg-logo-blue" },
-  quiz_failed:      { icon: "🔄", dotColor: "bg-status-red" },
-  badge_earned:     { icon: "🏅", dotColor: "bg-logo-yellow" },
-  coupon_redeemed:  { icon: "🎁", dotColor: "bg-status-yellow" },
-  coin_earned:      { icon: "🪙", dotColor: "bg-logo-yellow" },
+  quiz_passed: { icon: "🏆", dotColor: "bg-logo-blue" },
+  quiz_failed: { icon: "🔄", dotColor: "bg-status-red" },
+  badge_earned: { icon: "🏅", dotColor: "bg-logo-yellow" },
+  coupon_redeemed: { icon: "🎁", dotColor: "bg-status-yellow" },
+  coin_earned: { icon: "🪙", dotColor: "bg-logo-yellow" },
 };
 
 const DEFAULT_STYLE: ActivityStyle = { icon: "📌", dotColor: "bg-elegant-blue" };
@@ -95,9 +96,18 @@ const COLLAPSED_COUNT = 5;
 
 const RecentActivityFeed: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
-  const { data, isLoading } = useRecentActivity(expanded ? 20 : 8);
+  const { data, isLoading, isError, refetch } = useRecentActivity(
+    expanded ? 20 : 8
+  );
 
   if (isLoading) return <SkeletonFeed />;
+  if (isError)
+    return (
+      <SectionError
+        message="Failed to load recent activity."
+        onRetry={refetch}
+      />
+    );
 
   const activities: any[] = Array.isArray(data) ? data : [];
 
@@ -120,57 +130,59 @@ const RecentActivityFeed: React.FC = () => {
           {/* Timeline line */}
           <div className="absolute left-[15px] top-0 bottom-0 border-l-2 border-light-background-blue" />
 
-          {(expanded ? activities : activities.slice(0, COLLAPSED_COUNT)).map((item, idx) => {
-            const style = getStyle(item.activity_type);
-            const coinsEarned = item.metadata?.coins_earned;
+          {(expanded ? activities : activities.slice(0, COLLAPSED_COUNT)).map(
+            (item, idx) => {
+              const style = getStyle(item.activity_type);
+              const coinsEarned = item.metadata?.coins_earned;
 
-            return (
-              <div
-                key={item.id ?? idx}
-                className="relative flex items-start gap-3 py-3"
-              >
-                {/* Dot / icon */}
+              return (
                 <div
-                  className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${style.dotColor} bg-opacity-20`}
+                  key={item.id ?? idx}
+                  className="relative flex items-start gap-3 py-3"
                 >
-                  {style.icon}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <OnestFont
-                      as="p"
-                      weight={500}
-                      lineHeight="relaxed"
-                      className="text-text-grey text-sm truncate"
-                    >
-                      {item.description}
-                    </OnestFont>
-
-                    {coinsEarned != null && (
-                      <OnestFont
-                        as="span"
-                        weight={500}
-                        className="bg-light-background-blue text-logo-blue text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                      >
-                        +{coinsEarned} coins
-                      </OnestFont>
-                    )}
+                  {/* Dot / icon */}
+                  <div
+                    className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${style.dotColor} bg-opacity-20`}
+                  >
+                    {style.icon}
                   </div>
 
-                  <OnestFont
-                    as="span"
-                    weight={500}
-                    className="text-unavailable-button text-xs"
-                  >
-                    {relativeTime(item.created_at)}
-                  </OnestFont>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <OnestFont
+                        as="p"
+                        weight={500}
+                        lineHeight="relaxed"
+                        className="text-text-grey text-sm truncate"
+                      >
+                        {item.description}
+                      </OnestFont>
+
+                      {coinsEarned != null && (
+                        <OnestFont
+                          as="span"
+                          weight={500}
+                          className="bg-light-background-blue text-logo-blue text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                        >
+                          +{coinsEarned} coins
+                        </OnestFont>
+                      )}
+                    </div>
+
+                    <OnestFont
+                      as="span"
+                      weight={500}
+                      className="text-unavailable-button text-xs"
+                    >
+                      {relativeTime(item.created_at)}
+                    </OnestFont>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-       </div>
+              );
+            }
+          )}
+        </div>
       )}
 
       {/* View All / Show Less toggle */}
@@ -183,7 +195,7 @@ const RecentActivityFeed: React.FC = () => {
             className="text-logo-blue text-sm cursor-pointer hover:opacity-80"
             onClick={() => setExpanded((prev) => !prev)}
           >
-            {expanded ? 'Show Less' : `View All (${activities.length})`}
+            {expanded ? "Show Less" : `View All (${activities.length})`}
           </OnestFont>
         </div>
       )}
