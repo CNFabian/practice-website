@@ -541,9 +541,10 @@ class OnboardingManager:
         
         # Check new 5-step flow completion
         required_fields = [
+            onboarding.selected_avatar,
             onboarding.wants_expert_contact,
             onboarding.homeownership_timeline_months,
-            onboarding.target_cities
+            onboarding.zipcode
         ]
         
         # Also check that realtor/loan officer status is set (even if False)

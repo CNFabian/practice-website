@@ -110,14 +110,6 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/splash" element={
-        reduxIsAuthenticated ? <Navigate to="/app" replace /> : (
-          <AuthLayout>
-            <SplashPage />
-          </AuthLayout>
-        )
-      } />
-
       <Route path="/auth/*" element={
         reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
       }>
@@ -177,7 +169,7 @@ function App() {
                 : needsOnboarding === false 
                   ? <Navigate to="/app" replace />
                   : <LoadingSpinner minDisplayTime={500} />)
-            : <Navigate to="/splash" replace />
+            : <Navigate to="/auth/login" replace />
         } 
       />
 

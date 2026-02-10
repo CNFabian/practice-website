@@ -44,7 +44,6 @@ class UserResponse(BaseSchema):
     profile_picture_url: Optional[str]
     is_active: bool
     is_verified: bool
-    is_admin: bool = False
     last_login_at: Optional[datetime]
     created_at: datetime
 
@@ -124,16 +123,22 @@ class OnboardingStep4(BaseModel):
         ...,
         min_length=1,
         max_length=10,
-        description="Add your zipcode",
-        examples=["12345", "12345-6789"],
+        description="Select cities you're interested in",
+        examples=[["New York", "Los Angeles"], ["Chicago"]]
     )
     
-    @validator('target_cities', each_item=True)
-    def validate_zipcode_format(cls, v):
-        import re
-        if not re.match(r'^[0-9]{5}(-[0-9]{4})?$', v):
-            raise ValueError('Invalid zipcode format. Use 12345 or 12345-6789')
-        return v
+    @validator('target_cities')
+    def validate_cities(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one city must be selected')
+        if len(v) > 10:
+            raise ValueError('Maximum 10 cities allowed')
+        # Sanitize city names
+        sanitized = [city.strip()[:100] for city in v if city.strip()]
+        if not sanitized:
+            raise ValueError('Valid city names required')
+        return sanitized
+
 
 class OnboardingComplete(BaseModel):
     """Complete all onboarding steps at once"""
@@ -170,67 +175,6 @@ class OnboardingStatusPayload(BaseModel):
     homeownership_timeline_months: Optional[int] = None
     target_cities: Optional[List[str]] = None
     completed_at: Optional[datetime] = None
-    
-# ================================
-# CITY SEARCH SCHEMAS (Static Database)
-# ================================
-
-
-class CitySearchRequest(BaseModel):
-    """Request model for city search"""
-    query: str = Field(
-        ..., 
-        min_length=2, 
-        max_length=100,
-        description="City name to search for",
-        examples=["los", "san francisco", "new york"]
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "query": "los"
-            }
-        }
-
-
-class CityData(BaseModel):
-    """Response model for a single city"""
-    city: str = Field(..., description="City name")
-    state: str = Field(..., description="State abbreviation (e.g., CA, TX)")
-    zipcode: str = Field(..., description="Postal code")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "city": "Los Angeles",
-                "state": "CA",
-                "zipcode": "90001"
-            }
-        }
-
-
-class CitySearchResponse(BaseModel):
-    """Response model for city search"""
-    cities: List[CityData] = Field(..., description="List of matching cities")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "cities": [
-                    {
-                        "city": "Los Angeles",
-                        "state": "CA",
-                        "zipcode": "90001"
-                    },
-                    {
-                        "city": "Los Banos",
-                        "state": "CA",
-                        "zipcode": "93635"
-                    }
-                ]
-            }
-        }
 
 
 # ================================

@@ -19,7 +19,7 @@ from models import Base
 from routers import (
     auth, onboarding, dashboard, learning,
     quiz, rewards, materials, help_support, notifications,
-    analytics, grow_your_nest, cities, minigame
+    analytics, grow_your_nest
 )
 from analytics.scheduler import start_scheduler, stop_scheduler
 
@@ -164,22 +164,12 @@ app.include_router(rewards.router, prefix="/api/rewards", tags=["Rewards"])
 app.include_router(materials.router, prefix="/api/materials", tags=["Materials"])
 app.include_router(help_support.router, prefix="/api/help", tags=["Help & Support"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
-app.include_router(grow_your_nest.router, prefix="/api/grow-your-nest", tags=["Grow Your Nest"])
-app.include_router(cities.router, prefix="/api/v1/cities", tags=["Cities"])
 app.include_router(
     grow_your_nest.router,
     prefix=f"/api/{API_ROUTE_GROW_YOUR_NEST}",
     tags=[ROUTE_TAG_GROW_YOUR_NEST],
 )
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
-# Single route for Grow Your Nest
-API_ROUTE_GROW_YOUR_NEST = "grow-your-nest"
-ROUTE_TAG_GROW_YOUR_NEST = "Grow Your Nest"
-app.include_router(
-    grow_your_nest.router,
-    prefix=f"/api/{API_ROUTE_GROW_YOUR_NEST}",
-    tags=[ROUTE_TAG_GROW_YOUR_NEST],
-)
 
 @app.get("/")
 def read_root():
@@ -227,8 +217,7 @@ def api_status():
             "Materials & Resources",
             "Help & Support",
             "Notifications",
-            "Grow Your Nest Minigame",
-            "City Search"
+            "Grow Your Nest Minigame"
         ]
     }
 
