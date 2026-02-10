@@ -76,9 +76,6 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    email_verification_token: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
     password_reset_token: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True
     )
@@ -146,6 +143,31 @@ class User(Base):
 
     def __str__(self):
         return f"{self.email} ({self.first_name} {self.last_name})"
+
+
+class PendingEmailVerification(Base):
+    """Stores email verification state before sign-up (verify-then-register flow)."""
+    __tablename__ = "pending_email_verifications"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=text("uuid_generate_v4()")
+    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(10), nullable=False)
+    code_expires_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False
+    )
+    verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.datetime.now
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default=datetime.datetime.now,
+        onupdate=datetime.datetime.now,
+    )
 
 
 class UserOnboarding(Base):

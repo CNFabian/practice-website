@@ -133,6 +133,11 @@ class AuthManager:
     def generate_verification_token() -> str:
         """Generate a random verification token"""
         return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+
+    @staticmethod
+    def generate_verification_code() -> str:
+        """Generate a 6-digit numeric verification code for email/SMS"""
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
     
     @staticmethod
     def generate_password_reset_token() -> str:

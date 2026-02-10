@@ -7,27 +7,134 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from auth import AuthManager, create_tokens_for_user, refresh_access_token, get_current_user
-from models import User, UserCoinBalance
+from models import User, UserCoinBalance, PendingEmailVerification
 from schemas import (
     UserRegistration, UserLogin, UserResponse, TokenResponse,
-    PasswordReset, PasswordResetConfirm, ProfileUpdate, SuccessResponse
+    PasswordReset, PasswordResetConfirm, ProfileUpdate, SuccessResponse,
+    SendVerificationCodeRequest, VerifyEmailRequest,
 )
 from utils import NotificationManager
+from services.email import send_verification_email
 
 router = APIRouter()
+
+# How long after verify-email-code the user can complete register
+VERIFIED_EMAIL_VALID_MINUTES = 10
+
+
+@router.post("/send-verification-code", response_model=SuccessResponse)
+def send_verification_code(body: SendVerificationCodeRequest, db: Session = Depends(get_db)):
+    """Send a 6-digit verification code to the email (before sign-up). No user created yet."""
+    email = body.email.lower().strip()
+    existing_user = AuthManager.get_user_by_email(db, email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    code = AuthManager.generate_verification_code()
+    code_expires_at = datetime.now() + timedelta(minutes=15)
+
+    pending = db.query(PendingEmailVerification).filter(PendingEmailVerification.email == email).first()
+    if pending:
+        pending.code = code
+        pending.code_expires_at = code_expires_at
+        pending.verified_at = None
+        pending.updated_at = datetime.now()
+    else:
+        pending = PendingEmailVerification(
+            email=email,
+            code=code,
+            code_expires_at=code_expires_at,
+        )
+        db.add(pending)
+    db.commit()
+
+    send_verification_email(email, code)
+    return SuccessResponse(message="Verification code sent")
+
+
+@router.post("/verify-email-code", response_model=SuccessResponse)
+def verify_email_code(body: VerifyEmailRequest, db: Session = Depends(get_db)):
+    """Verify the 6-digit code for an email (before sign-up). Must call register within a short window."""
+    email = body.email.lower().strip()
+    pending = db.query(PendingEmailVerification).filter(PendingEmailVerification.email == email).first()
+    if not pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code",
+        )
+    if pending.code != body.code or pending.code_expires_at <= datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code",
+        )
+
+    pending.verified_at = datetime.now()
+    pending.updated_at = datetime.now()
+    db.commit()
+
+    return SuccessResponse(message="Email verified. You can now complete sign-up.")
+
+
+@router.post("/resend-verification-code", response_model=SuccessResponse)
+def resend_verification_code(body: SendVerificationCodeRequest, db: Session = Depends(get_db)):
+    """Resend a 6-digit verification code (before sign-up). Use when the first code wasn't received or expired."""
+    email = body.email.lower().strip()
+    existing_user = AuthManager.get_user_by_email(db, email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    pending = db.query(PendingEmailVerification).filter(PendingEmailVerification.email == email).first()
+    if not pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No verification in progress for this email. Request a code first.",
+        )
+
+    code = AuthManager.generate_verification_code()
+    code_expires_at = datetime.now() + timedelta(minutes=15)
+    pending.code = code
+    pending.code_expires_at = code_expires_at
+    pending.verified_at = None
+    pending.updated_at = datetime.now()
+    db.commit()
+
+    send_verification_email(email, code)
+    return SuccessResponse(message="Verification code sent")
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
-    """Register a new user"""
-    # Check if user already exists
-    existing_user = AuthManager.get_user_by_email(db, user_data.email)
+    """Register a new user. Email must have been verified first via send-verification-code + verify-email-code."""
+    email = user_data.email.lower().strip()
+
+    # Require recent email verification (verify-before-sign-up)
+    pending = db.query(PendingEmailVerification).filter(PendingEmailVerification.email == email).first()
+    if not pending or pending.verified_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please verify your email first. Request a code, then enter it before signing up.",
+        )
+    cutoff = datetime.now() - timedelta(minutes=VERIFIED_EMAIL_VALID_MINUTES)
+    if pending.verified_at < cutoff:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email verification expired. Please request a new code and verify again.",
+        )
+
+    # Check if user already exists (e.g. they verified then someone else registered first)
+    existing_user = AuthManager.get_user_by_email(db, email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Email already registered",
         )
-    
+
     # Parse date of birth if provided
     date_of_birth = None
     if user_data.date_of_birth:
@@ -38,23 +145,27 @@ def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid date format. Use YYYY-MM-DD"
             )
-    
-    # Create user
+
+    # Create user (already verified)
     user = AuthManager.create_user(
         db=db,
-        email=user_data.email,
+        email=email,
         password=user_data.password,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         phone=user_data.phone,
-        date_of_birth=date_of_birth
+        date_of_birth=date_of_birth,
+        is_verified=True,
     )
-    
+
     # Create initial coin balance
     coin_balance = UserCoinBalance(user_id=user.id)
     db.add(coin_balance)
+
+    # Consume pending verification so it can't be reused
+    db.delete(pending)
     db.commit()
-    
+
     # Send welcome notification
     NotificationManager.create_notification(
         db,
@@ -64,8 +175,7 @@ def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
         f"Hi {user.first_name}! Welcome to your gamified learning journey. Complete your onboarding to get started.",
         "high"
     )
-    
-    # Create tokens
+
     tokens = create_tokens_for_user(user)
     return tokens
 
@@ -213,44 +323,3 @@ def confirm_password_reset(request: PasswordResetConfirm, db: Session = Depends(
     db.commit()
     
     return SuccessResponse(message="Password reset successfully")
-
-
-@router.post("/verify-email", response_model=SuccessResponse)
-def verify_email(token: str, db: Session = Depends(get_db)):
-    """Verify user email with token"""
-    user = db.query(User).filter(User.email_verification_token == token).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification token"
-        )
-    
-    user.is_verified = True
-    user.email_verification_token = None
-    user.updated_at = datetime.now()
-    db.commit()
-    
-    return SuccessResponse(message="Email verified successfully")
-
-
-@router.post("/resend-verification", response_model=SuccessResponse)
-def resend_verification_email(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Resend email verification"""
-    if current_user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already verified"
-        )
-    
-    # Generate new verification token
-    verification_token = AuthManager.generate_verification_token()
-    current_user.email_verification_token = verification_token
-    current_user.updated_at = datetime.now()
-    db.commit()
-    
-    # TODO: Send verification email
-    
-    return SuccessResponse(message="Verification email sent")

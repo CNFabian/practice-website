@@ -44,6 +44,7 @@ class UserResponse(BaseSchema):
     profile_picture_url: Optional[str]
     is_active: bool
     is_verified: bool
+    is_admin: bool = False
     last_login_at: Optional[datetime]
     created_at: datetime
 
@@ -62,6 +63,17 @@ class PasswordReset(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str = Field(..., min_length=8)
+
+
+class SendVerificationCodeRequest(BaseModel):
+    """Request a 6-digit verification code (before sign-up)."""
+    email: EmailStr
+
+
+class VerifyEmailRequest(BaseModel):
+    """Email + 6-digit code for verification (sign-up flow)."""
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d+$")
 
 
 # ================================

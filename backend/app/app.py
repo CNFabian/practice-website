@@ -152,18 +152,25 @@ async def shutdown_event():
         logger.error(f"Error stopping scheduler: {e}", exc_info=True)
 
 # Include routers
+API_ROUTE_GROW_YOUR_NEST = "grow-your-nest"
+ROUTE_TAG_GROW_YOUR_NEST = "Grow Your Nest"
+
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(onboarding.router, prefix="/api/onboarding", tags=["Onboarding"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(learning.router, prefix="/api/learning", tags=["Learning"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["Quiz"])
-app.include_router(minigame.router, prefix="/api/minigame", tags=["Mini-Game"])
 app.include_router(rewards.router, prefix="/api/rewards", tags=["Rewards"])
 app.include_router(materials.router, prefix="/api/materials", tags=["Materials"])
 app.include_router(help_support.router, prefix="/api/help", tags=["Help & Support"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(grow_your_nest.router, prefix="/api/grow-your-nest", tags=["Grow Your Nest"])
 app.include_router(cities.router, prefix="/api/v1/cities", tags=["Cities"])
+app.include_router(
+    grow_your_nest.router,
+    prefix=f"/api/{API_ROUTE_GROW_YOUR_NEST}",
+    tags=[ROUTE_TAG_GROW_YOUR_NEST],
+)
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 # Single route for Grow Your Nest
 API_ROUTE_GROW_YOUR_NEST = "grow-your-nest"
@@ -221,7 +228,7 @@ def api_status():
             "Help & Support",
             "Notifications",
             "Grow Your Nest Minigame",
-            "City Search (Google Places API)"
+            "City Search"
         ]
     }
 
