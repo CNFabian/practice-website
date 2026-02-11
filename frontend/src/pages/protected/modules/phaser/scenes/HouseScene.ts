@@ -492,12 +492,11 @@ export default class HouseScene extends BaseScene {
     // Left col: ~5% to ~50%, Right col: ~50% to ~95% of house width
 
     const roomQuadrants = [
-      { left: 0.05, top: 0.10, right: 0.50, bottom: 0.54 },  // Room 0: top-left
-      { left: 0.50, top: 0.10, right: 0.95, bottom: 0.54 },  // Room 1: top-right
-      { left: 0.05, top: 0.54, right: 0.50, bottom: 1.00 },  // Room 2: bottom-left
-      { left: 0.50, top: 0.54, right: 0.95, bottom: 1.00 },  // Room 3: bottom-right
+      { left: 0.20, top: 0.25, right: 0.45, bottom: 0.50 },  // Room 0: top-left
+      { left: 0.55, top: 0.25, right: 0.825, bottom: 0.45 },  // Room 1: top-right
+      { left: 0.20, top: 0.575, right: 0.45, bottom: 0.87 },  // Room 2: bottom-left
+      { left: 0.55, top: 0.575, right: 0.825, bottom: 0.87 },  // Room 3: bottom-right
     ];
-
     this.module.lessons.forEach((lesson, index) => {
       if (index >= roomQuadrants.length) return;
 
@@ -508,7 +507,7 @@ export default class HouseScene extends BaseScene {
       const zoneH = (quad.bottom - quad.top) * houseDisplayH;
 
       // Transparent rectangle covering the room quadrant
-      const hitZone = this.add.rectangle(zoneX, zoneY, zoneW, zoneH, 0x000000, 0);
+      const hitZone = this.add.rectangle(zoneX, zoneY, zoneW, zoneH, COLORS.ELEGANT_BLUE, 0.3);
       hitZone.setDepth(15); // Above lesson cards (10) so it receives hover
       hitZone.setInteractive({ useHandCursor: !lesson.locked });
       this.roomHitZones.push(hitZone);
@@ -594,16 +593,21 @@ export default class HouseScene extends BaseScene {
 
     const tooltipHeight = btnSlotY + btnHeight + unlockMsgH + bottomPad;
 
-    // ── Position: centered over the room quadrant, clamped to viewport ──
+    // ── Position: above the room quadrant so user can reach the button ──
     let tooltipX = zoneX;
     let tooltipY = zoneY;
 
     const padX = tooltipWidth / 2 + scale(8);
-    const padY = tooltipHeight / 2 + scale(8);
     if (tooltipX - padX < 0) tooltipX = padX;
     if (tooltipX + padX > width) tooltipX = width - padX;
-    if (tooltipY - padY < 0) tooltipY = padY;
-    if (tooltipY + padY > height) tooltipY = height - padY;
+    // If tooltip would go above viewport, place it below the zone instead
+    if (tooltipY - tooltipHeight / 2 < scale(8)) {
+      tooltipY = zoneY + tooltipHeight / 2 + scale(12);
+    }
+    // Final clamp
+    if (tooltipY + tooltipHeight / 2 > height - scale(8)) {
+      tooltipY = height - tooltipHeight / 2 - scale(8);
+    }
 
     this.hoverTooltip = this.add.container(tooltipX, tooltipY);
     this.hoverTooltip.setDepth(51);
@@ -653,6 +657,14 @@ export default class HouseScene extends BaseScene {
     // Close button hit area
     const closeHit = this.add.circle(closeX, closeIconY, closeBtnSize + scale(4), 0x000000, 0);
     closeHit.setInteractive({ useHandCursor: true });
+    closeHit.on('pointerover', () => {
+      this.isPointerOverTooltip = true;
+      this.cancelTooltipDestroyTimer();
+    });
+    closeHit.on('pointerout', () => {
+      this.isPointerOverTooltip = false;
+      this.scheduleTooltipDestroy();
+    });
     closeHit.on('pointerdown', () => {
       this.isPointerOverTooltip = false;
       this.destroyHoverTooltip();
@@ -740,6 +752,8 @@ export default class HouseScene extends BaseScene {
       const btnHit = this.add.rectangle(0, btnCenterY, btnWidth, btnHeight, 0x000000, 0);
       btnHit.setInteractive({ useHandCursor: true });
       btnHit.on('pointerover', () => {
+        this.isPointerOverTooltip = true;
+        this.cancelTooltipDestroyTimer();
         activeBtnBg.clear();
         activeBtnBg.fillStyle(COLORS.ELEGANT_BLUE, 1);
         activeBtnBg.fillRoundedRect(
@@ -747,6 +761,8 @@ export default class HouseScene extends BaseScene {
         );
       });
       btnHit.on('pointerout', () => {
+        this.isPointerOverTooltip = false;
+        this.scheduleTooltipDestroy();
         activeBtnBg.clear();
         activeBtnBg.fillStyle(COLORS.LOGO_BLUE, 1);
         activeBtnBg.fillRoundedRect(

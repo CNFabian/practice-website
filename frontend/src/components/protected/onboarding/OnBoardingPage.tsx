@@ -40,13 +40,13 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
     has_loan_officer: null as boolean | null,
     wants_expert_contact: '',
     homeownership_timeline_months: 28, // Default: 2 years 4 months
-    target_city: ''  // Will hold "City, ST" format e.g. "Long Beach, CA"
+    target_cities: [] as string[]  // Will hold ["Long Beach, CA", "San Jose, CA"]
   });
 
-  // City search state (replaces zipcode state)
+  // City search state
   const [cityInput, setCityInput] = useState('');
   const [cityResults, setCityResults] = useState<PlacePrediction[]>([]);
-  const [selectedCity, setSelectedCity] = useState<PlacePrediction | null>(null);
+  const [selectedCities, setSelectedCities] = useState<PlacePrediction[]>([]);
   const [isSearchingCity, setIsSearchingCity] = useState(false);
   const [cityError, setCityError] = useState<string | null>(null);
 
@@ -67,12 +67,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
 
   // Search cities when user types (debounced)
   useEffect(() => {
-    // Don't search if a city is already selected or input is too short
-    if (selectedCity || cityInput.length < 3) {
-      if (cityInput.length < 3) {
-        setCityResults([]);
-        setCityError(null);
-      }
+    if (cityInput.length < 3) {
+      setCityResults([]);
+      setCityError(null);
       return;
     }
 
@@ -96,7 +93,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
     }, 600);
 
     return () => clearTimeout(timeoutId);
-  }, [cityInput, selectedCity]);
+  }, [cityInput]);
 
   // Progress calculation (6 total steps)
   const progress = ((currentStep + 1) / 6) * 100;
@@ -121,7 +118,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
       case 4: // Timeline
         return formData.homeownership_timeline_months > 0;
       case 5: // City
-        return formData.target_city !== '' && selectedCity !== null;
+        return selectedCities.length > 0;
       default:
         return false;
     }
@@ -129,11 +126,25 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
 
   // Handle city selection from dropdown
   const handleCitySelect = (city: PlacePrediction) => {
-    setSelectedCity(city);
-    setCityInput(city.displayText); // Show "Long Beach, CA" in input
+    // Prevent duplicates
+    if (selectedCities.some((c) => c.placeId === city.placeId)) {
+      setCityInput('');
+      setCityResults([]);
+      return;
+    }
+    const updatedCities = [...selectedCities, city];
+    setSelectedCities(updatedCities);
+    setCityInput('');
     setCityResults([]);
     setCityError(null);
-    setFormData({ ...formData, target_city: city.displayText }); // "Long Beach, CA"
+    setFormData({ ...formData, target_cities: updatedCities.map((c) => c.displayText) });
+  };
+
+  // Handle removing a selected city chip
+  const handleCityRemove = (placeId: string) => {
+    const updatedCities = selectedCities.filter((c) => c.placeId !== placeId);
+    setSelectedCities(updatedCities);
+    setFormData({ ...formData, target_cities: updatedCities.map((c) => c.displayText) });
   };
 
   // Handle final submission
@@ -161,9 +172,9 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
         homeownership_timeline_months: formData.homeownership_timeline_months
       });
 
-      // Step 4: Target Cities - sends "City, ST" format e.g. ["Long Beach, CA"]
+      // Step 4: Target Cities - sends array e.g. ["Long Beach, CA", "San Jose, CA"]
       await completeStep4({
-        target_cities: [formData.target_city]
+        target_cities: formData.target_cities
       });
 
       console.log('All onboarding steps completed successfully');
@@ -522,97 +533,117 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                 <img src={OnboardingImage3_5} alt="Location" className="w-16 h-16 object-contain" />
                 <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
                   Finally, let's find your future home base!
+                  <br />
+                  Select cities you're interested in:
                 </OnestFont>
               </div>
 
-              <div className="max-w-xl mx-auto space-y-4">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue">
-                  Enter your city name
+              <div className="max-w-xl mx-auto space-y-2">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue text-right">
+                  Search by City Name or ZIP Code
                 </OnestFont>
 
                 <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="e.g., Long Beach, San Francisco"
-                    value={cityInput}
-                    onChange={(e) => {
-                      setCityInput(e.target.value);
-                      // Reset selection when user types
-                      if (selectedCity) {
-                        setSelectedCity(null);
-                        setFormData({ ...formData, target_city: '' });
-                      }
-                    }}
-                    className={`w-full px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-elegant-blue text-lg transition-colors ${
-                      selectedCity
-                        ? 'border-status-green'
-                        : cityError
-                        ? 'border-status-red'
-                        : 'border-elegant-blue'
+                  {/* Search Input */}
+                  <div
+                    className={`flex items-center gap-2 w-full px-4 py-3 border-2 rounded-xl transition-colors bg-pure-white ${
+                      cityError ? 'border-status-red' : 'border-elegant-blue'
                     }`}
-                  />
+                  >
+                    {/* Search Icon */}
+                    <svg
+                      className="w-5 h-5 text-text-grey flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
 
-                  {/* Loading Spinner */}
-                  {isSearchingCity && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <div className="w-6 h-6 border-2 border-elegant-blue border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  )}
+                    {/* Text Input */}
+                    <input
+                      type="text"
+                      placeholder={selectedCities.length > 0 ? 'Add another city...' : 'e.g., Long Beach, San Francisco'}
+                      value={cityInput}
+                      onChange={(e) => {
+                        setCityInput(e.target.value);
+                      }}
+                      className="flex-1 min-w-0 outline-none text-lg text-text-blue-black bg-transparent placeholder:text-unavailable-button"
+                    />
 
-                  {/* Success Checkmark */}
-                  {selectedCity && !isSearchingCity && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-status-green text-2xl">
-                      ✓
-                    </div>
-                  )}
+                    {/* Clear Input Button (⊗) */}
+                    {cityInput && (
+                      <button
+                        onClick={() => {
+                          setCityInput('');
+                          setCityResults([]);
+                          setCityError(null);
+                        }}
+                        className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-text-grey hover:text-text-blue-black transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Loading Spinner */}
+                    {isSearchingCity && (
+                      <div className="flex-shrink-0">
+                        <div className="w-5 h-5 border-2 border-elegant-blue border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Dropdown Results */}
-                  {cityResults.length > 0 && !selectedCity && (
-                    <div className="absolute z-10 w-full mt-1 bg-pure-white border-2 border-elegant-blue rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                      {cityResults.map((city) => (
-                        <button
-                          key={city.placeId}
-                          onClick={() => handleCitySelect(city)}
-                          className="w-full px-6 py-3 text-left hover:bg-light-background-blue transition-colors first:rounded-t-xl last:rounded-b-xl"
-                        >
-                          <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
-                            {city.city}
-                          </OnestFont>
-                          <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey ml-1">
-                            , {city.state}
-                          </OnestFont>
-                        </button>
-                      ))}
+                  {cityResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-0 bg-pure-white border-2 border-t-0 border-elegant-blue rounded-b-xl shadow-lg max-h-60 overflow-y-auto">
+                      {cityResults
+                        .filter((city) => !selectedCities.some((sc) => sc.placeId === city.placeId))
+                        .map((city) => (
+                          <button
+                            key={city.placeId}
+                            onClick={() => handleCitySelect(city)}
+                            className="w-full px-6 py-3 text-left hover:bg-light-background-blue transition-colors last:rounded-b-xl"
+                          >
+                            <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black">
+                              {city.city}
+                            </OnestFont>
+                            <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey ml-1">
+                              , {city.state}
+                            </OnestFont>
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
 
-                {/* Selected City Display */}
-                {selectedCity && (
-                  <div className="bg-status-green/10 border-2 border-status-green rounded-xl p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-status-green">
-                        <span className="text-xl">✓</span>
-                        <div className="text-left">
-                          <OnestFont weight={700} lineHeight="relaxed" className="text-lg">
-                            {selectedCity.city}, {selectedCity.state}
-                          </OnestFont>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setSelectedCity(null);
-                          setCityInput('');
-                          setCityResults([]);
-                          setFormData({ ...formData, target_city: '' });
-                        }}
-                        className="text-text-grey hover:text-text-blue-black transition-colors"
+                {/* Selected City Chips - Below Input */}
+                {selectedCities.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2">
+                    {selectedCities.map((city) => (
+                      <span
+                        key={city.placeId}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-light-background-blue border border-elegant-blue rounded-lg"
                       >
-                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                          Change
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-text-blue-black">
+                          {city.city}, {city.state}
                         </OnestFont>
-                      </button>
-                    </div>
+                        <button
+                          onClick={() => handleCityRemove(city.placeId)}
+                          className="text-text-grey hover:text-text-blue-black transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 )}
 
@@ -624,7 +655,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                 )}
 
                 {/* Helper Text */}
-                {!cityInput && !selectedCity && (
+                {!cityInput && selectedCities.length === 0 && (
                   <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
                     Start typing to search for your city
                   </OnestFont>
@@ -657,7 +688,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                   }`}
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
-                    {isLoading ? 'LOADING...' : "LET'S GO"}
+                    {isLoading ? 'LOADING...' : 'NEXT >'}
                   </OnestFont>
                 </button>
               </div>
