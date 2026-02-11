@@ -17,7 +17,11 @@ const SettingsPage: React.FC = () => {
   }
 }, []);
 
-  const [activeTab, setActiveTab] = useState<TabType>('Account');
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialTab = (searchParams.get('tab') as TabType) || 'Account';
+  const [activeTab, setActiveTab] = useState<TabType>(
+    ['Account', 'Profile', 'Appearance', 'Notifications'].includes(initialTab) ? initialTab : 'Account'
+  );
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const tabs: TabType[] = ['Account', 'Profile', 'Appearance', 'Notifications'];

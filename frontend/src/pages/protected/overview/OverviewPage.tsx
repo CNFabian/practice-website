@@ -1,26 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
 import OnBoardingPage from '../../../components/protected/onboarding/OnBoardingPage';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 import { OnestFont } from "../../../assets";
 import {
-  WelcomeCard,
-  LessonCard,
+  HeroModuleCard,
+  ModuleOverviewCard,
+  UserProfileCard,
+  StreakCard,
+  DailyGoalsCard,
   LeaderboardCard,
-  SupportCard,
-  StatisticsSummary,
-  RecentActivityFeed,
-  ProgressRing,
 } from "./components";
-import {
-  Task,
-  Lesson,
-  LeaderboardEntry,
-  SupportCard as SupportCardType,
-} from "./types/overview.types";
+import { LeaderboardEntry } from "./types/overview.types";
 import { Icons, Images } from './images';
 import { useCoinBalance } from "../../../hooks/queries/useCoinBalance";
 import { useDashboardOverview } from "../../../hooks/queries/useDashboardOverview";
@@ -29,80 +24,8 @@ import { useQuizLeaderboard } from "../../../hooks/queries/useQuizLeaderboard";
 import { useMyProgress } from "../../../hooks/queries/useMyProgress";
 import type { QuizLeaderboardEntry } from "../../../hooks/queries/useQuizLeaderboard";
 
-// Helper functions to transform API data to UI types
-const transformAchievementsToTasks = (achievements: string[]): Task[] => {
-  const taskDefinitions = [
-    {
-      id: "1",
-      title: "Setup your Profile",
-      icon: Icons.BlueAvatar,
-      points: 100,
-      achievementKey: "profile_setup",
-    },
-    {
-      id: "2",
-      title: "Complete your Financial Profile",
-      icon: Icons.BlueAvatar,
-      points: 100,
-      achievementKey: "financial_profile",
-      isWIP: true,
-    },
-  ];
+// ─── Transform helpers ───────────────────────────────────────────
 
-  return taskDefinitions.map(taskDef => ({
-    id: taskDef.id,
-    title: taskDef.title,
-    icon: taskDef.icon,
-    points: taskDef.points,
-    completed: achievements.includes(taskDef.achievementKey),
-    isWIP: taskDef.isWIP,
-  }));
-};
-
-const transformNextLessonToLesson = (apiLesson: any, moduleNumber: number = 1): Lesson | null => {
-  if (!apiLesson) return null;
-
-  return {
-    id: apiLesson.id,
-    moduleNumber: moduleNumber,
-    title: apiLesson.title,
-    duration: `${apiLesson.estimated_duration_minutes} minutes`,
-    description: apiLesson.description,
-    points: apiLesson.nest_coins_reward,
-    moduleTitle: '',
-    imageUrl: apiLesson.image_url,
-    status: apiLesson.is_completed ? 'start' : 'continue',
-  };
-};
-
-const transformModuleToLesson = (moduleProgress: any): Lesson => {
-  const isLocked = moduleProgress.status === 'locked';
-  const isStarted = moduleProgress.lessons_completed > 0;
-
-  return {
-    id: moduleProgress.module.id,
-    moduleNumber: moduleProgress.module.order_index,
-    title: moduleProgress.module.title,
-    lessonsCount: moduleProgress.total_lessons,
-    description: moduleProgress.module.description,
-    points: 100,
-    moduleTitle: '',
-    tags: [
-      moduleProgress.module.difficulty_level,
-      `${moduleProgress.total_lessons} lessons`
-    ].filter(Boolean),
-    imageUrl: moduleProgress.module.thumbnail_url,
-    status: isLocked ? 'locked' : isStarted ? 'continue' : 'start',
-  };
-};
-
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-  { id: '1', name: 'Alex Johnson', avatar: Icons.GenericAvatar, coins: 1250, rank: 1 },
-  { id: '2', name: 'Sarah Chen', avatar: Icons.GenericAvatar, coins: 1100, rank: 2 },
-  { id: '3', name: 'Mike Rodriguez', avatar: Icons.GenericAvatar, coins: 980, rank: 3 },
-  { id: '4', name: 'Emma Davis', avatar: Icons.GenericAvatar, coins: 850, rank: 4 },
-  { id: '5', name: 'You', avatar: Icons.GenericAvatar, coins: 750, rank: 5 },
- ];
 const transformLeaderboardData = (
   entries: QuizLeaderboardEntry[]
 ): LeaderboardEntry[] => {
@@ -115,129 +38,75 @@ const transformLeaderboardData = (
   }));
 };
 
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    title: "Setup your Profile",
-    icon: Icons.BlueAvatar,
-    points: 100,
-    completed: true,
-  },
-  {
-    id: "2",
-    title: "Complete your Financial Profile (WIP!)",
-    icon: Icons.BlueAvatar,
-    points: 100,
-    completed: false,
-    isWIP: true,
-  },
+const MOCK_LEADERBOARD: LeaderboardEntry[] = [
+  { id: '1', name: 'Alex Johnson', avatar: Icons.GenericAvatar, coins: 1250, rank: 1 },
+  { id: '2', name: 'Sarah Chen', avatar: Icons.GenericAvatar, coins: 1100, rank: 2 },
+  { id: '3', name: 'Mike Rodriguez', avatar: Icons.GenericAvatar, coins: 980, rank: 3 },
+  { id: '4', name: 'Emma Davis', avatar: Icons.GenericAvatar, coins: 850, rank: 4 },
+  { id: '5', name: 'You', avatar: Icons.GenericAvatar, coins: 750, rank: 5 },
+  { id: '6', name: 'Jordan Lee', avatar: Icons.GenericAvatar, coins: 700, rank: 6 },
+  { id: '7', name: 'Taylor Swift', avatar: Icons.GenericAvatar, coins: 650, rank: 7 },
+  { id: '8', name: 'Chris P.', avatar: Icons.GenericAvatar, coins: 600, rank: 8 },
 ];
 
-const MOCK_CONTINUE_LESSON: Lesson = {
-  id: "lesson-1",
-  moduleNumber: 1,
-  title: "Mindset & Financial Readiness",
-  duration: "20 minutes",
-  description:
-    "Get your head in the game—and your wallet in shape—before you shop for your dream home.",
-  points: 25,
-  moduleTitle: "Readiness & Decision-Making Module",
-  imageUrl: Images.OverviewImg1,
-  status: "continue",
-};
-
-const MOCK_LEARNING_MODULES: Lesson[] = [
-  {
-    id: "module-1",
-    moduleNumber: 1,
-    title: "Mindset & Financial Readiness",
-    lessonsCount: 3,
-    description:
-      "What are the key financial steps & requirements to prepare for purchasing a home?",
-    points: 100,
-    moduleTitle: "",
-    tags: ["Beginner", "Finance"],
-    imageUrl: Images.OverviewImg2,
-    status: "start",
-  },
-];
+// ─── Component ───────────────────────────────────────────────────
 
 const OverviewPage: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const showOnboarding = useSelector((state: RootState) => state.ui.showOnboardingModal);
-  const [isWelcomeExpanded, setIsWelcomeExpanded] = useState(true);
+  const user = useSelector((state: RootState) => state.auth.user);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
+  // ─── Hooks ───
   useCoinBalance();
   const { data: onboardingStatus, isLoading: isOnboardingLoading } = useOnboardingStatus();
   const { data: overviewData, isLoading: isOverviewLoading, error: overviewError } = useDashboardOverview();
   const { data: modulesData, isLoading: isModulesLoading, error: modulesError } = useDashboardModules();
-  const { data: leaderboardData } = useQuizLeaderboard(5);
+  const { data: leaderboardData } = useQuizLeaderboard(8);
   const { data: progressData } = useMyProgress();
 
   const isLoading = isOverviewLoading || isModulesLoading;
   const error = overviewError || modulesError;
 
-  // Step A1: Merge achievements from both dashboard overview AND analytics my-progress
-  const allAchievements = [
-    ...(overviewData?.recent_achievements || []),
-    ...(progressData?.recent_achievements || [])
-  ];
-  
-  // Remove duplicates
-  const uniqueAchievements = Array.from(new Set(allAchievements));
+  // ─── Data derivations ───
 
-  const tasks = uniqueAchievements.length > 0
-    ? transformAchievementsToTasks(uniqueAchievements)
-    : MOCK_TASKS;
+  // Hero card: find the current in-progress module
+  const currentModule = modulesData?.find(
+    (m: any) => m.status === 'in_progress' || m.status === 'not_started'
+  );
 
-  const continueLesson = overviewData
-    ? (transformNextLessonToLesson(overviewData.next_lesson) || MOCK_CONTINUE_LESSON)
-    : MOCK_CONTINUE_LESSON;
+  // All modules for the list
+  const allModules = modulesData || [];
 
-  const learningModules = modulesData && modulesData.length > 0
-    ? modulesData.map(transformModuleToLesson).slice(0, 3)
-    : MOCK_LEARNING_MODULES;
-
+  // Leaderboard
   const leaderboard = leaderboardData?.leaderboard && leaderboardData.leaderboard.length > 0
     ? transformLeaderboardData(leaderboardData.leaderboard)
     : MOCK_LEADERBOARD;
 
-  const [supportCards] = useState<SupportCardType[]>([
-    {
-      id: "help",
-      title: "Help Center",
-      subtitle: "Find out what you need.",
-      icon: Icons.GetHelp,
-      action: () => console.log("Help Center clicked"),
-    },
-    {
-      id: "chat",
-      title: "Chat with an Expert",
-      subtitle: "Speak with an expert.",
-      icon: Icons.Chat,
-      action: () => console.log("Chat clicked"),
-    },
-    {
-      id: "share",
-      title: "Share NestNavigate with Your Friends",
-      subtitle: "Share the rewards of homeownership.",
-      icon: Icons.Share,
-      action: () => console.log("Share clicked"),
-    },
-  ]);
+  // User stats — prefer progressData when available for accuracy
+  const totalCoins = progressData?.coins_balance ?? overviewData?.total_coins ?? 0;
+  const totalBadges = progressData?.badges_earned ?? overviewData?.total_badges ?? 0;
+  const modulesCompleted = progressData?.modules_completed ?? overviewData?.modules_completed ?? 0;
+  const totalModules = overviewData?.total_modules ?? 0;
+  const [currentStreak, setCurrentStreak] = useState(overviewData?.current_streak ?? 0);
+  const overallProgress = progressData?.progress_percentage
+    ?? (totalModules > 0 ? Math.round((modulesCompleted / totalModules) * 100) : 0);
 
-  // Event handlers
-  const handleLessonAction = (lessonId: string) => {
-    console.log("Lesson action:", lessonId);
+  // ─── Event handlers ───
+
+  const handleContinueHero = () => {
+    if (currentModule) {
+      navigate(`/app/modules/${currentModule.module.id}`);
+    }
+  };
+
+  const handleModuleAction = (moduleId: string) => {
+    navigate(`/app/modules/${moduleId}`);
   };
 
   const handleSeeAllModules = () => {
-    console.log("See all modules clicked");
-  };
-
-  const handleRewardsShop = () => {
-    console.log("Rewards shop clicked");
+    navigate('/app/modules');
   };
 
   const handleLeaderboardMenu = () => {
@@ -249,27 +118,36 @@ const OverviewPage: React.FC = () => {
     dispatch(closeOnboardingModal());
   };
 
-  useEffect(() => {
-  const bgElement = document.getElementById('section-background');
-  if (bgElement) {
-    bgElement.className = 'bg-gradient-to-b from-[#EFF6FF] to-light-background-blue';
-    bgElement.style.backgroundSize = 'cover';
-  }
-}, []);
+  // ─── Module status helper ───
+  const getModuleStatus = (moduleProgress: any): "completed" | "in-progress" | "not-started" | "locked" => {
+    if (moduleProgress.status === 'completed') return 'completed';
+    if (moduleProgress.status === 'in_progress') return 'in-progress';
+    if (moduleProgress.status === 'locked') return 'locked';
+    return 'not-started';
+  };
 
+  // ─── Effects ───
+
+  useEffect(() => {
+    const bgElement = document.getElementById('section-background');
+    if (bgElement) {
+      bgElement.className = 'bg-gradient-to-b from-[#EFF6FF] to-light-background-blue';
+      bgElement.style.backgroundSize = 'cover';
+    }
+  }, []);
+
+  // Onboarding modal logic — UNCHANGED
   useEffect(() => {
     console.log('OverviewPage: useEffect triggered');
     console.log('OverviewPage: showOnboarding:', showOnboarding);
     console.log('OverviewPage: onboardingStatus:', onboardingStatus);
     console.log('OverviewPage: isOnboardingLoading:', isOnboardingLoading);
 
-    // Wait for onboarding status to load
     if (isOnboardingLoading) {
       console.log('OverviewPage: Still loading onboarding status, skipping check');
       return;
     }
 
-    // Check if we need to show onboarding
     if (onboardingStatus && !onboardingStatus.completed && !showOnboarding) {
       console.log('OverviewPage: Onboarding not completed, opening modal');
       dispatch(openOnboardingModal());
@@ -287,16 +165,21 @@ const OverviewPage: React.FC = () => {
   // Check if error is ONBOARDING_REQUIRED (expected state, not a real error)
   const isOnboardingRequiredError = error instanceof Error && error.message === 'ONBOARDING_REQUIRED';
 
-  // Render onboarding modal FIRST, before any error/loading checks
-  const onboardingModal = showOnboarding ? createPortal(
-    <>
-      {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
-      <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
-    </>,
-    document.body // Render directly to body, outside all layout containers
-  ) : null;
+  // ─── Render onboarding modal ───
+  const onboardingModal = showOnboarding
+    ? createPortal(
+        <>
+          {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
+          <OnBoardingPage
+            isOpen={showOnboarding}
+            onClose={handleCloseOnboarding}
+          />
+        </>,
+        document.body
+      )
+    : null;
 
-  // Loading state
+  // ─── Loading state ───
   if (isLoading) {
     return (
       <>
@@ -313,7 +196,7 @@ const OverviewPage: React.FC = () => {
     );
   }
 
-  // Show error ONLY if it's not the expected onboarding error
+  // ─── Error state ───
   if (error && !isOnboardingRequiredError) {
     return (
       <>
@@ -340,167 +223,173 @@ const OverviewPage: React.FC = () => {
     );
   }
 
+  // ─── Main Render ───
   return (
     <>
-      {/* Onboarding Modal - Render at root level for proper z-index */}
       {onboardingModal}
 
-      {/* Main Dashboard */}
       <div className="h-full overflow-y-auto overflow-x-hidden">
         <div
           className={`p-4 lg:p-6 w-full transition-all duration-700 ease-out ${
             isPageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
-          <OnestFont as="h1" weight={500} lineHeight="relaxed" className="mb-4 lg:mb-2 mt-2 text-base sm:text-lg">
-            Onboarding Checklist
-          </OnestFont>
+          {/* ════════════════ 2-Column Layout ════════════════ */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 lg:gap-6 w-full">
 
-          <div className="grid grid-cols-1 2xl:grid-cols-[1fr_500px] gap-4 lg:gap-6 w-full">
-            {/* Left Column */}
-            <div className="flex flex-col gap-4 lg:gap-6 min-w-0 w-full 2xl:max-w-[980px]">
-              <WelcomeCard
-                tasks={tasks}
-                isExpanded={isWelcomeExpanded}
-                onToggleExpand={() => setIsWelcomeExpanded(!isWelcomeExpanded)}
-              />
-              
-                {/* Progress Ring */}
-                <ProgressRing />
+            {/* ──── LEFT: Main Content Column ──── */}
+            <div className="flex flex-col gap-5 lg:gap-6 min-w-0 w-full">
 
-                {/* Statistics Summary */}
-                <StatisticsSummary />
-
-              {/* Continue Lesson Section */}
-              {continueLesson && (
-                <div>
-                  <OnestFont
-                    as="h2"
-                    weight={500}
-                    lineHeight="relaxed"
-                    className="text-text-blue-black mb-4 text-base sm:text-lg font-medium"
-                  >
-                    Continue Lesson
-                  </OnestFont>
-                  <LessonCard
-                    lesson={continueLesson}
-                    onAction={handleLessonAction}
-                    showTags={false}
-                  />
-                </div>
+              {/* 1. Hero Module Card */}
+              {currentModule && (
+                <HeroModuleCard
+                  moduleTitle={currentModule.module.title}
+                  moduleDescription={currentModule.module.description}
+                  tags={[
+                    currentModule.module.difficulty_level || 'Beginner',
+                    'Video',
+                  ].filter(Boolean)}
+                  coinReward={100}
+                  progressPercentage={Math.round(currentModule.completion_percentage || 0)}
+                  estimatedMinutesRemaining={
+                    Math.max(
+                      (currentModule.module.estimated_duration_minutes || 20) -
+                      Math.round(
+                        ((currentModule.completion_percentage || 0) / 100) *
+                        (currentModule.module.estimated_duration_minutes || 20)
+                      ),
+                      1
+                    )
+                  }
+                  thumbnailUrl={currentModule.module.thumbnail_url || Images.OverviewImg1}
+                  onContinue={handleContinueHero}
+                />
               )}
 
-              {/* Learning Modules Section */}
-              {learningModules.length > 0 && (
+              {/* Fallback: If no in-progress module and overviewData has next_lesson */}
+              {!currentModule && overviewData?.next_lesson && (
+                <HeroModuleCard
+                  moduleTitle={overviewData.next_lesson.title}
+                  moduleDescription={overviewData.next_lesson.description || "Continue your learning journey"}
+                  tags={['Video', 'Beginner']}
+                  coinReward={overviewData.next_lesson.nest_coins_reward || 25}
+                  progressPercentage={0}
+                  estimatedMinutesRemaining={overviewData.next_lesson.estimated_duration_minutes || 20}
+                  thumbnailUrl={overviewData.next_lesson.image_url || Images.OverviewImg1}
+                  onContinue={() => {
+                    if (overviewData.next_lesson?.id) {
+                      navigate(`/app/lessons/${overviewData.next_lesson.id}`);
+                    }
+                  }}
+                />
+              )}
+
+              {/* 2. Goals Card */}
+              <DailyGoalsCard
+                goals={[
+                  {
+                    id: 'complete-first-module',
+                    title: 'Complete First Module',
+                    current: modulesCompleted,
+                    target: 1,
+                  },
+                  {
+                    id: 'grow-first-tree',
+                    title: 'Grow Your First Tree',
+                    current: totalBadges,
+                    target: 1,
+                  },
+                  {
+                    id: 'complete-all-modules',
+                    title: 'Complete All Modules',
+                    current: modulesCompleted,
+                    target: totalModules || 1,
+                  },
+                  {
+                    id: 'earn-500-coins',
+                    title: 'Earn 500 Coins',
+                    current: totalCoins,
+                    target: 500,
+                  },
+                ]}
+              />
+
+              {/* 3. Modules Overview */}
+              {allModules.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-4 gap-2">
+                  {/* Section Header */}
+                  <div className="flex items-center justify-between mb-4">
                     <OnestFont
                       as="h2"
-                      weight={500}
-                      lineHeight="relaxed"
-                      className="text-text-blue-black text-base sm:text-lg flex-1 min-w-0"
-                      style={{ 
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word'
-                      }}
+                      weight={700}
+                      lineHeight="tight"
+                      className="text-text-blue-black text-lg"
                     >
-                      Learning Modules
+                      Modules Overview
                     </OnestFont>
                     <button
-                      className="text-black hover:text-logo-blue flex-shrink-0"
+                      className="text-logo-blue hover:opacity-80 transition-opacity"
                       onClick={handleSeeAllModules}
                     >
-                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm whitespace-nowrap">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
                         See all
                       </OnestFont>
                     </button>
                   </div>
 
+                  {/* Module Cards List */}
                   <div className="flex flex-col gap-4">
-                    {learningModules.map((module: Lesson) => (
-                      <LessonCard
-                        key={module.id}
-                        lesson={module}
-                        onAction={handleLessonAction}
-                        showTags={true}
-                      />
-                    ))}
+                    {allModules
+                      .filter((m: any) => !m.module.id.startsWith('mock-module'))
+                      .map((moduleProgress: any) => (
+                        <ModuleOverviewCard
+                          key={moduleProgress.module.id}
+                          orderNumber={moduleProgress.module.order_index}
+                          title={moduleProgress.module.title}
+                          coinReward={100}
+                          durationMinutes={moduleProgress.module.estimated_duration_minutes || 0}
+                          description={moduleProgress.module.description}
+                          progressPercentage={Math.round(moduleProgress.completion_percentage || 0)}
+                          tags={[
+                            moduleProgress.module.difficulty_level,
+                            `${moduleProgress.total_lessons} lessons`,
+                          ].filter(Boolean)}
+                          thumbnailUrl={moduleProgress.module.thumbnail_url || Images.OverviewImg2}
+                          status={getModuleStatus(moduleProgress)}
+                          onAction={() => handleModuleAction(moduleProgress.module.id)}
+                        />
+                      ))}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Right Column */}
-            <div className="flex flex-col gap-4 lg:gap-6 w-full 2xl:w-[500px] min-w-0">
-              {/* Learn Earn Rewards Card */}
-              <div
-                className="relative overflow-hidden bg-tab-active rounded-xl flex flex-col justify-between p-4 sm:p-6"
-                style={{ height: "12.5rem" }}
-              >
-                <div className="relative z-10 max-w-[60%] sm:max-w-[55%]">
-                  <OnestFont
-                    as="h2"
-                    weight={500}
-                    lineHeight="tight"
-                    className="text-text-blue-black text-2xl sm:text-3xl font-medium leading-tight"
-                  >
-                    Learn. Earn.
-                  </OnestFont>
-                  <OnestFont
-                    as="h2"
-                    weight={500}
-                    lineHeight="tight"
-                    className="text-text-blue-black mb-3 text-2xl sm:text-3xl font-medium leading-tight"
-                  >
-                    Get Rewards.
-                  </OnestFont>
-                  <OnestFont
-                    as="p"
-                    weight={300}
-                    lineHeight="relaxed"
-                    className="text-text-grey max-w-[180px] sm:max-w-[200px] text-sm leading-relaxed"
-                  >
-                    Redeem NestCoins for prizes to help you towards Homeownership.
-                  </OnestFont>
-                </div>
+            {/* ──── RIGHT: Sidebar Column ──── */}
+            <div className="flex flex-col gap-5 lg:gap-6 w-full min-w-0">
 
-                <div className="absolute bottom-3 right-4 sm:right-6 z-20">
-                  <button
-                    className="bg-logo-blue text-white hover:opacity-90 transition-opacity px-6 sm:px-8 py-2 rounded-full"
-                    onClick={handleRewardsShop}
-                  >
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                      Rewards Shop
-                    </OnestFont>
-                  </button>
-                </div>
+              {/* 4. User Profile Card */}
+              <UserProfileCard
+                firstName={user?.firstName || 'User'}
+                avatarUrl={user?.photoURL || null}
+                totalCoins={totalCoins}
+                currentStreak={currentStreak}
+                modulesCompleted={modulesCompleted}
+                totalModules={totalModules}
+                progressPercentage={overallProgress}
+                onNotificationClick={() => navigate('/app/notifications')}
+                onSettingsClick={() => navigate('/app/settings?tab=Profile')}
+              />
 
-                <img
-                  src={Images.NestCoins}
-                  alt="Nest Coins"
-                  className="absolute top-4 sm:top-7 right-[80px] sm:right-[118px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
-                />
-                <img
-                  src={Images.CoinBag}
-                  alt="Coin Bag"
-                  className="absolute top-1 sm:top-1.5 right-[5px] w-[70px] h-[70px] sm:w-[100px] sm:h-[100px] opacity-90"
-                />
-              </div>
+              {/* 5. Streak Card */}
+              <StreakCard onStreakChange={setCurrentStreak} />
 
+              {/* 7. Top Learners / Leaderboard */}
               <LeaderboardCard
                 entries={leaderboard}
                 onMenuClick={handleLeaderboardMenu}
               />
-
-              {/* Recent Activity */}
-              <RecentActivityFeed />
-
-              <div className="flex flex-col gap-4">
-                {supportCards.map((card) => (
-                  <SupportCard key={card.id} supportCard={card} />
-                ))}
-              </div>
             </div>
+
           </div>
         </div>
       </div>
