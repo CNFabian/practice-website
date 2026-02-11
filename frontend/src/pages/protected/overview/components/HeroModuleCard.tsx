@@ -61,7 +61,10 @@ const HeroModuleCard: React.FC<HeroModuleCardProps> = ({
                 </span>
               )}
               {/* Coin Reward */}
-              <span className="bg-status-yellow text-text-blue-black px-4 py-1 rounded-full text-xs flex items-center gap-1">
+              <span
+                className="text-text-blue-black px-4 py-1 rounded-full text-xs flex items-center gap-1"
+                style={{ backgroundColor: "#FEE8B8" }}
+              >
                 <OnestFont weight={700} lineHeight="relaxed">
                   {coinReward}
                 </OnestFont>

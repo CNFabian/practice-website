@@ -108,15 +108,21 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
   return (
     <div className="bg-card-gradient rounded-xl overflow-hidden flex flex-col md:flex-row">
       {/* Left Accent Bar */}
-      <div className={`w-full h-1 md:w-1.5 md:h-auto flex-shrink-0 ${getAccentColor()}`} />
+      <div
+        className={`w-full h-1 md:w-1.5 md:h-auto flex-shrink-0 ${getAccentColor()}`}
+      />
 
       {/* Content Section */}
       <div className="flex-1 p-4 lg:p-5 flex flex-col justify-between min-w-0">
-        {/* Top Row: Number + Title + Coins + Duration */}
+        {/* Top Row: Number + Title + Duration */}
         <div className="flex items-start gap-3 mb-2">
           {/* Order Number Circle */}
           <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-tab-active">
-            <OnestFont weight={700} lineHeight="relaxed" className="text-logo-blue text-sm">
+            <OnestFont
+              weight={700}
+              lineHeight="relaxed"
+              className="text-logo-blue text-sm"
+            >
               {orderNumber}
             </OnestFont>
           </div>
@@ -128,20 +134,21 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
                 weight={700}
                 lineHeight="tight"
                 className="text-text-blue-black text-base"
-                style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+                style={{
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
               >
                 {title}
               </OnestFont>
 
-              {/* Coins + Duration */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="flex items-center gap-1">
-                  <img src={Icons.NestCoin} alt="Coin" className="w-4 h-4" />
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-text-blue-black text-xs">
-                    +{coinReward}
-                  </OnestFont>
-                </div>
-                <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-xs">
+              {/* Duration */}
+              <div className="flex items-center flex-shrink-0">
+                <OnestFont
+                  weight={300}
+                  lineHeight="relaxed"
+                  className="text-text-grey text-xs"
+                >
                   {durationMinutes} min
                 </OnestFont>
               </div>
@@ -157,7 +164,9 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
           className="text-text-grey text-sm mb-3 ml-12 max-w-[400px]"
           style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
         >
-          {description.length > 120 ? description.substring(0, 120) + "..." : description}
+          {description.length > 120
+            ? description.substring(0, 120) + "..."
+            : description}
         </OnestFont>
 
         {/* Progress Bar */}
@@ -170,7 +179,7 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
           </div>
         </div>
 
-        {/* Bottom Row: Tags + Button */}
+        {/* Bottom Row: Tags + Coin Tag + Button */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ml-12">
           <div className="flex flex-wrap items-center gap-2">
             {tags.map((tag, index) => (
@@ -183,6 +192,16 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
                 </OnestFont>
               </span>
             ))}
+            {/* Coin Reward - matches HeroModuleCard style */}
+            <span
+              className="text-text-blue-black px-4 py-1 rounded-full text-xs flex items-center gap-1"
+              style={{ backgroundColor: "#FEE8B8" }}
+            >
+              <OnestFont weight={700} lineHeight="relaxed">
+                {coinReward}
+              </OnestFont>
+              <img src={Icons.NestCoin} alt="Coin" className="w-5 h-5" />
+            </span>
           </div>
 
           <button

@@ -148,3 +148,4 @@ export { default as BadgeProfileIcon } from './images/icons/profile/badge_icon.p
 
 //Overview Icons
 export { default as StreakBranch } from './images/icons/overview/streak_branch.png'
+export { default as LeaderboardCrown } from './images/icons/overview/leaderboard-crown.svg'

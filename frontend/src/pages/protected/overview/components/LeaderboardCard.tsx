@@ -1,6 +1,7 @@
 import React from "react";
 import { OnestFont } from "../../../../assets";
 import { LeaderboardEntry } from "../types/overview.types";
+import { LeaderboardCrown } from "../../../../assets";
 
 interface LeaderboardCardProps {
   entries: LeaderboardEntry[];
@@ -22,29 +23,16 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
     podiumEntries[2], // 3rd place (right)
   ].filter(Boolean);
 
-  const getMedalEmoji = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "👑";
-      case 2:
-        return "🥈";
-      case 3:
-        return "🥉";
-      default:
-        return null;
-    }
-  };
-
   const getPodiumHeight = (rank: number) => {
     switch (rank) {
       case 1:
-        return "h-16";
+        return "h-[140px]";
       case 2:
-        return "h-12";
+        return "h-[112px]";
       case 3:
-        return "h-9";
+        return "h-[92px]";
       default:
-        return "h-9";
+        return "h-[92px]";
     }
   };
 
@@ -59,7 +47,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
   return (
     <div className="bg-card-gradient rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+      <div className="flex items-center justify-between px-5 pt-4 pb-1">
         <OnestFont
           as="h2"
           weight={700}
@@ -84,56 +72,67 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
       {/* Podium Section */}
       {podiumOrder.length > 0 && (
         <div className="px-5 pb-4">
-          <div className="bg-tab-active rounded-xl p-4">
-            <div className="flex items-end justify-center gap-3">
+          <div className="rounded-xl px-2">
+            <div className="flex items-end justify-center gap-2">
               {podiumOrder.map((entry) => {
                 if (!entry) return null;
+                const isFirst = entry.rank === 1;
                 return (
                   <div
                     key={entry.id}
                     className="flex flex-col items-center"
-                    style={{ width: entry.rank === 1 ? "80px" : "68px" }}
+                    style={{ width: isFirst ? "90px" : "74px" }}
                   >
-                    {/* Medal */}
-                    <span className="text-base mb-1">{getMedalEmoji(entry.rank)}</span>
+                    {/* Crown for 1st place - overlaps avatar on the left */}
+                    {isFirst && (
+                      <img
+                        src={LeaderboardCrown}
+                        alt="Crown"
+                        className="w-12 h-12 mb-[-20px] ml-[8px] self-start z-20"
+                      />
+                    )}
 
-                    {/* Avatar */}
+                    {/* Avatar Circle */}
                     <div
-                      className={`rounded-full bg-elegant-blue flex items-center justify-center mb-1.5 ${
-                        entry.rank === 1 ? "w-11 h-11" : "w-9 h-9"
+                      className={`rounded-full bg-elegant-blue flex items-center justify-center mb-[-14px] z-10 border-2 border-pure-white ${
+                        isFirst ? "w-14 h-14" : "w-11 h-11"
                       }`}
                     >
                       <OnestFont
                         weight={700}
                         lineHeight="relaxed"
-                        className={`text-pure-white ${entry.rank === 1 ? "text-sm" : "text-xs"}`}
+                        className={`text-pure-white ${isFirst ? "text-base" : "text-sm"}`}
                       >
                         {getInitials(entry.name)}
                       </OnestFont>
                     </div>
 
-                    {/* Name */}
-                    <OnestFont
-                      weight={500}
-                      lineHeight="tight"
-                      className="text-text-blue-black text-xs text-center truncate w-full mb-0.5"
-                    >
-                      {entry.name}
-                    </OnestFont>
-
-                    {/* Score */}
-                    <OnestFont
-                      weight={300}
-                      lineHeight="relaxed"
-                      className="text-text-grey text-xs mb-1.5"
-                    >
-                      {entry.coins}
-                    </OnestFont>
-
-                    {/* Podium Bar */}
+                    {/* Podium Bar with Rank Number and Initials Tag */}
                     <div
-                      className={`w-full ${getPodiumHeight(entry.rank)} bg-logo-blue rounded-t-lg`}
-                    />
+                      className={`w-full ${getPodiumHeight(entry.rank)} bg-elegant-blue rounded-t-xl flex flex-col items-center justify-center relative`}
+                    >
+                      <OnestFont
+                        weight={700}
+                        lineHeight="tight"
+                        className={`text-pure-white ${
+                          entry.rank === 1 ? "text-4xl" : entry.rank === 2 ? "text-3xl" : "text-2xl"
+                        }`}
+                        style={{ fontStyle: "italic" }}
+                      >
+                        {entry.rank}
+                      </OnestFont>
+
+                      {/* Initials Tag */}
+                      <div className="bg-pure-white rounded-full px-3 py-0.5 mt-1">
+                        <OnestFont
+                          weight={500}
+                          lineHeight="tight"
+                          className="text-text-blue-black text-xs"
+                        >
+                          {getInitials(entry.name)}
+                        </OnestFont>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
