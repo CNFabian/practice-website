@@ -6,12 +6,14 @@ interface ProfilePictureModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (file: File) => void;
+  onAvatarSelect?: (avatarId: string) => void;
 }
 
 const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
   isOpen,
   onClose,
-  onUpload
+  onUpload,
+  onAvatarSelect
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'avatar'>('avatar');
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
@@ -95,8 +97,9 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
 
   const handleSaveChanges = () => {
     if (activeTab === 'avatar' && selectedAvatar) {
-      console.log('Selected avatar:', selectedAvatar);
-      // Handle avatar selection logic here
+      if (onAvatarSelect) {
+        onAvatarSelect(selectedAvatar);
+      }
     }
     // For upload tab, files are handled immediately in handleFileUpload
     onClose();

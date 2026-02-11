@@ -75,13 +75,12 @@ export const markFAQHelpful = async (faqId: string): Promise<any> => {
   }
 };
 
-// GET /api/help/faqs/categories - Get FAQ categories
+// GET /api/help/faq-categories - Get FAQ categories
 export const getFAQCategories = async (): Promise<any> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/faq-categories`, 
-      { 
-        method: 'GET'
-      });
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/faq-categories`, {
+      method: 'GET'
+    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -97,7 +96,7 @@ export const getFAQCategories = async (): Promise<any> => {
 
 // ==================== SUPPORT TICKET API FUNCTIONS ====================
 
-// POST /api/help/tickets - Submit support ticket
+// POST /api/help/contact - Submit support ticket
  export const submitSupportTicket = async (ticketData: {
   name: string;
   email: string;
@@ -106,7 +105,7 @@ export const getFAQCategories = async (): Promise<any> => {
   category?: string;
    }): Promise<any> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/tickets`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/contact`, {
       method: 'POST',
       body: JSON.stringify(ticketData),
     });
@@ -123,7 +122,7 @@ export const getFAQCategories = async (): Promise<any> => {
   }
 };
 
-// GET /api/help/tickets/my-tickets - Get user's support tickets
+// GET /api/help/my-tickets - Get user's support tickets
 export const getUserTickets = async (params?: {
   status?: string;
   limit?: number;
@@ -135,7 +134,7 @@ export const getUserTickets = async (params?: {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.offset) queryParams.append('offset', params.offset.toString());
     
-    const url = `${API_BASE_URL}/api/help/tickets/my-tickets${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const url = `${API_BASE_URL}/api/help/my-tickets${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     
     const response = await fetchWithAuth(url, {
       method: 'GET'
@@ -212,10 +211,10 @@ export const getQuickHelp = async (): Promise<any> => {
   }
 };
 
-// GET /api/help/contact - Get contact info
+// GET /api/help/contact-info - Get contact info
 export const getContactInfo = async (): Promise<any> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/contact`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/contact-info`, {
       method: 'GET'
     });
     
@@ -250,10 +249,10 @@ export const getSystemStatus = async (): Promise<any> => {
   }
 };
 
-// GET /api/help/feedback - Get feedback form
+// GET /api/help/feedback-form - Get feedback form
 export const getFeedbackForm = async (): Promise<any> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/feedback`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/help/feedback-form`, {
       method: 'GET'
     });
     
@@ -281,16 +280,16 @@ export const submitFeedback = async (feedbackData: {
 }): Promise<any> => {
   try {
     console.log('Submitting feedback:', feedbackData);
-
+    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/help/feedback`, {
       method: 'POST',
       body: JSON.stringify(feedbackData)
     });
-
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
+    
     const data = await response.json();
     console.log('Feedback submitted successfully:', data);
     return data;

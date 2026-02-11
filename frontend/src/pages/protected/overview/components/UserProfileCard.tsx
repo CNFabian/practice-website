@@ -1,11 +1,5 @@
 import React from "react";
-import { 
-  OnestFont, 
-  SettingsProfileIcon, 
-  GrowthPointsProfileIcon, 
-  NotificationProfileIcon, 
-  BadgeProfileIcon 
-} from "../../../../assets";
+import { OnestFont, SettingsProfileIcon, GrowthPointsProfileIcon, NotificationProfileIcon, BadgeProfileIcon } from "../../../../assets";
 import { Icons } from "../images";
 
 interface UserProfileCardProps {
@@ -21,6 +15,13 @@ interface UserProfileCardProps {
   onSettingsClick?: () => void;
 }
 
+const AVATAR_EMOJI_MAP: Record<string, string> = {
+  'curious-cat': '🐱',
+  'celebrating-bird': '🐦',
+  'careful-elephant': '🐘',
+  'protective-dog': '🐶',
+};
+
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   firstName,
   avatarUrl,
@@ -34,12 +35,23 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
 }) => {
   const initials = firstName ? firstName[0].toUpperCase() : "U";
 
+  const isAvatarEmoji = avatarUrl?.startsWith('avatar:');
+  const avatarEmoji = isAvatarEmoji
+    ? AVATAR_EMOJI_MAP[avatarUrl!.replace('avatar:', '')] || '👤'
+    : null;
+
   return (
     <div className="bg-card-gradient rounded-2xl pt-6 px-6 pb-1.5 flex flex-col items-center">
       {/* Large Centered Avatar */}
       <div className="w-24 h-24 rounded-full bg-tab-active flex items-center justify-center flex-shrink-0 overflow-hidden mb-3">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={firstName} className="w-full h-full object-cover" />
+        {isAvatarEmoji ? (
+          <span className="text-5xl">{avatarEmoji}</span>
+        ) : avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={firstName}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <OnestFont weight={700} lineHeight="relaxed" className="text-logo-blue text-3xl">
             {initials}

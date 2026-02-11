@@ -149,3 +149,13 @@ export { default as BadgeProfileIcon } from './images/icons/profile/badge_icon.p
 //Overview Icons
 export { default as StreakBranch } from './images/icons/overview/streak_branch.png'
 export { default as LeaderboardCrown } from './images/icons/overview/leaderboard-crown.svg'
+
+//Rewards Icons
+export { default as CoffeeRewards } from './images/icons/rewards/coffee_rewards.png'
+export { default as TravelRewards } from './images/icons/rewards/travel_rewards.png'
+export { default as ExperienceRewards } from './images/icons/rewards/experience_rewards.png'
+export { default as FoodRewards } from './images/icons/rewards/food_rewards.png'
+export { default as FurnitureRewards } from './images/icons/rewards/furniture_rewards.png'
+export { default as HomeLivingRewards } from './images/icons/rewards/homeLiving_rewards.png'
+export { default as HomeImprovementRewards } from './images/icons/rewards/homeImprovement_rewards.png'
+export { default as MovingRewards } from './images/icons/rewards/moving_rewards.png'

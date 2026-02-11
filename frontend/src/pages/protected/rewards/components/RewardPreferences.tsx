@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { OnestFont } from '../../../../assets';
+import {
+  OnestFont,
+  CoffeeRewards,
+  TravelRewards,
+  ExperienceRewards,
+  FoodRewards,
+  FurnitureRewards,
+  HomeLivingRewards,
+  HomeImprovementRewards,
+  MovingRewards,
+} from '../../../../assets';
 
 // ─── Reward category definitions ───
 const REWARD_CATEGORIES = [
-  { id: 'food_dining',        icon: '🍽️', label: 'Food & Everyday Dining' },
-  { id: 'coffee_bites',       icon: '☕', label: 'Coffee & Quick Bites' },
-  { id: 'home_living',        icon: '🏠', label: 'Home & Living' },
-  { id: 'moving_storage',     icon: '📦', label: 'Moving & Storage' },
-  { id: 'home_improvement',   icon: '🔧', label: 'Home Improvement & Tools' },
-  { id: 'furniture_decor',    icon: '🛋️', label: 'Furniture & Decor' },
-  { id: 'local_experiences',  icon: '🎟️', label: 'Local Experiences & Activities' },
-  { id: 'travel_rides',       icon: '✈️', label: 'Travel & Rides' },
+  { id: 'food_dining', image: FoodRewards, label: 'Food & Everyday Dining' },
+  { id: 'coffee_bites', image: CoffeeRewards, label: 'Coffee & Quick Bites' },
+  { id: 'home_living', image: HomeLivingRewards, label: 'Home & Living' },
+  { id: 'moving_storage', image: MovingRewards, label: 'Moving & Storage' },
+  { id: 'home_improvement', image: HomeImprovementRewards, label: 'Home Improvement & Tools' },
+  { id: 'furniture_decor', image: FurnitureRewards, label: 'Furniture & Decor' },
+  { id: 'local_experiences', image: ExperienceRewards, label: 'Local Experiences & Activities' },
+  { id: 'travel_rides', image: TravelRewards, label: 'Travel & Rides' },
 ];
 
 const MAX_SELECTIONS = 3;
@@ -57,7 +67,8 @@ const RewardPreferences: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-2xl mx-auto mb-6">
           {REWARD_CATEGORIES.map((category) => {
             const isSelected = selectedCategories.includes(category.id);
-            const isDisabled = (!isSelected && selectedCategories.length >= MAX_SELECTIONS) || isSubmitted;
+            const isDisabled =
+              (!isSelected && selectedCategories.length >= MAX_SELECTIONS) || isSubmitted;
 
             return (
               <button
@@ -74,9 +85,11 @@ const RewardPreferences: React.FC = () => {
                   }
                 `}
               >
-                <span className="text-2xl" role="img" aria-label={category.label}>
-                  {category.icon}
-                </span>
+                <img
+                  src={category.image}
+                  alt={category.label}
+                  className="w-16 h-16 object-contain"
+                />
                 <OnestFont
                   weight={isSelected ? 500 : 300}
                   lineHeight="relaxed"
@@ -116,10 +129,23 @@ const RewardPreferences: React.FC = () => {
 
         {/* Nest Coins Disclaimer */}
         <div className="text-center space-y-1">
-          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-unavailable-button text-xs">
-            Nest Coins are reward points used only inside Nest. They are not cryptocurrency, are not digital assets, and have no cash or monetary value. Nest Coins cannot be sold, transferred, or exchanged for money.
+          <OnestFont
+            as="p"
+            weight={300}
+            lineHeight="relaxed"
+            className="text-unavailable-button text-xs"
+          >
+            Nest Coins are reward points used only inside Nest. They are not cryptocurrency, are not
+            digital assets, and have no cash or monetary value. Nest Coins cannot be sold,
+            transferred, or exchanged for money.
           </OnestFont>
-          <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-unavailable-button" style={{ fontSize: '10px' }}>
+          <OnestFont
+            as="p"
+            weight={300}
+            lineHeight="relaxed"
+            className="text-unavailable-button"
+            style={{ fontSize: '10px' }}
+          >
             Rewards and partners may change and are not guaranteed.
           </OnestFont>
         </div>
