@@ -11,17 +11,18 @@ import {
   getLessonQuestions,
   submitLessonAnswers,
   getFreeRoamQuestions,
-  saveFreeRoamProgress,
+  submitFreeRoamAnswer,
   getFreeRoamState,
   transformGYNQuestionsForMinigame,
 } from '../../services/growYourNestAPI';
+
 import type {
   LessonQuestionsResponse,
   LessonSubmitRequest,
   LessonSubmitResponse,
   FreeRoamQuestionsResponse,
-  FreeRoamProgressRequest,
-  FreeRoamProgressResponse,
+  FreeRoamAnswerRequest,
+  FreeRoamAnswerResponse,
   FreeRoamStateResponse,
   GYNMinigameInitData,
   GYNMinigameQuestion,
@@ -96,14 +97,14 @@ export const useGYNFreeRoamQuestions = (moduleId: string, enabled: boolean = tru
 };
 
 /**
- * Save free roam progress after each question.
+ * Submit free roam answer with server-side validation.
  * Invalidates the free roam state query on success.
  */
-export const useGYNFreeRoamProgress = (moduleId: string) => {
+export const useGYNFreeRoamAnswer = (moduleId: string) => {
   const queryClient = useQueryClient();
 
-  return useMutation<FreeRoamProgressResponse, Error, FreeRoamProgressRequest>({
-    mutationFn: (progressData) => saveFreeRoamProgress(moduleId, progressData),
+  return useMutation<FreeRoamAnswerResponse, Error, FreeRoamAnswerRequest>({
+    mutationFn: (answerData) => submitFreeRoamAnswer(moduleId, answerData),
     onSuccess: () => {
       // Invalidate free roam state to reflect updated tree
       queryClient.invalidateQueries({ queryKey: GYN_QUERY_KEYS.freeRoamState(moduleId) });
@@ -111,7 +112,7 @@ export const useGYNFreeRoamProgress = (moduleId: string) => {
       queryClient.invalidateQueries({ queryKey: ['learning'] });
     },
     onError: (error) => {
-      console.error('🌳 Free roam progress mutation error:', error);
+      console.error('🌳 Free roam answer mutation error:', error);
     },
   });
 };

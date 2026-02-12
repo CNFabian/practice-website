@@ -1,16 +1,55 @@
 import { fetchWithAuth } from './authAPI';
 import type {
   GrowYourNestQuestion,
+  ValidateAnswerRequest,
+  ValidateAnswerResponse,
   LessonQuestionsResponse,
   LessonSubmitRequest,
   LessonSubmitResponse,
   FreeRoamQuestionsResponse,
-  FreeRoamProgressRequest,
-  FreeRoamProgressResponse,
+  FreeRoamAnswerRequest,
+  FreeRoamAnswerResponse,
   FreeRoamStateResponse,
 } from '../types/growYourNest.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// ═══════════════════════════════════════════════════════════════
+// VALIDATE ANSWER (instant feedback, no side effects)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/grow-your-nest/validate-answer
+ * Validate a single answer for immediate feedback. No side effects (no tree growth, no coins).
+ */
+export const validateAnswer = async (
+  data: ValidateAnswerRequest
+): Promise<ValidateAnswerResponse> => {
+  try {
+    console.log(`🌳 Validating answer: question=${data.question_id}, answer=${data.answer_id}`);
+
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/api/grow-your-nest/validate-answer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`GYN validate-answer error - Status: ${response.status}, Response: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ValidateAnswerResponse = await response.json();
+    console.log('🌳 Validate answer result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error validating GYN answer:', error);
+    throw error;
+  }
+};
 
 // ═══════════════════════════════════════════════════════════════
 // LESSON MODE ENDPOINTS
@@ -133,38 +172,38 @@ export const getFreeRoamQuestions = async (moduleId: string): Promise<FreeRoamQu
 };
 
 /**
- * POST /api/grow-your-nest/freeroam/{module_id}/progress
- * Save progress after EACH question in free roam mode (critical for persistent state)
+ * POST /api/grow-your-nest/freeroam/{module_id}/answer
+ * Submit one answer in free roam mode. Server validates and updates tree state.
  */
-export const saveFreeRoamProgress = async (
+export const submitFreeRoamAnswer = async (
   moduleId: string,
-  progressData: FreeRoamProgressRequest
-): Promise<FreeRoamProgressResponse> => {
+  answerData: FreeRoamAnswerRequest
+): Promise<FreeRoamAnswerResponse> => {
   try {
     if (/^\d+$/.test(moduleId)) {
-      console.warn(`⚠️ GYN FreeRoam Progress Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+      console.warn(`⚠️ GYN FreeRoam Answer Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
       throw new Error('Frontend ID used instead of UUID');
     }
 
-    console.log(`🌳 Saving free roam progress for module: ${moduleId}`);
-    console.log('📤 Progress data:', JSON.stringify(progressData));
+    console.log(`🌳 Submitting free roam answer for module: ${moduleId}`);
+    console.log('📤 Answer data:', JSON.stringify(answerData));
 
     const response = await fetchWithAuth(
-      `${API_BASE_URL}/api/grow-your-nest/freeroam/${moduleId}/progress`,
+      `${API_BASE_URL}/api/grow-your-nest/freeroam/${moduleId}/answer`,
       {
         method: 'POST',
-        body: JSON.stringify(progressData),
+        body: JSON.stringify(answerData),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`GYN free roam progress error - Status: ${response.status}, Response: ${errorText}`);
+      console.error(`GYN free roam answer error - Status: ${response.status}, Response: ${errorText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data: FreeRoamProgressResponse = await response.json();
-    console.log('🌳 Free roam progress response:', {
+    const data: FreeRoamAnswerResponse = await response.json();
+    console.log('🌳 Free roam answer response:', {
       isCorrect: data.is_correct,
       pointsEarned: data.growth_points_earned,
       fertilizerBonus: data.fertilizer_bonus,
@@ -174,7 +213,7 @@ export const saveFreeRoamProgress = async (
     });
     return data;
   } catch (error) {
-    console.error('Error saving GYN free roam progress:', error);
+    console.error('Error submitting GYN free roam answer:', error);
     throw error;
   }
 };

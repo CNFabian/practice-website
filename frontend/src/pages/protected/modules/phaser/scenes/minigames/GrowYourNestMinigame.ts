@@ -2,8 +2,9 @@ import Phaser from 'phaser';
 import { createTextStyle } from '../../constants/Typography';
 import { COLORS } from '../../constants/Colors';
 import {
+  validateAnswer,
   submitLessonAnswers,
-  saveFreeRoamProgress,
+  submitFreeRoamAnswer,
 } from '../../../../../../services/growYourNestAPI';
 import type {
   GYNMinigameInitData,
@@ -228,7 +229,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   // ANSWER HANDLING
   // ═══════════════════════════════════════════════════════════════
 
-  private handleAnswerSelection(selectedLetter: string): void {
+   private handleAnswerSelection(selectedLetter: string): void {
     if (this.isSubmitting) return;
 
     // In lesson mode, allow re-selection before clicking Next
@@ -242,59 +243,88 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
 
     this.selectedAnswer = selectedLetter;
+    this.isSubmitting = true;
     const q = this.questions[this.currentQuestionIndex];
+    const opt = q.options.find((o) => o.letter === selectedLetter);
 
-    if (this.gameMode === 'lesson') {
-      const opt = q.options.find((o) => o.letter === selectedLetter);
-      if (opt)
-        this.lessonAnswers.push({
-          question_id: q.id,
-          answer_id: opt.answerId,
-          is_correct: false,
-        });
-      this.showAnswerSelected();
-    } else if (this.gameMode === 'freeroam') {
-      this.isSubmitting = true;
-      const opt = q.options.find((o) => o.letter === selectedLetter);
-      if (opt && this.moduleId) {
-        saveFreeRoamProgress(this.moduleId, {
-          question_id: q.id,
-          answer_id: opt.answerId,
-          is_correct: false,
-          consecutive_correct: this.consecutiveCorrect,
-        })
-          .then((r) => {
-            this.isSubmitting = false;
-            this.lastServerResponse = r.tree_state;
-            if (r.is_correct) {
-              this.score++;
-              this.consecutiveCorrect++;
-            } else {
-              this.consecutiveCorrect = 0;
-            }
-            if (r.fertilizer_bonus) this.fertilizerBonusCount++;
-            this.totalGrowthPointsEarned += r.growth_points_earned;
-            this.totalCoinsEarned += r.coins_earned;
-            this.treeState = {
-              growth_points: r.tree_state.growth_points,
-              current_stage: r.tree_state.current_stage,
-              total_stages: r.tree_state.total_stages,
-              points_per_stage: r.tree_state.points_per_stage || 50,
-              completed: r.tree_state.completed || r.tree_state.just_completed,
-            };
-            this.showAnswerFeedback(r.is_correct);
-          })
-          .catch((e) => {
-            console.error('🌳 freeroam error:', e);
-            this.isSubmitting = false;
-            this.consecutiveCorrect = 0;
-            this.showAnswerFeedback(false);
+    if (!opt) {
+      this.isSubmitting = false;
+      return;
+    }
+
+    // Both modes: validate answer immediately for instant feedback
+    validateAnswer({ question_id: q.id, answer_id: opt.answerId })
+      .then((validation) => {
+        if (this.gameMode === 'lesson') {
+          // Store the answer for batch submission later
+          this.lessonAnswers.push({
+            question_id: q.id,
+            answer_id: opt.answerId,
           });
-      } else {
+
+          // Track score locally for lesson mode
+          if (validation.is_correct) {
+            this.score++;
+            this.consecutiveCorrect++;
+          } else {
+            this.consecutiveCorrect = 0;
+          }
+
+          this.isSubmitting = false;
+          this.showAnswerFeedback(validation.is_correct);
+
+        } else if (this.gameMode === 'freeroam') {
+          // After validation, submit to freeroam/answer for tree growth + coins
+          if (!this.moduleId) {
+            this.isSubmitting = false;
+            this.showAnswerFeedback(validation.is_correct);
+            return;
+          }
+
+          submitFreeRoamAnswer(this.moduleId, {
+            question_id: q.id,
+            answer_id: opt.answerId,
+            consecutive_correct: this.consecutiveCorrect,
+          })
+            .then((r) => {
+              this.isSubmitting = false;
+              this.lastServerResponse = r.tree_state;
+
+              if (r.is_correct) {
+                this.score++;
+                this.consecutiveCorrect++;
+              } else {
+                this.consecutiveCorrect = 0;
+              }
+
+              if (r.fertilizer_bonus) this.fertilizerBonusCount++;
+              this.totalGrowthPointsEarned += r.growth_points_earned;
+              this.totalCoinsEarned += r.coins_earned;
+
+              this.treeState = {
+                growth_points: r.tree_state.growth_points,
+                current_stage: r.tree_state.current_stage,
+                total_stages: r.tree_state.total_stages,
+                points_per_stage: r.tree_state.points_per_stage || 50,
+                completed: r.tree_state.completed || r.tree_state.just_completed,
+              };
+
+              this.showAnswerFeedback(r.is_correct);
+            })
+            .catch((e) => {
+              console.error('🌳 freeroam answer error:', e);
+              this.isSubmitting = false;
+              this.consecutiveCorrect = 0;
+              // Still show feedback from validate-answer even if freeroam/answer fails
+              this.showAnswerFeedback(validation.is_correct);
+            });
+        }
+      })
+      .catch((e) => {
+        console.error('🌳 validate-answer error:', e);
         this.isSubmitting = false;
         this.showAnswerFeedback(false);
-      }
-    }
+      });
   }
 
   private handleNextQuestion(): void {
@@ -312,15 +342,15 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
   }
 
-  private submitLessonResults(): void {
+    private submitLessonResults(): void {
     if (this.gameMode !== 'lesson' || !this.lessonId) {
       this.doShowCompletion();
       return;
     }
+
     this.isSubmitting = true;
     submitLessonAnswers(this.lessonId, {
       answers: this.lessonAnswers,
-      consecutive_correct: this.consecutiveCorrect,
     })
       .then((r) => {
         this.isSubmitting = false;

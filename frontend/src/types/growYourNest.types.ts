@@ -48,6 +48,22 @@ export interface TreeStateWithTransition extends TreeState {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// VALIDATE ANSWER (instant feedback, no side effects)
+// ═══════════════════════════════════════════════════════════════
+
+/** POST /api/grow-your-nest/validate-answer - Request */
+export interface ValidateAnswerRequest {
+  question_id: string;
+  answer_id: string;
+}
+
+/** POST /api/grow-your-nest/validate-answer - Response */
+export interface ValidateAnswerResponse {
+  is_correct: boolean;
+  explanation: string | null;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // LESSON MODE TYPES
 // ═══════════════════════════════════════════════════════════════
 
@@ -61,13 +77,11 @@ export interface LessonQuestionsResponse {
 export interface LessonAnswerSubmission {
   question_id: string;
   answer_id: string;
-  is_correct: boolean;
 }
 
 /** POST /api/grow-your-nest/lesson/{lesson_id}/submit - Request */
 export interface LessonSubmitRequest {
   answers: LessonAnswerSubmission[];
-  consecutive_correct: number;
 }
 
 /** POST /api/grow-your-nest/lesson/{lesson_id}/submit - Response */
@@ -91,18 +105,18 @@ export interface FreeRoamQuestionsResponse {
   tree_state: TreeState;
 }
 
-/** POST /api/grow-your-nest/freeroam/{module_id}/progress - Request */
-export interface FreeRoamProgressRequest {
+/** POST /api/grow-your-nest/freeroam/{module_id}/answer - Request */
+export interface FreeRoamAnswerRequest {
   question_id: string;
   answer_id: string;
-  is_correct: boolean;
   consecutive_correct: number;
 }
 
-/** POST /api/grow-your-nest/freeroam/{module_id}/progress - Response */
-export interface FreeRoamProgressResponse {
+/** POST /api/grow-your-nest/freeroam/{module_id}/answer - Response */
+export interface FreeRoamAnswerResponse {
   success: boolean;
   is_correct: boolean;
+  explanation: string | null;
   growth_points_earned: number;
   fertilizer_bonus: boolean;
   tree_state: TreeStateWithTransition;
