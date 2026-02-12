@@ -39,6 +39,7 @@ export function createRightPanel(
   );
   title.setOrigin(0.5, 0);
   state.rightPanel.add(title);
+
   state.rightPanel.setData('panelWidth', panelWidth);
   state.rightPanel.setData('panelHeight', panelHeight);
 
@@ -64,16 +65,13 @@ export function showStartScreen(
 ): void {
   const panelWidth = state.rightPanel.getData('panelWidth') as number;
   const panelHeight = state.rightPanel.getData('panelHeight') as number;
-
   const HORIZONTAL_PADDING = panelWidth * 0.08;
   const contentWidth = panelWidth - HORIZONTAL_PADDING * 2;
 
   // Bird illustration
   const birdSize = Math.min(220, panelWidth * 0.45);
   const birdY = panelHeight * 0.35;
-
   let birdGraphic: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
-
   if (scene.textures.exists('bird_celebration')) {
     birdGraphic = scene.add.image(panelWidth / 2, birdY, 'bird_celebration');
     (birdGraphic as Phaser.GameObjects.Image).setDisplaySize(birdSize, birdSize);
@@ -95,15 +93,18 @@ export function showStartScreen(
   // Description
   const descriptionY = birdY + birdSize / 2 + panelHeight * 0.08;
   const descriptionFontSize = Math.round(panelWidth * 0.038);
-
   let descriptionText = `Answer questions to earn water and fertilizer to grow your tree of Module ${state.moduleNumber}!`;
+
   if (state.gameMode === 'lesson') {
     descriptionText = `Answer 3 questions about this lesson to help your tree grow! Get 3 correct in a row for a fertilizer bonus.`;
   } else if (state.gameMode === 'freeroam') {
     descriptionText = `Free Roam mode! Answer questions from all lessons to keep growing your tree. Progress is saved after each question.`;
   }
 
-  const description = scene.add.text(panelWidth / 2, descriptionY, descriptionText,
+  const description = scene.add.text(
+    panelWidth / 2,
+    descriptionY,
+    descriptionText,
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
       fontSize: `${descriptionFontSize}px`,
       align: 'center',
@@ -197,7 +198,9 @@ function createStartScreenButton(
       width * 0.85,
       0,
       '→',
-      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${arrowSize}px` })
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${arrowSize}px`,
+      })
     );
     arrow.setOrigin(0.5, 0.5);
     container.add(arrow);
@@ -247,7 +250,6 @@ export function clearStartScreen(state: GYNSceneState): void {
   const children = state.rightPanel.getAll();
   for (let i = children.length - 1; i >= 2; i--) {
     const child = children[i];
-
     if (child instanceof Phaser.GameObjects.Container) {
       const hitArea = child.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (hitArea && hitArea.input) {
@@ -255,7 +257,6 @@ export function clearStartScreen(state: GYNSceneState): void {
         hitArea.disableInteractive();
       }
     }
-
     child.destroy();
   }
 }
@@ -296,7 +297,6 @@ export function updateQuestion(
 
   if (state.questionText) state.questionText.destroy();
   if (state.questionNumber) state.questionNumber.destroy();
-
   if (state.nextButton) {
     const hitArea = state.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
     if (hitArea && hitArea.input) {
@@ -309,11 +309,13 @@ export function updateQuestion(
   const HORIZONTAL_PADDING_PERCENT = 0.08;
   const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
   const contentWidth = panelWidth - horizontalPadding * 2;
+
   const QUESTION_START_PERCENT = 0.18;
   const QUESTION_TO_OPTIONS_GAP_PERCENT = 0.15;
   const OPTION_BUTTON_HEIGHT_PERCENT = 0.095;
   const OPTION_GAP_PERCENT = 0.02;
   const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
+
   const QUESTION_TEXT_FONT_PERCENT = 0.04;
   const OPTION_LETTER_FONT_PERCENT = 0.035;
   const OPTION_TEXT_FONT_PERCENT = 0.03;
@@ -323,13 +325,17 @@ export function updateQuestion(
   const optionButtonHeight = panelHeight * OPTION_BUTTON_HEIGHT_PERCENT;
   const optionGap = panelHeight * OPTION_GAP_PERCENT;
   const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
+
   const questionTextFontSize = Math.round(panelWidth * QUESTION_TEXT_FONT_PERCENT);
   const optionLetterFontSize = Math.round(panelWidth * OPTION_LETTER_FONT_PERCENT);
   const optionTextFontSize = Math.round(panelWidth * OPTION_TEXT_FONT_PERCENT);
 
   const fullQuestionText = `${state.currentQuestionIndex + 1}. ${question.question}`;
 
-  state.questionText = scene.add.text(horizontalPadding, questionStartY, fullQuestionText,
+  state.questionText = scene.add.text(
+    horizontalPadding,
+    questionStartY,
+    fullQuestionText,
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
       fontSize: `${questionTextFontSize}px`,
       wordWrap: { width: contentWidth },
@@ -338,6 +344,7 @@ export function updateQuestion(
   );
   state.questionText.setOrigin(0, 0);
   state.rightPanel.add(state.questionText);
+
   state.questionNumber = state.questionText;
 
   const optionsStartY = questionStartY + state.questionText.height + questionToOptionsGap;
@@ -363,6 +370,7 @@ export function updateQuestion(
   // Next button
   const nextButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
   const nextButtonY = panelHeight - nextButtonMargin;
+
   createNextButton(scene, state, nextButtonX, nextButtonY, panelWidth, callbacks.onNext);
   state.rightPanel.add(state.nextButton);
 }
@@ -389,8 +397,20 @@ function createOptionButton(
   buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
   buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
   const cornerRadius = buttonHeight * 0.2;
-  buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-  buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+  buttonBg.fillRoundedRect(
+    leftPadding,
+    -buttonHeight / 2,
+    buttonWidth,
+    buttonHeight,
+    cornerRadius
+  );
+  buttonBg.strokeRoundedRect(
+    leftPadding,
+    -buttonHeight / 2,
+    buttonWidth,
+    buttonHeight,
+    cornerRadius
+  );
   container.add(buttonBg);
 
   const buttonHitArea = scene.add.rectangle(
@@ -407,7 +427,9 @@ function createOptionButton(
     leftPadding + letterPaddingLeft,
     0,
     `${option.letter}.`,
-    createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: `${letterFontSize}px` })
+    createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
+      fontSize: `${letterFontSize}px`,
+    })
   );
   letterText.setOrigin(0, 0.5);
 
@@ -424,6 +446,7 @@ function createOptionButton(
   optionText.setOrigin(0, 0.5);
 
   container.add([letterText, optionText, buttonHitArea]);
+
   container.setData('letter', option.letter);
   container.setData('bg', buttonBg);
   container.setData('hitArea', buttonHitArea);
@@ -431,39 +454,97 @@ function createOptionButton(
   container.setData('buttonWidth', buttonWidth);
   container.setData('buttonHeight', buttonHeight);
   container.setData('cornerRadius', cornerRadius);
+  // Live selection tracker — updated by showAnswerSelected() via setData
+  container.setData('currentSelectedAnswer', null);
 
   buttonHitArea.setInteractive({ useHandCursor: true });
+
   buttonHitArea.on('pointerdown', () => onSelect(option.letter));
 
   buttonHitArea.on('pointerover', () => {
-    if (state.selectedAnswer !== option.letter) {
+    // Read live selection from container data (not stale closure)
+    const currentSelected = container.getData('currentSelectedAnswer') as string | null;
+    if (currentSelected !== option.letter) {
       buttonBg.clear();
       buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.3);
       buttonBg.lineStyle(2, COLORS.ELEGANT_BLUE);
-      buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-      buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+      buttonBg.fillRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
+      buttonBg.strokeRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
     }
   });
 
   buttonHitArea.on('pointerout', () => {
-    if (state.selectedAnswer === option.letter) {
+    // Read live selection from container data (not stale closure)
+    const currentSelected = container.getData('currentSelectedAnswer') as string | null;
+    if (currentSelected === option.letter) {
+      // This is the selected option — restore selected style
       buttonBg.clear();
       buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
       buttonBg.lineStyle(2, COLORS.LOGO_BLUE);
-      buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-      buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-    } else if (state.selectedAnswer !== null) {
+      buttonBg.fillRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
+      buttonBg.strokeRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
+    } else if (currentSelected !== null) {
+      // Another option is selected — restore unselected style
       buttonBg.clear();
       buttonBg.fillStyle(COLORS.TEXT_WHITE, 1);
       buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
-      buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-      buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+      buttonBg.fillRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
+      buttonBg.strokeRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
     } else {
+      // Nothing selected — restore default style
       buttonBg.clear();
       buttonBg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
       buttonBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
-      buttonBg.fillRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
-      buttonBg.strokeRoundedRect(leftPadding, -buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+      buttonBg.fillRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
+      buttonBg.strokeRoundedRect(
+        leftPadding,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        cornerRadius
+      );
     }
   });
 
@@ -491,19 +572,36 @@ function createNextButton(
 
   const buttonBg = scene.add.graphics();
   buttonBg.fillStyle(COLORS.UNAVAILABLE_BUTTON);
-  buttonBg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
+  buttonBg.fillRoundedRect(
+    -buttonWidth / 2,
+    -buttonHeight / 2,
+    buttonWidth,
+    buttonHeight,
+    borderRadius
+  );
 
-  const buttonText = scene.add.text(-buttonWidth * 0.12, 0, 'NEXT',
-    createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, { fontSize: `${fontSize}px` })
+  const buttonText = scene.add.text(
+    -buttonWidth * 0.12,
+    0,
+    'NEXT',
+    createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, {
+      fontSize: `${fontSize}px`,
+    })
   );
   buttonText.setOrigin(0.5, 0.5);
 
-  const arrow = scene.add.text(buttonWidth * 0.22, 0, '→',
-    createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, { fontSize: `${fontSize + 4}px` })
+  const arrow = scene.add.text(
+    buttonWidth * 0.22,
+    0,
+    '→',
+    createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, {
+      fontSize: `${fontSize + 4}px`,
+    })
   );
   arrow.setOrigin(0.5, 0.5);
 
   state.nextButton.add([buttonBg, buttonText, arrow]);
+
   state.nextButton.setData('bg', buttonBg);
   state.nextButton.setData('text', buttonText);
   state.nextButton.setData('arrow', arrow);
@@ -535,12 +633,24 @@ export function updateNextButton(state: GYNSceneState, enabled: boolean): void {
   bg.clear();
   if (enabled) {
     bg.fillStyle(COLORS.LOGO_BLUE);
-    bg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
+    bg.fillRoundedRect(
+      -buttonWidth / 2,
+      -buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      borderRadius
+    );
     text.setColor(COLORS.TEXT_PURE_WHITE);
     arrow.setColor(COLORS.TEXT_PURE_WHITE);
   } else {
     bg.fillStyle(COLORS.UNAVAILABLE_BUTTON);
-    bg.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, borderRadius);
+    bg.fillRoundedRect(
+      -buttonWidth / 2,
+      -buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      borderRadius
+    );
     text.setColor(COLORS.TEXT_SECONDARY);
     arrow.setColor(COLORS.TEXT_SECONDARY);
   }
@@ -573,7 +683,10 @@ export function showCompletion(
   const moduleButtonFontSize = Math.round(panelWidth * 0.034);
 
   // Title
-  const title = scene.add.text(panelWidth / 2, 40, 'Question Cards',
+  const title = scene.add.text(
+    panelWidth / 2,
+    40,
+    'Question Cards',
     createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${titleFontSize}px` })
   );
   title.setOrigin(0.5, 0);
@@ -590,8 +703,13 @@ export function showCompletion(
 
   // "Questions Completed!" text
   const completionTextY = birdY + panelHeight * 0.14;
-  const completionText = scene.add.text(panelWidth / 2, completionTextY, 'Questions Completed!',
-    createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${completionTextFontSize}px` })
+  const completionText = scene.add.text(
+    panelWidth / 2,
+    completionTextY,
+    'Questions Completed!',
+    createTextStyle('H2', COLORS.TEXT_PRIMARY, {
+      fontSize: `${completionTextFontSize}px`,
+    })
   );
   completionText.setOrigin(0.5, 0.5);
   state.rightPanel.add(completionText);
@@ -610,14 +728,22 @@ export function showCompletion(
   leftBoxBg.strokeRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
   state.rightPanel.add(leftBoxBg);
 
-  const waterText = scene.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.32, 'Growth Earned',
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxTitleFontSize}px` })
+  const waterText = scene.add.text(
+    leftBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.32,
+    'Growth Earned',
+    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+      fontSize: `${boxTitleFontSize}px`,
+    })
   );
   waterText.setOrigin(0.5, 0.5);
   state.rightPanel.add(waterText);
 
-  const waterEarned = state.gameMode !== 'legacy' ? state.totalGrowthPointsEarned : state.score;
-  const waterValue = scene.add.text(leftBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `Water +${waterEarned}`,
+  const waterEarned = state.totalGrowthPointsEarned;
+  const waterValue = scene.add.text(
+    leftBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.68,
+    `Water +${waterEarned}`,
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
       fontSize: `${boxValueFontSize}px`,
       align: 'center',
@@ -650,14 +776,24 @@ export function showCompletion(
     accuracyMessage = 'Try Again!';
   }
 
-  const accuracyText = scene.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.38, accuracyMessage,
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxTitleFontSize}px` })
+  const accuracyText = scene.add.text(
+    rightBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.38,
+    accuracyMessage,
+    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+      fontSize: `${boxTitleFontSize}px`,
+    })
   );
   accuracyText.setOrigin(0.5, 0.5);
   state.rightPanel.add(accuracyText);
 
-  const accuracyValue = scene.add.text(rightBoxX + boxWidth / 2, boxY + boxHeight * 0.68, `${accuracy}% Accuracy`,
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, { fontSize: `${boxValueFontSize}px` })
+  const accuracyValue = scene.add.text(
+    rightBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.68,
+    `${accuracy}% Accuracy`,
+    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+      fontSize: `${boxValueFontSize}px`,
+    })
   );
   accuracyValue.setOrigin(0.5, 0.5);
   state.rightPanel.add(accuracyValue);
@@ -667,13 +803,23 @@ export function showCompletion(
   const coinButtonWidth = contentWidth * 0.65;
   const coinButtonHeight = panelHeight * 0.08;
   const coinButtonRadius = coinButtonHeight / 2;
+
   const coinButton = scene.add.graphics();
   coinButton.fillStyle(COLORS.ELEGANT_BLUE);
-  coinButton.fillRoundedRect(panelWidth / 2 - coinButtonWidth / 2, coinButtonY, coinButtonWidth, coinButtonHeight, coinButtonRadius);
+  coinButton.fillRoundedRect(
+    panelWidth / 2 - coinButtonWidth / 2,
+    coinButtonY,
+    coinButtonWidth,
+    coinButtonHeight,
+    coinButtonRadius
+  );
   state.rightPanel.add(coinButton);
 
-  const coinsEarned = state.gameMode !== 'legacy' ? state.totalCoinsEarned : state.score * 5;
-  const coinText = scene.add.text(panelWidth / 2, coinButtonY + coinButtonHeight / 2, `You earned ${coinsEarned}\nNest Coins!`,
+  const coinsEarned = state.totalCoinsEarned;
+  const coinText = scene.add.text(
+    panelWidth / 2,
+    coinButtonY + coinButtonHeight / 2,
+    `You earned ${coinsEarned}\nNest Coins!`,
     createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
       fontSize: `${coinButtonFontSize}px`,
       align: 'center',
@@ -688,6 +834,7 @@ export function showCompletion(
   const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
   const moduleButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
   const moduleButtonY = panelHeight - nextButtonMargin;
+
   const moduleButtonWidth = panelWidth * 0.24;
   const moduleButtonHeight = panelWidth * 0.08;
   const moduleButtonRadius = moduleButtonHeight / 2;
@@ -696,22 +843,45 @@ export function showCompletion(
 
   const moduleButtonBg = scene.add.graphics();
   moduleButtonBg.fillStyle(COLORS.LOGO_BLUE);
-  moduleButtonBg.fillRoundedRect(-moduleButtonWidth / 2, -moduleButtonHeight / 2, moduleButtonWidth, moduleButtonHeight, moduleButtonRadius);
+  moduleButtonBg.fillRoundedRect(
+    -moduleButtonWidth / 2,
+    -moduleButtonHeight / 2,
+    moduleButtonWidth,
+    moduleButtonHeight,
+    moduleButtonRadius
+  );
 
-  const moduleButtonText = scene.add.text(-moduleButtonWidth * 0.12, 0, 'MODULE',
-    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${moduleButtonFontSize}px` })
+  const moduleButtonText = scene.add.text(
+    -moduleButtonWidth * 0.12,
+    0,
+    'MODULE',
+    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+      fontSize: `${moduleButtonFontSize}px`,
+    })
   );
   moduleButtonText.setOrigin(0.5, 0.5);
 
   const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
-  const arrow = scene.add.text(moduleButtonWidth * 0.22, 0, '→',
-    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${arrowFontSize}px` })
+  const arrow = scene.add.text(
+    moduleButtonWidth * 0.22,
+    0,
+    '→',
+    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+      fontSize: `${arrowFontSize}px`,
+    })
   );
   arrow.setOrigin(0.5, 0.5);
 
   state.completionReturnButton.add([moduleButtonBg, moduleButtonText, arrow]);
 
-  const hitArea = scene.add.rectangle(0, 0, moduleButtonWidth, moduleButtonHeight, 0x000000, 0);
+  const hitArea = scene.add.rectangle(
+    0,
+    0,
+    moduleButtonWidth,
+    moduleButtonHeight,
+    0x000000,
+    0
+  );
   hitArea.setInteractive({ useHandCursor: true });
   hitArea.on('pointerdown', () => {
     onReturn();

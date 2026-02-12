@@ -6,21 +6,9 @@ import type {
 } from '../../../../../../../types/growYourNest.types';
 
 // ═══════════════════════════════════════════════════════════════
-// LEGACY INTERFACE (backward compatibility with walkthrough)
-// ═══════════════════════════════════════════════════════════════
-export interface LegacyQuizQuestion {
-  id: number;
-  question: string;
-  options: Array<{
-    letter: string;
-    text: string;
-  }>;
-  correctAnswer: string;
-}
-
-// ═══════════════════════════════════════════════════════════════
 // INTERNAL UNIFIED QUESTION FORMAT
 // ═══════════════════════════════════════════════════════════════
+
 export interface InternalQuestion {
   id: string;
   question: string;
@@ -29,7 +17,7 @@ export interface InternalQuestion {
     text: string;
     answerId: string;
   }>;
-  /** For legacy mode: letter of correct answer. For API mode: null (server-side) */
+  /** Always null — correct answer is determined server-side */
   correctAnswer: string | null;
   explanation: string;
 }
@@ -37,6 +25,7 @@ export interface InternalQuestion {
 // ═══════════════════════════════════════════════════════════════
 // SCENE STATE — exposed to component helpers via getter interface
 // ═══════════════════════════════════════════════════════════════
+
 export interface GYNSceneState {
   questions: InternalQuestion[];
   currentQuestionIndex: number;
@@ -46,7 +35,7 @@ export interface GYNSceneState {
   fertilizerBonusCount: number;
   totalGrowthPointsEarned: number;
   totalCoinsEarned: number;
-  gameMode: GYNGameMode | 'legacy';
+  gameMode: GYNGameMode;
   lessonId: string | null;
   moduleId: string | null;
   treeState: TreeState | null;

@@ -1,5 +1,4 @@
 export type {
-  LegacyQuizQuestion,
   InternalQuestion,
   GYNSceneState,
   GYNGameMode,
@@ -7,8 +6,6 @@ export type {
   TreeStateWithTransition,
   LessonAnswerSubmission,
 } from './GYNTypes';
-
-export { getDefaultQuestions } from './GYNDefaultQuestions';
 
 export {
   createLeftPanel,

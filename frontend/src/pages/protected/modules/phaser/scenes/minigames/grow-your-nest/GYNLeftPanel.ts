@@ -169,7 +169,7 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
   let stage: number;
   let progressPercent: number;
 
-  if (state.gameMode !== 'legacy' && state.treeState) {
+  if (state.treeState) {
     stage = state.treeState.current_stage + 1;
     if (stage > 7) stage = 7;
     if (stage < 1) stage = 1;
@@ -178,19 +178,8 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
         (state.treeState.total_stages * state.treeState.points_per_stage)) *
       100;
   } else {
-    const totalQuestions = state.questions.length;
-    const correctAnswers = state.score;
-
-    if (correctAnswers === 0) {
-      stage = 1;
-    } else if (correctAnswers === totalQuestions) {
-      stage = 7;
-    } else {
-      const pct = correctAnswers / totalQuestions;
-      stage = Math.floor(pct * 5) + 2;
-      stage = Math.min(stage, 6);
-    }
-    progressPercent = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    stage = 1;
+    progressPercent = 0;
   }
 
   console.log(`🌳 Tree stage: ${stage}, progress: ${progressPercent.toFixed(1)}%`);
@@ -253,11 +242,7 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
 
   // Update stage text
   if (state.stageText) {
-    if (state.gameMode !== 'legacy' && state.treeState) {
-      state.stageText.setText(`Stage ${state.treeState.current_stage}`);
-    } else {
-      state.stageText.setText(`Stage ${stage}`);
-    }
+    state.stageText.setText(`Stage ${state.treeState ? state.treeState.current_stage : stage}`);
   }
 
   // Update progress percent text
