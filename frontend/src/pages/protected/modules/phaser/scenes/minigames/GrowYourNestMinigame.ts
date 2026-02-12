@@ -32,8 +32,9 @@ import {
   showFeedbackBanner,
   clearFeedbackBanner,
 } from './grow-your-nest/GYNRightPanel';
+import { BaseScene } from '../BaseScene';
 
-export default class GrowYourNestMinigame extends Phaser.Scene {
+export default class GrowYourNestMinigame extends BaseScene {
   // ─── Core game state ───
   private questions: InternalQuestion[] = [];
   private currentQuestionIndex: number = 0;
@@ -149,12 +150,20 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
   }
 
+  /**
+   * Override BaseScene's clearBackgroundImage to be a no-op.
+   * GYN is a minigame overlay — it should NOT touch the DOM background.
+   * The DOM background is managed by LessonView (React) or HouseScene, not by this Phaser scene.
+   */
+  protected clearBackgroundImage(): void {
+    // Intentionally empty — do not clear the DOM background
+  }
+
   private getCallbacks() {
     return {
       onAnswerSelection: (letter: string) => this.handleAnswerSelection(letter),
       onNext: () => this.handleNextQuestion(),
       onReturn: () => {
-        this.restoreHouseSceneInput();
         this.events.emit('minigameCompleted');
         this.scene.stop();
         this.scene.resume('HouseScene');
@@ -218,18 +227,16 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   }
 
   create() {
-    const { width, height } = this.cameras.main;
+    // Call BaseScene.create() to set up coin counter and coin update listener
+    super.create();
 
-    // Disable HouseScene input so its hit zones don't intercept clicks
-    const houseScene = this.scene.get('HouseScene');
-    if (houseScene && houseScene.input) {
-      houseScene.input.enabled = false;
-    }
+    const { width, height } = this.cameras.main;
 
     this.createBackButton();
     this.createHeader(width);
     this.createPanels(width, height);
     this.slideInMinigameComponents(width);
+
     this.scale.on('resize', this.handleResize, this);
   }
 
@@ -296,7 +303,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
             .then((r) => {
               this.isSubmitting = false;
               this.lastServerResponse = r.tree_state;
-
               if (r.is_correct) {
                 this.score++;
                 this.consecutiveCorrect++;
@@ -446,12 +452,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       const cr = btn.getData('cornerRadius') as number;
 
       bg.clear();
-
       if (letter === this.selectedAnswer) {
         bg.fillStyle(isCorrect ? COLORS.STATUS_GREEN : COLORS.STATUS_RED, 1);
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
       }
-
       const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (hitArea) hitArea.disableInteractive();
     });
@@ -505,6 +509,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       },
       consecutiveCorrect: this.consecutiveCorrect,
     };
+
     this.events.emit('minigameResult', result);
   }
 
@@ -543,8 +548,12 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     if (this.headerTitle) this.headerTitle.destroy();
     if (this.leftPanel) this.leftPanel.destroy();
     if (this.rightPanel) this.rightPanel.destroy();
+
     this.optionButtons = [];
     this.feedbackBanner = undefined;
+
+    // Handle coin counter resize from BaseScene
+    this.handleCoinCounterResize();
 
     const { width, height } = this.scale;
     this.createBackButton();
@@ -609,12 +618,16 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
 
     this.scale.off('resize', this.handleResize, this);
+
+    // Call BaseScene.shutdown() to clean up coin counter
+    super.shutdown();
   }
 
   // ─── Slide-in animation ───
 
   private slideInMinigameComponents(width: number): void {
     const offset = width * 1.5;
+
     if (this.backButton) this.backButton.x += offset;
     if (this.headerTitle) this.headerTitle.x += offset;
     if (this.leftPanel) this.leftPanel.x += offset;
@@ -696,12 +709,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     hitArea.setOrigin(0, 0.5);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => {
-      this.restoreHouseSceneInput();
       this.events.emit('minigameCompleted');
       this.scene.stop();
       this.scene.resume('HouseScene');
     });
-
     this.backButton.add(hitArea);
     this.backButton.sendToBack(hitArea);
   }

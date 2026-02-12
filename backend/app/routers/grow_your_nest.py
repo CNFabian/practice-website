@@ -1069,10 +1069,21 @@ def reset_lesson_gyn_dev(
     db: Session = Depends(get_db)
 ):
     """
-    DEV ONLY: Reset Grow Your Nest played status for a lesson.
-    Resets quiz_attempts to 0 so the minigame can be replayed.
+    DEV ONLY: Full reset of a lesson and its module's tree progress.
+    Resets lesson progress (status, video, milestones, completion) so it appears
+    as if the user never started the lesson. Also resets quiz_attempts for all
+    lessons in the module and resets the module's tree state.
     Remove this endpoint before production launch.
     """
+    # Get the lesson to find the module_id
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson not found"
+        )
+    
+    # Reset the target lesson's full progress
     lesson_progress = db.query(UserLessonProgress).filter(
         and_(
             UserLessonProgress.user_id == current_user.id,
@@ -1086,10 +1097,81 @@ def reset_lesson_gyn_dev(
             detail="No progress found for this lesson"
         )
     
+    # Full lesson progress reset — make it look like the lesson was never touched
+    lesson_progress.status = "not_started"
+    lesson_progress.video_progress_seconds = 0
     lesson_progress.quiz_attempts = 0
+    lesson_progress.quiz_best_score = None
+    lesson_progress.content_type_consumed = None
+    lesson_progress.transcript_progress_percentage = None
+    lesson_progress.time_spent_seconds = 0
+    lesson_progress.completion_method = None
+    lesson_progress.milestones_reached = None
+    lesson_progress.completed_at = None
+    lesson_progress.last_accessed_at = datetime.now()
+    
+    # Reset quiz_attempts for ALL other lessons in the same module
+    module_lessons = db.query(Lesson).filter(
+        and_(Lesson.module_id == lesson.module_id, Lesson.is_active == True)
+    ).all()
+    
+    reset_lesson_count = 1  # counting the target lesson
+    for mod_lesson in module_lessons:
+        if mod_lesson.id == lesson_id:
+            continue  # already reset above
+        lp = db.query(UserLessonProgress).filter(
+            and_(
+                UserLessonProgress.user_id == current_user.id,
+                UserLessonProgress.lesson_id == mod_lesson.id
+            )
+        ).first()
+        if lp and lp.quiz_attempts > 0:
+            lp.quiz_attempts = 0
+            lp.quiz_best_score = None
+            reset_lesson_count += 1
+    
+    # Reset tree progress on the module
+    module_progress = db.query(UserModuleProgress).filter(
+        and_(
+            UserModuleProgress.user_id == current_user.id,
+            UserModuleProgress.module_id == lesson.module_id
+        )
+    ).first()
+    
+    tree_was_reset = False
+    if module_progress:
+        module_progress.tree_growth_points = 0
+        module_progress.tree_current_stage = 0
+        module_progress.tree_completed = False
+        module_progress.tree_completed_at = None
+        # Recalculate module completion status since we reset a lesson
+        completed_lessons = db.query(UserLessonProgress).join(Lesson).filter(
+            and_(
+                UserLessonProgress.user_id == current_user.id,
+                Lesson.module_id == lesson.module_id,
+                UserLessonProgress.status == "completed",
+                Lesson.is_active == True
+            )
+        ).count()
+        module_progress.lessons_completed = completed_lessons
+        total_lessons = module_progress.total_lessons or 1
+        module_progress.completion_percentage = Decimal(
+            (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
+        )
+        if completed_lessons == 0:
+            module_progress.status = "not_started"
+        elif completed_lessons < total_lessons:
+            module_progress.status = "in_progress"
+        tree_was_reset = True
+    
     db.commit()
     
     return {
         "success": True,
-        "message": f"GYN reset for lesson {lesson_id}. quiz_attempts set to 0."
+        "message": (
+            f"Full reset for lesson '{lesson.title}' in module {lesson.module_id}. "
+            f"Lesson progress cleared (status → not_started, video → 0). "
+            f"{reset_lesson_count} lesson(s) quiz_attempts reset. "
+            f"Tree progress {'reset to stage 0' if tree_was_reset else 'no module progress found'}."
+        )
     }

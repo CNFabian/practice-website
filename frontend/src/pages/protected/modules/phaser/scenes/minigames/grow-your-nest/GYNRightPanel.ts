@@ -25,7 +25,7 @@ export function createRightPanel(
   state.rightPanel.setDepth(5);
 
   const panelBg = scene.add.graphics();
-  panelBg.fillStyle(COLORS.PURE_WHITE, 1);
+  panelBg.fillStyle(COLORS.PURE_WHITE, 0);
   panelBg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
   const cornerRadius = 16;
   panelBg.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);

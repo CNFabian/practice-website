@@ -8,7 +8,16 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from auth import AuthManager, create_tokens_for_user, refresh_access_token, get_current_user
-from models import User, UserCoinBalance, PendingEmailVerification
+from models import (
+    User, UserCoinBalance, PendingEmailVerification,
+    # Wipe-data imports
+    UserLessonProgress, UserModuleProgress,
+    UserQuizAttempt, UserQuizAnswer, UserModuleQuizAttempt,
+    UserCoinTransaction, UserBadge, UserCouponRedemption,
+    UserOnboarding, Notification,
+    UserBehaviorEvent, LeadScoreHistory, UserLeadScore,
+    UserActivityLog, CalculatorUsage, MaterialDownload, SupportTicket,
+)
 from schemas import (
     UserRegistration, UserLogin, UserResponse, TokenResponse,
     PasswordReset, PasswordResetConfirm, ProfileUpdate, SuccessResponse,
@@ -332,3 +341,80 @@ def confirm_password_reset(request: PasswordResetConfirm, db: Session = Depends(
     db.commit()
     
     return SuccessResponse(message="Password reset successfully")
+
+
+# ================================
+# FULL USER DATA WIPE — Settings page
+# ================================
+
+@router.post("/wipe-data", response_model=SuccessResponse)
+def wipe_user_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Wipe ALL user progress and activity data. The user account itself is preserved
+    (email, password, profile info) but all learning progress, coins, badges,
+    quiz history, analytics, notifications, and onboarding data are deleted.
+    The user will appear as a fresh account after this operation.
+    """
+    user_id = current_user.id
+
+    # ── 1. Learning progress ──
+    # Delete quiz answers first (child of quiz attempts)
+    quiz_attempt_ids = [
+        a.id for a in db.query(UserQuizAttempt.id).filter(
+            UserQuizAttempt.user_id == user_id
+        ).all()
+    ]
+    if quiz_attempt_ids:
+        db.query(UserQuizAnswer).filter(
+            UserQuizAnswer.quiz_attempt_id.in_(quiz_attempt_ids)
+        ).delete(synchronize_session=False)
+
+    db.query(UserQuizAttempt).filter(UserQuizAttempt.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserModuleQuizAttempt).filter(UserModuleQuizAttempt.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserLessonProgress).filter(UserLessonProgress.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserModuleProgress).filter(UserModuleProgress.user_id == user_id).delete(synchronize_session=False)
+
+    # ── 2. Rewards & economy ──
+    db.query(UserCoinTransaction).filter(UserCoinTransaction.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserCoinBalance).filter(UserCoinBalance.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserBadge).filter(UserBadge.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserCouponRedemption).filter(UserCouponRedemption.user_id == user_id).delete(synchronize_session=False)
+
+    # ── 3. Onboarding ──
+    db.query(UserOnboarding).filter(UserOnboarding.user_id == user_id).delete(synchronize_session=False)
+
+    # ── 4. Notifications ──
+    db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
+
+    # ── 5. Analytics & lead scoring ──
+    db.query(UserBehaviorEvent).filter(UserBehaviorEvent.user_id == user_id).delete(synchronize_session=False)
+    db.query(LeadScoreHistory).filter(LeadScoreHistory.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserLeadScore).filter(UserLeadScore.user_id == user_id).delete(synchronize_session=False)
+
+    # ── 6. Activity & usage (SET NULL — don't delete rows, just disassociate) ──
+    db.query(UserActivityLog).filter(UserActivityLog.user_id == user_id).update(
+        {UserActivityLog.user_id: None}, synchronize_session=False
+    )
+    db.query(CalculatorUsage).filter(CalculatorUsage.user_id == user_id).update(
+        {CalculatorUsage.user_id: None}, synchronize_session=False
+    )
+    db.query(MaterialDownload).filter(MaterialDownload.user_id == user_id).update(
+        {MaterialDownload.user_id: None}, synchronize_session=False
+    )
+    db.query(SupportTicket).filter(SupportTicket.user_id == user_id).update(
+        {SupportTicket.user_id: None}, synchronize_session=False
+    )
+
+    # ── 7. Recreate fresh coin balance ──
+    fresh_balance = UserCoinBalance(user_id=user_id)
+    db.add(fresh_balance)
+
+    # ── 8. Update user timestamp ──
+    current_user.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+
+    return SuccessResponse(message="All user data has been wiped successfully. Your account has been reset to a fresh state.")
