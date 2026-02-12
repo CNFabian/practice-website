@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  OnboardingImage1,
-  OnboardingImage2,
-  OnboardingImage3_5,
-  OnboardingImage4,
-  TextBox,
-  OnestFont
-} from '../../../assets';
-import {
-  getOnboardingOptions,
-  completeStep1,
-  completeStep2,
-  completeStep3,
-  completeStep4,
-  type OnboardingOptions
-} from '../../../services/onBoardingAPI';
+import { OnboardingImage1, OnboardingImage2, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
+import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../../../services/onBoardingAPI';
 import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
 import { searchCities, type PlacePrediction } from '../../../services/googlePlacesAPI';
 
@@ -40,7 +26,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
     has_loan_officer: null as boolean | null,
     wants_expert_contact: '',
     homeownership_timeline_months: 28, // Default: 2 years 4 months
-    target_cities: [] as string[]  // Will hold ["Long Beach, CA", "San Jose, CA"]
+    target_cities: [] as string[] // Will hold ["Long Beach, CA", "San Jose, CA"]
   });
 
   // City search state
@@ -61,7 +47,6 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
         setError('Failed to load onboarding options');
       }
     };
-
     loadOptions();
   }, []);
 
@@ -132,6 +117,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
       setCityResults([]);
       return;
     }
+
     const updatedCities = [...selectedCities, city];
     setSelectedCities(updatedCities);
     setCityInput('');
@@ -183,12 +169,21 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refetchOnboardingStatus();
 
+      // ═══════════════════════════════════════════════════════════
+      // Dispatch custom event BEFORE navigating so App.tsx can
+      // synchronously set needsOnboarding = false. Without this,
+      // navigating to /app hits the stale needsOnboarding === true
+      // route guard and redirects back to /onboarding (loop).
+      // ═══════════════════════════════════════════════════════════
+      window.dispatchEvent(new Event('onboarding-completed'));
+
       // Close or navigate
       if (onClose) {
         onClose();
       } else {
         nav('/app', { replace: true });
       }
+
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
       setError('Failed to complete onboarding. Please try again.');
@@ -229,7 +224,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
       {/* Content Area */}
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="max-w-2xl w-full">
-
+          
           {/* Screen 1: Welcome */}
           {currentStep === 0 && (
             <div className="text-center space-y-8 animate-fadeIn">
@@ -481,7 +476,10 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                     max="60"
                     value={formData.homeownership_timeline_months}
                     onChange={(e) =>
-                      setFormData({ ...formData, homeownership_timeline_months: parseInt(e.target.value) })
+                      setFormData({
+                        ...formData,
+                        homeownership_timeline_months: parseInt(e.target.value)
+                      })
                     }
                     className="w-full h-2 bg-light-background-blue rounded-lg appearance-none cursor-pointer slider"
                     style={{
@@ -542,7 +540,6 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                 <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue text-right">
                   Search by City Name or ZIP Code
                 </OnestFont>
-
                 <div className="relative">
                   {/* Search Input */}
                   <div
@@ -551,18 +548,8 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                     }`}
                   >
                     {/* Search Icon */}
-                    <svg
-                      className="w-5 h-5 text-text-grey flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
+                    <svg className="w-5 h-5 text-text-grey flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
 
                     {/* Text Input */}
@@ -576,7 +563,7 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
                       className="flex-1 min-w-0 outline-none text-lg text-text-blue-black bg-transparent placeholder:text-unavailable-button"
                     />
 
-                    {/* Clear Input Button (⊗) */}
+                    {/* Clear Input Button */}
                     {cityInput && (
                       <button
                         onClick={() => {

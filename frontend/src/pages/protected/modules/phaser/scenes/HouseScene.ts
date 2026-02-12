@@ -65,6 +65,9 @@ export default class HouseScene extends BaseScene {
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private transitionManager!: SceneTransitionManager;
 
+  // Stored original positions for slide-in restoration
+  private originalComponentPositions: Map<Phaser.GameObjects.GameObject, number> = new Map();
+
   // Hover tooltip
   private hoverTooltip?: Phaser.GameObjects.Container;
   private hoverTooltipLessonId?: number;
@@ -263,31 +266,57 @@ export default class HouseScene extends BaseScene {
         showStartScreen: true,
       };
 
-      // Slide out house components
-      this.slideOutHouseComponents();
-
-      // After slide-out, pause HouseScene and launch GYN with data
-      this.time.delayedCall(850, () => {
-        this.scene.pause('HouseScene');
-        this.scene.launch('GrowYourNestMinigame', initData);
-
-        // Setup completion listener
-        const minigameScene = this.scene.get('GrowYourNestMinigame');
-        if (minigameScene) {
-          this.minigameShutdownHandler = () => {
-            this.slideInHouseComponents();
-            this.isTransitioning = false;
-          };
-          minigameScene.events.once(
-            'minigameCompleted',
-            this.minigameShutdownHandler
-          );
-        }
-      });
+      this.slideAndLaunchMinigame(initData);
     } catch (error) {
       console.error('🌳 Error launching free roam:', error);
       this.isTransitioning = false;
     }
+  }
+
+  /**
+   * PUBLIC: Launch lesson-mode minigame with slide transition.
+   * Called from LessonView via registry after navigating back to HouseScene.
+   */
+  public launchLessonMinigame(initData: GYNMinigameInitData): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+    this.slideAndLaunchMinigame(initData);
+  }
+
+  /**
+   * Shared slide-out → launch → slide-in logic for both free roam and lesson mode.
+   */
+  private slideAndLaunchMinigame(initData: GYNMinigameInitData): void {
+    // Slide out house components to the left
+    this.slideOutHouseComponents();
+
+    // After slide-out completes, pause HouseScene and launch GYN
+    this.time.delayedCall(300, () => {
+      this.scene.pause('HouseScene');
+
+      // Stop any existing GYN scene first
+      if (
+        this.scene.isActive('GrowYourNestMinigame') ||
+        this.scene.isPaused('GrowYourNestMinigame')
+      ) {
+        this.scene.stop('GrowYourNestMinigame');
+      }
+
+      this.scene.launch('GrowYourNestMinigame', initData);
+
+      // Setup completion listener to slide house components back in
+      const minigameScene = this.scene.get('GrowYourNestMinigame');
+      if (minigameScene) {
+        this.minigameShutdownHandler = () => {
+          this.slideInHouseComponents();
+          this.isTransitioning = false;
+        };
+        minigameScene.events.once(
+          'minigameCompleted',
+          this.minigameShutdownHandler
+        );
+      }
+    });
   }
 
   private createMinigameButton(): void {
@@ -1062,6 +1091,12 @@ export default class HouseScene extends BaseScene {
     });
     if (this.minigameButton) allComponents.push(this.minigameButton);
 
+    // Store original positions before sliding out
+    this.originalComponentPositions.clear();
+    allComponents.forEach((component) => {
+      this.originalComponentPositions.set(component, (component as any).x);
+    });
+
     const slideDistance = width * 1.5;
     allComponents.forEach((component) => {
       this.tweens.add({
@@ -1074,7 +1109,6 @@ export default class HouseScene extends BaseScene {
   }
 
   private slideInHouseComponents(): void {
-    const { width } = this.scale;
     const duration = 800;
     const ease = 'Power2';
 
@@ -1091,15 +1125,21 @@ export default class HouseScene extends BaseScene {
     });
     if (this.minigameButton) allComponents.push(this.minigameButton);
 
-    const slideDistance = width * 1.5;
+    // Tween each component back to its stored original position
     allComponents.forEach((component) => {
-      this.tweens.add({
-        targets: component,
-        x: `+=${slideDistance}`,
-        duration: duration,
-        ease: ease,
-      });
+      const originalX = this.originalComponentPositions.get(component);
+      if (originalX !== undefined) {
+        this.tweens.add({
+          targets: component,
+          x: originalX,
+          duration: duration,
+          ease: ease,
+        });
+      }
     });
+
+    // Clear stored positions after use
+    this.originalComponentPositions.clear();
   }
 
   // ═══════════════════════════════════════════════════════════

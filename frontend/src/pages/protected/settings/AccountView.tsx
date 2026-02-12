@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { OnestFont } from '../../../assets';
 import { ProfilePictureModal } from '../../../components';
 import { updateUserProfile } from '../../../services/authAPI';
 import { requestPasswordReset } from '../../../services/authAPI';
-import { updateUserProfile as updateUserProfileAction } from '../../../store/slices/authSlice';
+import { wipeUserData } from '../../../services/authAPI';
+import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
+import { clearAuthData } from '../../../services/authAPI';
 import type { RootState } from '../../../store/store';
 
 const AccountView: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -16,6 +20,12 @@ const AccountView: React.FC = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+
+  // Wipe data state
+  const [isWiping, setIsWiping] = useState(false);
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [wipeMessage, setWipeMessage] = useState<string | null>(null);
+  const [wipeError, setWipeError] = useState<string | null>(null);
 
   const handleSaveSettings = () => {
     console.log('Settings saved!');
@@ -27,7 +37,6 @@ const AccountView: React.FC = () => {
 
   const handleAvatarSelect = async (avatarId: string) => {
     try {
-      // Store the avatar ID as the profile picture URL (e.g., "avatar:curious-cat")
       const avatarUrl = `avatar:${avatarId}`;
       await updateUserProfile({ photoURL: avatarUrl });
       dispatch(updateUserProfileAction({ photoURL: avatarUrl }));
@@ -50,7 +59,6 @@ const AccountView: React.FC = () => {
   const handleProfileUpload = async (file: File) => {
     setIsUploadingPicture(true);
     try {
-      // Convert file to base64 data URL
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -58,7 +66,6 @@ const AccountView: React.FC = () => {
         reader.readAsDataURL(file);
       });
 
-      // Send to backend via profile update
       await updateUserProfile({ photoURL: base64 });
       dispatch(updateUserProfileAction({ photoURL: base64 }));
       console.log('Profile picture uploaded successfully');
@@ -87,6 +94,29 @@ const AccountView: React.FC = () => {
       setResetPasswordError('Failed to send password reset email. Please try again.');
     } finally {
       setIsResettingPassword(false);
+    }
+  };
+
+  const handleWipeData = async () => {
+    setIsWiping(true);
+    setWipeMessage(null);
+    setWipeError(null);
+
+    try {
+      await wipeUserData();
+      setWipeMessage('All data wiped successfully. Logging you out...');
+      setShowWipeConfirm(false);
+
+      // Log the user out after a brief delay so they can see the success message
+      setTimeout(() => {
+        clearAuthData();
+        dispatch(logout());
+        navigate('/auth/login');
+      }, 2000);
+    } catch (error) {
+      console.error('Wipe data failed:', error);
+      setWipeError('Failed to wipe data. Please try again.');
+      setIsWiping(false);
     }
   };
 
@@ -391,6 +421,94 @@ const AccountView: React.FC = () => {
                 className="w-full px-3 py-3 border border-light-background-blue rounded-lg text-sm bg-light-background-blue cursor-not-allowed"
                 readOnly
               />
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* TEMPORARY: Wipe User Data — Beta Testing Only                */}
+        {/* Remove this entire section before production launch          */}
+        {/* ============================================================ */}
+        <div className="border-t border-light-background-blue py-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-status-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <OnestFont
+                as="h3"
+                weight={700}
+                lineHeight="relaxed"
+                className="text-base text-status-red mb-1"
+              >
+                Wipe All Data (Beta Testing)
+              </OnestFont>
+              <OnestFont
+                as="p"
+                weight={300}
+                lineHeight="relaxed"
+                className="text-sm text-text-grey mb-4"
+              >
+                This will permanently delete all your learning progress, coins, badges, quiz history, analytics, notifications, and onboarding data. Your account (email, password, profile info) will be preserved. You will be logged out after the wipe completes.
+              </OnestFont>
+
+              {wipeMessage && (
+                <div className="mb-4 px-4 py-3 rounded-lg bg-status-green/10 text-status-green text-sm">
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    {wipeMessage}
+                  </OnestFont>
+                </div>
+              )}
+
+              {wipeError && (
+                <div className="mb-4 px-4 py-3 rounded-lg bg-status-red/10 text-status-red text-sm">
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    {wipeError}
+                  </OnestFont>
+                </div>
+              )}
+
+              {!showWipeConfirm ? (
+                <button
+                  onClick={() => setShowWipeConfirm(true)}
+                  disabled={isWiping}
+                  className="px-4 py-2 bg-status-red text-pure-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <OnestFont weight={500} lineHeight="relaxed">
+                    Wipe All Data
+                  </OnestFont>
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <OnestFont
+                    weight={500}
+                    lineHeight="relaxed"
+                    className="text-sm text-status-red"
+                  >
+                    Are you sure? This cannot be undone.
+                  </OnestFont>
+                  <button
+                    onClick={handleWipeData}
+                    disabled={isWiping}
+                    className="px-4 py-2 bg-status-red text-pure-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <OnestFont weight={500} lineHeight="relaxed">
+                      {isWiping ? 'Wiping...' : 'Yes, Wipe Everything'}
+                    </OnestFont>
+                  </button>
+                  <button
+                    onClick={() => setShowWipeConfirm(false)}
+                    disabled={isWiping}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-text-grey bg-light-background-blue hover:bg-light-background-blue/80 transition-colors disabled:opacity-50"
+                  >
+                    <OnestFont weight={500} lineHeight="relaxed">
+                      Cancel
+                    </OnestFont>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -412,6 +412,22 @@ export const resendVerificationEmail = async (): Promise<void> => {
   console.log('AuthAPI: Verification email resent successfully');
 };
 
+// ==================== WIPE USER DATA (TEMPORARY - BETA TESTING) ====================
+
+// Wipe all user progress and activity data while preserving the account
+// POST /api/auth/wipe-data
+// Response: { success: true, message: "All user data has been wiped successfully..." }
+// NOTE: Uses fetchWithAuth — user must be authenticated
+export const wipeUserData = async (): Promise<void> => {
+  console.log('AuthAPI: Wiping all user data...');
+
+  await fetchWithAuth(`${API_BASE_URL}/api/auth/wipe-data`, {
+    method: 'POST',
+  });
+
+  console.log('AuthAPI: User data wiped successfully');
+};
+
 // ==================== AUTHENTICATION STATUS CHECKS ====================
 
 // Check if user is authenticated (for route protection)
@@ -465,6 +481,7 @@ export default {
   confirmPasswordReset,
   verifyEmail,
   resendVerificationEmail,
+  wipeUserData,
   sendVerificationCode,
   verifyEmailCode,
   resendVerificationCode,
