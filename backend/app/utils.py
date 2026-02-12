@@ -539,26 +539,26 @@ class OnboardingManager:
         if not onboarding:
             return False
         
-        # Check new 5-step flow completion
-        required_fields = [
-            onboarding.selected_avatar,
-            onboarding.wants_expert_contact,
-            onboarding.homeownership_timeline_months,
-            onboarding.zipcode
-        ]
-        
-        # Also check that realtor/loan officer status is set (even if False)
+        # Check that all onboarding steps are completed
         professional_status_set = (
             onboarding.has_realtor is not None and 
             onboarding.has_loan_officer is not None
         )
         
+        required_fields = [
+            onboarding.wants_expert_contact,
+            onboarding.homeownership_timeline_months,
+        ]
+        
+        has_cities = onboarding.target_cities and len(onboarding.target_cities) > 0
+        
         return (
             all(field is not None for field in required_fields) and 
             professional_status_set and 
+            has_cities and
             onboarding.completed_at is not None
         )
-    
+        
     @staticmethod
     def complete_onboarding(db: Session, user_id: UUID) -> UserOnboarding:
         """Mark onboarding as complete and award welcome bonus"""

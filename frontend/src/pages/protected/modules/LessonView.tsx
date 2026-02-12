@@ -9,6 +9,8 @@ import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
 import GrowYourNestPromptModal from '../../../components/protected/modals/GrowYourNestPromptModal';
+import { getLessonQuestions, getFreeRoamQuestions, getFreeRoamState, transformGYNQuestionsForMinigame, resetLessonGYNDev } from '../../../services/growYourNestAPI';
+import gameManager from './phaser/managers/GameManager';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -222,6 +224,11 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [showGYNPromptModal, setShowGYNPromptModal] = useState(false);
   const pendingNavigationRef = useRef<(() => void) | null>(null);
 
+  // Dev button loading states — TEMP: Remove before production
+  const [isDevCompleting, setIsDevCompleting] = useState(false);
+  const [isDevFreeRoam, setIsDevFreeRoam] = useState(false);
+  const [isDevResetting, setIsDevResetting] = useState(false);
+
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
@@ -355,13 +362,17 @@ const LessonView: React.FC<LessonViewProps> = ({
       gynLessonData
     );
 
-    // Emit event to Phaser to launch the GYN minigame
-    const phaserGame = (window as any).__phaserGame;
+    // Launch GYN minigame via Phaser — use scene.launch (parallel) not scene.start (replace)
+    const phaserGame = gameManager.getGame();
     if (phaserGame) {
       const houseScene = phaserGame.scene.getScene('HouseScene');
       if (houseScene) {
+        // Stop any existing GYN scene first to allow re-launch with fresh data
+        if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
+          phaserGame.scene.stop('GrowYourNestMinigame');
+        }
         houseScene.scene.pause();
-        phaserGame.scene.start('GrowYourNestMinigame', initData);
+        houseScene.scene.launch('GrowYourNestMinigame', initData);
       }
     }
   }, [gynLessonData, lesson.backendId, module.id]);
@@ -428,6 +439,8 @@ const LessonView: React.FC<LessonViewProps> = ({
       : null,
     [module.lessons, currentLessonIndex]
   );
+
+  const isLastLesson = useMemo(() => !nextLesson, [nextLesson]);
 
   // Extract YouTube video ID
   const videoUrl = backendLessonData?.video_url || lesson.videoUrl;
@@ -768,11 +781,52 @@ const LessonView: React.FC<LessonViewProps> = ({
   }, [nextLesson, handleCompleteLesson]);
 
   // GYN Prompt Modal handlers
-  const handleGYNPlay = useCallback(() => {
+  const handleGYNPlay = useCallback(async () => {
     setShowGYNPromptModal(false);
     pendingNavigationRef.current = null;
-    launchGrowYourNest();
-  }, [launchGrowYourNest]);
+
+    if (!lesson.backendId) {
+      console.warn('🌳 [GYN Play] No lesson backendId, cannot launch');
+      return;
+    }
+
+    // Always fetch GYN questions directly to avoid cache timing issues
+    console.log('🌳 [GYN Play] Fetching GYN questions for lesson:', lesson.backendId);
+    try {
+      const gynData = await getLessonQuestions(lesson.backendId);
+
+      if (gynData && gynData.questions && gynData.questions.length > 0) {
+        console.log('🌳 [GYN Play] Fetched', gynData.questions.length, 'questions');
+
+        const moduleNumber = module.id || 1;
+        const initData: GYNMinigameInitData = buildLessonModeInitData(
+          lesson.backendId,
+          typeof moduleNumber === 'number' ? moduleNumber : 1,
+          gynData
+        );
+
+        const phaserGame = gameManager.getGame();
+        if (phaserGame) {
+          const houseScene = phaserGame.scene.getScene('HouseScene');
+          if (houseScene) {
+            if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
+              phaserGame.scene.stop('GrowYourNestMinigame');
+            }
+            houseScene.scene.pause();
+            houseScene.scene.launch('GrowYourNestMinigame', initData);
+            console.log('🌳 [GYN Play] Minigame launched!');
+          }
+        }
+
+        // Dismiss LessonView so the Phaser canvas (minigame) is visible
+        onBack();
+      } else {
+        console.warn('🌳 [GYN Play] No GYN questions available');
+      }
+    } catch (error) {
+      console.error('🌳 [GYN Play] Failed to fetch GYN questions:', error);
+    }
+  }, [lesson.backendId, module.id, onBack]);
 
   const handleGYNDismiss = useCallback(() => {
     setShowGYNPromptModal(false);
@@ -782,6 +836,189 @@ const LessonView: React.FC<LessonViewProps> = ({
       pendingNavigationRef.current = null;
     }
   }, []);
+
+  // Back button handler — shows GYN prompt if lesson is complete and GYN hasn't been played
+  const handleBack = useCallback(() => {
+    if (
+      (videoCompleted || backendLessonData?.is_completed) &&
+      !backendLessonData?.grow_your_nest_played &&
+      gynLessonData
+    ) {
+      pendingNavigationRef.current = onBack;
+      setShowGYNPromptModal(true);
+      return;
+    }
+    onBack();
+  }, [videoCompleted, backendLessonData?.is_completed, backendLessonData?.grow_your_nest_played, gynLessonData, onBack]);
+
+  // ═══════════════════════════════════════════════════════════
+  // TEMPORARY DEV BUTTONS — Remove before production
+  // ═══════════════════════════════════════════════════════════
+
+  /** 
+   * TEMP: Complete lesson on backend and directly launch GYN minigame.
+   * Bypasses the video completion requirement.
+   */
+  const handleDevCompleteLesson = useCallback(async () => {
+    if (!isValidBackendId || !lesson.backendId || !module?.backendId) {
+      console.warn('🧪 [Dev] Cannot complete - invalid backend IDs');
+      return;
+    }
+
+    setIsDevCompleting(true);
+    console.log('🧪 [Dev] Completing lesson on backend:', lesson.backendId);
+
+    completeLessonMutation(
+      { lessonId: lesson.backendId! },
+      {
+        onSuccess: async () => {
+          console.log('🧪 [Dev] Lesson marked complete. Fetching GYN questions...');
+          
+          try {
+            // Directly fetch GYN lesson questions (bypass the hook's conditional logic)
+            const gynData = await getLessonQuestions(lesson.backendId!);
+            
+            if (gynData && gynData.questions && gynData.questions.length > 0) {
+              console.log('🧪 [Dev] GYN questions fetched:', gynData.questions.length);
+              
+              const moduleNumber = module.id || 1;
+              const initData: GYNMinigameInitData = buildLessonModeInitData(
+                lesson.backendId!,
+                typeof moduleNumber === 'number' ? moduleNumber : 1,
+                gynData
+              );
+
+              // Launch GYN minigame via Phaser
+              const phaserGame = gameManager.getGame();
+              if (phaserGame) {
+                const houseScene = phaserGame.scene.getScene('HouseScene');
+                if (houseScene) {
+                  // Stop any existing GYN scene first
+                  if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
+                    phaserGame.scene.stop('GrowYourNestMinigame');
+                  }
+                  houseScene.scene.pause();
+                  houseScene.scene.launch('GrowYourNestMinigame', initData);
+                  console.log('🧪 [Dev] GYN Minigame launched!');
+                } else {
+                  console.error('🧪 [Dev] HouseScene not found');
+                }
+              } else {
+                console.error('🧪 [Dev] Phaser game instance not found');
+              }
+            } else {
+              console.warn('🧪 [Dev] No GYN questions available (may have already been played)');
+            }
+          } catch (error) {
+            console.error('🧪 [Dev] Failed to fetch GYN questions:', error);
+          }
+
+          setIsDevCompleting(false);
+        },
+        onError: (error: Error) => {
+          console.error('🧪 [Dev] Failed to complete lesson:', error);
+          setIsDevCompleting(false);
+        },
+      }
+    );
+  }, [isValidBackendId, lesson.backendId, module?.backendId, module?.id, completeLessonMutation]);
+
+  /**
+   * TEMP: Launch Free Roam mode directly.
+   * Only available on the last lesson after it's been completed.
+   */
+  const handleDevLaunchFreeRoam = useCallback(async () => {
+    if (!module?.backendId) {
+      console.warn('🧪 [Dev] Cannot launch free roam - no module backendId');
+      return;
+    }
+
+    setIsDevFreeRoam(true);
+    console.log('🧪 [Dev] Launching Free Roam for module:', module.backendId);
+
+    try {
+      // Fetch questions and current state in parallel
+      const [questionsResponse, stateResponse] = await Promise.all([
+        getFreeRoamQuestions(module.backendId),
+        getFreeRoamState(module.backendId),
+      ]);
+
+      if (questionsResponse.questions.length === 0) {
+        console.warn('🧪 [Dev] No free roam questions available');
+        setIsDevFreeRoam(false);
+        return;
+      }
+
+      if (stateResponse.completed) {
+        console.log('🧪 [Dev] Tree is already fully grown!');
+        setIsDevFreeRoam(false);
+        return;
+      }
+
+      const transformedQuestions = transformGYNQuestionsForMinigame(questionsResponse.questions);
+      const moduleNumber = module.id || 1;
+
+      const initData: GYNMinigameInitData = {
+        mode: 'freeroam',
+        moduleId: module.backendId,
+        questions: transformedQuestions,
+        treeState: {
+          growth_points: stateResponse.growth_points,
+          current_stage: stateResponse.current_stage,
+          total_stages: stateResponse.total_stages,
+          points_per_stage: stateResponse.points_per_stage,
+          completed: stateResponse.completed,
+        },
+        moduleNumber: typeof moduleNumber === 'number' ? moduleNumber : 1,
+        showStartScreen: true,
+      };
+
+      // Launch via Phaser
+      const phaserGame = gameManager.getGame();
+      if (phaserGame) {
+        const houseScene = phaserGame.scene.getScene('HouseScene');
+        if (houseScene) {
+          // Stop any existing GYN scene first
+          if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
+            phaserGame.scene.stop('GrowYourNestMinigame');
+          }
+          houseScene.scene.pause();
+          houseScene.scene.launch('GrowYourNestMinigame', initData);
+          console.log('🧪 [Dev] Free Roam launched!');
+        } else {
+          console.error('🧪 [Dev] HouseScene not found');
+        }
+      } else {
+        console.error('🧪 [Dev] Phaser game instance not found');
+      }
+    } catch (error) {
+      console.error('🧪 [Dev] Error launching free roam:', error);
+    }
+
+    setIsDevFreeRoam(false);
+  }, [module?.backendId, module?.id]);
+
+  /**
+   * DEV ONLY: Reset GYN played status so lesson minigame can be replayed.
+   * Calls POST /api/grow-your-nest/lesson/{lesson_id}/reset-dev
+   */
+  const handleDevResetGYN = useCallback(async () => {
+    if (!isValidBackendId || !lesson.backendId) {
+      console.warn('🧪 [Dev] Cannot reset: no valid backend lesson ID');
+      return;
+    }
+
+    setIsDevResetting(true);
+    try {
+      const result = await resetLessonGYNDev(lesson.backendId);
+      console.log('🧪 [Dev] GYN reset result:', result);
+      alert(`✅ GYN reset successful!\n\n${result.message}\n\nYou can now replay the minigame for this lesson.`);
+    } catch (error) {
+      console.error('🧪 [Dev] GYN reset failed:', error);
+      alert(`❌ GYN reset failed.\n\n${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    setIsDevResetting(false);
+  }, [isValidBackendId, lesson.backendId]);
 
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
@@ -793,7 +1030,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         <div className="max-w-7xl mx-auto px-7 py-2">
           <div className="flex items-center justify-between">
             <button
-              onClick={onBack}
+              onClick={handleBack}
               className="flex items-center text-text-blue-black font-bold hover:bg-black/10 rounded-xl px-3 py-2 -ml-3 transition-colors"
             >
               <span className="text-2xl mr-10">←</span>
@@ -901,6 +1138,60 @@ const LessonView: React.FC<LessonViewProps> = ({
                       )}
                     </span>
                   )}
+                </div>
+
+                {/* ═══ TEMP DEV BUTTONS — Remove before production ═══ */}
+                <div className="mt-2 flex flex-col gap-1.5 border-t border-dashed border-status-yellow/50 pt-2">
+                  <button
+                    onClick={handleDevCompleteLesson}
+                    disabled={isDevCompleting || !isValidBackendId}
+                    className="px-4 py-1.5 bg-status-yellow text-text-blue-black rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {isDevCompleting ? (
+                      <>
+                        <span className="animate-spin h-3 w-3 border-2 border-text-blue-black border-t-transparent rounded-full" />
+                        Completing...
+                      </>
+                    ) : (
+                      '🧪 Complete & Play Minigame'
+                    )}
+                  </button>
+
+                  {isLastLesson && (
+                    <button
+                      onClick={handleDevLaunchFreeRoam}
+                      disabled={isDevFreeRoam || !module?.backendId}
+                      className="px-4 py-1.5 bg-status-green text-text-blue-black rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                      {isDevFreeRoam ? (
+                        <>
+                          <span className="animate-spin h-3 w-3 border-2 border-text-blue-black border-t-transparent rounded-full" />
+                          Loading...
+                        </>
+                      ) : (
+                        '🧪 Launch Free Roam'
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleDevResetGYN}
+                    disabled={isDevResetting || !isValidBackendId}
+                    className="px-4 py-1.5 bg-status-red text-white rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {isDevResetting ? (
+                      <>
+                        <span className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                        Resetting...
+                      </>
+                    ) : (
+                      '🧪 Reset GYN (replay)'
+                    )}
+                  </button>
+
+                  <span className="text-[10px] text-status-yellow italic">
+                    Dev only — remove before launch
+                  </span>
                 </div>
               </div>
             </div>

@@ -407,6 +407,7 @@ def get_module_lessons(
                 module_id=lesson.module_id,
                 title=lesson.title,
                 description=lesson.description,
+                lesson_summary=getattr(lesson, "lesson_summary", None),
                 image_url=lesson.image_url,
                 video_url=lesson.video_url,
                 video_transcription=lesson.video_transcription,

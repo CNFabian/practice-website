@@ -230,14 +230,14 @@ class LessonResponse(BaseSchema):
     id: UUID
     module_id: UUID
     title: str
-    description: Optional[str]
-    lesson_summary: Optional[str]
-    image_url: Optional[str]
-    video_url: Optional[str]
-    video_transcription: Optional[str]
+    description: Optional[str] = None
+    lesson_summary: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    video_transcription: Optional[str] = None
     order_index: int
     is_active: bool
-    estimated_duration_minutes: Optional[int]
+    estimated_duration_minutes: Optional[int] = None
     nest_coins_reward: int
     created_at: datetime
     is_completed: Optional[bool] = None

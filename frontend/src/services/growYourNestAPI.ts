@@ -271,3 +271,37 @@ export const transformGYNQuestionsForMinigame = (
     };
   });
 };
+
+/**
+ * POST /api/grow-your-nest/lesson/{lesson_id}/reset-dev
+ * DEV ONLY: Reset GYN played status for a lesson so it can be replayed.
+ * Remove before production launch.
+ */
+export const resetLessonGYNDev = async (lessonId: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    if (/^\d+$/.test(lessonId)) {
+      console.warn(`⚠️ GYN Reset Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping.`);
+      throw new Error('Frontend ID used instead of UUID');
+    }
+
+    console.log(`🧪 [Dev] Resetting GYN played status for lesson: ${lessonId}`);
+
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/api/grow-your-nest/lesson/${lessonId}/reset-dev`,
+      { method: 'POST' }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`GYN reset error - Status: ${response.status}, Response: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('🧪 [Dev] GYN reset successful:', data);
+    return { success: true, message: data.message || 'Reset successful' };
+  } catch (error) {
+    console.error('Error resetting GYN lesson:', error);
+    throw error;
+  }
+};

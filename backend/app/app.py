@@ -92,9 +92,19 @@ else:
     logger.info(f"Development mode: Allowed hosts = {ALLOWED_HOSTS}")
 
 # CORS Configuration
+# NOTE: The Origin must match exactly (scheme + host + port).
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "https://main.dzynw01sy9n1b.amplifyapp.com,http://localhost:3000,http://localhost:5173,https://app.nestnavigate.com"
+    ",".join(
+        [
+            "https://main.dzynw01sy9n1b.amplifyapp.com",
+            "https://app.nestnavigate.com",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+        ]
+    ),
 ).split(",")
 
 # CORS middleware

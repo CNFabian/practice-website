@@ -906,3 +906,39 @@ def get_module_quiz_stats(
         "best_score": round(best_score, 2),
         "modules_completed": modules_completed
     }
+    
+# ================================
+# TEMPORARY DEV RESET ENDPOINT — Remove before production
+# ================================
+
+@router.post("/lesson/{lesson_id}/reset-dev")
+def reset_lesson_gyn_dev(
+    lesson_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    DEV ONLY: Reset Grow Your Nest played status for a lesson.
+    Resets quiz_attempts to 0 so the minigame can be replayed.
+    Remove this endpoint before production launch.
+    """
+    lesson_progress = db.query(UserLessonProgress).filter(
+        and_(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id == lesson_id
+        )
+    ).first()
+    
+    if not lesson_progress:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No progress found for this lesson"
+        )
+    
+    lesson_progress.quiz_attempts = 0
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"GYN reset for lesson {lesson_id}. quiz_attempts set to 0."
+    }
