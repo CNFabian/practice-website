@@ -62,6 +62,7 @@ export interface GYNSceneState {
   leftPanelBackground?: Phaser.GameObjects.Image;
   floatingTween?: Phaser.Tweens.Tween;
   wateringCanImage?: Phaser.GameObjects.Image;
+  feedbackBanner?: Phaser.GameObjects.Container;
 }
 
 // Re-export needed types so component files only import from here

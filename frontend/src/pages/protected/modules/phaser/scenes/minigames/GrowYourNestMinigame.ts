@@ -29,6 +29,8 @@ import {
   updateQuestion,
   updateNextButton,
   showCompletion,
+  showFeedbackBanner,
+  clearFeedbackBanner,
 } from './grow-your-nest/GYNRightPanel';
 
 export default class GrowYourNestMinigame extends Phaser.Scene {
@@ -70,6 +72,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   private floatingTween?: Phaser.Tweens.Tween;
   private wateringCanImage?: Phaser.GameObjects.Image;
   private isWateringAnimationPlaying: boolean = false;
+  private feedbackBanner?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -111,6 +114,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       leftPanelBackground: this.leftPanelBackground,
       floatingTween: this.floatingTween,
       wateringCanImage: this.wateringCanImage,
+      feedbackBanner: this.feedbackBanner,
     };
   }
 
@@ -134,6 +138,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.isWateringAnimationPlaying = s.isWateringAnimationPlaying;
     this.showingStartScreen = s.showingStartScreen;
     this.selectedAnswer = s.selectedAnswer;
+    this.feedbackBanner = s.feedbackBanner;
   }
 
   /** Re-enable HouseScene input so it is interactive after minigame exits */
@@ -184,6 +189,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.lessonAnswers = [];
     this.isSubmitting = false;
     this.lastServerResponse = null;
+    this.feedbackBanner = undefined;
 
     this.gameMode = data.mode;
     this.lessonId = data.lessonId || null;
@@ -191,6 +197,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.treeState = data.treeState || null;
     this.moduleNumber = data.moduleNumber || 1;
     this.showingStartScreen = data.showStartScreen !== false;
+
     this.questions = data.questions.map((q) => ({
       id: q.id,
       question: q.question,
@@ -202,6 +209,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       correctAnswer: null,
       explanation: q.explanation || '',
     }));
+
     console.log(`🌳 GYN init ${this.gameMode}`, {
       count: this.questions.length,
       lessonId: this.lessonId,
@@ -229,7 +237,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   // ANSWER HANDLING
   // ═══════════════════════════════════════════════════════════════
 
-   private handleAnswerSelection(selectedLetter: string): void {
+  private handleAnswerSelection(selectedLetter: string): void {
     if (this.isSubmitting) return;
 
     // In lesson mode, allow re-selection before clicking Next
@@ -244,9 +252,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
     this.selectedAnswer = selectedLetter;
     this.isSubmitting = true;
+
     const q = this.questions[this.currentQuestionIndex];
     const opt = q.options.find((o) => o.letter === selectedLetter);
-
     if (!opt) {
       this.isSubmitting = false;
       return;
@@ -272,7 +280,6 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
           this.isSubmitting = false;
           this.showAnswerFeedback(validation.is_correct);
-
         } else if (this.gameMode === 'freeroam') {
           // After validation, submit to freeroam/answer for tree growth + coins
           if (!this.moduleId) {
@@ -329,7 +336,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private handleNextQuestion(): void {
     if (this.isSubmitting) return;
+
     this.currentQuestionIndex++;
+
     if (this.currentQuestionIndex >= this.questions.length) {
       if (this.gameMode === 'lesson') this.submitLessonResults();
       else this.doShowCompletion();
@@ -342,13 +351,14 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     }
   }
 
-    private submitLessonResults(): void {
+  private submitLessonResults(): void {
     if (this.gameMode !== 'lesson' || !this.lessonId) {
       this.doShowCompletion();
       return;
     }
 
     this.isSubmitting = true;
+
     submitLessonAnswers(this.lessonId, {
       answers: this.lessonAnswers,
     })
@@ -359,6 +369,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         this.totalGrowthPointsEarned = r.growth_points_earned;
         this.totalCoinsEarned = r.coins_earned;
         if (r.fertilizer_bonus) this.fertilizerBonusCount++;
+
         this.treeState = {
           growth_points: r.tree_state.growth_points,
           current_stage: r.tree_state.current_stage,
@@ -366,10 +377,12 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
           points_per_stage: r.tree_state.points_per_stage || 50,
           completed: r.tree_state.completed || r.tree_state.just_completed,
         };
+
         console.log('🌳 Lesson submitted:', {
           correct: r.correct_count,
           total: r.total_questions,
         });
+
         this.doShowCompletion();
       })
       .catch((e) => {
@@ -383,6 +396,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private showAnswerSelected(): void {
     const state = this.getState();
+
     state.optionButtons.forEach((btn) => {
       const bg = btn.getData('bg') as Phaser.GameObjects.Graphics;
       const letter = btn.getData('letter') as string;
@@ -390,7 +404,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       const bw = btn.getData('buttonWidth') as number;
       const bh = btn.getData('buttonHeight') as number;
       const cr = btn.getData('cornerRadius') as number;
+
       bg.clear();
+
       if (letter === this.selectedAnswer) {
         bg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
         bg.lineStyle(2, COLORS.LOGO_BLUE);
@@ -402,21 +418,25 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
         bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
       }
+
       // In lesson mode, keep options interactive so user can re-select
       if (this.gameMode !== 'lesson') {
         const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
         if (hitArea) hitArea.disableInteractive();
       }
     });
+
     // Update the selectedAnswer on each button's stored state so hover handlers work
     state.optionButtons.forEach((btn) => {
       btn.setData('currentSelectedAnswer', this.selectedAnswer);
     });
+
     updateNextButton(state, true);
   }
 
   private showAnswerFeedback(isCorrect: boolean): void {
     const state = this.getState();
+
     state.optionButtons.forEach((btn) => {
       const bg = btn.getData('bg') as Phaser.GameObjects.Graphics;
       const letter = btn.getData('letter') as string;
@@ -424,20 +444,32 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       const bw = btn.getData('buttonWidth') as number;
       const bh = btn.getData('buttonHeight') as number;
       const cr = btn.getData('cornerRadius') as number;
+
       bg.clear();
+
       if (letter === this.selectedAnswer) {
         bg.fillStyle(isCorrect ? COLORS.STATUS_GREEN : COLORS.STATUS_RED, 1);
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
       }
+
       const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (hitArea) hitArea.disableInteractive();
     });
+
     updatePlantGrowth(this, state);
     this.syncState(state);
+
+    // Show the feedback banner below the options
+    showFeedbackBanner(this, state, isCorrect);
+    this.syncState(state);
+
     if (isCorrect) {
-      playWateringAnimation(this, state);
+      playWateringAnimation(this, state, () => {
+        this.isWateringAnimationPlaying = false;
+      });
       this.syncState(state);
     }
+
     updateNextButton(state, true);
   }
 
@@ -464,14 +496,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       growthPointsEarned: this.totalGrowthPointsEarned,
       coinsEarned: this.totalCoinsEarned,
       fertilizerBonuses: this.fertilizerBonusCount,
-      treeState: this.lastServerResponse ||
-        this.treeState || {
-          growth_points: 0,
-          current_stage: 0,
-          total_stages: 5,
-          points_per_stage: 50,
-          completed: false,
-        },
+      treeState: this.lastServerResponse || this.treeState || {
+        growth_points: 0,
+        current_stage: 0,
+        total_stages: 5,
+        points_per_stage: 50,
+        completed: false,
+      },
       consecutiveCorrect: this.consecutiveCorrect,
     };
     this.events.emit('minigameResult', result);
@@ -483,6 +514,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private handleResize(): void {
     this.tweens.killAll();
+
     this.optionButtons.forEach((btn) => {
       const h = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (h?.input) {
@@ -490,6 +522,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     });
+
     if (this.nextButton) {
       const h = this.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
       if (h?.input) {
@@ -497,6 +530,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     }
+
     if (this.backButton) {
       const h = this.backButton.getAt(3) as Phaser.GameObjects.Rectangle;
       if (h?.input) {
@@ -504,11 +538,14 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     }
+
     if (this.backButton) this.backButton.destroy();
     if (this.headerTitle) this.headerTitle.destroy();
     if (this.leftPanel) this.leftPanel.destroy();
     if (this.rightPanel) this.rightPanel.destroy();
     this.optionButtons = [];
+    this.feedbackBanner = undefined;
+
     const { width, height } = this.scale;
     this.createBackButton();
     this.createHeader(width);
@@ -520,15 +557,22 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.restoreHouseSceneInput();
 
     this.tweens.killAll();
+
     if (this.floatingTween) {
       this.floatingTween.stop();
       this.floatingTween = undefined;
     }
+
     if (this.wateringCanImage) {
       this.wateringCanImage.destroy();
       this.wateringCanImage = undefined;
     }
     this.isWateringAnimationPlaying = false;
+
+    if (this.feedbackBanner) {
+      this.feedbackBanner.destroy();
+      this.feedbackBanner = undefined;
+    }
 
     if (this.backButton) {
       const h = this.backButton.getAt(3) as Phaser.GameObjects.Rectangle;
@@ -537,6 +581,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     }
+
     this.optionButtons.forEach((btn) => {
       const h = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (h?.input) {
@@ -544,6 +589,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     });
+
     if (this.nextButton) {
       const h = this.nextButton.getAt(3) as Phaser.GameObjects.Rectangle;
       if (h?.input) {
@@ -551,13 +597,17 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         h.disableInteractive();
       }
     }
+
     if (this.completionReturnButton) {
-      const h = this.completionReturnButton.getAt(3) as Phaser.GameObjects.Rectangle;
+      const h = this.completionReturnButton.getAt(
+        3
+      ) as Phaser.GameObjects.Rectangle;
       if (h?.input) {
         h.removeAllListeners();
         h.disableInteractive();
       }
     }
+
     this.scale.off('resize', this.handleResize, this);
   }
 
@@ -572,8 +622,10 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
     const dur = 800,
       ease = 'Power2';
+
     if (this.backButton)
       this.tweens.add({ targets: this.backButton, x: 60, duration: dur, ease });
+
     if (this.headerTitle)
       this.tweens.add({
         targets: this.headerTitle,
@@ -581,6 +633,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         duration: dur,
         ease,
       });
+
     if (this.leftPanel) {
       this.tweens.add({
         targets: this.leftPanel,
@@ -607,6 +660,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
         },
       });
     }
+
     if (this.rightPanel)
       this.tweens.add({
         targets: this.rightPanel,
@@ -620,11 +674,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   private createBackButton(): void {
     this.backButton = this.add.container(60, 48);
+
     const arrow = this.add.text(0, 0, '←', {
       fontSize: '48px',
       color: COLORS.TEXT_SECONDARY,
     });
     arrow.setOrigin(0.5);
+
     const text = this.add.text(
       40,
       0,
@@ -632,6 +688,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
     );
     text.setOrigin(0, 0.5);
+
     this.backButton.add([arrow, text]);
     this.backButton.setDepth(100);
 
@@ -644,6 +701,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       this.scene.stop();
       this.scene.resume('HouseScene');
     });
+
     this.backButton.add(hitArea);
     this.backButton.sendToBack(hitArea);
   }
@@ -665,6 +723,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     const panelWidth = (width - 80) / 2 - 20;
 
     const state = this.getState();
+
     createLeftPanel(this, state, 60, panelY, panelWidth, panelHeight);
     this.syncState(state);
 
@@ -689,6 +748,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
       console.log('🎯 Already showing questions');
       return;
     }
+
     console.log('🎯 Walkthrough: Switching to question view');
     const state = this.getState();
     clearStartScreen(state);

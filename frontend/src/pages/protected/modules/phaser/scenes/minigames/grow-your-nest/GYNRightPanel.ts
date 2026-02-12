@@ -73,6 +73,7 @@ export function showStartScreen(
   // Bird illustration
   const birdSize = Math.min(220, panelWidth * 0.45);
   const birdY = panelHeight * 0.35;
+
   let birdGraphic: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
   if (scene.textures.exists('bird_celebration')) {
     birdGraphic = scene.add.image(panelWidth / 2, birdY, 'bird_celebration');
@@ -96,7 +97,6 @@ export function showStartScreen(
   const descriptionY = birdY + birdSize / 2 + panelHeight * 0.08;
   const descriptionFontSize = Math.round(panelWidth * 0.038);
   let descriptionText = `Answer questions to earn water and fertilizer to grow your tree of Module ${state.moduleNumber}!`;
-
   if (state.gameMode === 'lesson') {
     descriptionText = `Answer 3 questions about this lesson to help your tree grow! Get 3 correct in a row for a fertilizer bonus.`;
   } else if (state.gameMode === 'freeroam') {
@@ -152,7 +152,7 @@ export function showStartScreen(
     buttonRadius,
     "LET'S GO",
     true,
-   () => {
+    () => {
       if (callbacks.onStartGame) {
         callbacks.onStartGame();
       } else {
@@ -215,7 +215,6 @@ function createStartScreenButton(
 
   const hitArea = scene.add.rectangle(width / 2, 0, width, height, 0x000000, 0);
   hitArea.setInteractive({ useHandCursor: true });
-
   container.setData('bg', bg);
   container.setData('text', buttonText);
   container.setData('width', width);
@@ -233,7 +232,6 @@ function createStartScreenButton(
     }
     bg.fillRoundedRect(0, -height / 2, width, height, radius);
   });
-
   hitArea.on('pointerout', () => {
     bg.clear();
     if (isPrimary) {
@@ -243,7 +241,6 @@ function createStartScreenButton(
     }
     bg.fillRoundedRect(0, -height / 2, width, height, radius);
   });
-
   hitArea.on('pointerdown', onClick);
 
   container.add(hitArea);
@@ -312,6 +309,9 @@ export function updateQuestion(
     state.nextButton.destroy();
   }
 
+  // Clear any existing feedback banner
+  clearFeedbackBanner(state);
+
   const HORIZONTAL_PADDING_PERCENT = 0.08;
   const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
   const contentWidth = panelWidth - horizontalPadding * 2;
@@ -321,7 +321,6 @@ export function updateQuestion(
   const OPTION_BUTTON_HEIGHT_PERCENT = 0.095;
   const OPTION_GAP_PERCENT = 0.02;
   const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
-
   const QUESTION_TEXT_FONT_PERCENT = 0.04;
   const OPTION_LETTER_FONT_PERCENT = 0.035;
   const OPTION_TEXT_FONT_PERCENT = 0.03;
@@ -331,13 +330,11 @@ export function updateQuestion(
   const optionButtonHeight = panelHeight * OPTION_BUTTON_HEIGHT_PERCENT;
   const optionGap = panelHeight * OPTION_GAP_PERCENT;
   const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
-
   const questionTextFontSize = Math.round(panelWidth * QUESTION_TEXT_FONT_PERCENT);
   const optionLetterFontSize = Math.round(panelWidth * OPTION_LETTER_FONT_PERCENT);
   const optionTextFontSize = Math.round(panelWidth * OPTION_TEXT_FONT_PERCENT);
 
   const fullQuestionText = `${state.currentQuestionIndex + 1}. ${question.question}`;
-
   state.questionText = scene.add.text(
     horizontalPadding,
     questionStartY,
@@ -350,10 +347,10 @@ export function updateQuestion(
   );
   state.questionText.setOrigin(0, 0);
   state.rightPanel.add(state.questionText);
-
   state.questionNumber = state.questionText;
 
-  const optionsStartY = questionStartY + state.questionText.height + questionToOptionsGap;
+  const optionsStartY =
+    questionStartY + state.questionText.height + questionToOptionsGap;
 
   question.options.forEach((option, index) => {
     const optionY = optionsStartY + index * (optionButtonHeight + optionGap);
@@ -375,7 +372,6 @@ export function updateQuestion(
   // Next button
   const nextButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
   const nextButtonY = panelHeight - nextButtonMargin;
-
   createNextButton(scene, state, nextButtonX, nextButtonY, panelWidth, callbacks.onNext);
   state.rightPanel.add(state.nextButton);
 }
@@ -458,6 +454,7 @@ function createOptionButton(
   container.setData('buttonWidth', buttonWidth);
   container.setData('buttonHeight', buttonHeight);
   container.setData('cornerRadius', cornerRadius);
+
   // Live selection tracker — updated by showAnswerSelected() via setData
   container.setData('currentSelectedAnswer', null);
 
@@ -616,10 +613,12 @@ function createNextButton(
 
   const hitArea = scene.add.rectangle(0, 0, buttonWidth, buttonHeight, 0x000000, 0);
   hitArea.setInteractive({ useHandCursor: true });
+
   hitArea.on('pointerdown', () => {
     if (!state.nextButton.getData('enabled')) return;
     onNext();
   });
+
   state.nextButton.add(hitArea);
   state.nextButton.sendToBack(hitArea);
 }
@@ -661,6 +660,106 @@ export function updateNextButton(state: GYNSceneState, enabled: boolean): void {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// FEEDBACK BANNER — "CORRECT!" / "INCORRECT" after answer
+// ═══════════════════════════════════════════════════════════════
+
+export function showFeedbackBanner(
+  scene: Phaser.Scene,
+  state: GYNSceneState,
+  isCorrect: boolean
+): void {
+  // Clear any existing banner first
+  clearFeedbackBanner(state);
+
+  const panelWidth = state.rightPanel.getData('panelWidth') as number;
+  const panelHeight = state.rightPanel.getData('panelHeight') as number;
+  const HORIZONTAL_PADDING = panelWidth * 0.08;
+  const contentWidth = panelWidth - HORIZONTAL_PADDING * 2;
+
+  // Position the banner below the last option button, above the next button
+  const lastOptionBtn = state.optionButtons[state.optionButtons.length - 1];
+  const lastOptionY = lastOptionBtn ? lastOptionBtn.y : panelHeight * 0.6;
+  const lastOptionHeight = lastOptionBtn
+    ? (lastOptionBtn.getData('buttonHeight') as number) || 0
+    : 0;
+
+  const bannerGap = panelHeight * 0.025;
+  const bannerY = lastOptionY + lastOptionHeight / 2 + bannerGap;
+  const bannerHeight = panelHeight * 0.075;
+  const bannerRadius = bannerHeight / 2;
+
+  state.feedbackBanner = scene.add.container(0, bannerY);
+
+  // Background with gradient-style fill
+  const bg = scene.add.graphics();
+  if (isCorrect) {
+    // Green gradient matching the uploaded image
+    bg.fillStyle(COLORS.STATUS_GREEN, 1);
+  } else {
+    // Red for incorrect
+    bg.fillStyle(COLORS.STATUS_RED, 1);
+  }
+  bg.fillRoundedRect(
+    HORIZONTAL_PADDING,
+    -bannerHeight / 2,
+    contentWidth,
+    bannerHeight,
+    bannerRadius
+  );
+  state.feedbackBanner.add(bg);
+
+  // Text
+  const bannerText = isCorrect ? 'CORRECT!' : 'INCORRECT';
+  const fontSize = Math.round(panelWidth * 0.045);
+  const text = scene.add.text(
+    panelWidth / 2,
+    0,
+    bannerText,
+    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+      fontSize: `${fontSize}px`,
+    })
+  );
+  text.setOrigin(0.5, 0.5);
+  state.feedbackBanner.add(text);
+
+  state.rightPanel.add(state.feedbackBanner);
+
+  // ─── Entrance animation ───
+  // Start scaled down and transparent
+  state.feedbackBanner.setScale(0.3, 0.3);
+  state.feedbackBanner.setAlpha(0);
+
+  // Pop in with overshoot
+  scene.tweens.add({
+    targets: state.feedbackBanner,
+    scaleX: 1,
+    scaleY: 1,
+    alpha: 1,
+    duration: 350,
+    ease: 'Back.easeOut',
+    onComplete: () => {
+      if (!state.feedbackBanner) return;
+      // Subtle pulse after landing
+      scene.tweens.add({
+        targets: state.feedbackBanner,
+        scaleX: 1.03,
+        scaleY: 1.03,
+        duration: 150,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+      });
+    },
+  });
+}
+
+export function clearFeedbackBanner(state: GYNSceneState): void {
+  if (state.feedbackBanner) {
+    state.feedbackBanner.destroy();
+    state.feedbackBanner = undefined;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // COMPLETION SCREEN
 // ═══════════════════════════════════════════════════════════════
 
@@ -674,6 +773,9 @@ export function showCompletion(
 
   const children = state.rightPanel.getAll();
   children.slice(1).forEach((child) => child.destroy());
+
+  // Clear feedback banner reference since we just destroyed everything
+  state.feedbackBanner = undefined;
 
   const HORIZONTAL_PADDING_PERCENT = 0.08;
   const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
@@ -892,6 +994,5 @@ export function showCompletion(
   });
   state.completionReturnButton.add(hitArea);
   state.completionReturnButton.sendToBack(hitArea);
-
   state.rightPanel.add(state.completionReturnButton);
 }
