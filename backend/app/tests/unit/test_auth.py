@@ -105,6 +105,14 @@ def test_generate_verification_token_length():
     assert t.isalnum()
 
 
+def test_generate_verification_code_six_digits():
+    """Verification code for email is 6 numeric digits."""
+    code = AuthManager.generate_verification_code()
+    assert isinstance(code, str)
+    assert len(code) == 6
+    assert code.isdigit()
+
+
 def test_generate_password_reset_token_length():
     t = AuthManager.generate_password_reset_token()
     assert isinstance(t, str)

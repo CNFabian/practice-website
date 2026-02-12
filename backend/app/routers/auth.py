@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional
 from uuid import UUID
@@ -14,7 +15,7 @@ from schemas import (
     SendVerificationCodeRequest, VerifyEmailRequest,
 )
 from utils import NotificationManager
-from services.email import send_verification_email
+from services.email import send_verification_email, send_password_reset_email
 
 router = APIRouter()
 
@@ -299,10 +300,12 @@ def request_password_reset(request: PasswordReset, db: Session = Depends(get_db)
     now = datetime.now(timezone.utc)
     user.password_reset_expires_at = now + timedelta(hours=1)  # 1 hour expiry
     db.commit()
-    
-    # TODO: Send email with reset token
-    # For now, we'll just return success
-    
+
+    # Send password reset email (same SES as verification; don't reveal outcome)
+    frontend_url = os.getenv("FRONTEND_URL", "https://app.nestnavigate.com").rstrip("/")
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    send_password_reset_email(user.email, reset_link)
+
     return SuccessResponse(message="If the email exists, a password reset link has been sent")
 
 

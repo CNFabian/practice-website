@@ -18,6 +18,7 @@ export function createRightPanel(
     onAnswerSelection: (letter: string) => void;
     onNext: () => void;
     onReturn: () => void;
+    onStartGame?: () => void;
   }
 ): void {
   state.rightPanel = scene.add.container(x, y);
@@ -61,6 +62,7 @@ export function showStartScreen(
     onAnswerSelection: (letter: string) => void;
     onNext: () => void;
     onReturn: () => void;
+    onStartGame?: () => void;
   }
 ): void {
   const panelWidth = state.rightPanel.getData('panelWidth') as number;
@@ -150,10 +152,14 @@ export function showStartScreen(
     buttonRadius,
     "LET'S GO",
     true,
-    () => {
-      clearStartScreen(state);
-      state.showingStartScreen = false;
-      updateQuestion(scene, state, callbacks);
+   () => {
+      if (callbacks.onStartGame) {
+        callbacks.onStartGame();
+      } else {
+        clearStartScreen(state);
+        state.showingStartScreen = false;
+        updateQuestion(scene, state, callbacks);
+      }
     }
   );
   state.rightPanel.add(goButton);
@@ -353,7 +359,6 @@ export function updateQuestion(
     const optionY = optionsStartY + index * (optionButtonHeight + optionGap);
     const optionContainer = createOptionButton(
       scene,
-      state,
       option,
       optionY,
       horizontalPadding,
@@ -381,7 +386,6 @@ export function updateQuestion(
 
 function createOptionButton(
   scene: Phaser.Scene,
-  state: GYNSceneState,
   option: { letter: string; text: string },
   y: number,
   leftPadding: number,

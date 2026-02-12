@@ -56,3 +56,46 @@ def send_verification_email(to_email: str, code: str) -> bool:
     except ClientError as e:
         logger.exception("SES send_email failed for %s: %s", to_email, e)
         return False
+
+
+def send_password_reset_email(to_email: str, reset_link: str) -> bool:
+    """
+    Send password reset link email via SES.
+    Returns True on success, False on failure (logs exception).
+    """
+    if not SES_FROM_EMAIL:
+        logger.warning("SES_FROM_EMAIL not set; skipping password reset email")
+        return False
+
+    subject = "Reset your NestNavigate password"
+    body_text = (
+        "You requested a password reset. Click the link below to set a new password:\n\n"
+        f"{reset_link}\n\n"
+        "This link expires in 1 hour. If you didn't request this, you can ignore this email.\n\n"
+        "— The NestNavigate Team"
+    )
+    body_html = (
+        "<p>You requested a password reset. Click the link below to set a new password:</p>"
+        f'<p><a href="{reset_link}" style="color:#2563eb;">Reset password</a></p>'
+        "<p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>"
+        "<p>— The NestNavigate Team</p>"
+    )
+
+    try:
+        client = _get_ses_client()
+        client.send_email(
+            Source=SES_FROM_EMAIL,
+            Destination={"ToAddresses": [to_email]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Text": {"Data": body_text, "Charset": "UTF-8"},
+                    "Html": {"Data": body_html, "Charset": "UTF-8"},
+                },
+            },
+        )
+        logger.info("Password reset email sent to %s", to_email)
+        return True
+    except ClientError as e:
+        logger.exception("SES send_email failed for %s: %s", to_email, e)
+        return False

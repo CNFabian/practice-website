@@ -135,16 +135,35 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     this.selectedAnswer = s.selectedAnswer;
   }
 
+  /** Re-enable HouseScene input so it is interactive after minigame exits */
+  private restoreHouseSceneInput(): void {
+    const houseScene = this.scene.get('HouseScene');
+    if (houseScene && houseScene.input) {
+      houseScene.input.enabled = true;
+    }
+  }
+
   private getCallbacks() {
     return {
       onAnswerSelection: (letter: string) => this.handleAnswerSelection(letter),
       onNext: () => this.handleNextQuestion(),
       onReturn: () => {
+        this.restoreHouseSceneInput();
         this.events.emit('minigameCompleted');
         this.scene.stop();
         this.scene.resume('HouseScene');
       },
+      onStartGame: () => this.handleStartGame(),
     };
+  }
+
+  private handleStartGame(): void {
+    const state = this.getState();
+    clearStartScreen(state);
+    state.showingStartScreen = false;
+    this.showingStartScreen = false;
+    updateQuestion(this, state, this.getCallbacks());
+    this.syncState(state);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -191,6 +210,13 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+
+    // Disable HouseScene input so its hit zones don't intercept clicks
+    const houseScene = this.scene.get('HouseScene');
+    if (houseScene && houseScene.input) {
+      houseScene.input.enabled = false;
+    }
+
     this.createBackButton();
     this.createHeader(width);
     this.createPanels(width, height);
@@ -460,6 +486,9 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
   }
 
   shutdown() {
+    // Safety net: re-enable HouseScene input on any exit path
+    this.restoreHouseSceneInput();
+
     this.tweens.killAll();
     if (this.floatingTween) {
       this.floatingTween.stop();
@@ -580,6 +609,7 @@ export default class GrowYourNestMinigame extends Phaser.Scene {
     hitArea.setOrigin(0, 0.5);
     hitArea.setInteractive({ useHandCursor: true });
     hitArea.on('pointerdown', () => {
+      this.restoreHouseSceneInput();
       this.events.emit('minigameCompleted');
       this.scene.stop();
       this.scene.resume('HouseScene');

@@ -584,6 +584,36 @@ class MiniGameQuestionsResponse(BaseModel):
     user_status: Dict[str, Any]  # User's progress and attempt history
 
 
+class ValidateAnswerRequest(BaseModel):
+    """Validate a single minigame answer (server-side)."""
+    question_id: UUID
+    answer_id: UUID
+
+
+class ValidateAnswerResponse(BaseModel):
+    """Response after validating one answer."""
+    is_correct: bool
+    explanation: Optional[str] = None
+
+
+class FreeroamAnswerRequest(BaseModel):
+    """Submit one answer in freeroam; server validates and updates tree."""
+    question_id: UUID
+    answer_id: UUID
+    consecutive_correct: Optional[int] = 0
+
+
+class LessonSubmitAnswerItem(BaseModel):
+    """One question/answer pair for lesson submit (server validates)."""
+    question_id: UUID
+    answer_id: UUID
+
+
+class LessonSubmitRequest(BaseModel):
+    """Submit lesson minigame answers; server validates each."""
+    answers: List[LessonSubmitAnswerItem]
+
+
 class MiniGameSubmission(BaseModel):
     """Submit mini-game answers"""
     module_id: UUID

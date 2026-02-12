@@ -24,7 +24,7 @@ try:
 except ImportError:
     from app import app
 from database import SessionLocal
-from models import User, Module, Lesson
+from models import User, Module, Lesson, QuizQuestion, QuizAnswer, UserLessonProgress
 from auth import AuthManager, get_current_user
 
 
@@ -110,6 +110,88 @@ def module_and_lesson(db: Session):
         db.refresh(module)
         db.refresh(lesson)
     return module, lesson
+
+
+@pytest.fixture(scope="module")
+def question_and_answers(db: Session, module_and_lesson):
+    """Get or create a quiz question with one correct and one wrong answer."""
+    module, lesson = module_and_lesson
+    q = (
+        db.query(QuizQuestion)
+        .filter(
+            QuizQuestion.lesson_id == lesson.id,
+            QuizQuestion.is_active == True,
+        )
+        .first()
+    )
+    if not q:
+        q = QuizQuestion(
+            lesson_id=lesson.id,
+            question_text="Test question for validate-answer?",
+            question_type="multiple_choice",
+            explanation="Test explanation",
+            order_index=0,
+            is_active=True,
+        )
+        db.add(q)
+        db.flush()
+    answers = db.query(QuizAnswer).filter(QuizAnswer.question_id == q.id).all()
+    if len(answers) < 2:
+        for ans in answers:
+            db.delete(ans)
+        db.flush()
+        a_correct = QuizAnswer(
+            question_id=q.id,
+            answer_text="Correct",
+            is_correct=True,
+            order_index=0,
+        )
+        a_wrong = QuizAnswer(
+            question_id=q.id,
+            answer_text="Wrong",
+            is_correct=False,
+            order_index=1,
+        )
+        db.add(a_correct)
+        db.add(a_wrong)
+        db.commit()
+        db.refresh(q)
+        db.refresh(a_correct)
+        db.refresh(a_wrong)
+        answers = [a_correct, a_wrong]
+    else:
+        correct = next((a for a in answers if a.is_correct), answers[0])
+        wrong = next((a for a in answers if not a.is_correct), answers[1])
+        answers = [correct, wrong]
+    return q, answers[0], answers[1]
+
+
+@pytest.fixture(scope="module")
+def lesson_progress_for_submit(db: Session, test_user, module_and_lesson):
+    """Ensure test_user has completed lesson (video) and quiz_attempts=0 so submit is allowed."""
+    _, lesson = module_and_lesson
+    progress = (
+        db.query(UserLessonProgress)
+        .filter(
+            UserLessonProgress.user_id == test_user[0].id,
+            UserLessonProgress.lesson_id == lesson.id,
+        )
+        .first()
+    )
+    if not progress:
+        progress = UserLessonProgress(
+            user_id=test_user[0].id,
+            lesson_id=lesson.id,
+            status="completed",
+            quiz_attempts=0,
+        )
+        db.add(progress)
+    else:
+        progress.status = "completed"
+        progress.quiz_attempts = 0
+    db.commit()
+    db.refresh(progress)
+    return progress
 
 
 # ----- Unauthenticated access -----
@@ -297,3 +379,128 @@ def test_freeroam_progress_requires_auth(client: TestClient, module_and_lesson):
         },
     )
     assert response.status_code == 403
+
+
+# ----- Validate single answer -----
+
+
+def test_validate_answer_requires_auth(client: TestClient, question_and_answers):
+    """POST /api/grow-your-nest/validate-answer without token returns 403."""
+    q, a_correct, _ = question_and_answers
+    response = client.post(
+        f"{API_PREFIX}/validate-answer",
+        json={"question_id": str(q.id), "answer_id": str(a_correct.id)},
+    )
+    assert response.status_code == 403
+
+
+def test_validate_answer_correct_returns_true(
+    auth_client: TestClient, question_and_answers
+):
+    """POST validate-answer with correct answer_id returns is_correct true and explanation."""
+    q, a_correct, _ = question_and_answers
+    response = auth_client.post(
+        f"{API_PREFIX}/validate-answer",
+        json={"question_id": str(q.id), "answer_id": str(a_correct.id)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_correct"] is True
+    assert "explanation" in data
+
+
+def test_validate_answer_incorrect_returns_false(
+    auth_client: TestClient, question_and_answers
+):
+    """POST validate-answer with wrong answer_id returns is_correct false."""
+    q, _, a_wrong = question_and_answers
+    response = auth_client.post(
+        f"{API_PREFIX}/validate-answer",
+        json={"question_id": str(q.id), "answer_id": str(a_wrong.id)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_correct"] is False
+
+
+def test_validate_answer_invalid_ids_returns_false(auth_client: TestClient):
+    """POST validate-answer with non-matching question/answer returns is_correct false."""
+    response = auth_client.post(
+        f"{API_PREFIX}/validate-answer",
+        json={"question_id": str(uuid4()), "answer_id": str(uuid4())},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_correct"] is False
+
+
+# ----- Freeroam /answer (server-validated) -----
+
+
+def test_freeroam_answer_requires_auth(client: TestClient, module_and_lesson):
+    """POST /api/grow-your-nest/freeroam/{module_id}/answer without token returns 403."""
+    module, _ = module_and_lesson
+    response = client.post(
+        f"{API_PREFIX}/freeroam/{module.id}/answer",
+        json={
+            "question_id": str(uuid4()),
+            "answer_id": str(uuid4()),
+            "consecutive_correct": 0,
+        },
+    )
+    assert response.status_code == 403
+
+
+def test_freeroam_answer_validates_and_returns_feedback(
+    auth_client: TestClient, module_and_lesson, question_and_answers
+):
+    """POST freeroam/{module_id}/answer validates on server and returns is_correct and tree_state."""
+    module, _ = module_and_lesson
+    q, a_correct, a_wrong = question_and_answers
+    response = auth_client.post(
+        f"{API_PREFIX}/freeroam/{module.id}/answer",
+        json={
+            "question_id": str(q.id),
+            "answer_id": str(a_correct.id),
+            "consecutive_correct": 0,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "is_correct" in data
+    assert "tree_state" in data
+    assert "growth_points" in data["tree_state"]
+    if data["is_correct"]:
+        assert data.get("growth_points_earned", 0) >= 0
+        assert data.get("explanation") is not None or "explanation" in data
+
+
+# ----- Lesson submit (server-validated, no is_correct from client) -----
+
+
+def test_lesson_submit_accepts_answers_without_is_correct(
+    auth_client: TestClient,
+    module_and_lesson,
+    question_and_answers,
+    lesson_progress_for_submit,
+):
+    """POST lesson/{id}/submit accepts answers as question_id+answer_id only; server validates."""
+    _, lesson = module_and_lesson
+    q, a_correct, a_wrong = question_and_answers
+    if q.lesson_id != lesson.id:
+        pytest.skip("question not in this lesson")
+    response = auth_client.post(
+        f"{API_PREFIX}/lesson/{lesson.id}/submit",
+        json={
+            "answers": [
+                {"question_id": str(q.id), "answer_id": str(a_correct.id)},
+            ],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "correct_count" in data
+    assert "total_questions" in data
+    assert data["total_questions"] == 1
+    assert data["correct_count"] == 1

@@ -29,6 +29,8 @@ from schemas import (
     SuccessResponse,
     MiniGameQuestionsResponse, MiniGameSubmission, MiniGameResult,
     MiniGameAttemptHistory,
+    ValidateAnswerRequest, ValidateAnswerResponse,
+    FreeroamAnswerRequest, LessonSubmitRequest,
 )
 from utils import CoinManager, NotificationManager, QuizManager
 from analytics.event_tracker import EventTracker
@@ -69,6 +71,23 @@ def is_tree_complete(growth_points: int) -> bool:
     return growth_points >= (TREE_TOTAL_STAGES * POINTS_PER_STAGE)
 
 
+def validate_single_answer(db: Session, question_id: UUID, answer_id: UUID) -> tuple[bool, Optional[str]]:
+    """
+    Validate one answer against the DB. Returns (is_correct, explanation).
+    """
+    answer = db.query(QuizAnswer).filter(
+        and_(
+            QuizAnswer.id == answer_id,
+            QuizAnswer.question_id == question_id,
+        )
+    ).first()
+    if not answer:
+        return False, None
+    question = db.query(QuizQuestion).filter(QuizQuestion.id == question_id).first()
+    explanation = question.explanation if question else None
+    return bool(answer.is_correct), explanation
+
+
 def get_or_create_module_progress(db: Session, user_id: UUID, module_id: UUID) -> UserModuleProgress:
     """Get or create module progress record"""
     progress = db.query(UserModuleProgress).filter(
@@ -95,6 +114,25 @@ def get_or_create_module_progress(db: Session, user_id: UUID, module_id: UUID) -
         db.refresh(progress)
     
     return progress
+
+
+# ================================
+# VALIDATE SINGLE ANSWER (all modes)
+# ================================
+
+
+@router.post("/validate-answer", response_model=ValidateAnswerResponse)
+def validate_answer(
+    body: ValidateAnswerRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Validate one minigame answer. Call after each question for immediate feedback.
+    Returns is_correct and explanation (if any). No side effects.
+    """
+    is_correct, explanation = validate_single_answer(db, body.question_id, body.answer_id)
+    return ValidateAnswerResponse(is_correct=is_correct, explanation=explanation)
 
 
 # ================================
@@ -202,22 +240,15 @@ def get_lesson_questions(
 @router.post("/lesson/{lesson_id}/submit")
 def submit_lesson_game(
     lesson_id: UUID,
-    submission: Dict,
+    submission: LessonSubmitRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Submit Grow Your Nest lesson results (all 3 questions at once).
+    Server validates each answer; do not send is_correct from client.
     
-    Expected submission format:
-    {
-        "answers": [
-            {"question_id": "uuid", "answer_id": "uuid", "is_correct": true},
-            {"question_id": "uuid", "answer_id": "uuid", "is_correct": false},
-            {"question_id": "uuid", "answer_id": "uuid", "is_correct": true}
-        ],
-        "consecutive_correct": 2
-    }
+    Body: { "answers": [ {"question_id": "uuid", "answer_id": "uuid"}, ... ] }
     """
     
     # Verify lesson exists
@@ -253,22 +284,37 @@ def submit_lesson_game(
             detail="Grow Your Nest has already been played for this lesson"
         )
     
-    # Process answers
-    answers = submission.get("answers", [])
-    correct_count = sum(1 for a in answers if a.get("is_correct", False))
-    total_questions = len(answers)
+    # Validate each answer on server and compute correct_count + consecutive_correct
+    results = []
+    for item in submission.answers:
+        is_correct, _ = validate_single_answer(db, item.question_id, item.answer_id)
+        results.append(is_correct)
+    correct_count = sum(1 for r in results if r)
+    total_questions = len(results)
+    consecutive_correct = 0
+    for r in results:
+        if r:
+            consecutive_correct += 1
+        else:
+            consecutive_correct = 0
     
     # Calculate growth points
     # Each correct answer = 1 Water = 10 points
     growth_points_earned = correct_count * WATER_POINTS
-    
-    # Fertilizer bonus for 3 consecutive correct
-    consecutive_correct = submission.get("consecutive_correct", 0)
-    fertilizer_bonus = (consecutive_correct // 3) * FERTILIZER_POINTS
-    growth_points_earned += fertilizer_bonus
+    # Fertilizer bonus for every 3 consecutive correct (count streaks)
+    streak = 0
+    for r in results:
+        if r:
+            streak += 1
+            if streak >= 3:
+                growth_points_earned += FERTILIZER_POINTS
+                streak = 0
+        else:
+            streak = 0
     
     # Cap at 50 points per lesson session (3 correct + 1 fertilizer = 50 max)
     growth_points_earned = min(growth_points_earned, 50)
+    fertilizer_bonus = growth_points_earned > (correct_count * WATER_POINTS)
     
     # Update module progress (tree state)
     module_progress = get_or_create_module_progress(db, current_user.id, lesson.module_id)
@@ -443,6 +489,111 @@ def get_freeroam_questions(
             "points_to_complete": (TREE_TOTAL_STAGES * POINTS_PER_STAGE) - module_progress.tree_growth_points,
             "completed": module_progress.tree_completed
         }
+    }
+
+
+@router.post("/freeroam/{module_id}/answer")
+def submit_freeroam_answer(
+    module_id: UUID,
+    body: FreeroamAnswerRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Submit one answer in freeroam; server validates and updates tree.
+    Call after each question for immediate feedback and progress.
+    Body: { "question_id": "uuid", "answer_id": "uuid", "consecutive_correct": 0 }
+    """
+    module = db.query(Module).filter(
+        and_(Module.id == module_id, Module.is_active == True)
+    ).first()
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
+
+    module_progress = get_or_create_module_progress(db, current_user.id, module_id)
+    if module_progress.tree_completed:
+        return {
+            "success": True,
+            "message": "Tree is already fully grown",
+            "is_correct": False,
+            "explanation": None,
+            "tree_state": {
+                "growth_points": module_progress.tree_growth_points,
+                "current_stage": module_progress.tree_current_stage,
+                "total_stages": TREE_TOTAL_STAGES,
+                "completed": True,
+            },
+            "growth_points_earned": 0,
+            "coins_earned": 0,
+        }
+
+    is_correct, explanation = validate_single_answer(db, body.question_id, body.answer_id)
+    consecutive_correct = body.consecutive_correct or 0
+
+    growth_points_earned = 0
+    fertilizer_bonus = False
+    if is_correct:
+        growth_points_earned = WATER_POINTS
+        if consecutive_correct > 0 and consecutive_correct % 3 == 0:
+            growth_points_earned += FERTILIZER_POINTS
+            fertilizer_bonus = True
+
+    old_stage = module_progress.tree_current_stage
+    module_progress.tree_growth_points += growth_points_earned
+    module_progress.tree_current_stage = calculate_tree_stage(module_progress.tree_growth_points)
+    module_progress.last_accessed_at = datetime.now()
+    new_stage = module_progress.tree_current_stage
+    stage_increased = new_stage > old_stage
+
+    tree_just_completed = False
+    if is_tree_complete(module_progress.tree_growth_points) and not module_progress.tree_completed:
+        module_progress.tree_completed = True
+        module_progress.tree_completed_at = datetime.now()
+        tree_just_completed = True
+
+    db.commit()
+
+    coins_earned = 0
+    if growth_points_earned > 0:
+        coins_earned = int(
+            (growth_points_earned / (TREE_TOTAL_STAGES * POINTS_PER_STAGE)) * MAX_COINS_PER_TREE
+        )
+        if coins_earned > 0:
+            CoinManager.award_coins(
+                db,
+                current_user.id,
+                coins_earned,
+                COIN_REASON_FREEROAM,
+                module_id,
+                f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}",
+            )
+
+    return {
+        "success": True,
+        "is_correct": is_correct,
+        "explanation": explanation,
+        "growth_points_earned": growth_points_earned,
+        "fertilizer_bonus": fertilizer_bonus,
+        "tree_state": {
+            "growth_points": module_progress.tree_growth_points,
+            "current_stage": module_progress.tree_current_stage,
+            "previous_stage": old_stage,
+            "stage_increased": stage_increased,
+            "total_stages": TREE_TOTAL_STAGES,
+            "points_per_stage": POINTS_PER_STAGE,
+            "points_to_next_stage": (
+                POINTS_PER_STAGE - (module_progress.tree_growth_points % POINTS_PER_STAGE)
+                if not module_progress.tree_completed
+                else 0
+            ),
+            "points_to_complete": max(
+                0,
+                (TREE_TOTAL_STAGES * POINTS_PER_STAGE) - module_progress.tree_growth_points,
+            ),
+            "completed": module_progress.tree_completed,
+            "just_completed": tree_just_completed,
+        },
+        "coins_earned": coins_earned,
     }
 
 
