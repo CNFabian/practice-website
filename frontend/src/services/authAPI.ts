@@ -431,22 +431,20 @@ export const wipeUserData = async (): Promise<void> => {
 // ==================== AUTHENTICATION STATUS CHECKS ====================
 
 // Check if user is authenticated (for route protection)
-export const checkAuthStatus = async (): Promise<boolean> => {
+export const checkAuthStatus = async (): Promise<SerializableUser | null> => {
   try {
     const token = getAccessToken();
-    
     if (!token) {
       console.log('AuthAPI: No token found - user not authenticated');
-      return false;
+      return null;
     }
-
-    await getCurrentUser();
+    const userData = await getCurrentUser();
     console.log('AuthAPI: Token validated - user is authenticated');
-    return true;
+    return userData;
   } catch (error) {
     console.error('AuthAPI: Authentication check failed:', error);
     clearAuthData();
-    return false;
+    return null;
   }
 };
 
