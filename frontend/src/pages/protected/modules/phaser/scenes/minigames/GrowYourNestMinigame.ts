@@ -32,6 +32,8 @@ import {
   showFeedbackBanner,
 } from './grow-your-nest/GYNRightPanel';
 import { BaseScene } from '../BaseScene';
+import { queryClient } from '../../../../../../lib/queryClient';
+import { queryKeys } from '../../../../../../lib/queryKeys';
 
 export default class GrowYourNestMinigame extends BaseScene {
   // ─── Core game state ───
@@ -387,6 +389,13 @@ export default class GrowYourNestMinigame extends BaseScene {
           correct: r.correct_count,
           total: r.total_questions,
         });
+
+        // Invalidate lesson cache so grow_your_nest_played is fresh
+        if (this.lessonId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.learning.lesson(this.lessonId) });
+          queryClient.invalidateQueries({ queryKey: ['learning'] });
+          queryClient.invalidateQueries({ queryKey: ['gyn'] });
+        }
 
         this.doShowCompletion();
       })

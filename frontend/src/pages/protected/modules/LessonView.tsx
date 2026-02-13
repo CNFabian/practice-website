@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
-import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
+import { getLesson } from '../../../services/learningAPI';import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
 import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
@@ -200,8 +202,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   addProgressItem,
   flushProgress
 }) => {
-  const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // YouTube Player state and refs
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -220,17 +222,17 @@ const LessonView: React.FC<LessonViewProps> = ({
   const lessonStartTimeRef = useRef<number>(Date.now());
   const lastProgressSyncRef = useRef<number>(0);
 
-  // Grow Your Nest prompt modal state
+  // ═══════════════════════════════════════════════════════════
+  // GYN MODAL STATE — Clean, server-driven approach
+  // ═══════════════════════════════════════════════════════════
+  // Modal visibility
   const [showGYNPromptModal, setShowGYNPromptModal] = useState(false);
+  // Pending navigation to execute after modal is dismissed/played
   const pendingNavigationRef = useRef<(() => void) | null>(null);
-
-  // ═══════════════════════════════════════════════════════════
-  // GYN session guard — prevents modal from re-appearing after
-  // the user has already played or dismissed GYN in this session.
-  // The backend field `grow_your_nest_played` may be stale in
-  // the TanStack Query cache, so this ref acts as a local override.
-  // ═══════════════════════════════════════════════════════════
-  const gynHandledThisSessionRef = useRef(false);
+  // Session guard: once the user has played or dismissed the GYN
+  // modal for THIS lesson in THIS session, never show it again.
+  // Uses state (not ref) so it participates in React's render cycle.
+  const [gynDismissedThisSession, setGynDismissedThisSession] = useState(false);
 
   // Dev button loading states — TEMP: Remove before production
   const [isDevCompleting, setIsDevCompleting] = useState(false);
@@ -246,13 +248,14 @@ const LessonView: React.FC<LessonViewProps> = ({
       bgElement.style.backgroundRepeat = 'no-repeat';
     }
 
-    // Reset video completion state and milestones when lesson changes
+    // Reset all per-lesson state when lesson changes
     setVideoCompleted(false);
     milestonesReachedRef.current.clear();
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
-    // Reset GYN session guard when switching to a new lesson
-    gynHandledThisSessionRef.current = false;
+    setGynDismissedThisSession(false);
+    setShowGYNPromptModal(false);
+    pendingNavigationRef.current = null;
 
     return () => {
       const bgElement = document.getElementById('section-background');
@@ -331,30 +334,78 @@ const LessonView: React.FC<LessonViewProps> = ({
     error: lessonError 
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
   
-  // Grow Your Nest lesson questions - fetch when lesson is completed but GYN not yet played
-  const shouldFetchGYN = backendLessonData?.is_completed && !backendLessonData?.grow_your_nest_played;
+  // ═══════════════════════════════════════════════════════════
+  // GYN QUESTIONS — Only fetch when server confirms:
+  //   1. Lesson is completed
+  //   2. GYN has NOT been played yet
+  // ═══════════════════════════════════════════════════════════
+  const shouldFetchGYN = !!(
+    backendLessonData?.is_completed &&
+    backendLessonData?.grow_your_nest_played === false
+  );
   const { data: gynLessonData } = useGYNLessonQuestions(
     shouldFetchGYN ? (lesson.backendId || '') : ''
   );
 
   // ═══════════════════════════════════════════════════════════
-  // Derived flag: should GYN prompt be eligible to show?
-  // True only when:
-  //   1. Lesson is completed (backend confirms)
-  //   2. Minigame has NOT been played yet (backend confirms)
-  //   3. GYN has NOT been handled already this session (local guard)
+  // shouldShowGYNModal — Called at the moment of navigation
+  // (Back / Next Lesson). NOT memoized — reads live values.
+  //
+  // Returns true ONLY when ALL of these are true:
+  //   1. Backend says lesson is completed (is_completed === true)
+  //   2. Backend says GYN not played yet (grow_your_nest_played === false)
+  //   3. User hasn't dismissed/played GYN this session
   //   4. GYN questions are available
+  //   5. We have a valid backend ID
   // ═══════════════════════════════════════════════════════════
-  const gynPromptEligible = useMemo(() => {
-    return (
-      !!backendLessonData?.is_completed &&
-      !backendLessonData?.grow_your_nest_played &&
-      !gynHandledThisSessionRef.current &&
-      !!gynLessonData &&
-      gynLessonData.questions &&
-      gynLessonData.questions.length > 0
-    );
-  }, [backendLessonData?.is_completed, backendLessonData?.grow_your_nest_played, gynLessonData]);
+  const shouldShowGYNModal = useCallback(async (): Promise<boolean> => {
+    // Guard 1: Valid backend connection
+    if (!isValidBackendId || !lesson.backendId) {
+      console.log('🌳 [GYN Check] No valid backend data — skipping');
+      return false;
+    }
+
+    // Guard 2: User hasn't already dismissed/played GYN this session
+    if (gynDismissedThisSession) {
+      console.log('🌳 [GYN Check] GYN already handled this session — skipping');
+      return false;
+    }
+
+    // Guard 3: Force-refetch FRESH lesson data from server (bypass cache)
+    console.log('🌳 [GYN Check] Fetching fresh lesson data from server...');
+    let freshLessonData;
+    try {
+      freshLessonData = await queryClient.fetchQuery({
+        queryKey: queryKeys.learning.lesson(lesson.backendId),
+        queryFn: () => getLesson(lesson.backendId!),
+        staleTime: 0, // Force fresh fetch, never use cache
+      });
+    } catch (error) {
+      console.error('🌳 [GYN Check] Failed to fetch fresh lesson data:', error);
+      return false;
+    }
+
+    // Guard 4: Lesson must be completed (server confirms)
+    if (!freshLessonData?.is_completed) {
+      console.log('🌳 [GYN Check] Lesson not completed — skipping');
+      return false;
+    }
+
+    // Guard 5: GYN must NOT already be played (server confirms with FRESH data)
+    if (freshLessonData?.grow_your_nest_played) {
+      console.log('🌳 [GYN Check] GYN already played for this lesson — skipping');
+      return false;
+    }
+
+    // Guard 6: GYN questions must be available
+    if (!gynLessonData?.questions || gynLessonData.questions.length === 0) {
+      console.log('🌳 [GYN Check] No GYN questions available — skipping');
+      return false;
+    }
+
+    console.log('🌳 [GYN Check] ✅ All conditions met — showing modal');
+    return true;
+  }, [isValidBackendId, lesson.backendId, gynDismissedThisSession, gynLessonData, queryClient]);
   
   const { 
     data: quizData,
@@ -471,19 +522,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     });
   }, [isValidBackendId, module?.backendId, updateLessonProgressMutation, lesson?.backendId]);
 
-  // ═══════════════════════════════════════════════════════════
-  // Helper: conditionally show GYN prompt modal.
-  // Centralises the eligibility check so every trigger site
-  // goes through the same guard logic.
-  // ═══════════════════════════════════════════════════════════
-  const maybeShowGYNPrompt = useCallback((): boolean => {
-    if (gynPromptEligible) {
-      setShowGYNPromptModal(true);
-      return true;
-    }
-    return false;
-  }, [gynPromptEligible]);
-
   // YouTube Player Event Handlers
   const onPlayerReady = useCallback((event: YouTubePlayerEvent) => {
     console.log('🎉 [YouTube Player] Player is ready!');
@@ -517,19 +555,16 @@ const LessonView: React.FC<LessonViewProps> = ({
           // Mark as complete and hide player
           setVideoCompleted(true);
           console.log('✅ [YouTube Player] VIDEO COMPLETED - Player hidden!');
-          console.log('🎯 [YouTube Player] Final time:', currentTime.toFixed(2), 'seconds');
-          console.log('🏁 [YouTube Player] Total duration:', duration.toFixed(2), 'seconds');
           
           // Update progress to full duration
           handleVideoProgress(Math.floor(duration));
           
-          // Mark lesson as complete on backend
+          // Mark lesson as complete on backend (NO GYN modal here — only on navigation)
           if (isValidBackendId && module?.backendId) {
             console.log('📝 [YouTube Player] Marking lesson as complete on backend');
             completeLessonMutation({ lessonId: lesson.backendId! }, {
               onSuccess: () => {
                 console.log('✅ [YouTube Player] Lesson marked complete successfully');
-                maybeShowGYNPrompt();
               },
               onError: (error: Error) => {
                 console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -569,7 +604,7 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     }, 1000); // Update every second for UI, but milestones + progress sync are throttled
 
-  }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, addProgressItem, maybeShowGYNPrompt]);
+  }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, addProgressItem]);
 
   const onPlayerStateChange = useCallback((event: YouTubePlayerEvent) => {
     const state = event.data;
@@ -592,18 +627,15 @@ const LessonView: React.FC<LessonViewProps> = ({
         
       case YT_PLAYER_STATES.ENDED:
         console.log('✅ [YouTube Player] VIDEO COMPLETED!');
-        console.log('🎯 [YouTube Player] Final time:', currentTime.toFixed(2), 'seconds');
-        console.log('🏁 [YouTube Player] Total duration:', duration.toFixed(2), 'seconds');
         setVideoCompleted(true); // Hide player immediately
         handleVideoProgress(Math.floor(duration)); // Send full duration as progress
         
-        // Mark lesson as complete on backend
+        // Mark lesson as complete on backend (NO GYN modal here — only on navigation)
         if (isValidBackendId && module?.backendId) {
           console.log('📝 [YouTube Player] Marking lesson as complete on backend');
           completeLessonMutation({ lessonId: lesson.backendId! }, {
             onSuccess: () => {
               console.log('✅ [YouTube Player] Lesson marked complete successfully');
-              maybeShowGYNPrompt();
             },
             onError: (error: Error) => {
               console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -631,7 +663,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         console.log('📋 [YouTube Player] Video is cued');
         break;
     }
-  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, maybeShowGYNPrompt]);
+  }, [handleVideoProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId]);
 
   const onPlayerError = useCallback((event: any) => {
     const errorCode = event.data;
@@ -733,6 +765,10 @@ const LessonView: React.FC<LessonViewProps> = ({
     };
   }, [isYouTubeAPIReady, youtubeVideoId, onPlayerReady, onPlayerStateChange, onPlayerError, onPlaybackRateChange, onPlaybackQualityChange]);
 
+  // ═══════════════════════════════════════════════════════════
+  // NAVIGATION HELPERS
+  // ═══════════════════════════════════════════════════════════
+
   const executeNavigation = useCallback(() => {
     if (nextLesson && onNextLesson && module.backendId) {
       console.log('✅ Navigating to next lesson:', nextLesson.id, 'in module:', module.backendId);
@@ -750,50 +786,75 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [nextLesson, onNextLesson, module.backendId, onBack]);
 
+  // ═══════════════════════════════════════════════════════════
+  // COMPLETE LESSON BUTTON (top-right "Next Lesson" / "Finish")
+  // Only marks lesson complete on backend. No navigation, no modal.
+  // ═══════════════════════════════════════════════════════════
   const handleCompleteLesson = useCallback(() => {
-    // Flush any pending batch progress before navigating (Step 13)
     if (flushProgress) {
       flushProgress();
     }
     
     console.log('🔄 Complete lesson called');
-    console.log('Next lesson:', nextLesson);
-    console.log('Module backend ID:', module.backendId);
     
     if (isValidBackendId && module?.backendId) {
       completeLessonMutation({ lessonId: lesson.backendId! }, {
         onSuccess: () => {
           console.log('✅ Lesson completed successfully on backend');
-          // Only show GYN prompt if eligible (not already handled this session)
-          if (gynPromptEligible) {
-            pendingNavigationRef.current = executeNavigation;
-            setShowGYNPromptModal(true);
-            return; // Don't navigate yet — wait for modal choice
-          }
-          // GYN not eligible, navigate immediately
-          executeNavigation();
         },
         onError: (error: Error) => {
           console.error('❌ Failed to complete lesson on backend:', error);
-          // Still navigate on error
-          executeNavigation();
         }
       });
     } else {
       console.warn('⚠️ Skipping backend completion - invalid backend IDs');
-      executeNavigation();
     }
-  }, [isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, gynPromptEligible, executeNavigation, flushProgress, nextLesson]);
+  }, [isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, flushProgress]);
 
+  // ═══════════════════════════════════════════════════════════
+  // NEXT LESSON BUTTON (bottom bar)
+  // Marks complete, then checks GYN eligibility before navigating.
+  // Modal shown ONLY if server says lesson complete + GYN not played.
+  // ═══════════════════════════════════════════════════════════
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
-    handleCompleteLesson();
-  }, [nextLesson, handleCompleteLesson]);
+    
+    if (flushProgress) {
+      flushProgress();
+    }
+    
+    if (isValidBackendId && module?.backendId) {
+      completeLessonMutation({ lessonId: lesson.backendId! }, {
+        onSuccess: async () => {
+          console.log('✅ Lesson completed on backend before navigation');
+          
+          // Check GYN eligibility with fresh server data
+          const showGYN = await shouldShowGYNModal();
+          if (showGYN) {
+            pendingNavigationRef.current = executeNavigation;
+            setShowGYNPromptModal(true);
+            return;
+          }
+          
+          executeNavigation();
+        },
+        onError: (error: Error) => {
+          console.error('❌ Failed to complete lesson:', error);
+          executeNavigation();
+        }
+      });
+    } else {
+      executeNavigation();
+    }
+  }, [nextLesson, flushProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, shouldShowGYNModal, executeNavigation]);
 
-  // GYN Prompt Modal handlers
- const handleGYNPlay = useCallback(async () => {
+  // ═══════════════════════════════════════════════════════════
+  // GYN MODAL HANDLERS
+  // ═══════════════════════════════════════════════════════════
+
+  const handleGYNPlay = useCallback(async () => {
     setShowGYNPromptModal(false);
-    gynHandledThisSessionRef.current = true; // Mark as handled so modal won't re-appear
+    setGynDismissedThisSession(true);
     pendingNavigationRef.current = null;
 
     if (!lesson.backendId) {
@@ -801,7 +862,6 @@ const LessonView: React.FC<LessonViewProps> = ({
       return;
     }
 
-    // Always fetch GYN questions directly to avoid cache timing issues
     console.log('🌳 [GYN Play] Fetching GYN questions for lesson:', lesson.backendId);
     try {
       const gynData = await getLessonQuestions(lesson.backendId);
@@ -845,26 +905,33 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const handleGYNDismiss = useCallback(() => {
     setShowGYNPromptModal(false);
-    gynHandledThisSessionRef.current = true; // Mark as handled so modal won't re-appear
-    // Execute the pending navigation if there was one (from button click path)
+    setGynDismissedThisSession(true);
+    
+    // Execute the pending navigation (user chose to skip GYN)
     if (pendingNavigationRef.current) {
       pendingNavigationRef.current();
       pendingNavigationRef.current = null;
     }
   }, []);
 
-  // Back button handler — shows GYN prompt if lesson is complete and GYN hasn't been played
-  const handleBack = useCallback(() => {
-    if (
-      (videoCompleted || backendLessonData?.is_completed) &&
-      gynPromptEligible
-    ) {
-      pendingNavigationRef.current = onBack;
-      setShowGYNPromptModal(true);
-      return;
+  // ═══════════════════════════════════════════════════════════
+  // BACK BUTTON
+  // Shows GYN modal if lesson is complete + GYN not played.
+  // Otherwise navigates directly.
+  // ═══════════════════════════════════════════════════════════
+  const handleBack = useCallback(async () => {
+    // Only check GYN if the lesson has actually been completed
+    // (either video finished this session OR server says so)
+    if (videoCompleted || backendLessonData?.is_completed) {
+      const showGYN = await shouldShowGYNModal();
+      if (showGYN) {
+        pendingNavigationRef.current = onBack;
+        setShowGYNPromptModal(true);
+        return;
+      }
     }
     onBack();
-  }, [videoCompleted, backendLessonData?.is_completed, gynPromptEligible, onBack]);
+  }, [videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, onBack]);
 
   // ═══════════════════════════════════════════════════════════
   // TEMPORARY DEV BUTTONS — Remove before production
@@ -890,7 +957,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         onSuccess: () => {
           console.log('🧪 [Dev] Lesson marked complete. Showing GYN prompt modal...');
           setIsDevCompleting(false);
-          // Show the prompt modal — the user decides whether to play via "Let's Grow"
+          // Dev shortcut: show modal directly (bypasses normal navigation flow)
           setShowGYNPromptModal(true);
         },
         onError: (error: Error) => {
@@ -990,8 +1057,8 @@ const LessonView: React.FC<LessonViewProps> = ({
     try {
       const result = await resetLessonGYNDev(lesson.backendId);
       console.log('🧪 [Dev] GYN reset result:', result);
-      // Also reset the local session guard so the modal can appear again after reset
-      gynHandledThisSessionRef.current = false;
+      // Reset the session guard so the modal can appear again
+      setGynDismissedThisSession(false);
       alert(`✅ GYN reset successful!\n\n${result.message}\n\nYou can now replay the minigame for this lesson.`);
     } catch (error) {
       console.error('🧪 [Dev] GYN reset failed:', error);

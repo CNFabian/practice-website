@@ -24,6 +24,7 @@ import {
 } from './pages'
 import { BadgesPage } from './pages/protected/badges'
 import AdminDashboardPage from './pages/protected/admin/AdminDashboardPage'
+import MobileGate from './components/common/MobileGate'
 
 function App() {
   const { isAuthenticated: reduxIsAuthenticated, isLoading } = useSelector((state: RootState) => state.auth)
@@ -121,70 +122,72 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/auth/*"
-        element={
-          reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
-        }>
-        <Route path="login" element={<LoginPage />} />
-        <Route path="signup" element={<SignupPage />} />
-        <Route path="*" element={<Navigate to="/auth/login" replace />} />
-      </Route>
-
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            <OnboardingPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/app/*"
-        element={
-          reduxIsAuthenticated ? (
-            needsOnboarding === true ? (
-              <Navigate to="/onboarding" replace />
-            ) : needsOnboarding === false ? (
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            ) : (
-              <LoadingSpinner minDisplayTime={500} />
-            )
-          ) : (
-            <Navigate to="/splash" replace />
-          )
-        }
-      >
-        <Route index element={<ModulesPage />} />
-        <Route path="overview" element={<OverviewPage />} />
-        <Route path="materials" element={<MaterialsPage />} />
-        <Route path="rewards" element={<RewardsPage />} />
-        <Route path="badges" element={<BadgesPage />} />
-        <Route path="help" element={<HelpPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
+    <MobileGate>
+      <Routes>
         <Route
-          path="admin/*"
+          path="/auth/*"
           element={
-            <AdminRoute>
-              <AdminDashboardPage />
-            </AdminRoute>
+            reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
+          }>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="signup" element={<SignupPage />} />
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
+        </Route>
+
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
           }
         />
-      </Route>
 
-      <Route
-        path="/"
-        element={
-          reduxIsAuthenticated ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner minDisplayTime={500} />) : <Navigate to="/auth/login" replace />
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route
+          path="/app/*"
+          element={
+            reduxIsAuthenticated ? (
+              needsOnboarding === true ? (
+                <Navigate to="/onboarding" replace />
+              ) : needsOnboarding === false ? (
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              ) : (
+                <LoadingSpinner minDisplayTime={500} />
+              )
+            ) : (
+              <Navigate to="/splash" replace />
+            )
+          }
+        >
+          <Route index element={<ModulesPage />} />
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="materials" element={<MaterialsPage />} />
+          <Route path="rewards" element={<RewardsPage />} />
+          <Route path="badges" element={<BadgesPage />} />
+          <Route path="help" element={<HelpPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route
+            path="admin/*"
+            element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            }
+          />
+        </Route>
+
+        <Route
+          path="/"
+          element={
+            reduxIsAuthenticated ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner minDisplayTime={500} />) : <Navigate to="/auth/login" replace />
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </MobileGate>
   )
 }
 
