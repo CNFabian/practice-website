@@ -869,10 +869,9 @@ const LessonView: React.FC<LessonViewProps> = ({
       if (gynData && gynData.questions && gynData.questions.length > 0) {
         console.log('🌳 [GYN Play] Fetched', gynData.questions.length, 'questions');
 
-        const moduleNumber = module.id || 1;
         const initData: GYNMinigameInitData = buildLessonModeInitData(
           lesson.backendId,
-          typeof moduleNumber === 'number' ? moduleNumber : 1,
+          (module.orderIndex ?? 0) + 1,
           gynData
         );
 
@@ -1001,7 +1000,6 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
 
       const transformedQuestions = transformGYNQuestionsForMinigame(questionsResponse.questions);
-      const moduleNumber = module.id || 1;
 
       const initData: GYNMinigameInitData = {
         mode: 'freeroam',
@@ -1014,7 +1012,7 @@ const LessonView: React.FC<LessonViewProps> = ({
           points_per_stage: stateResponse.points_per_stage,
           completed: stateResponse.completed,
         },
-        moduleNumber: typeof moduleNumber === 'number' ? moduleNumber : 1,
+        moduleNumber: (module.orderIndex ?? 0) + 1,
         showStartScreen: true,
       };
 

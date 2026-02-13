@@ -65,10 +65,8 @@ export function createLeftPanel(
   state.plantGraphics = scene.add.container(panelWidth / 2, panelHeight / 2 + 20);
   state.leftPanel.add(state.plantGraphics);
 
-  // Delay progress section creation to ensure fonts are loaded
-  scene.time.delayedCall(100, () => {
-    createProgressSection(scene, state, panelWidth, panelHeight);
-  });
+  createProgressSection(scene, state, panelWidth, panelHeight);
+
 }
 
 function createProgressSection(
@@ -171,12 +169,18 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
 
   if (state.treeState) {
     stage = state.treeState.current_stage + 1;
-    if (stage > 7) stage = 7;
+    if (stage > 5) stage = 5;
     if (stage < 1) stage = 1;
-    progressPercent =
-      (state.treeState.growth_points /
-        (state.treeState.total_stages * state.treeState.points_per_stage)) *
-      100;
+
+    // Progress within the current stage (not overall)
+    const pointsPerStage = state.treeState.points_per_stage || 50;
+    const pointsIntoCurrentStage = state.treeState.growth_points % pointsPerStage;
+    // If tree is completed, show 100%
+    if (state.treeState.completed) {
+      progressPercent = 100;
+    } else {
+      progressPercent = (pointsIntoCurrentStage / pointsPerStage) * 100;
+    }
   } else {
     stage = 1;
     progressPercent = 0;
@@ -185,13 +189,13 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
   console.log(`🌳 Tree stage: ${stage}, progress: ${progressPercent.toFixed(1)}%`);
 
   // Progressive scaling: Stage 1: 1.0x, Stage 7: 2.0x
-  const stageScaleMultiplier = 1.0 + ((stage - 1) / 6) * 1.0;
+  const stageScaleMultiplier = 1.0 + ((stage - 1) / 4) * 1.0;
 
   // Shadow
   if (scene.textures.exists(ASSET_KEYS.TREE_SHADOW)) {
-    const shadowYOffset = 200 + (stage - 1) * 30;
+    const shadowYOffset = 200 + (stage - 1) * 50;
     const treeShadow = scene.add.image(0, shadowYOffset, ASSET_KEYS.TREE_SHADOW);
-    const shadowBaseScale = 0.8 + ((stage - 1) / 6) * 0.7;
+    const shadowBaseScale = 0.8 + ((stage - 1) / 4) * 0.7;
     treeShadow.setScale(shadowBaseScale);
     treeShadow.setAlpha(1);
     state.plantGraphics.add(treeShadow);
@@ -240,14 +244,23 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
     state.plantGraphics.add(treeEmoji);
   }
 
-  // Update stage text
-  if (state.stageText) {
-    state.stageText.setText(`Stage ${state.treeState ? state.treeState.current_stage : stage}`);
+ // Update stage text (display 1-indexed: backend stage 0 = display "Stage 1")
+  if (state.stageText && state.stageText.scene) {
+    try {
+      const totalStages = state.treeState ? state.treeState.total_stages : 5;
+      state.stageText.setText(`Stage ${stage}/${totalStages}`);
+    } catch (e) {
+      console.warn('⚠️ stageText.setText failed:', e);
+    }
   }
 
   // Update progress percent text
-  if (state.progressPercentText) {
-    state.progressPercentText.setText(`${Math.round(progressPercent)}%`);
+  if (state.progressPercentText && state.progressPercentText.scene) {
+    try {
+      state.progressPercentText.setText(`${Math.round(progressPercent)}%`);
+    } catch (e) {
+      console.warn('⚠️ progressPercentText.setText failed:', e);
+    }
   }
 
   // Update progress bar fill

@@ -324,13 +324,13 @@ class GameManager {
    */
   updateModulesData(modulesData: any[]): void {
     this.housesData = transformModulesToHouses(modulesData);
-    
+
     if (!this.game) return;
-    
     const scenes = this.game.scene.getScenes(false);
     if (scenes.length > 0) {
       const scene = scenes[0];
       scene.registry.set('neighborhoodHouses', this.housesData);
+      scene.registry.set('learningModules', modulesData);
       console.log('✅ Set neighborhood houses in registry:', this.housesData);
     }
   }
@@ -452,14 +452,17 @@ class GameManager {
    * Get current module data
    */
   getCurrentModule(moduleId: number, moduleBackendId: string): Module | null {
-    const house = this.housesData['downtown']?.find(h => h.moduleBackendId === moduleBackendId);
+    const houses = this.housesData['downtown'] || [];
+    const houseIndex = houses.findIndex(h => h.moduleBackendId === moduleBackendId);
+    const house = houseIndex >= 0 ? houses[houseIndex] : null;
     const moduleData = this.moduleLessonsData[moduleBackendId];
-    
+
     if (!house) return null;
 
     return {
       id: moduleId,
       backendId: moduleBackendId,
+      orderIndex: houseIndex,
       image: '/placeholder-module.jpg',
       title: house.name,
       description: house.description || 'Module description',

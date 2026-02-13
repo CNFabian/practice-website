@@ -338,12 +338,45 @@ export default class HouseScene extends BaseScene {
 
     const circleRadius = scale(24);
 
-    const completedLessons =
-      this.module?.lessons.filter((l) => l.completed).length || 0;
-    const totalLessons = this.module?.lessons.length || 0;
+    // Use tree growth data from the learning modules API (flat structure)
+    // or fall back to dashboard modules (nested under .module)
     let progressPercent = 0;
-    if (totalLessons > 0 && completedLessons > 0) {
-      progressPercent = (completedLessons / totalLessons) * 100;
+    let treeGrowthPoints = 0;
+    let treeTotalStages = 5;
+    let treeCurrentStage = 0;
+    let treeCompleted = false;
+    const pointsPerStage = 50;
+
+    // Try learning modules first (flat: module.tree_growth_points)
+    const learningModules: any[] | undefined = this.registry.get('learningModules');
+    const dashboardModules: any[] | undefined = this.registry.get('dashboardModules');
+
+    if (learningModules && this.moduleBackendId) {
+      const mod = learningModules.find((m: any) => m.id === this.moduleBackendId);
+      if (mod) {
+        treeGrowthPoints = mod.tree_growth_points ?? 0;
+        treeTotalStages = mod.tree_total_stages ?? 5;
+        treeCurrentStage = mod.tree_current_stage ?? 0;
+        treeCompleted = mod.tree_completed ?? false;
+      }
+    } else if (dashboardModules && this.moduleBackendId) {
+      // Dashboard modules are nested: { module: { id, tree_growth_points, ... }, ... }
+      const dashEntry = dashboardModules.find(
+        (entry: any) => entry.module?.id === this.moduleBackendId
+      );
+      if (dashEntry?.module) {
+        treeGrowthPoints = dashEntry.module.tree_growth_points ?? 0;
+        treeTotalStages = dashEntry.module.tree_total_stages ?? 5;
+        treeCurrentStage = dashEntry.module.tree_current_stage ?? 0;
+        treeCompleted = dashEntry.module.tree_completed ?? false;
+      }
+    }
+
+    const treeTotalPoints = treeTotalStages * pointsPerStage;
+    if (treeCompleted) {
+      progressPercent = 100;
+    } else if (treeTotalPoints > 0) {
+      progressPercent = (treeGrowthPoints / treeTotalPoints) * 100;
     }
 
     // Background circle (light gray)
@@ -366,16 +399,10 @@ export default class HouseScene extends BaseScene {
       container.add(progressArc);
     }
 
-    // Determine tree stage (1-7)
-    let treeStage: number;
-    if (progressPercent === 0) {
-      treeStage = 1;
-    } else if (progressPercent === 100) {
-      treeStage = 7;
-    } else {
-      treeStage = Math.floor((progressPercent / 100) * 5) + 2;
-      treeStage = Math.min(treeStage, 6);
-    }
+    // Tree stage for display (1-indexed)
+    let treeStage = treeCurrentStage + 1;
+    if (treeStage > 5) treeStage = 5;
+    if (treeStage < 1) treeStage = 1;
 
     // Tree image
     const treeIcon = this.add.image(0, 0, `tree_stage_${treeStage}`);
@@ -415,11 +442,15 @@ export default class HouseScene extends BaseScene {
     });
 
     hitArea.on('pointerdown', () => {
-      if (this.isTransitioning) return;
-      this.isTransitioning = true;
-
-      if (this.moduleBackendId) {
-        this.launchFreeRoam(this.moduleBackendId, this.module?.id || 1);
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+    
+    if (this.moduleBackendId) {
+      // Derive display module number from house position (1-indexed)
+      const houses = this.registry.get('neighborhoodHouses')?.['downtown'] || [];
+      const houseIndex = houses.findIndex((h: any) => h.moduleBackendId === this.moduleBackendId);
+        const moduleNumber = (houseIndex >= 0 ? houseIndex : 0) + 1;
+        this.launchFreeRoam(this.moduleBackendId, moduleNumber);
       } else {
         this.isTransitioning = false;
       }

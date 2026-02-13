@@ -334,8 +334,9 @@ export function updateQuestion(
   const optionLetterFontSize = Math.round(panelWidth * OPTION_LETTER_FONT_PERCENT);
   const optionTextFontSize = Math.round(panelWidth * OPTION_TEXT_FONT_PERCENT);
 
-  const fullQuestionText = `${state.currentQuestionIndex + 1}. ${question.question}`;
-  state.questionText = scene.add.text(
+  const fullQuestionText = state.gameMode === 'freeroam'
+    ? question.question
+    : `${state.currentQuestionIndex + 1}. ${question.question}`;  state.questionText = scene.add.text(
     horizontalPadding,
     questionStartY,
     fullQuestionText,

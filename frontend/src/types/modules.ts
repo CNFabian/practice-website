@@ -33,6 +33,7 @@ export interface MinigameConfig {
 export interface Lesson {
   id: number;
   backendId?: string;
+  orderIndex?: number;
   image: string;
   title: string;
   duration: string;
@@ -63,6 +64,7 @@ export interface Lesson {
 export interface Module {
   id: number;
   backendId?: string;
+  orderIndex?: number;
   image: string;
   title: string;
   description: string;
@@ -73,8 +75,6 @@ export interface Module {
   lessons: Lesson[];
   quizCompleted?: boolean;
   quizScore?: number;
-  
-  // NEW GAMIFIED PROPERTIES
   neighborhoodId?: string;        // Which neighborhood this module belongs to
   houseId?: string;              // Which house this module belongs to
   mapPosition?: MapPosition;      // Position on the map/neighborhood/house

@@ -271,24 +271,43 @@ export default class GrowYourNestMinigame extends BaseScene {
     // Both modes: validate answer immediately for instant feedback
     validateAnswer({ question_id: q.id, answer_id: opt.answerId })
       .then((validation) => {
-        if (this.gameMode === 'lesson') {
-          // Store the answer for batch submission later
-          this.lessonAnswers.push({
-            question_id: q.id,
-            answer_id: opt.answerId,
-          });
+          if (this.gameMode === 'lesson') {
+            // Store the answer for batch submission later
+            this.lessonAnswers.push({
+              question_id: q.id,
+              answer_id: opt.answerId,
+            });
 
-          // Track score locally for lesson mode
-          if (validation.is_correct) {
-            this.score++;
-            this.consecutiveCorrect++;
-          } else {
-            this.consecutiveCorrect = 0;
-          }
+            // Track score locally for lesson mode
+            if (validation.is_correct) {
+              this.score++;
+              this.consecutiveCorrect++;
 
-          this.isSubmitting = false;
-          this.showAnswerFeedback(validation.is_correct);
-        } else if (this.gameMode === 'freeroam') {
+              // Update treeState locally so progress bar reflects changes per-question
+              // Water = 10 pts per correct; Fertilizer = 20 bonus pts at 3 consecutive
+              const waterPoints = 10;
+              const fertilizerBonus = this.consecutiveCorrect > 0 && this.consecutiveCorrect % 3 === 0 ? 20 : 0;
+              const pointsEarned = waterPoints + fertilizerBonus;
+              if (fertilizerBonus > 0) this.fertilizerBonusCount++;
+              this.totalGrowthPointsEarned += pointsEarned;
+
+              if (this.treeState) {
+                this.treeState = {
+                  ...this.treeState,
+                  growth_points: this.treeState.growth_points + pointsEarned,
+                  current_stage: Math.min(
+                    Math.floor((this.treeState.growth_points + pointsEarned) / this.treeState.points_per_stage),
+                    this.treeState.total_stages
+                  ),
+                };
+              }
+            } else {
+              this.consecutiveCorrect = 0;
+            }
+
+            this.isSubmitting = false;
+            this.showAnswerFeedback(validation.is_correct);
+          } else if (this.gameMode === 'freeroam') {
           // After validation, submit to freeroam/answer for tree growth + coins
           if (!this.moduleId) {
             this.isSubmitting = false;
@@ -323,8 +342,15 @@ export default class GrowYourNestMinigame extends BaseScene {
                 completed: r.tree_state.completed || r.tree_state.just_completed,
               };
 
-              this.showAnswerFeedback(r.is_correct);
-            })
+              // If tree just completed, show completion after feedback
+              if (this.treeState?.completed) {
+                this.showAnswerFeedback(r.is_correct);
+                this.time.delayedCall(2000, () => {
+                  this.doShowCompletion();
+                });
+                return;
+              }
+              this.showAnswerFeedback(r.is_correct);            })
             .catch((e) => {
               console.error('🌳 freeroam answer error:', e);
               this.isSubmitting = false;
@@ -347,15 +373,30 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.currentQuestionIndex++;
 
     if (this.currentQuestionIndex >= this.questions.length) {
-      if (this.gameMode === 'lesson') this.submitLessonResults();
-      else this.doShowCompletion();
-    } else {
-      this.selectedAnswer = null;
-      const state = this.getState();
-      updateNextButton(state, false);
-      updateQuestion(this, state, this.getCallbacks());
-      this.syncState(state);
+      if (this.gameMode === 'lesson') {
+        this.submitLessonResults();
+        return;
+      }
+
+      // Free roam: check if tree is complete
+      if (this.treeState?.completed) {
+        this.doShowCompletion();
+        return;
+      }
+
+      // Free roam: recycle questions, ensuring no repeat of last question
+      const lastQuestion = this.questions[this.questions.length - 1];
+      do {
+        Phaser.Utils.Array.Shuffle(this.questions);
+      } while (this.questions.length > 1 && this.questions[0].id === lastQuestion.id);
+      this.currentQuestionIndex = 0;
     }
+
+    this.selectedAnswer = null;
+    const state = this.getState();
+    updateNextButton(state, false);
+    updateQuestion(this, state, this.getCallbacks());
+    this.syncState(state);
   }
 
   private submitLessonResults(): void {
