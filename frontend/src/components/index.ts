@@ -1,6 +1,7 @@
 // Common components
 export { default as ProtectedRoute } from './common/ProtectedRoute';
 export { default as LoadingSpinner } from './common/LoadingSpinner';
+export { default as BetaTooltip } from './common/BetaToolTip';
 
 // Protected layout components
 export { default as Header } from './protected/Header';
@@ -16,5 +17,4 @@ export { default as HomeInspectionChecklist } from './protected/materials/HomeIn
 // Protected settings components
 export { default as ProfilePictureModal } from './protected/settings/ProfilePictureModal';
 export { default as ProfileCompletionModal } from './protected/settings/ProfileCompletionModal';
-
 export { default as OnboardingPage } from './protected/onboarding/OnBoardingPage';

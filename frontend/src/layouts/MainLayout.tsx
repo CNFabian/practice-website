@@ -6,6 +6,7 @@ import { useWalkthrough } from '../contexts/WalkthroughContext'
 import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
 import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
 import { getModuleLessons } from '../services/learningAPI';
+import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../services/growYourNestAPI';
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
@@ -16,19 +17,16 @@ const MainLayoutContent: React.FC = () => {
     console.log('🎬 Walkthrough: handleSceneTransition called with:', scene);
     
     if (scene === 'NeighborhoodScene') {
-      // Call the React navigation handler to update navState (which updates background)
       const game = GameManager.getGame();
       const handleNeighborhoodSelect = game?.registry.get('handleNeighborhoodSelect');
       if (handleNeighborhoodSelect) {
         console.log('🎬 Walkthrough: Calling handleNeighborhoodSelect to sync navState');
         handleNeighborhoodSelect('downtown');
       }
-      
-      // Also transition the Phaser scene
       GameManager.transitionToNeighborhood('downtown', 0);
     } else if (scene === 'MapScene') {
       const game = GameManager.getGame();
-      
+
       // Stop GrowYourNestMinigame if it's running
       try {
         const minigameScene = game?.scene.getScene('GrowYourNestMinigame');
@@ -37,31 +35,30 @@ const MainLayoutContent: React.FC = () => {
           game!.scene.stop('GrowYourNestMinigame');
         }
       } catch (e) { /* scene may not exist yet */ }
-      
-      // Reset navState to map via handleBackToMap (which IS registered)
+
+      // Reset navState to map via handleBackToMap
       const handleBackToMap = game?.registry.get('handleBackToMap');
       if (handleBackToMap) {
         console.log('🎬 Walkthrough: Calling handleBackToMap');
         handleBackToMap();
       }
-      
+
       setTimeout(() => {
         GameManager.transitionToMap();
       }, 100);
     } else if (scene === 'HouseScene') {
       const game = GameManager.getGame();
       const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
-      
+
       if (houses.length > 0) {
         const firstHouse = houses[0];
-        
-        // Call the React navigation handler to update navState (which updates background)
+
         const handleHouseSelect = game?.registry.get('handleHouseSelect');
         if (handleHouseSelect) {
           console.log('🎬 Walkthrough: Calling handleHouseSelect to sync navState');
           handleHouseSelect(firstHouse.id, firstHouse.moduleBackendId);
         }
-        
+
         if (firstHouse.moduleBackendId && !GameManager.hasLessonsData(firstHouse.moduleBackendId)) {
           getModuleLessons(firstHouse.moduleBackendId).then((lessonsData) => {
             if (lessonsData && Array.isArray(lessonsData)) {
@@ -83,37 +80,20 @@ const MainLayoutContent: React.FC = () => {
       }
 
       console.log('🎬 Walkthrough: Starting GrowYourNestMinigame transition');
-      
-      // Step 1: Dismiss the LessonView React overlay by setting navState to 'house'
-      // handleMinigameSelect sets currentView='minigame' which shows the React Minigame overlay
-      // Instead, we want to go back to 'house' view so only the Phaser canvas is visible
+
+      // Step 1: Dismiss the LessonView React overlay
       const handleBackToHouse = game.registry.get('handleBackToHouse');
-      const handleMinigameSelect = game.registry.get('handleMinigameSelect');
-      
-      // Try handleBackToHouse first (dismisses LessonView, goes back to house view)
       if (handleBackToHouse) {
-        console.log('🎬 Walkthrough: Calling handleBackToHouse');
+        console.log('🎬 Walkthrough: Calling handleBackToHouse to dismiss LessonView');
         handleBackToHouse();
-      } else if (handleMinigameSelect) {
-        // Fallback: handleMinigameSelect at least dismisses LessonView
-        console.log('🎬 Walkthrough: handleBackToHouse not found, using handleMinigameSelect');
-        handleMinigameSelect();
-      } else {
-        console.error('❌ Walkthrough: No handler found to dismiss LessonView');
       }
 
-      // Step 2: Directly start the GrowYourNestMinigame Phaser scene
-      // Don't wait for HouseScene — just start the minigame scene directly
-      setTimeout(() => {
-        console.log('🎬 Walkthrough: Directly starting GrowYourNestMinigame scene');
-        
-        // Check what scenes are currently active for debugging
-        const scenes = game.scene.getScenes(true);
-        console.log('📋 Active scenes:', scenes.map((s: any) => s.scene.key));
-        
+      // Step 2: After LessonView dismisses, prepare and launch the minigame
+      setTimeout(async () => {
         try {
-          // Stop any currently running scene that would conflict
+          // Stop conflicting scenes
           const activeScenes = game.scene.getScenes(true);
+          console.log('📋 Active scenes before GYN launch:', activeScenes.map((s: any) => s.scene.key));
           for (const s of activeScenes) {
             const key = (s as any).scene.key;
             if (key !== 'PreloaderScene') {
@@ -121,27 +101,158 @@ const MainLayoutContent: React.FC = () => {
               game.scene.stop(key);
             }
           }
+
+          // Get the first house and its moduleBackendId
+          const houses = game.registry.get('neighborhoodHouses')?.['downtown'] || [];
+          console.log('🏠 Walkthrough: Houses available:', houses.length);
+
+          if (houses.length === 0) {
+            console.error('❌ Walkthrough: No houses found in registry');
+            return;
+          }
+
+          const firstHouse = houses[0];
+          const moduleBackendId = firstHouse.moduleBackendId;
+          console.log('🏠 Walkthrough: First house moduleBackendId:', moduleBackendId);
+
+          if (!moduleBackendId) {
+            console.error('❌ Walkthrough: No moduleBackendId on first house');
+            return;
+          }
+
+          // Get lessons data - first check registry, then fetch if needed
+          let moduleLessonsData = game.registry.get('moduleLessonsData') || {};
+          let moduleData = moduleLessonsData[moduleBackendId];
+          console.log('📚 Walkthrough: Module lessons in registry:', moduleData ? `${moduleData.lessons?.length} lessons` : 'NOT FOUND');
+
+          // If lessons not in registry, fetch them
+          if (!moduleData || !moduleData.lessons || moduleData.lessons.length === 0) {
+            console.log('📚 Walkthrough: Fetching lessons for module:', moduleBackendId);
+            try {
+              const lessonsData = await getModuleLessons(moduleBackendId);
+              if (lessonsData && Array.isArray(lessonsData) && lessonsData.length > 0) {
+                GameManager.updateLessonsData(moduleBackendId, lessonsData);
+                // Re-read from registry after update
+                moduleLessonsData = game.registry.get('moduleLessonsData') || {};
+                moduleData = moduleLessonsData[moduleBackendId];
+                console.log('📚 Walkthrough: Fetched and stored lessons:', moduleData?.lessons?.length);
+              }
+            } catch (fetchError) {
+              console.error('❌ Walkthrough: Failed to fetch lessons:', fetchError);
+            }
+          }
+
+          // Get the first lesson's backendId (UUID)
+          let lessonBackendId: string | null = null;
+          if (moduleData?.lessons?.length > 0) {
+            lessonBackendId = moduleData.lessons[0].backendId;
+            console.log('📝 Walkthrough: First lesson backendId:', lessonBackendId);
+          }
+
+          // Try to fetch real GYN questions, fall back to demo data for walkthrough
+          let launched = false;
+
+          if (lessonBackendId && !/^\d+$/.test(lessonBackendId)) {
+            try {
+              console.log(`🌳 Walkthrough: Fetching GYN questions for lesson: ${lessonBackendId}`);
+              const questionsResponse = await getLessonQuestions(lessonBackendId);
+              console.log('🌳 Walkthrough: GYN questions received:', questionsResponse.questions.length);
+
+              if (questionsResponse.questions.length > 0) {
+                const transformedQuestions = transformGYNQuestionsForMinigame(questionsResponse.questions);
+
+                const initData = {
+                  mode: 'lesson' as const,
+                  lessonId: lessonBackendId,
+                  moduleId: moduleBackendId,
+                  questions: transformedQuestions,
+                  treeState: questionsResponse.tree_state,
+                  moduleNumber: 1,
+                  showStartScreen: true,
+                };
+
+                console.log('✅ Walkthrough: Launching GrowYourNestMinigame with real lesson data');
+                game.scene.start('GrowYourNestMinigame', initData);
+                launched = true;
+              }
+            } catch (apiError) {
+              console.warn('⚠️ Walkthrough: API rejected GYN questions (likely lesson not completed), using demo data');
+            }
+          }
+
+          // Fallback: use demo walkthrough data so the minigame scene renders for the tour
+          if (!launched) {
+            console.log('🎯 Walkthrough: Launching GrowYourNestMinigame with demo walkthrough data');
+
+            const walkthroughDemoData = {
+              mode: 'lesson' as const,
+              lessonId: lessonBackendId || 'walkthrough-demo',
+              moduleId: moduleBackendId || 'walkthrough-demo',
+              questions: [
+                {
+                  id: 'wt-q1',
+                  question: 'What is the first step in buying a home?',
+                  options: [
+                    { letter: 'A', text: 'Get pre-approved for a mortgage', answerId: 'wt-a1a' },
+                    { letter: 'B', text: 'Start looking at houses', answerId: 'wt-a1b' },
+                    { letter: 'C', text: 'Hire a moving company', answerId: 'wt-a1c' },
+                  ],
+                  correctAnswerId: null,
+                  explanation: 'Getting pre-approved helps you understand your budget before house hunting.',
+                },
+                {
+                  id: 'wt-q2',
+                  question: 'What does a home inspection check for?',
+                  options: [
+                    { letter: 'A', text: 'The home\'s market value', answerId: 'wt-a2a' },
+                    { letter: 'B', text: 'Structural issues and defects', answerId: 'wt-a2b' },
+                    { letter: 'C', text: 'The neighborhood crime rate', answerId: 'wt-a2c' },
+                  ],
+                  correctAnswerId: null,
+                  explanation: 'A home inspection identifies potential problems with the property\'s condition.',
+                },
+                {
+                  id: 'wt-q3',
+                  question: 'What is earnest money?',
+                  options: [
+                    { letter: 'A', text: 'A deposit showing you\'re serious about buying', answerId: 'wt-a3a' },
+                    { letter: 'B', text: 'The down payment on the home', answerId: 'wt-a3b' },
+                    { letter: 'C', text: 'Money paid to the real estate agent', answerId: 'wt-a3c' },
+                  ],
+                  correctAnswerId: null,
+                  explanation: 'Earnest money is a good faith deposit that shows the seller you\'re committed.',
+                },
+              ],
+              treeState: {
+                growth_points: 0,
+                current_stage: 0,
+                total_stages: 5,
+                points_per_stage: 50,
+                completed: false,
+              },
+              moduleNumber: 1,
+              showStartScreen: true,
+            };
+
+            game.scene.start('GrowYourNestMinigame', walkthroughDemoData);
+          }
           
-          // Start GrowYourNestMinigame directly
-          game.scene.start('GrowYourNestMinigame');
-          console.log('✅ Walkthrough: GrowYourNestMinigame started!');
-        } catch (e) {
-          console.error('❌ Walkthrough: Error starting GrowYourNestMinigame:', e);
+        } catch (error) {
+          console.error('❌ Walkthrough: Error during GrowYourNestMinigame launch:', error);
         }
       }, 500);
-      
     } else if (scene === 'LessonView') {
-      // Trigger lesson select for the first lesson of the first module
       const game = GameManager.getGame();
       const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
+
       if (houses.length > 0) {
         const firstHouse = houses[0];
         const moduleBackendId = firstHouse.moduleBackendId;
-        
+
         if (moduleBackendId) {
           const moduleLessonsData = game?.registry.get('moduleLessonsData') || {};
           const moduleData = moduleLessonsData[moduleBackendId];
-          
+
           if (moduleData && moduleData.lessons && moduleData.lessons.length > 0) {
             const firstLesson = moduleData.lessons[0];
             const handleLessonSelect = game?.registry.get('handleLessonSelect');
@@ -152,18 +263,17 @@ const MainLayoutContent: React.FC = () => {
         }
       }
     }
-    
   };
 
   return (
     <div className="min-h-screen overflow-hidden">
       <Sidebar />
-      
+
       {/* Background layer - full viewport, behind content */}
       <div className="fixed inset-0 -z-10" id="section-background"></div>
-      
+
       {/* Content layer - with dynamic padding based on sidebar state */}
-      <main 
+      <main
         className={`h-screen overflow-hidden relative z-0 transition-[padding] duration-300 ease-in-out ${
           isCollapsed ? 'pl-20' : 'pl-48'
         }`}

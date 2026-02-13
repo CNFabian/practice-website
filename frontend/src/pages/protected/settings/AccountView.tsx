@@ -14,12 +14,12 @@ const AccountView: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
-
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [showNewPhone, setShowNewPhone] = useState(false);
 
   // Wipe data state
   const [isWiping, setIsWiping] = useState(false);
@@ -65,7 +65,6 @@ const AccountView: React.FC = () => {
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
       });
-
       await updateUserProfile({ photoURL: base64 });
       dispatch(updateUserProfileAction({ photoURL: base64 }));
       console.log('Profile picture uploaded successfully');
@@ -81,11 +80,9 @@ const AccountView: React.FC = () => {
       setResetPasswordError('No email address found on your account.');
       return;
     }
-
     setIsResettingPassword(true);
     setResetPasswordMessage(null);
     setResetPasswordError(null);
-
     try {
       await requestPasswordReset(user.email);
       setResetPasswordMessage('A password reset link has been sent to your email.');
@@ -101,12 +98,10 @@ const AccountView: React.FC = () => {
     setIsWiping(true);
     setWipeMessage(null);
     setWipeError(null);
-
     try {
       await wipeUserData();
       setWipeMessage('All data wiped successfully. Logging you out...');
       setShowWipeConfirm(false);
-
       // Log the user out after a brief delay so they can see the success message
       setTimeout(() => {
         clearAuthData();
@@ -306,7 +301,6 @@ const AccountView: React.FC = () => {
               </OnestFont>
             </div>
           )}
-
           {resetPasswordError && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-status-red/10 text-status-red text-sm">
               <OnestFont weight={500} lineHeight="relaxed">
@@ -336,49 +330,64 @@ const AccountView: React.FC = () => {
           >
             Phone Number
           </OnestFont>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-text-grey mb-2">
-                <OnestFont weight={500} lineHeight="relaxed">
-                  Current Phone Number
-                </OnestFont>
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  defaultValue={user?.phone || '123 456 7890'}
-                  className="w-full px-3 py-3 border border-light-background-blue rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent"
-                />
-                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
+
+          <div>
+            <label className="block text-sm text-text-grey mb-2">
+              <OnestFont weight={500} lineHeight="relaxed">
+                Current Phone Number
+              </OnestFont>
+            </label>
+            <div className="relative max-w-md">
+              <input
+                type="tel"
+                defaultValue={user?.phone || '123 456 7890'}
+                className="w-full px-3 py-3 border border-light-background-blue rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent"
+              />
+              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-            <div>
+          </div>
+
+          {/* Change Phone Number button / New Phone Number field */}
+          {!showNewPhone ? (
+            <button
+              onClick={() => setShowNewPhone(true)}
+              className="mt-4 px-4 py-2 bg-elegant-blue rounded-lg text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
+            >
+              <OnestFont weight={500} lineHeight="relaxed">
+                Change Phone Number
+              </OnestFont>
+            </button>
+          ) : (
+            <div className="mt-4">
               <label className="block text-sm text-text-grey mb-2">
                 <OnestFont weight={500} lineHeight="relaxed">
                   New Phone Number
                 </OnestFont>
               </label>
-              <div className="relative">
+              <div className="relative max-w-md">
                 <input
                   type="tel"
-                  defaultValue="987 654 3210"
+                  placeholder="Enter new phone number"
                   className="w-full px-3 py-3 border border-light-background-blue rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-transparent"
                 />
-                <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey">
+                <button
+                  onClick={() => setShowNewPhone(false)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey"
+                >
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -395,7 +404,7 @@ const AccountView: React.FC = () => {
                 </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Email */}
@@ -426,7 +435,7 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* TEMPORARY: Wipe User Data — Beta Testing Only                */}
+        {/* TEMPORARY: Wipe User Data — Beta Testing Only               */}
         {/* Remove this entire section before production launch          */}
         {/* ============================================================ */}
         <div className="border-t border-light-background-blue py-6">
@@ -461,7 +470,6 @@ const AccountView: React.FC = () => {
                   </OnestFont>
                 </div>
               )}
-
               {wipeError && (
                 <div className="mb-4 px-4 py-3 rounded-lg bg-status-red/10 text-status-red text-sm">
                   <OnestFont weight={500} lineHeight="relaxed">
@@ -482,11 +490,7 @@ const AccountView: React.FC = () => {
                 </button>
               ) : (
                 <div className="flex items-center gap-3">
-                  <OnestFont
-                    weight={500}
-                    lineHeight="relaxed"
-                    className="text-sm text-status-red"
-                  >
+                  <OnestFont weight={500} lineHeight="relaxed" className="text-sm text-status-red">
                     Are you sure? This cannot be undone.
                   </OnestFont>
                   <button

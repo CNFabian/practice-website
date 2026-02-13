@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   HouseBackground,
   NeighborhoodMap,
@@ -30,12 +31,14 @@ const ModulesPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const location = useLocation();
+  const walkthroughTriggered = useRef(false);
   const { data: dashboardModules } = useDashboardModules();
   const { data: coinBalanceData } = useCoinBalance();
   const totalCoins = coinBalanceData?.current_balance || 0;
   const queryClient = useQueryClient();
   const { isCollapsed } = useSidebar();
-  const { isWalkthroughActive } = useWalkthrough();
+  const { isWalkthroughActive, startWalkthrough, hasCompletedWalkthrough } = useWalkthrough();
   const { addProgressItem, flushProgress } = useBatchProgressSync();
 
   // Calculate sidebar offset based on collapsed state
@@ -75,6 +78,26 @@ const ModulesPage: React.FC = () => {
       });
     }
   }, [isWalkthroughActive]);
+
+  // Auto-trigger walkthrough immediately after onboarding completion
+  useEffect(() => {
+    const fromOnboarding = (location.state as any)?.fromOnboarding === true;
+    if (
+      fromOnboarding &&
+      !walkthroughTriggered.current &&
+      !hasCompletedWalkthrough &&
+      isPhaserReady &&
+      assetsLoaded
+    ) {
+      walkthroughTriggered.current = true;
+      // Clear the navigation state so refresh doesn't re-trigger
+      window.history.replaceState({}, document.title);
+      // Small delay to ensure Phaser scene is fully rendered
+      setTimeout(() => {
+        startWalkthrough();
+      }, 800);
+    }
+  }, [location.state, isPhaserReady, assetsLoaded, hasCompletedWalkthrough, startWalkthrough]);
 
   const { 
     data: modulesData, 

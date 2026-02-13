@@ -2,6 +2,7 @@ import React from "react";
 import { OnestFont } from "../../../../assets";
 import { LeaderboardEntry } from "../types/overview.types";
 import { LeaderboardCrown } from "../../../../assets";
+import { BetaTooltip } from "../../../../components";
 
 interface LeaderboardCardProps {
   entries: LeaderboardEntry[];
@@ -10,7 +11,6 @@ interface LeaderboardCardProps {
 
 const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
   entries,
-  onMenuClick,
 }) => {
   // Split entries: top 3 for podium, rest for list
   const podiumEntries = entries.slice(0, 3);
@@ -56,17 +56,20 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
         >
           Top Learners
         </OnestFont>
-        <button
-          className="text-text-grey hover:text-text-blue-black flex-shrink-0"
-          onClick={onMenuClick}
-          aria-label="Leaderboard menu"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="5" r="2" />
-            <circle cx="12" cy="12" r="2" />
-            <circle cx="12" cy="19" r="2" />
-          </svg>
-        </button>
+
+        {/* 3 Vertical Dots - wrapped with BetaTooltip */}
+        <BetaTooltip position="left">
+          <button
+            className="text-text-grey hover:text-text-blue-black flex-shrink-0 cursor-default"
+            aria-label="Leaderboard menu"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="5" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="12" cy="19" r="2" />
+            </svg>
+          </button>
+        </BetaTooltip>
       </div>
 
       {/* Podium Section */}
@@ -77,6 +80,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
               {podiumOrder.map((entry) => {
                 if (!entry) return null;
                 const isFirst = entry.rank === 1;
+
                 return (
                   <div
                     key={entry.id}
@@ -101,7 +105,9 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
                       <OnestFont
                         weight={700}
                         lineHeight="relaxed"
-                        className={`text-pure-white ${isFirst ? "text-base" : "text-sm"}`}
+                        className={`text-pure-white ${
+                          isFirst ? "text-base" : "text-sm"
+                        }`}
                       >
                         {getInitials(entry.name)}
                       </OnestFont>
@@ -109,13 +115,19 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
 
                     {/* Podium Bar with Rank Number and Initials Tag */}
                     <div
-                      className={`w-full ${getPodiumHeight(entry.rank)} bg-elegant-blue rounded-t-xl flex flex-col items-center justify-center relative`}
+                      className={`w-full ${getPodiumHeight(
+                        entry.rank
+                      )} bg-elegant-blue rounded-t-xl flex flex-col items-center justify-center relative`}
                     >
                       <OnestFont
                         weight={700}
                         lineHeight="tight"
                         className={`text-pure-white ${
-                          entry.rank === 1 ? "text-4xl" : entry.rank === 2 ? "text-3xl" : "text-2xl"
+                          entry.rank === 1
+                            ? "text-4xl"
+                            : entry.rank === 2
+                            ? "text-3xl"
+                            : "text-2xl"
                         }`}
                         style={{ fontStyle: "italic" }}
                       >

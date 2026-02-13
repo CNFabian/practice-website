@@ -23,9 +23,9 @@ import { useDashboardModules } from "../../../hooks/queries/useDashboardModules"
 import { useQuizLeaderboard } from "../../../hooks/queries/useQuizLeaderboard";
 import { useMyProgress } from "../../../hooks/queries/useMyProgress";
 import type { QuizLeaderboardEntry } from "../../../hooks/queries/useQuizLeaderboard";
+import { BetaTooltip } from "../../../components";
 
 // ─── Transform helpers ───────────────────────────────────────────
-
 const transformLeaderboardData = (
   entries: QuizLeaderboardEntry[]
 ): LeaderboardEntry[] => {
@@ -49,8 +49,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   { id: '8', name: 'Chris P.', avatar: Icons.GenericAvatar, coins: 600, rank: 8 },
 ];
 
-// ─── Component ───────────────────────────────────────────────────
-
+// ─── Component ─────────────────────────────────────────────────────
 const OverviewPage: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -70,7 +69,6 @@ const OverviewPage: React.FC = () => {
   const error = overviewError || modulesError;
 
   // ─── Data derivations ───
-
   // Hero card: find the current in-progress module
   const currentModule = modulesData?.find(
     (m: any) => m.status === 'in_progress' || m.status === 'not_started'
@@ -80,9 +78,10 @@ const OverviewPage: React.FC = () => {
   const allModules = modulesData || [];
 
   // Leaderboard
-  const leaderboard = leaderboardData?.leaderboard && leaderboardData.leaderboard.length > 0
-    ? transformLeaderboardData(leaderboardData.leaderboard)
-    : MOCK_LEADERBOARD;
+  const leaderboard =
+    leaderboardData?.leaderboard && leaderboardData.leaderboard.length > 0
+      ? transformLeaderboardData(leaderboardData.leaderboard)
+      : MOCK_LEADERBOARD;
 
   // User stats — prefer progressData when available for accuracy
   const totalCoins = progressData?.coins_balance ?? overviewData?.total_coins ?? 0;
@@ -90,11 +89,11 @@ const OverviewPage: React.FC = () => {
   const modulesCompleted = progressData?.modules_completed ?? overviewData?.modules_completed ?? 0;
   const totalModules = overviewData?.total_modules ?? 0;
   const [currentStreak, setCurrentStreak] = useState(overviewData?.current_streak ?? 0);
-  const overallProgress = progressData?.progress_percentage
-    ?? (totalModules > 0 ? Math.round((modulesCompleted / totalModules) * 100) : 0);
+  const overallProgress =
+    progressData?.progress_percentage ??
+    (totalModules > 0 ? Math.round((modulesCompleted / totalModules) * 100) : 0);
 
   // ─── Event handlers ───
-
   const handleContinueHero = () => {
     if (currentModule) {
       navigate(`/app/modules/${currentModule.module.id}`);
@@ -103,10 +102,6 @@ const OverviewPage: React.FC = () => {
 
   const handleModuleAction = (moduleId: string) => {
     navigate(`/app/modules/${moduleId}`);
-  };
-
-  const handleSeeAllModules = () => {
-    navigate('/app/modules');
   };
 
   const handleLeaderboardMenu = () => {
@@ -127,7 +122,6 @@ const OverviewPage: React.FC = () => {
   };
 
   // ─── Effects ───
-
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
@@ -170,10 +164,7 @@ const OverviewPage: React.FC = () => {
     ? createPortal(
         <>
           {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
-          <OnBoardingPage
-            isOpen={showOnboarding}
-            onClose={handleCloseOnboarding}
-          />
+          <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
         </>,
         document.body
       )
@@ -227,7 +218,6 @@ const OverviewPage: React.FC = () => {
   return (
     <>
       {onboardingModal}
-
       <div className="h-full overflow-y-auto overflow-x-hidden">
         <div
           className={`p-4 lg:p-6 w-full transition-all duration-700 ease-out ${
@@ -236,10 +226,8 @@ const OverviewPage: React.FC = () => {
         >
           {/* ════════════════ 2-Column Layout ════════════════ */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 lg:gap-6 w-full">
-
             {/* ──── LEFT: Main Content Column ──── */}
             <div className="flex flex-col gap-5 lg:gap-6 min-w-0 w-full">
-
               {/* 1. Hero Module Card */}
               {currentModule && (
                 <HeroModuleCard
@@ -254,10 +242,10 @@ const OverviewPage: React.FC = () => {
                   estimatedMinutesRemaining={
                     Math.max(
                       (currentModule.module.estimated_duration_minutes || 20) -
-                      Math.round(
-                        ((currentModule.completion_percentage || 0) / 100) *
-                        (currentModule.module.estimated_duration_minutes || 20)
-                      ),
+                        Math.round(
+                          ((currentModule.completion_percentage || 0) / 100) *
+                            (currentModule.module.estimated_duration_minutes || 20)
+                        ),
                       1
                     )
                   }
@@ -270,11 +258,15 @@ const OverviewPage: React.FC = () => {
               {!currentModule && overviewData?.next_lesson && (
                 <HeroModuleCard
                   moduleTitle={overviewData.next_lesson.title}
-                  moduleDescription={overviewData.next_lesson.description || "Continue your learning journey"}
+                  moduleDescription={
+                    overviewData.next_lesson.description || "Continue your learning journey"
+                  }
                   tags={['Video', 'Beginner']}
                   coinReward={overviewData.next_lesson.nest_coins_reward || 25}
                   progressPercentage={0}
-                  estimatedMinutesRemaining={overviewData.next_lesson.estimated_duration_minutes || 20}
+                  estimatedMinutesRemaining={
+                    overviewData.next_lesson.estimated_duration_minutes || 20
+                  }
                   thumbnailUrl={overviewData.next_lesson.image_url || Images.OverviewImg1}
                   onContinue={() => {
                     if (overviewData.next_lesson?.id) {
@@ -327,14 +319,17 @@ const OverviewPage: React.FC = () => {
                     >
                       Modules Overview
                     </OnestFont>
-                    <button
-                      className="text-logo-blue hover:opacity-80 transition-opacity"
-                      onClick={handleSeeAllModules}
-                    >
-                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                        See all
-                      </OnestFont>
-                    </button>
+
+                    {/* See all - wrapped with BetaTooltip */}
+                    <BetaTooltip position="left">
+                      <button
+                        className="text-logo-blue hover:opacity-80 transition-opacity cursor-default"
+                      >
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                          See all
+                        </OnestFont>
+                      </button>
+                    </BetaTooltip>
                   </div>
 
                   {/* Module Cards List */}
@@ -347,16 +342,24 @@ const OverviewPage: React.FC = () => {
                           orderNumber={moduleProgress.module.order_index}
                           title={moduleProgress.module.title}
                           coinReward={100}
-                          durationMinutes={moduleProgress.module.estimated_duration_minutes || 0}
+                          durationMinutes={
+                            moduleProgress.module.estimated_duration_minutes || 0
+                          }
                           description={moduleProgress.module.description}
-                          progressPercentage={Math.round(moduleProgress.completion_percentage || 0)}
+                          progressPercentage={Math.round(
+                            moduleProgress.completion_percentage || 0
+                          )}
                           tags={[
                             moduleProgress.module.difficulty_level,
                             `${moduleProgress.total_lessons} lessons`,
                           ].filter(Boolean)}
-                          thumbnailUrl={moduleProgress.module.thumbnail_url || Images.OverviewImg2}
+                          thumbnailUrl={
+                            moduleProgress.module.thumbnail_url || Images.OverviewImg2
+                          }
                           status={getModuleStatus(moduleProgress)}
-                          onAction={() => handleModuleAction(moduleProgress.module.id)}
+                          onAction={() =>
+                            handleModuleAction(moduleProgress.module.id)
+                          }
                         />
                       ))}
                   </div>
@@ -366,7 +369,6 @@ const OverviewPage: React.FC = () => {
 
             {/* ──── RIGHT: Sidebar Column ──── */}
             <div className="flex flex-col gap-5 lg:gap-6 w-full min-w-0">
-
               {/* 4. User Profile Card */}
               <UserProfileCard
                 firstName={user?.firstName || 'User'}
@@ -377,7 +379,7 @@ const OverviewPage: React.FC = () => {
                 totalModules={totalModules}
                 progressPercentage={overallProgress}
                 onNotificationClick={() => navigate('/app/notifications')}
-                onSettingsClick={() => navigate('/app/settings?tab=Profile')}
+                onSettingsClick={() => navigate('/app/settings')}
               />
 
               {/* 5. Streak Card */}
@@ -389,7 +391,6 @@ const OverviewPage: React.FC = () => {
                 onMenuClick={handleLeaderboardMenu}
               />
             </div>
-
           </div>
         </div>
       </div>

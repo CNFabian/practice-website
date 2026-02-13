@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { OnestFont } from '../../../assets';
 import AccountView from './AccountView';
-import ProfileView from './ProfileView';
-import AppearanceView from './AppearanceView';
-import NotificationView from './NotificationView';
 import { logoutUser } from '../../../services/authAPI';
 import { logout } from '../../../store/slices/authSlice';
+import { BetaTooltip } from '../../../components';
 
 type TabType = 'Account' | 'Profile' | 'Appearance' | 'Notifications';
 
@@ -24,16 +22,8 @@ const SettingsPage: React.FC = () => {
     }
   }, []);
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const initialTab = (searchParams.get('tab') as TabType) || 'Account';
-
-  const [activeTab, setActiveTab] = useState<TabType>(
-    ['Account', 'Profile', 'Appearance', 'Notifications'].includes(initialTab)
-      ? initialTab
-      : 'Account'
-  );
-
   const tabs: TabType[] = ['Account', 'Profile', 'Appearance', 'Notifications'];
+  const betaTabs: TabType[] = ['Profile', 'Appearance', 'Notifications'];
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -43,24 +33,8 @@ const SettingsPage: React.FC = () => {
       navigate('/auth/login');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Even if backend logout fails, clear local state and redirect
       dispatch(logout());
       navigate('/auth/login');
-    }
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'Account':
-        return <AccountView />;
-      case 'Profile':
-        return <ProfileView />;
-      case 'Appearance':
-        return <AppearanceView />;
-      case 'Notifications':
-        return <NotificationView />;
-      default:
-        return <AccountView />;
     }
   };
 
@@ -94,29 +68,41 @@ const SettingsPage: React.FC = () => {
           {/* Tab Navigation */}
           <div className="mb-6">
             <div className="flex space-x-1 p-1 rounded-lg w-fit">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-tab-active text-logo-blue shadow-sm'
-                      : 'text-text-grey hover:text-text-blue-black'
-                  }`}
-                >
-                  <OnestFont
-                    weight={activeTab === tab ? 700 : 500}
-                    lineHeight="relaxed"
+              {tabs.map((tab) => {
+                const isBeta = betaTabs.includes(tab);
+
+                if (isBeta) {
+                  return (
+                    <BetaTooltip key={tab} position="bottom">
+                      <div
+                        className="px-4 py-2 rounded-md text-sm font-medium text-text-grey hover:text-text-blue-black transition-colors cursor-pointer"
+                      >
+                        <OnestFont weight={500} lineHeight="relaxed">
+                          {tab}
+                        </OnestFont>
+                      </div>
+                    </BetaTooltip>
+                  );
+                }
+
+                return (
+                  <div
+                    key={tab}
+                    className="px-4 py-2 rounded-md text-sm font-medium bg-tab-active text-logo-blue shadow-sm"
                   >
-                    {tab}
-                  </OnestFont>
-                </button>
-              ))}
+                    <OnestFont weight={700} lineHeight="relaxed">
+                      {tab}
+                    </OnestFont>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="transition-all duration-200">{renderTabContent()}</div>
+          {/* Tab Content - Always show Account */}
+          <div className="transition-all duration-200">
+            <AccountView />
+          </div>
         </div>
       </div>
     </div>

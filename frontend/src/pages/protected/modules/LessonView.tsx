@@ -378,34 +378,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     module?.backendId || ''
   );
 
-  const launchGrowYourNest = useCallback(() => {
-    if (!gynLessonData || !lesson.backendId) {
-      console.warn('🌳 GYN data not available, skipping launch');
-      return;
-    }
-
-    const moduleNumber = module.id || 1;
-    const initData: GYNMinigameInitData = buildLessonModeInitData(
-      lesson.backendId,
-      typeof moduleNumber === 'number' ? moduleNumber : 1,
-      gynLessonData
-    );
-
-    // Launch GYN minigame via Phaser — use scene.launch (parallel) not scene.start (replace)
-    const phaserGame = gameManager.getGame();
-    if (phaserGame) {
-      const houseScene = phaserGame.scene.getScene('HouseScene');
-      if (houseScene) {
-        // Stop any existing GYN scene first to allow re-launch with fresh data
-        if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
-          phaserGame.scene.stop('GrowYourNestMinigame');
-        }
-        houseScene.scene.pause();
-        houseScene.scene.launch('GrowYourNestMinigame', initData);
-      }
-    }
-  }, [gynLessonData, lesson.backendId, module.id]);
-
   // Milestone-based progress tracking — fires at 25%, 50%, 75%, 90% instead of every second
   const checkAndTrackMilestones = useCallback((currentTime: number, duration: number) => {
     if (!isValidBackendId || !lesson.backendId || duration <= 0) return;

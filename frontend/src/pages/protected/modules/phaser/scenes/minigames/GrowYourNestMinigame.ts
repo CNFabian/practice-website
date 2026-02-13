@@ -30,7 +30,6 @@ import {
   updateNextButton,
   showCompletion,
   showFeedbackBanner,
-  clearFeedbackBanner,
 } from './grow-your-nest/GYNRightPanel';
 import { BaseScene } from '../BaseScene';
 
@@ -399,46 +398,6 @@ export default class GrowYourNestMinigame extends BaseScene {
   }
 
   // ─── Answer visual feedback (uses option button data from state) ───
-
-  private showAnswerSelected(): void {
-    const state = this.getState();
-
-    state.optionButtons.forEach((btn) => {
-      const bg = btn.getData('bg') as Phaser.GameObjects.Graphics;
-      const letter = btn.getData('letter') as string;
-      const lp = btn.getData('leftPadding') as number;
-      const bw = btn.getData('buttonWidth') as number;
-      const bh = btn.getData('buttonHeight') as number;
-      const cr = btn.getData('cornerRadius') as number;
-
-      bg.clear();
-
-      if (letter === this.selectedAnswer) {
-        bg.fillStyle(COLORS.ELEGANT_BLUE, 0.2);
-        bg.lineStyle(2, COLORS.LOGO_BLUE);
-        bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
-        bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
-      } else {
-        bg.fillStyle(COLORS.TEXT_WHITE, 1);
-        bg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON);
-        bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
-        bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
-      }
-
-      // In lesson mode, keep options interactive so user can re-select
-      if (this.gameMode !== 'lesson') {
-        const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
-        if (hitArea) hitArea.disableInteractive();
-      }
-    });
-
-    // Update the selectedAnswer on each button's stored state so hover handlers work
-    state.optionButtons.forEach((btn) => {
-      btn.setData('currentSelectedAnswer', this.selectedAnswer);
-    });
-
-    updateNextButton(state, true);
-  }
 
   private showAnswerFeedback(isCorrect: boolean): void {
     const state = this.getState();

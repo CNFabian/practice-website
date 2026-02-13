@@ -1,6 +1,7 @@
 import React from "react";
 import { OnestFont } from "../../../../assets";
 import { Icons } from "../images";
+import { BetaTooltip } from "../../../../components";
 
 interface HeroModuleCardProps {
   moduleTitle: string;
@@ -21,7 +22,6 @@ const HeroModuleCard: React.FC<HeroModuleCardProps> = ({
   progressPercentage,
   estimatedMinutesRemaining,
   thumbnailUrl,
-  onContinue,
 }) => {
   return (
     <div className="bg-card-gradient rounded-2xl overflow-hidden">
@@ -60,6 +60,7 @@ const HeroModuleCard: React.FC<HeroModuleCardProps> = ({
                   </OnestFont>
                 </span>
               )}
+
               {/* Coin Reward */}
               <span
                 className="text-text-blue-black px-4 py-1 rounded-full text-xs flex items-center gap-1"
@@ -97,26 +98,40 @@ const HeroModuleCard: React.FC<HeroModuleCardProps> = ({
               />
             </div>
           </div>
+
           {/* Time + Percentage */}
           <div className="flex items-center justify-between mt-1">
-            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-xs italic">
+            <OnestFont
+              weight={300}
+              lineHeight="relaxed"
+              className="text-text-grey text-xs italic"
+            >
               only {estimatedMinutesRemaining} minutes to go
             </OnestFont>
-            <OnestFont weight={700} lineHeight="relaxed" className="text-text-blue-black text-sm">
+            <OnestFont
+              weight={700}
+              lineHeight="relaxed"
+              className="text-text-blue-black text-sm"
+            >
               {progressPercentage}%
             </OnestFont>
           </div>
         </div>
 
-        {/* Continue Button */}
-        <button
-          onClick={onContinue}
-          className="w-full bg-elegant-blue text-pure-white py-3.5 rounded-xl hover:opacity-90 transition-opacity"
-        >
-          <OnestFont weight={700} lineHeight="relaxed" className="text-sm tracking-widest">
-            CONTINUE
-          </OnestFont>
-        </button>
+        {/* Continue Button - wrapped with BetaTooltip */}
+        <BetaTooltip position="top" className="w-full">
+          <button
+            className="w-full bg-elegant-blue text-pure-white py-3.5 rounded-xl hover:opacity-90 transition-opacity cursor-default opacity-80"
+          >
+            <OnestFont
+              weight={700}
+              lineHeight="relaxed"
+              className="text-sm tracking-widest"
+            >
+              CONTINUE
+            </OnestFont>
+          </button>
+        </BetaTooltip>
       </div>
     </div>
   );

@@ -13,7 +13,6 @@ import LoadingSpinner from './components/common/LoadingSpinner'
 import LoginPage from './pages/public/LoginPage'
 import SignupPage from './pages/public/SignupPage'
 import OnboardingPage from './components/protected/onboarding/OnBoardingPage'
-
 import {
   OverviewPage,
   ModulesPage,
@@ -43,7 +42,6 @@ function App() {
     const initAuth = async () => {
       try {
         dispatch(setLoading(true))
-
         if (!isAuthenticated()) {
           dispatch(logout())
           setAuthInitialized(true)
@@ -66,7 +64,6 @@ function App() {
         dispatch(setLoading(false))
       }
     }
-
     initAuth()
   }, [dispatch])
 
@@ -75,6 +72,7 @@ function App() {
   // ═══════════════════════════════════════════════════════════
   const recheckOnboarding = useCallback(async () => {
     if (!reduxIsAuthenticated || !authInitialized) return
+
     try {
       const isComplete = await checkOnboardingStatus()
       console.log('🔍 Onboarding status check:', isComplete ? 'Complete' : 'Incomplete')
@@ -102,7 +100,6 @@ function App() {
       console.log('✅ App: Received onboarding-completed event, updating state')
       setNeedsOnboarding(false)
     }
-
     window.addEventListener('onboarding-completed', handleOnboardingCompleted)
     return () => {
       window.removeEventListener('onboarding-completed', handleOnboardingCompleted)
@@ -125,35 +122,43 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/auth/*" element={
-        reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
-      }>
+      <Route
+        path="/auth/*"
+        element={
+          reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
+        }>
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Route>
 
-      <Route path="/onboarding" element={
-        <ProtectedRoute>
-          <OnboardingPage />
-        </ProtectedRoute>
-      } />
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/app/*" element={
-        reduxIsAuthenticated ? (
-          needsOnboarding === true ? (
-            <Navigate to="/onboarding" replace />
-          ) : needsOnboarding === false ? (
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
+      <Route
+        path="/app/*"
+        element={
+          reduxIsAuthenticated ? (
+            needsOnboarding === true ? (
+              <Navigate to="/onboarding" replace />
+            ) : needsOnboarding === false ? (
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            ) : (
+              <LoadingSpinner minDisplayTime={500} />
+            )
           ) : (
-            <LoadingSpinner minDisplayTime={500} />
+            <Navigate to="/splash" replace />
           )
-        ) : (
-          <Navigate to="/splash" replace />
-        )
-      } >
+        }
+      >
         <Route index element={<ModulesPage />} />
         <Route path="overview" element={<OverviewPage />} />
         <Route path="materials" element={<MaterialsPage />} />
@@ -162,18 +167,22 @@ function App() {
         <Route path="help" element={<HelpPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="admin/*" element={
-          <AdminRoute>
-            <AdminDashboardPage />
-          </AdminRoute>
-        } />
+        <Route
+          path="admin/*"
+          element={
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
+          }
+        />
       </Route>
 
-      <Route path="/" element={
-        reduxIsAuthenticated
-          ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner minDisplayTime={500} />)
-          : <Navigate to="/auth/login" replace />
-      } />
+      <Route
+        path="/"
+        element={
+          reduxIsAuthenticated ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner minDisplayTime={500} />) : <Navigate to="/auth/login" replace />
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -1,6 +1,7 @@
 import React from "react";
 import { OnestFont } from "../../../../assets";
 import { Icons } from "../images";
+import { BetaTooltip } from "../../../../components";
 
 interface ModuleOverviewCardProps {
   orderNumber: number;
@@ -25,7 +26,6 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
   tags,
   thumbnailUrl,
   status,
-  onAction,
 }) => {
   const getButtonText = () => {
     switch (status) {
@@ -45,15 +45,15 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
   const getButtonStyles = () => {
     switch (status) {
       case "completed":
-        return "bg-status-green text-pure-white hover:opacity-90";
+        return "bg-status-green text-pure-white";
       case "in-progress":
-        return "bg-logo-blue text-pure-white hover:opacity-90";
+        return "bg-logo-blue text-pure-white";
       case "not-started":
-        return "bg-logo-blue text-pure-white hover:opacity-90";
+        return "bg-logo-blue text-pure-white";
       case "locked":
         return "bg-unavailable-button text-text-grey cursor-not-allowed";
       default:
-        return "bg-logo-blue text-pure-white hover:opacity-90";
+        return "bg-logo-blue text-pure-white";
     }
   };
 
@@ -192,6 +192,7 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
                 </OnestFont>
               </span>
             ))}
+
             {/* Coin Reward - matches HeroModuleCard style */}
             <span
               className="text-text-blue-black px-4 py-1 rounded-full text-xs flex items-center gap-1"
@@ -204,15 +205,27 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
             </span>
           </div>
 
-          <button
-            className={`rounded-full px-5 py-2 transition-opacity flex-shrink-0 ${getButtonStyles()}`}
-            onClick={onAction}
-            disabled={status === "locked"}
-          >
-            <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-              {getButtonText()}
-            </OnestFont>
-          </button>
+          {/* Action Button - wrapped with BetaTooltip (except locked) */}
+          {status === "locked" ? (
+            <button
+              className={`rounded-full px-5 py-2 transition-opacity flex-shrink-0 ${getButtonStyles()}`}
+              disabled
+            >
+              <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                {getButtonText()}
+              </OnestFont>
+            </button>
+          ) : (
+            <BetaTooltip position="top">
+              <button
+                className={`rounded-full px-5 py-2 flex-shrink-0 cursor-default opacity-80 ${getButtonStyles()}`}
+              >
+                <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                  {getButtonText()}
+                </OnestFont>
+              </button>
+            </BetaTooltip>
+          )}
         </div>
       </div>
 

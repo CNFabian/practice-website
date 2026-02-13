@@ -177,11 +177,11 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
       // ═══════════════════════════════════════════════════════════
       window.dispatchEvent(new Event('onboarding-completed'));
 
-      // Close or navigate
+     // Close or navigate
       if (onClose) {
         onClose();
       } else {
-        nav('/app', { replace: true });
+        nav('/app', { replace: true, state: { fromOnboarding: true } });
       }
 
     } catch (err) {
