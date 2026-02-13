@@ -38,6 +38,8 @@ import {
   GrowYourNestBackground,
   WateringCanStill,
   WateringCanWatering,
+  FertilizerStill,
+  FertilizerPouring,
   TreeShadow
 } from '../../../../../assets';
 
@@ -157,6 +159,8 @@ export default class PreloaderScene extends Phaser.Scene {
     //Minigame Assets
     this.load.image(ASSET_KEYS.WATERING_CAN_STILL, WateringCanStill);
     this.load.image(ASSET_KEYS.WATERING_CAN_POURING, WateringCanWatering);
+    this.load.image(ASSET_KEYS.FERTILIZER_STILL, FertilizerStill);
+    this.load.image(ASSET_KEYS.FERTILIZER_POURING, FertilizerPouring);
   }
 
   create(): void {

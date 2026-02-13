@@ -49,6 +49,8 @@ export const ASSET_KEYS = {
   // Minigame Assets
   WATERING_CAN_STILL: 'watering_can_still',
   WATERING_CAN_POURING: 'watering_can_pouring',
+  FERTILIZER_STILL: 'fertilizer_still',
+  FERTILIZER_POURING: 'fertilizer_pouring',
 } as const;
 
 // Type for asset keys

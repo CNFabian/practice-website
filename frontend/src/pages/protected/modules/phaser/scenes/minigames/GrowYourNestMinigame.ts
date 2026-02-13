@@ -22,6 +22,7 @@ import {
   createLeftPanel,
   updatePlantGrowth,
   playWateringAnimation,
+  playFertilizerAnimation
 } from './grow-your-nest/GYNLeftPanel';
 import {
   createRightPanel,
@@ -53,6 +54,7 @@ export default class GrowYourNestMinigame extends BaseScene {
   private treeState: TreeState | null = null;
   private lessonAnswers: LessonAnswerSubmission[] = [];
   private isSubmitting: boolean = false;
+  private pendingFertilizer: boolean = false;
   private lastServerResponse: TreeStateWithTransition | null = null;
 
   // ─── UI elements ───
@@ -74,6 +76,8 @@ export default class GrowYourNestMinigame extends BaseScene {
   private floatingTween?: Phaser.Tweens.Tween;
   private wateringCanImage?: Phaser.GameObjects.Image;
   private isWateringAnimationPlaying: boolean = false;
+  private fertilizerImage?: Phaser.GameObjects.Image;
+  private isFertilizerAnimationPlaying: boolean = false;
   private feedbackBanner?: Phaser.GameObjects.Container;
 
   constructor() {
@@ -101,6 +105,7 @@ export default class GrowYourNestMinigame extends BaseScene {
       showingStartScreen: this.showingStartScreen,
       moduleNumber: this.moduleNumber,
       isWateringAnimationPlaying: this.isWateringAnimationPlaying,
+      isFertilizerAnimationPlaying: this.isFertilizerAnimationPlaying,
       leftPanel: this.leftPanel,
       rightPanel: this.rightPanel,
       questionText: this.questionText,
@@ -116,6 +121,7 @@ export default class GrowYourNestMinigame extends BaseScene {
       leftPanelBackground: this.leftPanelBackground,
       floatingTween: this.floatingTween,
       wateringCanImage: this.wateringCanImage,
+      fertilizerImage: this.fertilizerImage,
       feedbackBanner: this.feedbackBanner,
     };
   }
@@ -138,6 +144,8 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.floatingTween = s.floatingTween;
     this.wateringCanImage = s.wateringCanImage;
     this.isWateringAnimationPlaying = s.isWateringAnimationPlaying;
+    this.fertilizerImage = s.fertilizerImage;
+    this.isFertilizerAnimationPlaying = s.isFertilizerAnimationPlaying;
     this.showingStartScreen = s.showingStartScreen;
     this.selectedAnswer = s.selectedAnswer;
     this.feedbackBanner = s.feedbackBanner;
@@ -286,9 +294,11 @@ export default class GrowYourNestMinigame extends BaseScene {
               // Update treeState locally so progress bar reflects changes per-question
               // Water = 10 pts per correct; Fertilizer = 20 bonus pts at 3 consecutive
               const waterPoints = 10;
-              const fertilizerBonus = this.consecutiveCorrect > 0 && this.consecutiveCorrect % 3 === 0 ? 20 : 0;
+              const isFertilizerStreak = this.consecutiveCorrect > 0 && this.consecutiveCorrect % 3 === 0;
+              const fertilizerBonus = isFertilizerStreak ? 20 : 0;
               const pointsEarned = waterPoints + fertilizerBonus;
               if (fertilizerBonus > 0) this.fertilizerBonusCount++;
+              this.pendingFertilizer = isFertilizerStreak;
               this.totalGrowthPointsEarned += pointsEarned;
 
               if (this.treeState) {
@@ -323,6 +333,7 @@ export default class GrowYourNestMinigame extends BaseScene {
             .then((r) => {
               this.isSubmitting = false;
               this.lastServerResponse = r.tree_state;
+              this.pendingFertilizer = r.fertilizer_bonus;              
               if (r.is_correct) {
                 this.score++;
                 this.consecutiveCorrect++;
@@ -481,10 +492,26 @@ export default class GrowYourNestMinigame extends BaseScene {
         this.isWateringAnimationPlaying = false;
       });
       this.syncState(state);
+
+      // Check for fertilizer bonus (3 consecutive correct)
+      const shouldPlayFertilizer = this.pendingFertilizer;
+
+      if (shouldPlayFertilizer) {
+        // Delay fertilizer to play after watering starts (overlap slightly)
+        this.time.delayedCall(800, () => {
+          const fertState = this.getState();
+          playFertilizerAnimation(this, fertState, () => {
+            this.isFertilizerAnimationPlaying = false;
+          });
+          this.syncState(fertState);
+        });
+        this.pendingFertilizer = false;
+      }
     }
 
     updateNextButton(state, true);
   }
+
 
   // ═══════════════════════════════════════════════════════════════
   // COMPLETION
@@ -586,6 +613,12 @@ export default class GrowYourNestMinigame extends BaseScene {
       this.wateringCanImage = undefined;
     }
     this.isWateringAnimationPlaying = false;
+
+    if (this.fertilizerImage) {
+      this.fertilizerImage.destroy();
+      this.fertilizerImage = undefined;
+    }
+    this.isFertilizerAnimationPlaying = false;
 
     if (this.feedbackBanner) {
       this.feedbackBanner.destroy();

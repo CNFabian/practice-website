@@ -480,10 +480,25 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [quizData]);
 
-  const currentLessonIndex = useMemo(() => 
-    module.lessons.findIndex(l => l.id === lesson.id), 
-    [module.lessons, lesson.id]
-  );
+  const currentLessonIndex = useMemo(() => {
+    if (!module.lessons || module.lessons.length === 0) {
+      return -1;
+    }
+    
+    // Primary: match by backendId (most reliable, always a UUID)
+    if (lesson.backendId) {
+      const idx = module.lessons.findIndex(l => l.backendId === lesson.backendId);
+      if (idx !== -1) return idx;
+    }
+    
+    // Fallback: match by frontend id (strict then loose)
+    let idx = module.lessons.findIndex(l => l.id === lesson.id);
+    if (idx === -1) {
+      idx = module.lessons.findIndex(l => String(l.id) === String(lesson.id));
+    }
+    
+    return idx;
+  }, [module.lessons, lesson.id, lesson.backendId]);
 
   const nextLesson = useMemo(() => 
     currentLessonIndex < module.lessons.length - 1 
@@ -787,66 +802,60 @@ const LessonView: React.FC<LessonViewProps> = ({
   }, [nextLesson, onNextLesson, module.backendId, onBack]);
 
   // ═══════════════════════════════════════════════════════════
-  // COMPLETE LESSON BUTTON (top-right "Next Lesson" / "Finish")
-  // Only marks lesson complete on backend. No navigation, no modal.
+  // NEXT LESSON BUTTON (top-right "Next Lesson" / "Finish")
+  // Navigation only — does NOT mark lesson as complete.
+  // Lesson completion is handled by video completion events.
+  // Checks GYN eligibility before navigating if lesson is already complete.
   // ═══════════════════════════════════════════════════════════
-  const handleCompleteLesson = useCallback(() => {
+  const handleNavigateNext = useCallback(async () => {
     if (flushProgress) {
       flushProgress();
     }
     
-    console.log('🔄 Complete lesson called');
+    console.log('➡️ Next lesson / finish button pressed');
     
-    if (isValidBackendId && module?.backendId) {
-      completeLessonMutation({ lessonId: lesson.backendId! }, {
-        onSuccess: () => {
-          console.log('✅ Lesson completed successfully on backend');
-        },
-        onError: (error: Error) => {
-          console.error('❌ Failed to complete lesson on backend:', error);
-        }
-      });
-    } else {
-      console.warn('⚠️ Skipping backend completion - invalid backend IDs');
+    // Check GYN eligibility before navigating (only if lesson was already completed)
+    if (videoCompleted || backendLessonData?.is_completed) {
+      const showGYN = await shouldShowGYNModal();
+      if (showGYN) {
+        pendingNavigationRef.current = nextLesson ? executeNavigation : onBack;
+        setShowGYNPromptModal(true);
+        return;
+      }
     }
-  }, [isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, flushProgress]);
+    
+    // Navigate: next lesson if available, otherwise back to house
+    if (nextLesson) {
+      executeNavigation();
+    } else {
+      onBack();
+    }
+  }, [flushProgress, videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, nextLesson, executeNavigation, onBack]);
 
   // ═══════════════════════════════════════════════════════════
   // NEXT LESSON BUTTON (bottom bar)
-  // Marks complete, then checks GYN eligibility before navigating.
-  // Modal shown ONLY if server says lesson complete + GYN not played.
+  // Navigation only — does NOT mark lesson as complete.
+  // Checks GYN eligibility before navigating if lesson is already complete.
   // ═══════════════════════════════════════════════════════════
-  const handleNextLesson = useCallback(() => {
+  const handleNextLesson = useCallback(async () => {
     if (!nextLesson) return;
     
     if (flushProgress) {
       flushProgress();
     }
     
-    if (isValidBackendId && module?.backendId) {
-      completeLessonMutation({ lessonId: lesson.backendId! }, {
-        onSuccess: async () => {
-          console.log('✅ Lesson completed on backend before navigation');
-          
-          // Check GYN eligibility with fresh server data
-          const showGYN = await shouldShowGYNModal();
-          if (showGYN) {
-            pendingNavigationRef.current = executeNavigation;
-            setShowGYNPromptModal(true);
-            return;
-          }
-          
-          executeNavigation();
-        },
-        onError: (error: Error) => {
-          console.error('❌ Failed to complete lesson:', error);
-          executeNavigation();
-        }
-      });
-    } else {
-      executeNavigation();
+    // Check GYN eligibility before navigating (only if lesson was already completed)
+    if (videoCompleted || backendLessonData?.is_completed) {
+      const showGYN = await shouldShowGYNModal();
+      if (showGYN) {
+        pendingNavigationRef.current = executeNavigation;
+        setShowGYNPromptModal(true);
+        return;
+      }
     }
-  }, [nextLesson, flushProgress, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, shouldShowGYNModal, executeNavigation]);
+    
+    executeNavigation();
+  }, [nextLesson, flushProgress, videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, executeNavigation]);
 
   // ═══════════════════════════════════════════════════════════
   // GYN MODAL HANDLERS
@@ -1163,7 +1172,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               
               <div className="flex flex-col items-end gap-2 ml-4">
                 <button 
-                  onClick={handleCompleteLesson}
+                  onClick={handleNavigateNext}
                   className="px-6 py-2 bg-logo-blue text-white rounded-full hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoadingLesson}
                 >

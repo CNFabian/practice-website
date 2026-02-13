@@ -11,6 +11,7 @@ export {
   createLeftPanel,
   updatePlantGrowth,
   playWateringAnimation,
+  playFertilizerAnimation
 } from './GYNLeftPanel';
 
 export {

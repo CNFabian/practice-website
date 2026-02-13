@@ -139,6 +139,8 @@ export {  default as LessonViewBackground } from './images/backgrounds/lessonVie
 export { default as GrowYourNestBackground } from './images/phaser/minigames/GrowYourNestTree_background.png'
 export { default as WateringCanStill } from './images/phaser/minigames/wateringCan_Still.png'
 export { default as WateringCanWatering } from './images/phaser/minigames/wateringCan_watering.png'
+export { default as FertilizerStill } from './images/phaser/minigames/fertilizer_Still.png'
+export { default as FertilizerPouring } from './images/phaser/minigames/fertilizer_pouring.png'
 
 //Profile Icons
 export { default as SettingsProfileIcon} from './images/icons/profile/settings_icon.png'

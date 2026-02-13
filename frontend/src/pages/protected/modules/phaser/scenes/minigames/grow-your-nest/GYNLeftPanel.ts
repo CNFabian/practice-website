@@ -452,3 +452,164 @@ function showWaterText(
     },
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// FERTILIZER ANIMATION
+// ═══════════════════════════════════════════════════════════════
+
+export function playFertilizerAnimation(
+  scene: Phaser.Scene,
+  state: GYNSceneState,
+  onComplete?: () => void
+): void {
+  if (state.isFertilizerAnimationPlaying) return;
+
+  if (!scene.textures.exists(ASSET_KEYS.FERTILIZER_STILL)) {
+    console.warn('⚠️ Fertilizer animation skipped: FERTILIZER_STILL texture not loaded');
+    if (onComplete) onComplete();
+    return;
+  }
+  if (!scene.textures.exists(ASSET_KEYS.FERTILIZER_POURING)) {
+    console.warn('⚠️ Fertilizer animation skipped: FERTILIZER_POURING texture not loaded');
+    if (onComplete) onComplete();
+    return;
+  }
+
+  console.log('🌿 Playing fertilizer animation!');
+  state.isFertilizerAnimationPlaying = true;
+
+  const panelWidth = state.leftPanel.getData('panelWidth') as number;
+  const panelHeight = state.leftPanel.getData('panelHeight') as number;
+
+  // Left side of the tree (mirrored from watering can which is on the right)
+  const startX = panelWidth * 0.3;
+  const startY = panelHeight * 0.65;
+  const pouringX = panelWidth * 0.35;
+  const pouringY = panelHeight * 0.7;
+
+  state.fertilizerImage = scene.add.image(startX, startY, ASSET_KEYS.FERTILIZER_STILL);
+  state.fertilizerImage.setScale(0.25);
+  state.fertilizerImage.setAlpha(0);
+  state.leftPanel.add(state.fertilizerImage);
+
+  // Step 1: Fade in
+  scene.tweens.add({
+    targets: state.fertilizerImage,
+    alpha: 1,
+    duration: 300,
+    ease: 'Power2',
+    onComplete: () => {
+      if (!state.fertilizerImage) return;
+
+      // Step 2: Move to pouring position
+      scene.tweens.add({
+        targets: state.fertilizerImage,
+        x: pouringX,
+        y: pouringY,
+        duration: 400,
+        ease: 'Power2',
+        onComplete: () => {
+          if (!state.fertilizerImage) return;
+
+          // Step 3: Switch to pouring frame and tilt (opposite direction)
+          state.fertilizerImage.setTexture(ASSET_KEYS.FERTILIZER_POURING);
+          state.fertilizerImage.setAngle(-15);
+
+          // Show "Fertilizer +20" text
+          showFertilizerText(scene, state, pouringX, pouringY, panelWidth);
+
+          // Step 4: Hold pouring
+          scene.time.delayedCall(1200, () => {
+            if (!state.fertilizerImage) return;
+
+            // Step 5: Straighten
+            state.fertilizerImage.setTexture(ASSET_KEYS.FERTILIZER_STILL);
+            state.fertilizerImage.setAngle(0);
+
+            // Step 6: Return
+            scene.tweens.add({
+              targets: state.fertilizerImage,
+              x: startX,
+              y: startY,
+              duration: 400,
+              ease: 'Power2',
+              onComplete: () => {
+                if (!state.fertilizerImage) return;
+
+                // Step 7: Fade out
+                scene.tweens.add({
+                  targets: state.fertilizerImage,
+                  alpha: 0,
+                  duration: 300,
+                  ease: 'Power2',
+                  onComplete: () => {
+                    if (state.fertilizerImage) {
+                      state.fertilizerImage.destroy();
+                      state.fertilizerImage = undefined;
+                    }
+                    state.isFertilizerAnimationPlaying = false;
+                    console.log('✅ Fertilizer animation complete!');
+                    if (onComplete) {
+                      onComplete();
+                    }
+                  },
+                });
+              },
+            });
+          });
+        },
+      });
+    },
+  });
+}
+
+function showFertilizerText(
+  scene: Phaser.Scene,
+  state: GYNSceneState,
+  x: number,
+  y: number,
+  panelWidth: number
+): void {
+  const fontSize = Math.round(panelWidth * 0.08);
+  const fertilizerText = scene.add.text(
+    x + 175,
+    y - 100,
+    'Fertilizer +20',
+    createTextStyle('BODY_BOLD', `#${COLORS.STATUS_GREEN.toString(16).padStart(6, '0')}`, {
+      fontSize: `${fontSize}px`,
+    })
+  );
+  fertilizerText.setOrigin(0.5, 0.5);
+  fertilizerText.setAlpha(0);
+  fertilizerText.setScale(0.5);
+  state.leftPanel.add(fertilizerText);
+
+  scene.tweens.add({
+    targets: fertilizerText,
+    alpha: 1,
+    scale: 1.2,
+    duration: 200,
+    ease: 'Back.easeOut',
+    onComplete: () => {
+      scene.tweens.add({
+        targets: fertilizerText,
+        scale: 1,
+        duration: 150,
+        ease: 'Power2',
+        onComplete: () => {
+          scene.tweens.add({
+            targets: fertilizerText,
+            y: y - 130,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2',
+            delay: 200,
+            onComplete: () => {
+              fertilizerText.destroy();
+            },
+          });
+        },
+      });
+    },
+  });
+}

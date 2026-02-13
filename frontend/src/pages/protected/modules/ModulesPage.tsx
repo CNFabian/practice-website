@@ -504,7 +504,7 @@ const ModulesPage: React.FC = () => {
     console.log('🔍 Found module:', module ? 'YES' : 'NO');
     
     return module;
-  }, [navState.moduleId, navState.moduleBackendId, isLoadingModules, modulesData]);
+  }, [navState.moduleId, navState.moduleBackendId, isLoadingModules, modulesData, lessonsData]);
 
   const currentLesson = useMemo(() => {
     console.log('🔍 Computing currentLesson:', {
@@ -628,6 +628,7 @@ const ModulesPage: React.FC = () => {
               lesson={currentLesson}
               module={currentModule}
               onBack={handleBackToHouse}
+              onNextLesson={handleLessonSelect}
               addProgressItem={addProgressItem}
               flushProgress={flushProgress}
             />

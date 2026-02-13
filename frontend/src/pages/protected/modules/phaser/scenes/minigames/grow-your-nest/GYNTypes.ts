@@ -45,6 +45,8 @@ export interface GYNSceneState {
   showingStartScreen: boolean;
   moduleNumber: number;
   isWateringAnimationPlaying: boolean;
+  isFertilizerAnimationPlaying: boolean;
+
 
   // UI element references
   leftPanel: Phaser.GameObjects.Container;
@@ -62,6 +64,7 @@ export interface GYNSceneState {
   leftPanelBackground?: Phaser.GameObjects.Image;
   floatingTween?: Phaser.Tweens.Tween;
   wateringCanImage?: Phaser.GameObjects.Image;
+  fertilizerImage?: Phaser.GameObjects.Image;
   feedbackBanner?: Phaser.GameObjects.Container;
 }
 
