@@ -1,4 +1,15 @@
 import { fetchWithAuth } from './authAPI';
+import {
+  isMockModuleId,
+  isMockLessonId,
+  isMockQuestionId,
+  getMockFreeRoamQuestions,
+  getMockFreeRoamState,
+  getMockGYNValidateAnswer,
+  getMockGYNLessonSubmit,
+  getMockGYNFreeRoamAnswer,
+  getMockQuizForLesson,
+} from './mockLearningData';
 import type {
   GrowYourNestQuestion,
   ValidateAnswerRequest,
@@ -25,6 +36,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const validateAnswer = async (
   data: ValidateAnswerRequest
 ): Promise<ValidateAnswerResponse> => {
+  // Check if the question_id is from mock data
+  const questionIdStr = String(data.question_id);
+  if (isMockQuestionId(questionIdStr)) {
+    console.log(`📋 Using mock GYN validate answer for mock question: ${questionIdStr}`);
+    return getMockGYNValidateAnswer(
+      questionIdStr,
+      String(data.answer_id)
+    ) as ValidateAnswerResponse;
+  }
+
   try {
     console.log(`🌳 Validating answer: question=${data.question_id}, answer=${data.answer_id}`);
 
@@ -60,12 +81,22 @@ export const validateAnswer = async (
  * Get 3 questions for lesson mode (one-time play after completing lesson video)
  */
 export const getLessonQuestions = async (lessonId: string): Promise<LessonQuestionsResponse> => {
-  try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ GYN Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return { questions: [], tree_state: getDefaultTreeState() };
-    }
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ GYN Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return { questions: [], tree_state: getDefaultTreeState() };
+  }
 
+  // Return mock data for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Using mock GYN lesson questions for mock lesson: ${lessonId}`);
+    const quizData = getMockQuizForLesson(lessonId);
+    return {
+      questions: quizData,
+      tree_state: getDefaultTreeState(),
+    } as LessonQuestionsResponse;
+  }
+
+  try {
     console.log(`🌳 Fetching Grow Your Nest questions for lesson: ${lessonId}`);
 
     const response = await fetchWithAuth(
@@ -96,12 +127,19 @@ export const submitLessonAnswers = async (
   lessonId: string,
   submission: LessonSubmitRequest
 ): Promise<LessonSubmitResponse> => {
-  try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ GYN Submit Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      throw new Error('Frontend ID used instead of UUID');
-    }
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ GYN Submit Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    throw new Error('Frontend ID used instead of UUID');
+  }
 
+  // Return mock data for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Using mock GYN lesson submit for mock lesson: ${lessonId}`);
+    const answers = (submission as any).answers || [];
+    return getMockGYNLessonSubmit(answers) as LessonSubmitResponse;
+  }
+
+  try {
     console.log(`🌳 Submitting Grow Your Nest lesson answers for lesson: ${lessonId}`);
     console.log('📤 Submission data:', JSON.stringify(submission));
 
@@ -143,12 +181,18 @@ export const submitLessonAnswers = async (
  * Get all questions for free roam mode (available after all lessons completed)
  */
 export const getFreeRoamQuestions = async (moduleId: string): Promise<FreeRoamQuestionsResponse> => {
-  try {
-    if (/^\d+$/.test(moduleId)) {
-      console.warn(`⚠️ GYN FreeRoam Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return { questions: [], tree_state: getDefaultTreeState() };
-    }
+  if (/^\d+$/.test(moduleId)) {
+    console.warn(`⚠️ GYN FreeRoam Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return { questions: [], tree_state: getDefaultTreeState() };
+  }
 
+  // Return mock data for mock module IDs
+  if (isMockModuleId(moduleId)) {
+    console.log(`📋 Using mock free roam questions for mock module: ${moduleId}`);
+    return getMockFreeRoamQuestions(moduleId) as FreeRoamQuestionsResponse;
+  }
+
+  try {
     console.log(`🌳 Fetching Grow Your Nest free roam questions for module: ${moduleId}`);
 
     const response = await fetchWithAuth(
@@ -179,12 +223,21 @@ export const submitFreeRoamAnswer = async (
   moduleId: string,
   answerData: FreeRoamAnswerRequest
 ): Promise<FreeRoamAnswerResponse> => {
-  try {
-    if (/^\d+$/.test(moduleId)) {
-      console.warn(`⚠️ GYN FreeRoam Answer Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      throw new Error('Frontend ID used instead of UUID');
-    }
+  if (/^\d+$/.test(moduleId)) {
+    console.warn(`⚠️ GYN FreeRoam Answer Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    throw new Error('Frontend ID used instead of UUID');
+  }
 
+  // Return mock data for mock module IDs
+  if (isMockModuleId(moduleId)) {
+    console.log(`📋 Using mock free roam answer for mock module: ${moduleId}`);
+    return getMockGYNFreeRoamAnswer(
+      String(answerData.question_id),
+      String(answerData.answer_id)
+    ) as FreeRoamAnswerResponse;
+  }
+
+  try {
     console.log(`🌳 Submitting free roam answer for module: ${moduleId}`);
     console.log('📤 Answer data:', JSON.stringify(answerData));
 
@@ -223,12 +276,18 @@ export const submitFreeRoamAnswer = async (
  * Get current tree state for resuming free roam mode
  */
 export const getFreeRoamState = async (moduleId: string): Promise<FreeRoamStateResponse> => {
-  try {
-    if (/^\d+$/.test(moduleId)) {
-      console.warn(`⚠️ GYN FreeRoam State Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return getDefaultTreeState();
-    }
+  if (/^\d+$/.test(moduleId)) {
+    console.warn(`⚠️ GYN FreeRoam State Module ID "${moduleId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return getDefaultTreeState();
+  }
 
+  // Return mock data for mock module IDs
+  if (isMockModuleId(moduleId)) {
+    console.log(`📋 Using mock free roam state for mock module: ${moduleId}`);
+    return getMockFreeRoamState() as FreeRoamStateResponse;
+  }
+
+  try {
     console.log(`🌳 Fetching Grow Your Nest free roam state for module: ${moduleId}`);
 
     const response = await fetchWithAuth(
@@ -317,12 +376,18 @@ export const transformGYNQuestionsForMinigame = (
  * Remove before production launch.
  */
 export const resetLessonGYNDev = async (lessonId: string): Promise<{ success: boolean; message: string }> => {
-  try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ GYN Reset Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping.`);
-      throw new Error('Frontend ID used instead of UUID');
-    }
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ GYN Reset Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping.`);
+    throw new Error('Frontend ID used instead of UUID');
+  }
 
+  // Skip backend call for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Mock: Skipping GYN reset for mock lesson: ${lessonId}`);
+    return { success: true, message: 'Mock reset successful' };
+  }
+
+  try {
     console.log(`🧪 [Dev] Resetting GYN played status for lesson: ${lessonId}`);
 
     const response = await fetchWithAuth(

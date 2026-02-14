@@ -169,13 +169,20 @@ export default class PreloaderScene extends Phaser.Scene {
     } else {
       console.log('✓ PreloaderScene.create: No loading needed');
     }
-    
+
     this.registry.set('assetsLoaded', true);
-    
-    // Wait for fonts loaded by fonts.css to be ready
-    document.fonts.ready.then(() => {
-      console.log('✓ Onest fonts ready from fonts.css');
-      // Start game after fonts are ready
+
+    const fontTimeout = new Promise<string>((resolve) =>
+      setTimeout(() => resolve('timeout'), 500)
+    );
+    const fontReady = document.fonts.ready.then(() => 'fonts-loaded' as string);
+
+    Promise.race([fontReady, fontTimeout]).then((result) => {
+      if (result === 'timeout') {
+        console.log('⚡ PreloaderScene: Font timeout reached — proceeding without waiting');
+      } else {
+        console.log('✓ PreloaderScene: Onest fonts ready from fonts.css');
+      }
       this.scene.stop();
       console.log('✓ PreloaderScene stopped, textures remain in cache');
     });

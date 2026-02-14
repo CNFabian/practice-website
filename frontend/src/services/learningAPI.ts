@@ -3,6 +3,12 @@
 // Re-exports fetchWithAuth for backward compatibility with any remaining consumers
 
 import { fetchWithAuth } from './authAPI';
+import {
+  isMockModuleId,
+  isMockLessonId,
+  getMockLessonsForModule,
+  getMockQuizForLesson,
+} from './mockLearningData';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -55,6 +61,12 @@ export const getModules = async (): Promise<any> => {
 
 // GET /api/learning/modules/{module_id} - Get specific module
 export const getModule = async (moduleId: string): Promise<any> => {
+  // Return null for mock module IDs — module detail not needed for mock flow
+  if (isMockModuleId(moduleId)) {
+    console.log(`📋 Mock: Skipping getModule for mock module: ${moduleId}`);
+    return null;
+  }
+
   try {
     console.log(`Fetching module with ID: ${moduleId}`);
     
@@ -93,6 +105,12 @@ export const getAvailableModules = async (): Promise<any[]> => {
 
 // GET /api/learning/modules/{module_id}/lessons - Get all lessons in a module
 export const getModuleLessons = async (moduleId: string): Promise<any> => {
+  // Return mock data for mock module IDs
+  if (isMockModuleId(moduleId)) {
+    console.log(`📋 Using mock lesson data for mock module: ${moduleId}`);
+    return getMockLessonsForModule(moduleId);
+  }
+
   try {
     console.log(`Fetching lessons for module ID: ${moduleId}`);
     
@@ -115,12 +133,19 @@ export const getModuleLessons = async (moduleId: string): Promise<any> => {
 
 // GET /api/learning/lessons/{lesson_id} - Get specific lesson
 export const getLesson = async (lessonId: string): Promise<any> => {
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return null;
+  }
+
+  // Return mock data for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Using mock lesson data for mock lesson: ${lessonId}`);
+    const mockLessons = getMockLessonsForModule('mock-module-1');
+    return mockLessons.find((l: any) => l.id === lessonId) || null;
+  }
+
   try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return null;
-    }
-    
     console.log(`Fetching lesson with ID: ${lessonId}`);
     
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}`, {
@@ -166,12 +191,18 @@ export const checkOnboardingStatus = async (): Promise<boolean> => {
 
 // POST /api/learning/lessons/{lesson_id}/progress - Update lesson progress
 export const updateLessonProgress = async (lessonId: string, videoProgressSeconds: number): Promise<any> => {
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ Lesson Progress ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return { success: false, message: 'Frontend ID used instead of UUID' };
+  }
+
+  // Skip backend call for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Mock: Skipping progress update for mock lesson: ${lessonId}`);
+    return { success: true, message: 'Mock progress update', data: {} };
+  }
+
   try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ Lesson Progress ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return { success: false, message: 'Frontend ID used instead of UUID' };
-    }
-    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/progress`, {
       method: 'POST',
       body: JSON.stringify({
@@ -202,12 +233,18 @@ export const completeLesson = async (
     contentType?: 'video' | 'transcript' | null;
   }
 ): Promise<any> => {
-  try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ Complete Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return { success: false, message: 'Frontend ID used instead of UUID' };
-    }
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ Complete Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return { success: false, message: 'Frontend ID used instead of UUID' };
+  }
 
+  // Skip backend call for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Mock: Skipping lesson completion for mock lesson: ${lessonId}`);
+    return { success: true, message: 'Mock lesson completed', data: {} };
+  }
+
+  try {
     // Build request body matching backend LessonCompletionRequest schema
     const body: LessonCompletionRequest = {
       lesson_id: lessonId,
@@ -299,6 +336,19 @@ export const trackLessonMilestone = async (
   transcriptProgressPercentage?: number | null,
   timeSpentSeconds: number = 0
 ): Promise<LessonMilestoneResponse> => {
+  // Skip backend call for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Mock: Skipping milestone tracking for mock lesson: ${lessonId}`);
+    return {
+      lesson_id: lessonId,
+      status: 'mock',
+      milestones_reached: [milestone],
+      completion_percentage: `${milestone}`,
+      auto_completed: milestone >= 90,
+      message: 'Mock milestone tracked',
+    };
+  }
+
   const response = await fetchWithAuth(`/api/learning/lessons/${lessonId}/milestone`, {
     method: 'POST',
     body: JSON.stringify({
@@ -324,10 +374,21 @@ export const trackLessonMilestone = async (
 export const batchUpdateProgress = async (
   items: BatchProgressItem[]
 ): Promise<BatchProgressResponse> => {
+  // Filter out mock lesson IDs from batch updates
+  const realItems = items.filter(item => !isMockLessonId(item.lesson_id));
+  if (realItems.length === 0) {
+    console.log(`📋 Mock: All batch items are mock lessons, skipping backend call`);
+    return {
+      success: true,
+      message: 'Mock batch update',
+      data: { results: items.map(i => ({ lesson_id: i.lesson_id, status: 'mock' })), completed_count: 0 },
+    };
+  }
+
   const response = await fetchWithAuth('/api/learning/progress/batch', {
     method: 'POST',
     body: JSON.stringify({
-      items,
+      items: realItems,
     }),
   });
 
@@ -341,12 +402,18 @@ export const batchUpdateProgress = async (
 
 // GET /api/learning/lessons/{lesson_id}/quiz - Get quiz for lesson
 export const getLessonQuiz = async (lessonId: string): Promise<any> => {
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ Lesson Quiz ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return null;
+  }
+
+  // Return mock data for mock lesson IDs
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Using mock quiz data for mock lesson: ${lessonId}`);
+    return getMockQuizForLesson(lessonId);
+  }
+
   try {
-    if (/^\d+$/.test(lessonId)) {
-      console.warn(`⚠️ Lesson Quiz ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
-      return null;
-    }
-    
     const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/quiz`, {
       method: 'GET'
     });

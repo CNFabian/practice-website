@@ -64,6 +64,7 @@ export default class HouseScene extends BaseScene {
   private minigameShutdownHandler?: () => void;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private transitionManager!: SceneTransitionManager;
+  private loadingText?: Phaser.GameObjects.Text;
 
   // Stored original positions for slide-in restoration
   private originalComponentPositions: Map<Phaser.GameObjects.GameObject, number> = new Map();
@@ -129,6 +130,8 @@ export default class HouseScene extends BaseScene {
     this.createBirdWithEntrance();
     this.setupEventListeners();
     this.checkForLessonsUpdate();
+    this.registry.events.on('changedata-moduleLessonsData', this.onLessonsDataChanged, this);
+
   }
 
   shutdown() {
@@ -144,6 +147,7 @@ export default class HouseScene extends BaseScene {
     }
 
     this.cleanupResizeHandler();
+    this.registry.events.off('changedata-moduleLessonsData', this.onLessonsDataChanged, this);
     this.cancelTooltipDestroyTimer();
     this.destroyBird();
     this.destroyHoverTooltip(true);
@@ -200,7 +204,7 @@ export default class HouseScene extends BaseScene {
   private createLoadingPlaceholder(): void {
     const { width, height } = this.scale;
 
-    const loadingText = this.add
+    this.loadingText = this.add
       .text(
         width / 2,
         height / 2,
@@ -210,7 +214,7 @@ export default class HouseScene extends BaseScene {
         })
       )
       .setOrigin(0.5);
-    loadingText.setDepth(10);
+    this.loadingText.setDepth(10);
   }
 
   private createBackButton(): void {
@@ -457,6 +461,34 @@ export default class HouseScene extends BaseScene {
     });
 
     return container;
+  }
+
+  /**
+   * Called when moduleLessonsData is updated in the registry after scene creation.
+   * Rebuilds lesson cards if this module's data has arrived.
+   */
+  private onLessonsDataChanged(_parent: any, _key: string, data: Record<string, any>): void {
+    if (!this.moduleBackendId || !data[this.moduleBackendId]) return;
+    if (this.module && this.module.lessons.length > 0) return;
+
+    console.log('📋 HouseScene: Late-arriving lessons data detected, rebuilding UI');
+    this.module = data[this.moduleBackendId];
+
+    // Destroy loading placeholder
+    if (this.loadingText) {
+      this.loadingText.destroy();
+      this.loadingText = undefined;
+    }
+
+    this.lessonContainers.forEach((container) => container.destroy());
+    this.lessonContainers = [];
+    this.roomHitZones.forEach((zone) => zone.destroy());
+    this.roomHitZones = [];
+
+    if (this.module && this.module.lessons.length > 0) {
+      this.createLessonCards();
+      this.createRoomHitZones();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

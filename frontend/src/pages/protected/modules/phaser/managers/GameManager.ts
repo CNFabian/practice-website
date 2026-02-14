@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { createGameConfig } from '../config/gameConfig';
 import type { Module, Lesson } from '../../../../../types/modules';
 import type { HousePosition, ModuleLessonsData } from '../types';
-import { transformModulesToHouses, transformBackendLessonsToFrontend } from '../utils/DataTransformers';
+import { transformModulesToHouses, transformBackendLessonsToFrontend, generateFrontendId } from '../utils/DataTransformers';
 
 class GameManager {
   private static instance: GameManager;
@@ -59,24 +59,23 @@ class GameManager {
     // If game already exists, reattach to new container
     if (this.game) {
       console.log('=== USING EXISTING PHASER GAME INSTANCE ===');
-      
       const canvas = this.game.canvas;
       if (canvas && canvas.parentElement !== container) {
         console.log('=== REATTACHING CANVAS TO NEW CONTAINER ===');
         container.appendChild(canvas);
       }
-      
+
       // Update the parent reference
       this.game.scale.parent = container;
-      
+
       // Make sure the canvas is visible and properly sized
       if (canvas) {
         canvas.style.display = 'block';
       }
-      
+
       // Trigger a resize to ensure proper scaling
       this.performCanvasResize();
-      
+
       return this.game;
     }
 
@@ -88,15 +87,15 @@ class GameManager {
     this.game.events.once('ready', () => {
       console.log('=== PHASER GAME READY ===');
       this.isPhaserReady = true;
-      
+
       // Set up DPI change monitoring
       this.setupDPIMonitoring();
-      
+
       // Only start PreloaderScene if assets haven't been loaded yet
       if (!this.assetsLoaded && this.game) {
         console.log('=== STARTING PRELOADER SCENE (FIRST TIME) ===');
         this.game.scene.start('PreloaderScene');
-        
+
         // Poll for assets loaded
         const checkInterval = setInterval(() => {
           if (this.game) {
@@ -108,7 +107,7 @@ class GameManager {
             }
           }
         }, 50);
-        
+
         setTimeout(() => clearInterval(checkInterval), 10000);
       } else {
         console.log('=== ASSETS ALREADY LOADED, SKIPPING PRELOADER ===');
@@ -128,7 +127,6 @@ class GameManager {
    */
   updateSidebarOffset(sidebarOffset: number): void {
     if (!this.game || this.currentSidebarOffset === sidebarOffset) return;
-
     console.log(`=== UPDATING SIDEBAR OFFSET: ${this.currentSidebarOffset} → ${sidebarOffset} ===`);
     this.currentSidebarOffset = sidebarOffset;
 
@@ -163,21 +161,20 @@ class GameManager {
     const dpr = window.devicePixelRatio || 1;
     const baseWidth = window.innerWidth - this.currentSidebarOffset;
     const baseHeight = window.innerHeight;
-    
+
     console.log(`=== CANVAS RESIZE: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
-    
+
     // Update canvas element pixel buffer
     canvas.width = baseWidth * dpr;
     canvas.height = baseHeight * dpr;
-    
+
     // Update canvas CSS display size
     canvas.style.width = `${baseWidth}px`;
     canvas.style.height = `${baseHeight}px`;
-    
+
     // Update Phaser internals
     this.game.scale.setZoom(1 / dpr);
     this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
-  
   }
 
   /**
@@ -188,15 +185,13 @@ class GameManager {
 
     const dpr = window.devicePixelRatio || 1;
     this.dpiMediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`);
-    
+
     this.dpiChangeHandler = () => {
       console.log('=== GAME MANAGER: DPI CHANGE DETECTED ===');
-      
       // Immediate resize
       setTimeout(() => {
         this.performCanvasResize();
       }, 50);
-      
       // Follow-up resize after DPI stabilizes
       setTimeout(() => {
         this.performCanvasResize();
@@ -211,7 +206,6 @@ class GameManager {
    */
   private cleanupDPIMonitoring(): void {
     if (!this.dpiMediaQuery || !this.dpiChangeHandler) return;
-
     this.dpiMediaQuery.removeEventListener('change', this.dpiChangeHandler);
     this.dpiMediaQuery = null;
     this.dpiChangeHandler = null;
@@ -244,10 +238,10 @@ class GameManager {
   destroy(): void {
     if (this.game) {
       console.log('=== DESTROYING PHASER GAME INSTANCE ===');
-      
+
       // Clean up DPI monitoring
       this.cleanupDPIMonitoring();
-      
+
       // Clear any pending debounce timer
       if (this.resizeDebounceTimer) {
         clearTimeout(this.resizeDebounceTimer);
@@ -314,7 +308,6 @@ class GameManager {
       scene.registry.set('handleBackToNeighborhood', handlers.handleBackToNeighborhood);
       scene.registry.set('handlePrefetchLessons', handlers.handlePrefetchLessons);
       scene.registry.set('handleBackToHouse', handlers.handleBackToHouse);
-      
       console.log('✅ Navigation handlers set in registry');
     }
   }
@@ -326,6 +319,7 @@ class GameManager {
     this.housesData = transformModulesToHouses(modulesData);
 
     if (!this.game) return;
+
     const scenes = this.game.scene.getScenes(false);
     if (scenes.length > 0) {
       const scene = scenes[0];
@@ -340,15 +334,56 @@ class GameManager {
    */
   updateLessonsData(moduleBackendId: string, lessonsData: any[]): void {
     console.log(`📚 Updating lessons data for module: ${moduleBackendId}`);
-    
-    // Wait for houses data to be available
-    if (!this.housesData['downtown'] || this.housesData['downtown'].length === 0) {
-      console.warn(`⚠️ Houses data not ready yet, skipping lessons update for ${moduleBackendId}`);
-      return;
+
+    // Check if we have a matching house in housesData
+    let house = this.housesData['downtown']?.find(h => h.moduleBackendId === moduleBackendId);
+
+    // If no house found and this is a mock module, create a synthetic house entry
+    // so mock lessons can still be stored and rendered
+    if (!house && moduleBackendId.startsWith('mock-module-')) {
+      console.log(`📋 Creating synthetic house entry for mock module: ${moduleBackendId}`);
+      const mockIndex = parseInt(moduleBackendId.replace('mock-module-', ''), 10) - 1;
+      const mockHouse: HousePosition = {
+        id: `mock-house-${mockIndex + 1}`,
+        name: lessonsData.length > 0 ? 'Home-buying Foundations' : `Module ${mockIndex + 1}`,
+        x: 20,
+        y: 40,
+        moduleId: generateFrontendId(moduleBackendId, 10000),
+        moduleBackendId: moduleBackendId,
+        isLocked: false,
+        houseType: `house${(mockIndex % 4) + 1}`,
+        description: '',
+        coinReward: 0,
+      };
+
+      // Add the synthetic house to housesData so HouseScene can find it
+      if (!this.housesData['downtown']) {
+        this.housesData['downtown'] = [];
+      }
+      // Only add if not already present
+      if (!this.housesData['downtown'].find(h => h.moduleBackendId === moduleBackendId)) {
+        this.housesData['downtown'].push(mockHouse);
+      }
+      house = mockHouse;
+
+      // Update registry with the new houses data
+      if (this.game) {
+        const scenes = this.game.scene.getScenes(false);
+        if (scenes.length > 0) {
+          scenes[0].registry.set('neighborhoodHouses', this.housesData);
+          console.log(`✅ Updated neighborhood houses registry with mock house`);
+        }
+      }
     }
 
-    const house = this.housesData['downtown'].find(h => h.moduleBackendId === moduleBackendId);
+    // If still no house found (non-mock module with empty backend), wait for real data
     if (!house) {
+      // But if we already have transformed data from a previous successful call, keep it
+      if (this.moduleLessonsData[moduleBackendId]) {
+        console.log(`📋 Using previously stored lessons data for ${moduleBackendId}`);
+        this.syncLessonsToRegistry();
+        return;
+      }
       console.warn(`⚠️ House not found for module ${moduleBackendId}`);
       return;
     }
@@ -363,15 +398,21 @@ class GameManager {
     console.log(`✅ Transformed lessons for ${house.name}:`, transformedLessons);
 
     // Update the registry IMMEDIATELY
-    if (!this.game) return;
+    this.syncLessonsToRegistry();
+  }
 
+  /**
+   * Push current moduleLessonsData to the Phaser registry
+   */
+  private syncLessonsToRegistry(): void {
+    if (!this.game) return;
     const scenes = this.game.scene.getScenes(false);
     if (scenes.length > 0) {
-      const scene = scenes[0];
-      scene.registry.set('moduleLessonsData', { ...this.moduleLessonsData });
-      console.log(`✅ Updated registry with lessons for ${moduleBackendId}`);
+      scenes[0].registry.set('moduleLessonsData', { ...this.moduleLessonsData });
+      console.log(`✅ Synced moduleLessonsData to registry`);
     }
   }
+
   /**
    * Check if lessons data exists for a module
    */
@@ -387,7 +428,9 @@ class GameManager {
 
     if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.sleep('NeighborhoodScene');
     if (this.game.scene.isActive('HouseScene')) this.game.scene.sleep('HouseScene');
-    if (!this.game.scene.isActive('MapScene')) this.game.scene.start('MapScene');
+
+    if (!this.game.scene.isActive('MapScene'))
+      this.game.scene.start('MapScene');
   }
 
   /**
@@ -397,6 +440,7 @@ class GameManager {
     if (!this.game) return;
 
     let currentHouseIndex = 0;
+
     if (savedHouseIndex !== undefined) {
       currentHouseIndex = savedHouseIndex;
     } else {
@@ -408,7 +452,7 @@ class GameManager {
     if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
     if (this.game.scene.isActive('HouseScene')) this.game.scene.sleep('HouseScene');
     if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
-    
+
     this.game.scene.start('NeighborhoodScene', {
       neighborhoodId: neighborhoodId,
       houses: this.housesData['downtown'] || [],
@@ -423,13 +467,27 @@ class GameManager {
     if (!this.game) return;
 
     // Find the house to get the moduleId
-    const house = this.housesData['downtown']?.find(h => h.id === houseId);
+    let house = this.housesData['downtown']?.find(h => h.id === houseId);
+
+    // For mock modules: also try matching by moduleBackendId if house wasn't found by id
+    if (!house && moduleBackendId) {
+      house = this.housesData['downtown']?.find(h => h.moduleBackendId === moduleBackendId);
+    }
+
     const moduleId = house?.moduleId || null;
 
     if (this.game.scene.isActive('MapScene')) this.game.scene.sleep('MapScene');
     if (this.game.scene.isActive('NeighborhoodScene')) this.game.scene.stop('NeighborhoodScene');
     if (this.game.scene.isActive('HouseScene')) this.game.scene.stop('HouseScene');
-    
+
+    // Ensure moduleLessonsData is in the registry before HouseScene.init() reads it
+    if (moduleBackendId && this.moduleLessonsData[moduleBackendId]) {
+      const scenes = this.game.scene.getScenes(false);
+      if (scenes.length > 0) {
+        scenes[0].registry.set('moduleLessonsData', { ...this.moduleLessonsData });
+      }
+    }
+
     this.game.scene.start('HouseScene', {
       houseId: houseId,
       moduleId: moduleId,
@@ -480,10 +538,10 @@ class GameManager {
   getCurrentLesson(moduleBackendId: string, lessonId: number): Lesson | null {
     const moduleData = this.moduleLessonsData[moduleBackendId];
     if (!moduleData || !moduleData.lessons) return null;
-    
+
     const lessonData = moduleData.lessons.find(l => l.id === lessonId);
     if (!lessonData) return null;
-    
+
     return {
       id: lessonData.id,
       backendId: lessonData.backendId,

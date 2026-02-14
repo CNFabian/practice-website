@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, lazy, Suspense } from 'react'
 import type { RootState } from './store/store'
 import { setLoading, logout, setUser } from './store/slices/authSlice'
 import { getCurrentUser, clearAuthData, isAuthenticated } from './services/authAPI'
@@ -10,21 +10,20 @@ import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import AdminRoute from './components/common/AdminRoute'
 import LoadingSpinner from './components/common/LoadingSpinner'
-import LoginPage from './pages/public/LoginPage'
-import SignupPage from './pages/public/SignupPage'
-import OnboardingPage from './components/protected/onboarding/OnBoardingPage'
-import {
-  OverviewPage,
-  ModulesPage,
-  MaterialsPage,
-  RewardsPage,
-  HelpPage,
-  SettingsPage,
-  NotificationsPage
-} from './pages'
-import { BadgesPage } from './pages/protected/badges'
-import AdminDashboardPage from './pages/protected/admin/AdminDashboardPage'
 import MobileGate from './components/common/MobileGate'
+import ModulesPage from './pages/protected/modules/ModulesPage'
+
+const LoginPage = lazy(() => import('./pages/public/LoginPage'))
+const SignupPage = lazy(() => import('./pages/public/SignupPage'))
+const OnboardingPage = lazy(() => import('./components/protected/onboarding/OnBoardingPage'))
+const OverviewPage = lazy(() => import('./pages/protected/overview/OverviewPage'))
+const MaterialsPage = lazy(() => import('./pages/protected/MaterialsPage'))
+const RewardsPage = lazy(() => import('./pages/protected/rewards/RewardsPage'))
+const BadgesPage = lazy(() => import('./pages/protected/badges/BadgesPage'))
+const SettingsPage = lazy(() => import('./pages/protected/settings/SettingsPage'))
+const HelpPage = lazy(() => import('./pages/protected/help/HelpPage'))
+const NotificationsPage = lazy(() => import('./pages/protected/notifications/NotificationsPage'))
+const AdminDashboardPage = lazy(() => import('./pages/protected/admin/AdminDashboardPage'))
 
 // ═══════════════════════════════════════════════════════════
 // Cache helpers — persist auth state so refreshes are instant
@@ -192,60 +191,62 @@ function App() {
 
   return (
     <MobileGate>
-      <Routes>
-        <Route path="/auth/*" element={
-          reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
-        }>
-          <Route path="login" element={<LoginPage />} />
-          <Route path="signup" element={<SignupPage />} />
-          <Route path="*" element={<Navigate to="/auth/login" replace />} />
-        </Route>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route path="/auth/*" element={
+            reduxIsAuthenticated ? <Navigate to="/app" replace /> : <PublicLayout />
+          }>
+            <Route path="login" element={<LoginPage />} />
+            <Route path="signup" element={<SignupPage />} />
+            <Route path="*" element={<Navigate to="/auth/login" replace />} />
+          </Route>
 
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <OnboardingPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/app/*" element={
-          reduxIsAuthenticated ? (
-            needsOnboarding === true ? (
-              <Navigate to="/onboarding" replace />
-            ) : needsOnboarding === false ? (
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            ) : (
-              <LoadingSpinner />
-            )
-          ) : (
-            <Navigate to="/splash" replace />
-          )
-        }
-        >
-          <Route index element={<ModulesPage />} />
-          <Route path="overview" element={<OverviewPage />} />
-          <Route path="materials" element={<MaterialsPage />} />
-          <Route path="rewards" element={<RewardsPage />} />
-          <Route path="badges" element={<BadgesPage />} />
-          <Route path="help" element={<HelpPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="admin/*" element={
-            <AdminRoute>
-              <AdminDashboardPage />
-            </AdminRoute>
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
           } />
-        </Route>
 
-        <Route path="/" element={
-          reduxIsAuthenticated
-            ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner />)
-            : <Navigate to="/auth/login" replace />
-        } />
+          <Route path="/app/*" element={
+            reduxIsAuthenticated ? (
+              needsOnboarding === true ? (
+                <Navigate to="/onboarding" replace />
+              ) : needsOnboarding === false ? (
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              ) : (
+                <LoadingSpinner />
+              )
+            ) : (
+              <Navigate to="/splash" replace />
+            )
+          }
+          >
+            <Route index element={<ModulesPage />} />
+            <Route path="overview" element={<OverviewPage />} />
+            <Route path="materials" element={<MaterialsPage />} />
+            <Route path="rewards" element={<RewardsPage />} />
+            <Route path="badges" element={<BadgesPage />} />
+            <Route path="help" element={<HelpPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="admin/*" element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            } />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="/" element={
+            reduxIsAuthenticated
+              ? (needsOnboarding === true ? <Navigate to="/onboarding" replace /> : needsOnboarding === false ? <Navigate to="/app" replace /> : <LoadingSpinner />)
+              : <Navigate to="/auth/login" replace />
+          } />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </MobileGate>
   )
 }

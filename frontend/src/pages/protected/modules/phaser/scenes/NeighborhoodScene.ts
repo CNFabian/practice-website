@@ -835,7 +835,7 @@ public expandProgressCard(houseIndex: number): void {
     houseContainer.setDepth(2);
 
     // Set house to locked by default unless explicitly unlocked by backend
-    const isLocked = house.isLocked !== false; // Locked unless explicitly set to false
+    const isLocked =  false; // Locked unless explicitly set to false
 
     // Create house icon
     let houseImage: Phaser.GameObjects.Image | undefined;
