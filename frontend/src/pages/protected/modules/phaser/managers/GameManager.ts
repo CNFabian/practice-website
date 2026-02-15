@@ -61,23 +61,39 @@ class GameManager {
     if (this.game) {
       console.log('=== USING EXISTING PHASER GAME INSTANCE ===');
       const canvas = this.game.canvas;
-      if (canvas && canvas.parentElement !== container) {
-        console.log('=== REATTACHING CANVAS TO NEW CONTAINER ===');
-        container.appendChild(canvas);
+
+      // If the canvas exists but its parent is no longer in the DOM
+      // (e.g. React StrictMode double-mount or auth state remount),
+      // destroy the stale game and create a fresh one below.
+      if (canvas && !canvas.isConnected) {
+        console.log('=== STALE CANVAS DETECTED — DESTROYING OLD INSTANCE ===');
+        this.destroy();
+        // Fall through to create new game below
+      } else if (!canvas) {
+        // Game is still initializing (canvas not created yet).
+        // Destroy and recreate to ensure it targets the current container.
+        console.log('=== GAME INITIALIZING WITHOUT CANVAS — DESTROYING TO RECREATE ===');
+        this.destroy();
+        // Fall through to create new game below
+      } else {
+        if (canvas && canvas.parentElement !== container) {
+          console.log('=== REATTACHING CANVAS TO NEW CONTAINER ===');
+          container.appendChild(canvas);
+        }
+
+        // Update the parent reference
+        this.game.scale.parent = container;
+
+        // Make sure the canvas is visible and properly sized
+        if (canvas) {
+          canvas.style.display = 'block';
+        }
+
+        // Trigger a resize to ensure proper scaling
+        this.performCanvasResize();
+
+        return this.game;
       }
-
-      // Update the parent reference
-      this.game.scale.parent = container;
-
-      // Make sure the canvas is visible and properly sized
-      if (canvas) {
-        canvas.style.display = 'block';
-      }
-
-      // Trigger a resize to ensure proper scaling
-      this.performCanvasResize();
-
-      return this.game;
     }
 
     // Create new game instance
