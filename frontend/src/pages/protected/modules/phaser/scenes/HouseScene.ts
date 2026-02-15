@@ -288,6 +288,27 @@ export default class HouseScene extends BaseScene {
   }
 
   /**
+   * PUBLIC: Launch free roam mode from React (FreeRoamUnlockModal).
+   * Derives module number from house position and delegates to private launchFreeRoam.
+   */
+  public launchFreeRoamFromReact(): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+
+    if (!this.moduleBackendId) {
+      console.error('🌳 [FreeRoam] No moduleBackendId available');
+      this.isTransitioning = false;
+      return;
+    }
+
+    const houses = this.registry.get('neighborhoodHouses')?.['downtown'] || [];
+    const houseIndex = houses.findIndex((h: any) => h.moduleBackendId === this.moduleBackendId);
+    const moduleNumber = (houseIndex >= 0 ? houseIndex : 0) + 1;
+
+    this.launchFreeRoam(this.moduleBackendId, moduleNumber);
+  }
+
+  /**
    * Shared slide-out → launch → slide-in logic for both free roam and lesson mode.
    */
   private slideAndLaunchMinigame(initData: GYNMinigameInitData): void {
@@ -314,6 +335,9 @@ export default class HouseScene extends BaseScene {
         this.minigameShutdownHandler = () => {
           this.slideInHouseComponents();
           this.isTransitioning = false;
+
+          // Check if all lesson minigames are now complete (Free Roam unlock condition)
+          this.checkFreeRoamUnlockCondition();
         };
         minigameScene.events.once(
           'minigameCompleted',
@@ -321,6 +345,43 @@ export default class HouseScene extends BaseScene {
         );
       }
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // FREE ROAM UNLOCK — Client-side check (Option B from plan)
+  //
+  // After a lesson-mode minigame completes, check if ALL lessons
+  // in this module now have grow_your_nest_played === true.
+  // If so, signal React via registry to show the unlock modal.
+  // ═══════════════════════════════════════════════════════════
+  private checkFreeRoamUnlockCondition(): void {
+    if (!this.moduleBackendId) return;
+
+    const moduleLessonsData: Record<string, any> =
+      this.registry.get('moduleLessonsData') || {};
+    const moduleData = moduleLessonsData[this.moduleBackendId];
+
+    if (!moduleData?.lessons || moduleData.lessons.length === 0) {
+      console.log('🌳 [FreeRoam Check] No lessons data available — skipping');
+      return;
+    }
+
+    const allGYNCompleted = moduleData.lessons.every(
+      (lesson: any) => lesson.grow_your_nest_played === true
+    );
+
+    console.log(
+      '🌳 [FreeRoam Check] All GYN completed:',
+      allGYNCompleted,
+      `(${moduleData.lessons.filter((l: any) => l.grow_your_nest_played).length}/${moduleData.lessons.length})`
+    );
+
+    if (allGYNCompleted) {
+      // Signal React to show the Free Roam unlock modal
+      // React (MainLayout) watches for this registry value
+      this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
+      console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React');
+    }
   }
 
   private createMinigameButton(): void {
@@ -341,6 +402,28 @@ export default class HouseScene extends BaseScene {
     const container = this.add.container(x, y);
 
     const circleRadius = scale(24);
+
+    // ── Check Free Roam unlock condition ──
+    // Button is only active when ALL lessons have grow_your_nest_played === true
+    let freeRoamUnlocked = false;
+    const moduleLessonsData: Record<string, any> =
+      this.registry.get('moduleLessonsData') || {};
+    const moduleData = this.moduleBackendId
+      ? moduleLessonsData[this.moduleBackendId]
+      : null;
+
+    if (moduleData?.lessons && moduleData.lessons.length > 0) {
+      freeRoamUnlocked = moduleData.lessons.every(
+        (lesson: any) => lesson.grow_your_nest_played === true
+      );
+    }
+
+    // If Free Roam is not unlocked, hide the button entirely
+    if (!freeRoamUnlocked) {
+      container.setVisible(false);
+      container.setAlpha(0);
+      return container;
+    }
 
     // Use tree growth data from the learning modules API (flat structure)
     // or fall back to dashboard modules (nested under .module)
@@ -416,6 +499,24 @@ export default class HouseScene extends BaseScene {
     treeIcon.setOrigin(0.5);
     container.add(treeIcon);
 
+    // Completed state: checkmark overlay
+    if (treeCompleted) {
+      // Semi-transparent overlay
+      const overlay = this.add.graphics();
+      overlay.fillStyle(COLORS.STATUS_GREEN, 0.25);
+      overlay.fillCircle(0, 0, circleRadius);
+      container.add(overlay);
+
+      // Checkmark text
+      const checkmark = this.add.text(0, 0, '✓', {
+        fontSize: `${scaleFontSize(18)}px`,
+        fontFamily: "'Onest', sans-serif",
+        color: '#76DC94',
+      });
+      checkmark.setOrigin(0.5);
+      container.add(checkmark);
+    }
+
     // Invisible hit area
     const hitArea = this.add.circle(
       0,
@@ -424,7 +525,10 @@ export default class HouseScene extends BaseScene {
       0x000000,
       0
     );
-    hitArea.setInteractive({ useHandCursor: true });
+    // Only make interactive if tree is not completed
+    if (!treeCompleted) {
+      hitArea.setInteractive({ useHandCursor: true });
+    }
     container.add(hitArea);
 
     hitArea.on('pointerover', () => {
@@ -446,7 +550,7 @@ export default class HouseScene extends BaseScene {
     });
 
     hitArea.on('pointerdown', () => {
-    if (this.isTransitioning) return;
+    if (this.isTransitioning || treeCompleted) return;
     this.isTransitioning = true;
     
     if (this.moduleBackendId) {

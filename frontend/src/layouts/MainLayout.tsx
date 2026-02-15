@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from '../components/index'
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
 import { useWalkthrough } from '../contexts/WalkthroughContext'
 import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
+import FreeRoamUnlockModal from '../components/protected/modals/FreeroamUnlockModal'
 import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
 import { getModuleLessons } from '../services/learningAPI';
 import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../services/growYourNestAPI';
@@ -11,6 +12,56 @@ import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../service
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
   const { isWalkthroughActive, exitWalkthrough, completeWalkthrough } = useWalkthrough();
+
+  // ═══════════════════════════════════════════════════════════
+  // FREE ROAM UNLOCK MODAL — Registry bridge from HouseScene
+  // ═══════════════════════════════════════════════════════════
+  const [showFreeRoamModal, setShowFreeRoamModal] = useState(false);
+
+  useEffect(() => {
+    const game = GameManager.getGame();
+    if (!game) return;
+
+    const handleRegistryChange = (_parent: any, _key: string, value: any) => {
+      if (value) {
+        console.log('🌳 [MainLayout] Free Roam unlock signal received for module:', value);
+        setShowFreeRoamModal(true);
+      }
+    };
+
+    game.registry.events.on('changedata-showFreeRoamUnlockModal', handleRegistryChange);
+
+    return () => {
+      game.registry.events.off('changedata-showFreeRoamUnlockModal', handleRegistryChange);
+    };
+  }, []);
+
+  const handleLaunchFreeRoam = useCallback(() => {
+    setShowFreeRoamModal(false);
+
+    const game = GameManager.getGame();
+    if (game) {
+      // Clear the registry signal
+      game.registry.set('showFreeRoamUnlockModal', null);
+
+      const houseScene = game.scene.getScene('HouseScene') as any;
+      if (houseScene && houseScene.launchFreeRoamFromReact) {
+        houseScene.launchFreeRoamFromReact();
+        console.log('🌳 [MainLayout] Free Roam launch triggered via HouseScene');
+      } else {
+        console.error('🌳 [MainLayout] HouseScene or launchFreeRoamFromReact not found');
+      }
+    }
+  }, []);
+
+  const handleDismissFreeRoam = useCallback(() => {
+    setShowFreeRoamModal(false);
+
+    const game = GameManager.getGame();
+    if (game) {
+      game.registry.set('showFreeRoamUnlockModal', null);
+    }
+  }, []);
 
   // Handle scene transitions for walkthrough
   const handleSceneTransition = (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => {
@@ -286,6 +337,12 @@ const MainLayoutContent: React.FC = () => {
         onExit={exitWalkthrough}
         onComplete={completeWalkthrough}
         onSceneTransition={handleSceneTransition}
+      />
+
+      <FreeRoamUnlockModal
+        isOpen={showFreeRoamModal}
+        onLaunchFreeRoam={handleLaunchFreeRoam}
+        onDismiss={handleDismissFreeRoam}
       />
     </div>
   )

@@ -1,17 +1,15 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
-import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../../../lib/queryKeys';
-import { getLesson } from '../../../services/learningAPI';import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
+import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
 import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
-import GrowYourNestPromptModal from '../../../components/protected/modals/GrowYourNestPromptModal';
-import { getLessonQuestions, getFreeRoamQuestions, getFreeRoamState, transformGYNQuestionsForMinigame, resetLessonGYNDev } from '../../../services/growYourNestAPI';
+import GYNLessonButton from '../../../components/protected/modules/GYNLessonButton';
+import { getLessonQuestions } from '../../../services/growYourNestAPI';
 import gameManager from './phaser/managers/GameManager';
 
 // YouTube Player Type Definitions
@@ -202,7 +200,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   addProgressItem,
   flushProgress
 }) => {
-  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // YouTube Player state and refs
@@ -222,22 +219,10 @@ const LessonView: React.FC<LessonViewProps> = ({
   const lessonStartTimeRef = useRef<number>(Date.now());
   const lastProgressSyncRef = useRef<number>(0);
 
-  // ═══════════════════════════════════════════════════════════
-  // GYN MODAL STATE — Clean, server-driven approach
-  // ═══════════════════════════════════════════════════════════
-  // Modal visibility
-  const [showGYNPromptModal, setShowGYNPromptModal] = useState(false);
-  // Pending navigation to execute after modal is dismissed/played
-  const pendingNavigationRef = useRef<(() => void) | null>(null);
-  // Session guard: once the user has played or dismissed the GYN
-  // modal for THIS lesson in THIS session, never show it again.
-  // Uses state (not ref) so it participates in React's render cycle.
-  const [gynDismissedThisSession, setGynDismissedThisSession] = useState(false);
-
-  // Dev button loading states — TEMP: Remove before production
-  const [isDevCompleting, setIsDevCompleting] = useState(false);
-  const [isDevFreeRoam, setIsDevFreeRoam] = useState(false);
-  const [isDevResetting, setIsDevResetting] = useState(false);
+  // GYN "just unlocked" notification state
+  const [showGYNUnlockedNotification, setShowGYNUnlockedNotification] = useState(false);
+  const prevIsCompletedRef = useRef<boolean | undefined>(undefined);
+  const gynNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
@@ -253,9 +238,12 @@ const LessonView: React.FC<LessonViewProps> = ({
     milestonesReachedRef.current.clear();
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
-    setGynDismissedThisSession(false);
-    setShowGYNPromptModal(false);
-    pendingNavigationRef.current = null;
+    setShowGYNUnlockedNotification(false);
+    prevIsCompletedRef.current = undefined;
+    if (gynNotificationTimerRef.current) {
+      clearTimeout(gynNotificationTimerRef.current);
+      gynNotificationTimerRef.current = null;
+    }
 
     return () => {
       const bgElement = document.getElementById('section-background');
@@ -335,6 +323,40 @@ const LessonView: React.FC<LessonViewProps> = ({
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
   
   // ═══════════════════════════════════════════════════════════
+  // GYN "JUST UNLOCKED" notification — detects is_completed
+  // transitioning from falsy → true while GYN not yet played
+  // ═══════════════════════════════════════════════════════════
+  useEffect(() => {
+    const isCompleted = !!backendLessonData?.is_completed;
+    const gynPlayed = !!backendLessonData?.grow_your_nest_played;
+    const wasCompleted = prevIsCompletedRef.current;
+
+    // Detect transition: previously falsy → now true, and GYN not played
+    if (wasCompleted === false && isCompleted && !gynPlayed) {
+      setShowGYNUnlockedNotification(true);
+
+      // Auto-dismiss after 5 seconds
+      if (gynNotificationTimerRef.current) {
+        clearTimeout(gynNotificationTimerRef.current);
+      }
+      gynNotificationTimerRef.current = setTimeout(() => {
+        setShowGYNUnlockedNotification(false);
+        gynNotificationTimerRef.current = null;
+      }, 5000);
+    }
+
+    // Track current value for next render
+    prevIsCompletedRef.current = isCompleted;
+
+    return () => {
+      if (gynNotificationTimerRef.current) {
+        clearTimeout(gynNotificationTimerRef.current);
+        gynNotificationTimerRef.current = null;
+      }
+    };
+  }, [backendLessonData?.is_completed, backendLessonData?.grow_your_nest_played]);
+
+  // ═══════════════════════════════════════════════════════════
   // GYN QUESTIONS — Only fetch when server confirms:
   //   1. Lesson is completed
   //   2. GYN has NOT been played yet
@@ -343,70 +365,10 @@ const LessonView: React.FC<LessonViewProps> = ({
     backendLessonData?.is_completed &&
     backendLessonData?.grow_your_nest_played === false
   );
-  const { data: gynLessonData } = useGYNLessonQuestions(
+  useGYNLessonQuestions(
     shouldFetchGYN ? (lesson.backendId || '') : ''
   );
 
-  // ═══════════════════════════════════════════════════════════
-  // shouldShowGYNModal — Called at the moment of navigation
-  // (Back / Next Lesson). NOT memoized — reads live values.
-  //
-  // Returns true ONLY when ALL of these are true:
-  //   1. Backend says lesson is completed (is_completed === true)
-  //   2. Backend says GYN not played yet (grow_your_nest_played === false)
-  //   3. User hasn't dismissed/played GYN this session
-  //   4. GYN questions are available
-  //   5. We have a valid backend ID
-  // ═══════════════════════════════════════════════════════════
-  const shouldShowGYNModal = useCallback(async (): Promise<boolean> => {
-    // Guard 1: Valid backend connection
-    if (!isValidBackendId || !lesson.backendId) {
-      console.log('🌳 [GYN Check] No valid backend data — skipping');
-      return false;
-    }
-
-    // Guard 2: User hasn't already dismissed/played GYN this session
-    if (gynDismissedThisSession) {
-      console.log('🌳 [GYN Check] GYN already handled this session — skipping');
-      return false;
-    }
-
-    // Guard 3: Force-refetch FRESH lesson data from server (bypass cache)
-    console.log('🌳 [GYN Check] Fetching fresh lesson data from server...');
-    let freshLessonData;
-    try {
-      freshLessonData = await queryClient.fetchQuery({
-        queryKey: queryKeys.learning.lesson(lesson.backendId),
-        queryFn: () => getLesson(lesson.backendId!),
-        staleTime: 0, // Force fresh fetch, never use cache
-      });
-    } catch (error) {
-      console.error('🌳 [GYN Check] Failed to fetch fresh lesson data:', error);
-      return false;
-    }
-
-    // Guard 4: Lesson must be completed (server confirms)
-    if (!freshLessonData?.is_completed) {
-      console.log('🌳 [GYN Check] Lesson not completed — skipping');
-      return false;
-    }
-
-    // Guard 5: GYN must NOT already be played (server confirms with FRESH data)
-    if (freshLessonData?.grow_your_nest_played) {
-      console.log('🌳 [GYN Check] GYN already played for this lesson — skipping');
-      return false;
-    }
-
-    // Guard 6: GYN questions must be available
-    if (!gynLessonData?.questions || gynLessonData.questions.length === 0) {
-      console.log('🌳 [GYN Check] No GYN questions available — skipping');
-      return false;
-    }
-
-    console.log('🌳 [GYN Check] ✅ All conditions met — showing modal');
-    return true;
-  }, [isValidBackendId, lesson.backendId, gynDismissedThisSession, gynLessonData, queryClient]);
-  
   const { 
     data: quizData,
     isLoading: isLoadingQuiz,
@@ -506,8 +468,6 @@ const LessonView: React.FC<LessonViewProps> = ({
       : null,
     [module.lessons, currentLessonIndex]
   );
-
-  const isLastLesson = useMemo(() => !nextLesson, [nextLesson]);
 
   // Extract YouTube video ID
   const videoUrl = backendLessonData?.video_url || lesson.videoUrl;
@@ -805,24 +765,13 @@ const LessonView: React.FC<LessonViewProps> = ({
   // NEXT LESSON BUTTON (top-right "Next Lesson" / "Finish")
   // Navigation only — does NOT mark lesson as complete.
   // Lesson completion is handled by video completion events.
-  // Checks GYN eligibility before navigating if lesson is already complete.
   // ═══════════════════════════════════════════════════════════
-  const handleNavigateNext = useCallback(async () => {
+  const handleNavigateNext = useCallback(() => {
     if (flushProgress) {
       flushProgress();
     }
     
     console.log('➡️ Next lesson / finish button pressed');
-    
-    // Check GYN eligibility before navigating (only if lesson was already completed)
-    if (videoCompleted || backendLessonData?.is_completed) {
-      const showGYN = await shouldShowGYNModal();
-      if (showGYN) {
-        pendingNavigationRef.current = nextLesson ? executeNavigation : onBack;
-        setShowGYNPromptModal(true);
-        return;
-      }
-    }
     
     // Navigate: next lesson if available, otherwise back to house
     if (nextLesson) {
@@ -830,41 +779,34 @@ const LessonView: React.FC<LessonViewProps> = ({
     } else {
       onBack();
     }
-  }, [flushProgress, videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, nextLesson, executeNavigation, onBack]);
+  }, [flushProgress, nextLesson, executeNavigation, onBack]);
 
   // ═══════════════════════════════════════════════════════════
   // NEXT LESSON BUTTON (bottom bar)
   // Navigation only — does NOT mark lesson as complete.
-  // Checks GYN eligibility before navigating if lesson is already complete.
   // ═══════════════════════════════════════════════════════════
-  const handleNextLesson = useCallback(async () => {
+  const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
     
     if (flushProgress) {
       flushProgress();
     }
     
-    // Check GYN eligibility before navigating (only if lesson was already completed)
-    if (videoCompleted || backendLessonData?.is_completed) {
-      const showGYN = await shouldShowGYNModal();
-      if (showGYN) {
-        pendingNavigationRef.current = executeNavigation;
-        setShowGYNPromptModal(true);
-        return;
-      }
-    }
-    
     executeNavigation();
-  }, [nextLesson, flushProgress, videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, executeNavigation]);
+  }, [nextLesson, flushProgress, executeNavigation]);
 
   // ═══════════════════════════════════════════════════════════
-  // GYN MODAL HANDLERS
+  // GYN PLAY HANDLER — Launches lesson-mode minigame
+  // Called by GYNLessonButton when in Active state
   // ═══════════════════════════════════════════════════════════
 
   const handleGYNPlay = useCallback(async () => {
-    setShowGYNPromptModal(false);
-    setGynDismissedThisSession(true);
-    pendingNavigationRef.current = null;
+    // Dismiss "just unlocked" notification if showing
+    setShowGYNUnlockedNotification(false);
+    if (gynNotificationTimerRef.current) {
+      clearTimeout(gynNotificationTimerRef.current);
+      gynNotificationTimerRef.current = null;
+    }
 
     if (!lesson.backendId) {
       console.warn('🌳 [GYN Play] No lesson backendId, cannot launch');
@@ -909,170 +851,18 @@ const LessonView: React.FC<LessonViewProps> = ({
     } catch (error) {
       console.error('🌳 [GYN Play] Failed to fetch GYN questions:', error);
     }
-  }, [lesson.backendId, module.id, onBack]);
-
-  const handleGYNDismiss = useCallback(() => {
-    setShowGYNPromptModal(false);
-    setGynDismissedThisSession(true);
-    
-    // Execute the pending navigation (user chose to skip GYN)
-    if (pendingNavigationRef.current) {
-      pendingNavigationRef.current();
-      pendingNavigationRef.current = null;
-    }
-  }, []);
+  }, [lesson.backendId, module.orderIndex, onBack]);
 
   // ═══════════════════════════════════════════════════════════
-  // BACK BUTTON
-  // Shows GYN modal if lesson is complete + GYN not played.
-  // Otherwise navigates directly.
+  // BACK BUTTON — Navigates directly without interception
   // ═══════════════════════════════════════════════════════════
-  const handleBack = useCallback(async () => {
-    // Only check GYN if the lesson has actually been completed
-    // (either video finished this session OR server says so)
-    if (videoCompleted || backendLessonData?.is_completed) {
-      const showGYN = await shouldShowGYNModal();
-      if (showGYN) {
-        pendingNavigationRef.current = onBack;
-        setShowGYNPromptModal(true);
-        return;
-      }
-    }
+  const handleBack = useCallback(() => {
     onBack();
-  }, [videoCompleted, backendLessonData?.is_completed, shouldShowGYNModal, onBack]);
+  }, [onBack]);
 
   // ═══════════════════════════════════════════════════════════
   // TEMPORARY DEV BUTTONS — Remove before production
   // ═══════════════════════════════════════════════════════════
-
-  /** 
-   * TEMP: Complete lesson on backend, then show GYN prompt modal.
-   * Bypasses the video completion requirement but still routes
-   * through the modal so the user chooses whether to play.
-   */
-  const handleDevCompleteLesson = useCallback(async () => {
-    if (!isValidBackendId || !lesson.backendId || !module?.backendId) {
-      console.warn('🧪 [Dev] Cannot complete - invalid backend IDs');
-      return;
-    }
-
-    setIsDevCompleting(true);
-    console.log('🧪 [Dev] Completing lesson on backend:', lesson.backendId);
-
-    completeLessonMutation(
-      { lessonId: lesson.backendId! },
-      {
-        onSuccess: () => {
-          console.log('🧪 [Dev] Lesson marked complete. Showing GYN prompt modal...');
-          setIsDevCompleting(false);
-          // Dev shortcut: show modal directly (bypasses normal navigation flow)
-          setShowGYNPromptModal(true);
-        },
-        onError: (error: Error) => {
-          console.error('🧪 [Dev] Failed to complete lesson:', error);
-          setIsDevCompleting(false);
-        },
-      }
-    );
-  }, [isValidBackendId, lesson.backendId, module?.backendId, completeLessonMutation]);
-
-  /**
-   * TEMP: Launch Free Roam mode directly.
-   * Only available on the last lesson after it's been completed.
-   */
-  const handleDevLaunchFreeRoam = useCallback(async () => {
-    if (!module?.backendId) {
-      console.warn('🧪 [Dev] Cannot launch free roam - no module backendId');
-      return;
-    }
-
-    setIsDevFreeRoam(true);
-    console.log('🧪 [Dev] Launching Free Roam for module:', module.backendId);
-
-    try {
-      // Fetch questions and current state in parallel
-      const [questionsResponse, stateResponse] = await Promise.all([
-        getFreeRoamQuestions(module.backendId),
-        getFreeRoamState(module.backendId),
-      ]);
-
-      if (questionsResponse.questions.length === 0) {
-        console.warn('🧪 [Dev] No free roam questions available');
-        setIsDevFreeRoam(false);
-        return;
-      }
-
-      if (stateResponse.completed) {
-        console.log('🧪 [Dev] Tree is already fully grown!');
-        setIsDevFreeRoam(false);
-        return;
-      }
-
-      const transformedQuestions = transformGYNQuestionsForMinigame(questionsResponse.questions);
-
-      const initData: GYNMinigameInitData = {
-        mode: 'freeroam',
-        moduleId: module.backendId,
-        questions: transformedQuestions,
-        treeState: {
-          growth_points: stateResponse.growth_points,
-          current_stage: stateResponse.current_stage,
-          total_stages: stateResponse.total_stages,
-          points_per_stage: stateResponse.points_per_stage,
-          completed: stateResponse.completed,
-        },
-        moduleNumber: (module.orderIndex ?? 0) + 1,
-        showStartScreen: true,
-      };
-
-      // Launch via Phaser
-      const phaserGame = gameManager.getGame();
-      if (phaserGame) {
-        const houseScene = phaserGame.scene.getScene('HouseScene');
-        if (houseScene) {
-          // Stop any existing GYN scene first
-          if (phaserGame.scene.isActive('GrowYourNestMinigame') || phaserGame.scene.isPaused('GrowYourNestMinigame')) {
-            phaserGame.scene.stop('GrowYourNestMinigame');
-          }
-          houseScene.scene.pause();
-          houseScene.scene.launch('GrowYourNestMinigame', initData);
-          console.log('🧪 [Dev] Free Roam launched!');
-        } else {
-          console.error('🧪 [Dev] HouseScene not found');
-        }
-      } else {
-        console.error('🧪 [Dev] Phaser game instance not found');
-      }
-    } catch (error) {
-      console.error('🧪 [Dev] Error launching free roam:', error);
-    }
-
-    setIsDevFreeRoam(false);
-  }, [module?.backendId, module?.id]);
-
-  /**
-   * DEV ONLY: Reset GYN played status so lesson minigame can be replayed.
-   * Calls POST /api/grow-your-nest/lesson/{lesson_id}/reset-dev
-   */
-  const handleDevResetGYN = useCallback(async () => {
-    if (!isValidBackendId || !lesson.backendId) {
-      console.warn('🧪 [Dev] Cannot reset: no valid backend lesson ID');
-      return;
-    }
-
-    setIsDevResetting(true);
-    try {
-      const result = await resetLessonGYNDev(lesson.backendId);
-      console.log('🧪 [Dev] GYN reset result:', result);
-      // Reset the session guard so the modal can appear again
-      setGynDismissedThisSession(false);
-      alert(`✅ GYN reset successful!\n\n${result.message}\n\nYou can now replay the minigame for this lesson.`);
-    } catch (error) {
-      console.error('🧪 [Dev] GYN reset failed:', error);
-      alert(`❌ GYN reset failed.\n\n${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    setIsDevResetting(false);
-  }, [isValidBackendId, lesson.backendId]);
 
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
@@ -1168,6 +958,51 @@ const LessonView: React.FC<LessonViewProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* GYN Lesson Minigame Button + Unlock Notification */}
+                {isValidBackendId && (
+                  <div className="mt-3">
+                    {/* "Just Unlocked" celebration notification */}
+                    {showGYNUnlockedNotification && (
+                      <div className="mb-2 bg-status-green/10 border border-status-green/30 rounded-xl px-3 py-2 flex items-center gap-2 animate-gyn-slide-in">
+                        <span className="text-base flex-shrink-0">🌱</span>
+                        <p className="text-xs text-status-green font-medium">
+                          Minigame Unlocked! Help the bird grow her tree.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setShowGYNUnlockedNotification(false);
+                            if (gynNotificationTimerRef.current) {
+                              clearTimeout(gynNotificationTimerRef.current);
+                              gynNotificationTimerRef.current = null;
+                            }
+                          }}
+                          className="ml-auto flex-shrink-0 text-status-green/60 hover:text-status-green transition-colors"
+                          aria-label="Dismiss notification"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <style>{`
+                          .animate-gyn-slide-in {
+                            animation: gynSlideIn 0.3s ease-out;
+                          }
+                          @keyframes gynSlideIn {
+                            from { opacity: 0; transform: translateY(-8px); }
+                            to { opacity: 1; transform: translateY(0); }
+                          }
+                        `}</style>
+                      </div>
+                    )}
+                    <GYNLessonButton
+                      lessonCompleted={!!backendLessonData?.is_completed}
+                      gynPlayed={!!backendLessonData?.grow_your_nest_played}
+                      onPlay={handleGYNPlay}
+                      isLoading={isLoadingLesson}
+                    />
+                  </div>
+                )}
               </div>
               
               <div className="flex flex-col items-end gap-2 ml-4">
@@ -1194,59 +1029,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                   )}
                 </div>
 
-                {/* ═══ TEMP DEV BUTTONS — Remove before production ═══ */}
-                <div className="mt-2 flex flex-col gap-1.5 border-t border-dashed border-status-yellow/50 pt-2">
-                  <button
-                    onClick={handleDevCompleteLesson}
-                    disabled={isDevCompleting || !isValidBackendId}
-                    className="px-4 py-1.5 bg-status-yellow text-text-blue-black rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                  >
-                    {isDevCompleting ? (
-                      <>
-                        <span className="animate-spin h-3 w-3 border-2 border-text-blue-black border-t-transparent rounded-full" />
-                        Completing...
-                      </>
-                    ) : (
-                      '🧪 Complete Lesson'
-                    )}
-                  </button>
-
-                  {isLastLesson && (
-                    <button
-                      onClick={handleDevLaunchFreeRoam}
-                      disabled={isDevFreeRoam || !module?.backendId}
-                      className="px-4 py-1.5 bg-status-green text-text-blue-black rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    >
-                      {isDevFreeRoam ? (
-                        <>
-                          <span className="animate-spin h-3 w-3 border-2 border-text-blue-black border-t-transparent rounded-full" />
-                          Loading...
-                        </>
-                      ) : (
-                        '🧪 Launch Free Roam'
-                      )}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={handleDevResetGYN}
-                    disabled={isDevResetting || !isValidBackendId}
-                    className="px-4 py-1.5 bg-status-red text-white rounded-full text-xs font-medium hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                  >
-                    {isDevResetting ? (
-                      <>
-                        <span className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                        Resetting...
-                      </>
-                    ) : (
-                      '🧪 Reset GYN (replay)'
-                    )}
-                  </button>
-
-                  <span className="text-[10px] text-status-yellow italic">
-                    Dev only — remove before launch
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -1456,13 +1238,6 @@ const LessonView: React.FC<LessonViewProps> = ({
         </div>
       </div>
 
-      {/* Grow Your Nest Prompt Modal */}
-      <GrowYourNestPromptModal
-        isOpen={showGYNPromptModal}
-        onPlay={handleGYNPlay}
-        onDismiss={handleGYNDismiss}
-        lessonTitle={displayTitle}
-      />
     </div>
   );
 };

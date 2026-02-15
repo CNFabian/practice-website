@@ -8,7 +8,7 @@ import {
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
 import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
-import { useModules, useModuleLessons } from '../../../hooks/queries/useLearningQueries';
+import { useModuleLessons } from '../../../hooks/queries/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -99,11 +99,15 @@ const ModulesPage: React.FC = () => {
     }
   }, [location.state, isPhaserReady, assetsLoaded, hasCompletedWalkthrough, startWalkthrough]);
 
-  const { 
-    data: modulesData, 
-    isLoading: isLoadingModules, 
-    error: modulesError 
-  } = useModules();
+  // OPT-04: Derive modules from dashboard response instead of making a separate API call
+  // Dashboard response shape: [{ module: {...}, lessons_completed, total_lessons, ... }]
+  // We extract just the module objects to match what useModules() previously returned
+  const modulesData = useMemo(() => {
+    if (!dashboardModules) return undefined;
+    return dashboardModules.map((item: any) => item.module);
+  }, [dashboardModules]);
+  const isLoadingModules = !dashboardModules;
+  const modulesError = null;
 
   const { 
     data: lessonsData, 
