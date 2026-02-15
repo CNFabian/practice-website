@@ -49,6 +49,14 @@ const LoginPage: React.FC = () => {
       console.log('LoginPage: User profile fetched:', userProfile);
 
       dispatch(setUser(userProfile));
+
+      // Cache user data so App.tsx cache path works on next refresh
+      try {
+        localStorage.setItem('cached_user_data', JSON.stringify(userProfile))
+      } catch {
+        // non-critical
+      }
+
       console.log('LoginPage: Redux updated, navigating to /');
       navigate('/', { replace: true });
     } catch (err: any) {

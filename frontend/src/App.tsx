@@ -154,8 +154,58 @@ function App() {
       }
     }
 
-    initAuth()
+      initAuth()
   }, [dispatch])
+
+  // ═══════════════════════════════════════════════════════════
+  // FIX: Catch fresh-login transitions where initAuth already
+  // completed but needsOnboarding was never resolved.
+  // When reduxIsAuthenticated becomes true while needsOnboarding
+  // is still null, fetch the onboarding status and cache it.
+  // ═══════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!reduxIsAuthenticated || needsOnboarding !== null) {
+      return
+    }
+
+    // reduxIsAuthenticated is true but needsOnboarding is null
+    // This means LoginPage set the user but initAuth never resolved onboarding
+    console.log('🔄 App: Fresh login detected — resolving onboarding status')
+
+    let cancelled = false
+
+    const resolveOnboarding = async () => {
+      try {
+        const onboardingComplete = await checkOnboardingStatus()
+        if (cancelled) return
+
+        const isComplete = onboardingComplete === true
+        console.log('🔍 App: Post-login onboarding check:', isComplete ? 'Complete' : 'Incomplete')
+        setNeedsOnboarding(!isComplete)
+
+        // Cache for next refresh
+        try {
+          const userJson = localStorage.getItem(CACHE_KEY_USER)
+          if (userJson) {
+            setCachedAuth(JSON.parse(userJson), isComplete)
+          }
+        } catch {
+          // non-critical
+        }
+      } catch (error) {
+        console.error('App: Post-login onboarding check failed:', error)
+        if (cancelled) return
+        // Default to needing onboarding on error — safer than infinite spinner
+        setNeedsOnboarding(true)
+      }
+    }
+
+    resolveOnboarding()
+
+    return () => {
+      cancelled = true
+    }
+  }, [reduxIsAuthenticated, needsOnboarding])
 
   // ═══════════════════════════════════════════════════════════
   // Listen for onboarding completion event from OnBoardingPage.
