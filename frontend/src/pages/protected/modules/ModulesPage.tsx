@@ -109,6 +109,24 @@ const ModulesPage: React.FC = () => {
   const isLoadingModules = !dashboardModules;
   const modulesError = null;
 
+  // OPT-07: Proactively prefetch lessons for first 2 modules when data arrives
+  // This ensures lesson data is in TanStack Query cache before user clicks a house
+  useEffect(() => {
+    if (!dashboardModules || dashboardModules.length === 0) return;
+
+    const modulesToPrefetch = dashboardModules.slice(0, 2);
+    modulesToPrefetch.forEach((item: any) => {
+      const backendId = item.module?.backend_id;
+      if (backendId) {
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.learning.moduleLessons(backendId),
+          queryFn: () => getModuleLessons(backendId),
+          staleTime: 10 * 60 * 1000, // 10 minutes
+        });
+      }
+    });
+  }, [dashboardModules, queryClient]);
+
   const { 
     data: lessonsData, 
     isLoading: isLoadingLessons,
@@ -290,6 +308,12 @@ const ModulesPage: React.FC = () => {
     GameManager.updateSidebarOffset(offset);
   }, [isCollapsed, isPhaserReady, assetsLoaded]);
 
+  // OPT-02: Trigger Tier 2 (Secondary) background asset loading after map is visible
+  useEffect(() => {
+    if (!isPhaserReady || !assetsLoaded) return;
+    GameManager.loadSecondaryAssets();
+  }, [isPhaserReady, assetsLoaded]);
+
   // Pause/resume game based on view
   useEffect(() => {
     const game = GameManager.getGame();
@@ -375,6 +399,10 @@ const ModulesPage: React.FC = () => {
       case 'lesson':
       case 'minigame':
         GameManager.pauseAllScenes();
+        // OPT-02: Trigger Tier 3 (Deferred) asset loading on first minigame navigation
+        if (navState.currentView === 'minigame') {
+          GameManager.loadDeferredAssets();
+        }
         break;
     }
   }, [navState, isPhaserReady, assetsLoaded, isLoadingModules]);

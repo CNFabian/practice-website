@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { createGameConfig } from '../config/gameConfig';
+import type PreloaderScene from '../scenes/PreloaderScene';
 import type { Module, Lesson } from '../../../../../types/modules';
 import type { HousePosition, ModuleLessonsData } from '../types';
 import { transformModulesToHouses, transformBackendLessonsToFrontend, generateFrontendId } from '../utils/DataTransformers';
@@ -230,6 +231,34 @@ class GameManager {
    */
   areAssetsLoaded(): boolean {
     return this.assetsLoaded;
+  }
+
+  /**
+   * Trigger Tier 2 (Secondary) background asset loading via PreloaderScene.
+   * Call after MapScene is visible and assetsLoaded is true.
+   */
+  loadSecondaryAssets(): void {
+    if (!this.game) return;
+    const preloader = this.game.scene.getScene('PreloaderScene') as PreloaderScene | null;
+    if (preloader) {
+      preloader.loadSecondaryAssets();
+    } else {
+      console.warn('GameManager.loadSecondaryAssets: PreloaderScene not found');
+    }
+  }
+
+  /**
+   * Trigger Tier 3 (Deferred) background asset loading via PreloaderScene.
+   * Call when user first navigates to the minigame.
+   */
+  loadDeferredAssets(): void {
+    if (!this.game) return;
+    const preloader = this.game.scene.getScene('PreloaderScene') as PreloaderScene | null;
+    if (preloader) {
+      preloader.loadDeferredAssets();
+    } else {
+      console.warn('GameManager.loadDeferredAssets: PreloaderScene not found');
+    }
   }
 
   /**

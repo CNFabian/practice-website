@@ -71,9 +71,12 @@ export class UIComponents {
     container.add(background);
 
     // Blue bird celebration icon on the left
-    const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
-    birdIcon.setDisplaySize(scale(64), scale(64));
-    container.add(birdIcon);
+    // OPT-02: Check texture exists (Tier 2 may still be loading)
+    if (scene.textures.exists(ASSET_KEYS.BIRD_CELEBRATION)) {
+      const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
+      birdIcon.setDisplaySize(scale(64), scale(64));
+      container.add(birdIcon);
+    }
 
     // Tooltip text - 15px font size
     const tooltipText = scene.add.text(

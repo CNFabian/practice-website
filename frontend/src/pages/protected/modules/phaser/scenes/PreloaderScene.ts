@@ -41,7 +41,76 @@ import {
   FertilizerStill,
   FertilizerPouring,
   TreeShadow
-} from '../../../../../assets';
+} from '../../../../../assets/phaser';
+
+// ═══════════════════════════════════════════════════════════════════
+// ASSET LOADING TIERS — OPT-02 Performance Optimization
+// Assets are split into 3 tiers to reduce initial load time.
+// Only Tier 1 blocks game start; Tiers 2-3 load in background.
+// ═══════════════════════════════════════════════════════════════════
+
+interface AssetDefinition {
+  key: string;
+  path: string;
+  type: 'image' | 'svg';
+  svgWidth?: number;
+  svgHeight?: number;
+}
+
+/** Tier 1: MapScene + BaseScene essentials — blocks game start (11 assets) */
+const CRITICAL_ASSETS: AssetDefinition[] = [
+  // MapScene backgrounds & icons
+  { key: ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND, path: NeighborhoodMap, type: 'image' },
+  { key: ASSET_KEYS.NEIGHBORHOOD_1, path: Neighborhood1, type: 'image' },
+  { key: ASSET_KEYS.NEIGHBORHOOD_2, path: Neighborhood2, type: 'image' },
+  { key: ASSET_KEYS.NEIGHBORHOOD_3, path: Neighborhood3, type: 'image' },
+  { key: ASSET_KEYS.NEIGHBORHOOD_SHADOW, path: NeighborhoodShadow, type: 'image' },
+  { key: ASSET_KEYS.LOCK_ICON, path: LockIcon, type: 'image' },
+  { key: ASSET_KEYS.ROADBLOCK_ICON, path: RoadblockIcon, type: 'image' },
+  { key: ASSET_KEYS.NOTICE_BIRD_ICON, path: NoticeBirdIcon, type: 'image' },
+  // BaseScene essentials (used by all scenes)
+  { key: ASSET_KEYS.COIN_ICON, path: CoinCounterIcon, type: 'image' },
+  { key: ASSET_KEYS.BIRD_IDLE, path: BirdIdle, type: 'image' },
+  { key: ASSET_KEYS.BIRD_FLY, path: BirdFly, type: 'image' },
+];
+
+/** Tier 2: NeighborhoodScene + HouseScene — background load after map visible (15 assets) */
+const SECONDARY_ASSETS: AssetDefinition[] = [
+  // NeighborhoodScene
+  { key: ASSET_KEYS.HOUSE_1, path: House1, type: 'image' },
+  { key: ASSET_KEYS.HOUSE_2, path: House2, type: 'image' },
+  { key: ASSET_KEYS.HOUSE_3, path: House3, type: 'image' },
+  { key: ASSET_KEYS.HOUSE_4, path: House4, type: 'image' },
+  { key: ASSET_KEYS.HOUSE_5, path: House5, type: 'image' },
+  { key: ASSET_KEYS.HOUSE_CLOUD, path: HouseCloud, type: 'image' },
+  { key: ASSET_KEYS.BACKGROUND_CLOUD, path: BackgroundCloud, type: 'image' },
+  // HouseScene
+  { key: ASSET_KEYS.SUBURBAN_BACKGROUND, path: HouseBackground, type: 'image' },
+  { key: ASSET_KEYS.LESSON_HOUSE, path: LessonHouse, type: 'image' },
+  { key: ASSET_KEYS.VIDEO_PROGRESS_ICON, path: VideoProgressIcon, type: 'image' },
+  { key: ASSET_KEYS.DOCUMENT_PROGRESS_ICON, path: DocumentProgressIcon, type: 'image' },
+  { key: ASSET_KEYS.PROGRESS_STAR_ICON, path: ProgressStarIcon, type: 'image' },
+  { key: ASSET_KEYS.FRONT_GRASS, path: FrontGrass, type: 'image' },
+  // Bird celebration (SVG with dimensions)
+  { key: ASSET_KEYS.BIRD_CELEBRATION, path: BirdCelebration, type: 'svg', svgWidth: 200, svgHeight: 200 },
+];
+
+/** Tier 3: GrowYourNest minigame — load on-demand when minigame starts (12 assets) */
+const DEFERRED_ASSETS: AssetDefinition[] = [
+  { key: ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND, path: GrowYourNestBackground, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_1, path: stage1Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_2, path: stage2Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_3, path: stage3Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_4, path: stage4Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_5, path: stage5Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_6, path: stage6Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_STAGE_7, path: stage7Tree, type: 'image' },
+  { key: ASSET_KEYS.TREE_SHADOW, path: TreeShadow, type: 'image' },
+  { key: ASSET_KEYS.WATERING_CAN_STILL, path: WateringCanStill, type: 'image' },
+  { key: ASSET_KEYS.WATERING_CAN_POURING, path: WateringCanWatering, type: 'image' },
+  { key: ASSET_KEYS.FERTILIZER_STILL, path: FertilizerStill, type: 'image' },
+  { key: ASSET_KEYS.FERTILIZER_POURING, path: FertilizerPouring, type: 'image' },
+];
 
 export default class PreloaderScene extends Phaser.Scene {
   private progressBar?: Phaser.GameObjects.Graphics;
@@ -49,6 +118,8 @@ export default class PreloaderScene extends Phaser.Scene {
   private loadingText?: Phaser.GameObjects.Text;
   private percentText?: Phaser.GameObjects.Text;
   private shouldLoad: boolean = true;
+  private secondaryLoading: boolean = false;
+  private deferredLoading: boolean = false;
 
   constructor() {
     super({ key: SCENE_KEYS.PRELOADER });
@@ -109,58 +180,15 @@ export default class PreloaderScene extends Phaser.Scene {
       this.cleanup();
     });
 
-    // Load all assets
-    // Backgrounds
-    this.load.image(ASSET_KEYS.SUBURBAN_BACKGROUND, HouseBackground);
-    this.load.image(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND, NeighborhoodMap);
-    this.load.image(ASSET_KEYS.NEIGHBORHOOD_SHADOW, NeighborhoodShadow);
-    this.load.image(ASSET_KEYS.LOCK_ICON, LockIcon);
-    this.load.image(ASSET_KEYS.ROADBLOCK_ICON, RoadblockIcon);
-    this.load.image(ASSET_KEYS.NOTICE_BIRD_ICON, NoticeBirdIcon);
-    this.load.image(ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND, GrowYourNestBackground);
-    
-    // Neighborhoods
-    this.load.image(ASSET_KEYS.NEIGHBORHOOD_1, Neighborhood1);
-    this.load.image(ASSET_KEYS.NEIGHBORHOOD_2, Neighborhood2);
-    this.load.image(ASSET_KEYS.NEIGHBORHOOD_3, Neighborhood3);
-    
-    // Houses
-    this.load.image(ASSET_KEYS.LESSON_HOUSE, LessonHouse);
-    this.load.image(ASSET_KEYS.HOUSE_1, House1);
-    this.load.image(ASSET_KEYS.HOUSE_2, House2);
-    this.load.image(ASSET_KEYS.HOUSE_3, House3);
-    this.load.image(ASSET_KEYS.HOUSE_4, House4);
-    this.load.image(ASSET_KEYS.HOUSE_5, House5);
-    this.load.image(ASSET_KEYS.HOUSE_CLOUD, HouseCloud);
-    this.load.image(ASSET_KEYS.VIDEO_PROGRESS_ICON, VideoProgressIcon);
-    this.load.image(ASSET_KEYS.DOCUMENT_PROGRESS_ICON, DocumentProgressIcon);
-    this.load.image(ASSET_KEYS.PROGRESS_STAR_ICON, ProgressStarIcon);
-    this.load.image(ASSET_KEYS.FRONT_GRASS, FrontGrass);
-    this.load.image(ASSET_KEYS.BACKGROUND_CLOUD, BackgroundCloud);
-    
-    // Characters
-    this.load.image(ASSET_KEYS.BIRD_IDLE, BirdIdle);
-    this.load.image(ASSET_KEYS.BIRD_FLY, BirdFly);
-    this.load.svg(ASSET_KEYS.BIRD_CELEBRATION, BirdCelebration, { width: 200, height: 200 });
-    
-    // UI
-    this.load.image(ASSET_KEYS.COIN_ICON, CoinCounterIcon);
-    
-    // Trees
-    this.load.image(ASSET_KEYS.TREE_STAGE_1, stage1Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_2, stage2Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_3, stage3Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_4, stage4Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_5, stage5Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_6, stage6Tree);
-    this.load.image(ASSET_KEYS.TREE_STAGE_7, stage7Tree);
-    this.load.image(ASSET_KEYS.TREE_SHADOW, TreeShadow);
-
-    //Minigame Assets
-    this.load.image(ASSET_KEYS.WATERING_CAN_STILL, WateringCanStill);
-    this.load.image(ASSET_KEYS.WATERING_CAN_POURING, WateringCanWatering);
-    this.load.image(ASSET_KEYS.FERTILIZER_STILL, FertilizerStill);
-    this.load.image(ASSET_KEYS.FERTILIZER_POURING, FertilizerPouring);
+    // Load only Tier 1 (Critical) assets — MapScene + BaseScene essentials
+    // Tier 2 (Secondary) and Tier 3 (Deferred) load in background after map is visible
+    CRITICAL_ASSETS.forEach((asset) => {
+      if (asset.type === 'svg') {
+        this.load.svg(asset.key, asset.path, { width: asset.svgWidth, height: asset.svgHeight });
+      } else {
+        this.load.image(asset.key, asset.path);
+      }
+    });
   }
 
   create(): void {
@@ -183,8 +211,8 @@ export default class PreloaderScene extends Phaser.Scene {
       } else {
         console.log('✓ PreloaderScene: Onest fonts ready from fonts.css');
       }
-      this.scene.stop();
-      console.log('✓ PreloaderScene stopped, textures remain in cache');
+      this.scene.sleep();
+      console.log('✓ PreloaderScene sleeping, loader available for background asset loading');
     });
   }
 
@@ -209,5 +237,67 @@ export default class PreloaderScene extends Phaser.Scene {
       this.percentText.destroy();
       this.percentText = undefined;
     }
+  }
+
+  /**
+   * Load Tier 2 assets in the background after MapScene is visible.
+   * Called by GameManager once assetsLoaded is true.
+   * Sets registry flag 'secondaryAssetsLoaded' on completion.
+   */
+  loadSecondaryAssets(): void {
+    if (this.secondaryLoading || this.registry.get('secondaryAssetsLoaded')) {
+      return;
+    }
+    this.secondaryLoading = true;
+    console.log('PreloaderScene: Starting Tier 2 (Secondary) background load');
+
+    SECONDARY_ASSETS.forEach((asset) => {
+      // Skip if already loaded (e.g., from a previous session)
+      if (this.textures.exists(asset.key)) return;
+      if (asset.type === 'svg') {
+        this.load.svg(asset.key, asset.path, { width: asset.svgWidth, height: asset.svgHeight });
+      } else {
+        this.load.image(asset.key, asset.path);
+      }
+    });
+
+    const onComplete = () => {
+      this.load.off('complete', onComplete);
+      this.registry.set('secondaryAssetsLoaded', true);
+      console.log('✓ PreloaderScene: Tier 2 (Secondary) assets loaded');
+    };
+    this.load.on('complete', onComplete);
+    this.load.start();
+  }
+
+  /**
+   * Load Tier 3 assets on-demand when the minigame is first navigated to.
+   * Called by GameManager when user enters minigame view.
+   * Sets registry flag 'deferredAssetsLoaded' on completion.
+   */
+  loadDeferredAssets(): void {
+    if (this.deferredLoading || this.registry.get('deferredAssetsLoaded')) {
+      return;
+    }
+    this.deferredLoading = true;
+    console.log('PreloaderScene: Starting Tier 3 (Deferred) background load');
+
+    DEFERRED_ASSETS.forEach((asset) => {
+      // Skip if already loaded
+      if (this.textures.exists(asset.key)) return;
+      if (asset.type === 'svg') {
+        this.load.svg(asset.key, asset.path, { width: asset.svgWidth, height: asset.svgHeight });
+      } else {
+        this.load.image(asset.key, asset.path);
+      }
+    });
+
+    const onComplete = () => {
+      this.load.off('complete', onComplete);
+      this.registry.set('deferredAssetsLoaded', true);
+      console.log('✓ PreloaderScene: Tier 3 (Deferred) assets loaded');
+    };
+    this.load.on('complete', onComplete);
+    this.load.start();
   }
 }

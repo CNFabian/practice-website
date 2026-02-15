@@ -178,11 +178,27 @@ export default class HouseScene extends BaseScene {
     }
 
     // Layer 1 (depth 2): Lesson house image with transparent background
-    this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
-    this.lessonHouse.setDepth(1);
+    // OPT-02: Check texture exists (Tier 2 may still be loading)
+    if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
+      this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
+      this.lessonHouse.setDepth(1);
 
-    const houseScale = Math.min(width, height) * 0.00121;
-    this.lessonHouse.setScale(houseScale);
+      const houseScale = Math.min(width, height) * 0.00121;
+      this.lessonHouse.setScale(houseScale);
+    } else {
+      // Listen for secondary assets and create house when ready
+      const onLoaded = () => {
+        this.registry.events.off('changedata-secondaryAssetsLoaded', onLoaded);
+        if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
+          const { width, height } = this.scale;
+          this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
+          this.lessonHouse.setDepth(1);
+          const houseScale = Math.min(width, height) * 0.00121;
+          this.lessonHouse.setScale(houseScale);
+        }
+      };
+      this.registry.events.on('changedata-secondaryAssetsLoaded', onLoaded);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

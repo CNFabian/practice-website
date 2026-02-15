@@ -389,6 +389,9 @@ public expandProgressCard(houseIndex: number): void {
   }
 
   private createBackgroundClouds(): void {
+    // OPT-02: Skip if cloud texture not yet loaded (Tier 2)
+    if (!this.textures.exists(ASSET_KEYS.BACKGROUND_CLOUD)) return;
+
     const { width, height } = this.scale;
     const worldWidth = width * 2.5; // Match the camera world width
     
@@ -567,6 +570,9 @@ public expandProgressCard(houseIndex: number): void {
   }
 
   private createGrassLayer(): void {
+    // OPT-02: Skip if grass texture not yet loaded (Tier 2)
+    if (!this.textures.exists('frontGrass')) return;
+
     const { width, height } = this.scale;
     
     // Use world width instead of just viewport width for scrollable area
@@ -844,7 +850,7 @@ public expandProgressCard(houseIndex: number): void {
     }
 
     // Add cloud overlay for locked houses ONLY - positioned lower
-    if (isLocked && house.houseType) {
+    if (isLocked && house.houseType && this.textures.exists(ASSET_KEYS.HOUSE_CLOUD)) {
       const cloudOverlay = this.add.image(x, y + scale(10), ASSET_KEYS.HOUSE_CLOUD);
       cloudOverlay.setDisplaySize(scale(700), scale(700));
       cloudOverlay.setAlpha(0); // Start invisible for fade-in
@@ -927,7 +933,23 @@ public expandProgressCard(houseIndex: number): void {
     container: Phaser.GameObjects.Container, 
     houseType: string, 
     isLocked: boolean
-  ): Phaser.GameObjects.Image {
+  ): Phaser.GameObjects.Image | undefined {
+    // OPT-02: Check texture exists (Tier 2 may still be loading)
+    if (!this.textures.exists(houseType)) {
+      // Listen for secondary assets to finish loading, then retry
+      const onLoaded = () => {
+        this.registry.events.off('changedata-secondaryAssetsLoaded', onLoaded);
+        if (this.textures.exists(houseType)) {
+          const img = this.add.image(0, 0, houseType);
+          img.setScale(scale(1));
+          if (isLocked) img.setTint(0x999999);
+          container.add(img);
+        }
+      };
+      this.registry.events.on('changedata-secondaryAssetsLoaded', onLoaded);
+      return undefined;
+    }
+
     const houseImage = this.add.image(0, 0, houseType);
     houseImage.setScale(scale(1));
     
