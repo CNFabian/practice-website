@@ -74,7 +74,7 @@ const CRITICAL_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.BIRD_FLY, path: BirdFly, type: 'image' },
 ];
 
-/** Tier 2: NeighborhoodScene + HouseScene — background load after map visible (15 assets) */
+/** Tier 2: NeighborhoodScene + HouseScene — background load after map visible (22 assets) */
 const SECONDARY_ASSETS: AssetDefinition[] = [
   // NeighborhoodScene
   { key: ASSET_KEYS.HOUSE_1, path: House1, type: 'image' },
@@ -93,11 +93,8 @@ const SECONDARY_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.FRONT_GRASS, path: FrontGrass, type: 'image' },
   // Bird celebration (SVG with dimensions)
   { key: ASSET_KEYS.BIRD_CELEBRATION, path: BirdCelebration, type: 'svg', svgWidth: 200, svgHeight: 200 },
-];
-
-/** Tier 3: GrowYourNest minigame — load on-demand when minigame starts (12 assets) */
-const DEFERRED_ASSETS: AssetDefinition[] = [
-  { key: ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND, path: GrowYourNestBackground, type: 'image' },
+  // Tree stage images — needed by HouseProgressCard minigame indicator on hover
+  // Moved from Tier 3 to Tier 2 so they are available when NeighborhoodScene renders
   { key: ASSET_KEYS.TREE_STAGE_1, path: stage1Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_2, path: stage2Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_3, path: stage3Tree, type: 'image' },
@@ -105,6 +102,11 @@ const DEFERRED_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.TREE_STAGE_5, path: stage5Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_6, path: stage6Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_7, path: stage7Tree, type: 'image' },
+];
+
+/** Tier 3: GrowYourNest minigame — load on-demand when minigame starts (5 assets) */
+const DEFERRED_ASSETS: AssetDefinition[] = [
+  { key: ASSET_KEYS.GROW_YOUR_NEST_BACKGROUND, path: GrowYourNestBackground, type: 'image' },
   { key: ASSET_KEYS.TREE_SHADOW, path: TreeShadow, type: 'image' },
   { key: ASSET_KEYS.WATERING_CAN_STILL, path: WateringCanStill, type: 'image' },
   { key: ASSET_KEYS.WATERING_CAN_POURING, path: WateringCanWatering, type: 'image' },

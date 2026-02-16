@@ -132,6 +132,10 @@ const MainLayoutContent: React.FC = () => {
 
       console.log('🎬 Walkthrough: Starting GrowYourNestMinigame transition');
 
+      // Step 0: Ensure Tier 3 (Deferred) assets are loaded before launching minigame
+      // The walkthrough bypasses ModulesPage's useEffect that normally triggers this
+      GameManager.loadDeferredAssets();
+
       // Step 1: Dismiss the LessonView React overlay
       const handleBackToHouse = game.registry.get('handleBackToHouse');
       if (handleBackToHouse) {

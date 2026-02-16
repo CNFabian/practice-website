@@ -343,17 +343,21 @@ export class HouseProgressCard {
         treeStage = Math.min(treeStage, 6); // Cap at stage 6 until 100%
       }
 
-      // Display the tree stage image (these are loaded in PreloaderScene as 'tree_stage_1' through 'tree_stage_7')
-      const treeIcon = scene.add.image(circleX, bottomY, `tree_stage_${treeStage}`);
+      // Display the tree stage image — guarded with textures.exists()
+      // Tree stages are Tier 2 assets; may still be loading on fast navigation
+      const treeKey = `tree_stage_${treeStage}`;
+      if (scene.textures.exists(treeKey)) {
+        const treeIcon = scene.add.image(circleX, bottomY, treeKey);
 
-      // Scale the tree to fit in the circular progress indicator
-      // The circle has radius of scale(16), so tree should fit within ~scale(28) diameter
-      const targetSize = scale(28);
-      const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
-      treeIcon.setScale(treeScale);
-      treeIcon.setOrigin(0.5);
+        // Scale the tree to fit in the circular progress indicator
+        // The circle has radius of scale(16), so tree should fit within ~scale(28) diameter
+        const targetSize = scale(28);
+        const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
+        treeIcon.setScale(treeScale);
+        treeIcon.setOrigin(0.5);
 
-      progressContainer.add(treeIcon);
+        progressContainer.add(treeIcon);
+      }
 
       // Determine button text based on status
       const getButtonText = (): string => {

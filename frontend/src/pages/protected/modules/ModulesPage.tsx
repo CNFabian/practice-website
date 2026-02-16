@@ -31,6 +31,7 @@ const ModulesPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [secondaryAssetsLoaded, setSecondaryAssetsLoaded] = useState(false);
   const location = useLocation();
   const walkthroughTriggered = useRef(false);
   const { data: dashboardModules } = useDashboardModules();
@@ -300,15 +301,49 @@ const ModulesPage: React.FC = () => {
     GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
   }, [lessonsData, navState.moduleBackendId, isLoadingLessons]);
 
-  // Update Phaser game size when sidebar collapses/expands
+  // Trigger Tier 2 (Secondary) background asset loading after map is visible
   useEffect(() => {
     if (!isPhaserReady || !assetsLoaded) return;
-    
-    const offset = isCollapsed ? 80 : 192;
-    GameManager.updateSidebarOffset(offset);
-  }, [isCollapsed, isPhaserReady, assetsLoaded]);
 
-  // OPT-02: Trigger Tier 2 (Secondary) background asset loading after map is visible
+    const game = GameManager.getGame();
+    if (!game) return;
+
+    // If already loaded (e.g. game instance persisted across remount), set immediately
+    if (game.registry.get('secondaryAssetsLoaded')) {
+      setSecondaryAssetsLoaded(true);
+      return;
+    }
+
+    // Start Tier 2 loading
+    GameManager.loadSecondaryAssets();
+
+    // Listen for completion via Phaser registry's specific change event
+    // Phaser emits 'changedata-KEY' (not generic 'changedata' with key arg)
+    const eventName = 'changedata-secondaryAssetsLoaded';
+    const onSecondaryLoaded = () => {
+      console.log('✅ [ModulesPage] Tier 2 secondary assets loaded — scenes ready');
+      setSecondaryAssetsLoaded(true);
+      game.registry.events.off(eventName, onSecondaryLoaded);
+    };
+    game.registry.events.on(eventName, onSecondaryLoaded);
+
+    // Also poll as a safety net in case the event fired between
+    // the check above and the listener registration (race condition)
+    const pollInterval = setInterval(() => {
+      if (game.registry.get('secondaryAssetsLoaded')) {
+        setSecondaryAssetsLoaded(true);
+        clearInterval(pollInterval);
+        game.registry.events.off(eventName, onSecondaryLoaded);
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(pollInterval);
+      game.registry.events.off(eventName, onSecondaryLoaded);
+    };
+  }, [isPhaserReady, assetsLoaded]);
+
+  // Trigger Tier 2 (Secondary) background asset loading after map is visible
   useEffect(() => {
     if (!isPhaserReady || !assetsLoaded) return;
     GameManager.loadSecondaryAssets();
@@ -386,10 +421,20 @@ const ModulesPage: React.FC = () => {
         break;
 
       case 'neighborhood':
+        // Tier 2 assets required — wait for them before transitioning
+        if (!secondaryAssetsLoaded) {
+          console.log('⏳ [Scene Transition] Waiting for Tier 2 assets before entering neighborhood...');
+          return;
+        }
         GameManager.transitionToNeighborhood(navState.neighborhoodId, navState.currentHouseIndex);
         break;
 
       case 'house':
+        // Tier 2 assets required — wait for them before transitioning
+        if (!secondaryAssetsLoaded) {
+          console.log('⏳ [Scene Transition] Waiting for Tier 2 assets before entering house...');
+          return;
+        }
         GameManager.transitionToHouse(
           navState.houseId,
           navState.moduleBackendId
@@ -405,7 +450,7 @@ const ModulesPage: React.FC = () => {
         }
         break;
     }
-  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules]);
+  }, [navState, isPhaserReady, assetsLoaded, isLoadingModules, secondaryAssetsLoaded]);
 
   // Handle window resize
   useEffect(() => {

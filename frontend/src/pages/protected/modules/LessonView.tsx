@@ -200,7 +200,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   addProgressItem,
   flushProgress
 }) => {
-  const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // YouTube Player state and refs
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -213,6 +214,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [playerState, setPlayerState] = useState<number>(YT_PLAYER_STATES.UNSTARTED);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [videoCompleted, setVideoCompleted] = useState(false); // Track if video is complete
+  const [readingCompleted, setReadingCompleted] = useState(false); // Track if reading is marked complete
 
   // Milestone tracking refs
   const milestonesReachedRef = useRef<Set<number>>(new Set());
@@ -235,6 +237,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
     // Reset all per-lesson state when lesson changes
     setVideoCompleted(false);
+    setReadingCompleted(false);
     milestonesReachedRef.current.clear();
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
@@ -321,13 +324,15 @@ const LessonView: React.FC<LessonViewProps> = ({
     isLoading: isLoadingLesson, 
     error: lessonError 
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
+
+  // Derive completion state from backend data
+  const isCompleted = !!backendLessonData?.is_completed;
   
   // ═══════════════════════════════════════════════════════════
   // GYN "JUST UNLOCKED" notification — detects is_completed
   // transitioning from falsy → true while GYN not yet played
   // ═══════════════════════════════════════════════════════════
   useEffect(() => {
-    const isCompleted = !!backendLessonData?.is_completed;
     const gynPlayed = !!backendLessonData?.grow_your_nest_played;
     const wasCompleted = prevIsCompletedRef.current;
 
@@ -354,7 +359,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         gynNotificationTimerRef.current = null;
       }
     };
-  }, [backendLessonData?.is_completed, backendLessonData?.grow_your_nest_played]);
+  }, [isCompleted, backendLessonData?.grow_your_nest_played]);
 
   // ═══════════════════════════════════════════════════════════
   // GYN QUESTIONS — Only fetch when server confirms:
@@ -423,7 +428,6 @@ const LessonView: React.FC<LessonViewProps> = ({
             },
             onError: (error) => {
               console.error(`❌ [Milestone] Failed to track ${milestone}%:`, error);
-              // Remove from set so it retries next time
               milestonesReachedRef.current.delete(milestone);
             },
           }
@@ -447,13 +451,11 @@ const LessonView: React.FC<LessonViewProps> = ({
       return -1;
     }
     
-    // Primary: match by backendId (most reliable, always a UUID)
     if (lesson.backendId) {
       const idx = module.lessons.findIndex(l => l.backendId === lesson.backendId);
       if (idx !== -1) return idx;
     }
     
-    // Fallback: match by frontend id (strict then loose)
     let idx = module.lessons.findIndex(l => l.id === lesson.id);
     if (idx === -1) {
       idx = module.lessons.findIndex(l => String(l.id) === String(lesson.id));
@@ -475,7 +477,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     return extractYouTubeVideoId(videoUrl || '');
   }, [videoUrl]);
 
-  // Define handleVideoProgress before YouTube event handlers that use it
   const handleVideoProgress = useCallback((seconds: number) => {
     if (!isValidBackendId || !module?.backendId) {
       console.warn('⚠️ Cannot update progress - invalid backend IDs');
@@ -510,7 +511,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     
     setVideoDuration(duration);
     setIsPlayerReady(true);
-    setVideoCompleted(false); // Reset on player ready
+    setVideoCompleted(false);
 
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -527,14 +528,11 @@ const LessonView: React.FC<LessonViewProps> = ({
           console.log('🛑 [YouTube Player] Stopping video at', currentTime.toFixed(2), 'to prevent recommendations');
           player.pauseVideo();
           
-          // Mark as complete and hide player
           setVideoCompleted(true);
           console.log('✅ [YouTube Player] VIDEO COMPLETED - Player hidden!');
           
-          // Update progress to full duration
           handleVideoProgress(Math.floor(duration));
           
-          // Mark lesson as complete on backend (NO GYN modal here — only on navigation)
           if (isValidBackendId && module?.backendId) {
             console.log('📝 [YouTube Player] Marking lesson as complete on backend');
             completeLessonMutation({ lessonId: lesson.backendId! }, {
@@ -550,21 +548,17 @@ const LessonView: React.FC<LessonViewProps> = ({
           return;
         }
         
-        // Only process when playing to avoid spam
         if (state === YT_PLAYER_STATES.PLAYING) {
           console.log('⏯️ [YouTube Player] Progress - Time:', currentTime.toFixed(2), 'State:', getPlayerStateName(state));
           
-          // Check milestone thresholds (replaces continuous progress updates)
           checkAndTrackMilestones(currentTime, duration);
           
-          // Reduced-frequency progress sync: every 30 seconds instead of every second
           const now = Date.now();
           if (now - lastProgressSyncRef.current >= 30000) {
             handleVideoProgress(Math.floor(currentTime));
             lastProgressSyncRef.current = now;
           }
 
-          // Queue for batch sync on tab close/hide (Step 13)
           if (addProgressItem && lesson.backendId) {
             addProgressItem({
               lesson_id: lesson.backendId,
@@ -577,7 +571,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         
         setCurrentVideoTime(currentTime);
       }
-    }, 1000); // Update every second for UI, but milestones + progress sync are throttled
+    }, 1000);
 
   }, [handleVideoProgress, checkAndTrackMilestones, isValidBackendId, module?.backendId, completeLessonMutation, lesson?.backendId, addProgressItem]);
 
@@ -602,10 +596,9 @@ const LessonView: React.FC<LessonViewProps> = ({
         
       case YT_PLAYER_STATES.ENDED:
         console.log('✅ [YouTube Player] VIDEO COMPLETED!');
-        setVideoCompleted(true); // Hide player immediately
-        handleVideoProgress(Math.floor(duration)); // Send full duration as progress
+        setVideoCompleted(true);
+        handleVideoProgress(Math.floor(duration));
         
-        // Mark lesson as complete on backend (NO GYN modal here — only on navigation)
         if (isValidBackendId && module?.backendId) {
           console.log('📝 [YouTube Player] Marking lesson as complete on backend');
           completeLessonMutation({ lessonId: lesson.backendId! }, {
@@ -701,14 +694,14 @@ const LessonView: React.FC<LessonViewProps> = ({
           autoplay: 0,
           controls: 1,
           modestbranding: 1,
-          rel: 0,              // Don't show related videos
+          rel: 0,
           showinfo: 0,
           fs: 1,
           cc_load_policy: 0,
           iv_load_policy: 3,
           autohide: 0,
-          disablekb: 0,        // Keep keyboard controls enabled
-          enablejsapi: 1,      // Enable JS API
+          disablekb: 0,
+          enablejsapi: 1,
           origin: window.location.origin,
           widget_referrer: window.location.origin
         },
@@ -761,11 +754,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [nextLesson, onNextLesson, module.backendId, onBack]);
 
-  // ═══════════════════════════════════════════════════════════
-  // NEXT LESSON BUTTON (top-right "Next Lesson" / "Finish")
-  // Navigation only — does NOT mark lesson as complete.
-  // Lesson completion is handled by video completion events.
-  // ═══════════════════════════════════════════════════════════
   const handleNavigateNext = useCallback(() => {
     if (flushProgress) {
       flushProgress();
@@ -773,7 +761,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     
     console.log('➡️ Next lesson / finish button pressed');
     
-    // Navigate: next lesson if available, otherwise back to house
     if (nextLesson) {
       executeNavigation();
     } else {
@@ -781,10 +768,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [flushProgress, nextLesson, executeNavigation, onBack]);
 
-  // ═══════════════════════════════════════════════════════════
-  // NEXT LESSON BUTTON (bottom bar)
-  // Navigation only — does NOT mark lesson as complete.
-  // ═══════════════════════════════════════════════════════════
   const handleNextLesson = useCallback(() => {
     if (!nextLesson) return;
     
@@ -801,7 +784,6 @@ const LessonView: React.FC<LessonViewProps> = ({
   // ═══════════════════════════════════════════════════════════
 
   const handleGYNPlay = useCallback(async () => {
-    // Dismiss "just unlocked" notification if showing
     setShowGYNUnlockedNotification(false);
     if (gynNotificationTimerRef.current) {
       clearTimeout(gynNotificationTimerRef.current);
@@ -826,11 +808,8 @@ const LessonView: React.FC<LessonViewProps> = ({
           gynData
         );
 
-        // Step 1: Dismiss LessonView first to reveal HouseScene
         onBack();
 
-        // Step 2: After React state updates and HouseScene is visible,
-        // trigger the slide transition via HouseScene's public method
         setTimeout(() => {
           const phaserGame = gameManager.getGame();
           if (phaserGame) {
@@ -861,8 +840,37 @@ const LessonView: React.FC<LessonViewProps> = ({
   }, [onBack]);
 
   // ═══════════════════════════════════════════════════════════
-  // TEMPORARY DEV BUTTONS — Remove before production
+  // FINISH LESSON (READING MODE) — Marks lesson complete
+  // from reading view when user clicks the Finish Lesson button
   // ═══════════════════════════════════════════════════════════
+  const handleFinishReading = useCallback(() => {
+    if (readingCompleted || isCompleted) return; // Prevent double-clicks
+    setReadingCompleted(true);
+
+    // Mark lesson as complete on backend
+    if (isValidBackendId && module?.backendId && lesson.backendId) {
+      console.log('📖 [Reading] Marking lesson as complete from reading view');
+      completeLessonMutation({ lessonId: lesson.backendId }, {
+        onSuccess: () => {
+          console.log('✅ [Reading] Lesson marked complete successfully');
+        },
+        onError: (error: Error) => {
+          console.error('❌ [Reading] Failed to mark lesson complete:', error);
+        }
+      });
+    }
+
+    // Also track reading progress via batch
+    if (addProgressItem && lesson.backendId) {
+      addProgressItem({
+        lesson_id: lesson.backendId,
+        content_type: 'transcript',
+        transcript_progress_percentage: 100,
+        time_spent_seconds: Math.floor((Date.now() - lessonStartTimeRef.current) / 1000),
+        completed: true,
+      });
+    }
+  }, [readingCompleted, isCompleted, isValidBackendId, module?.backendId, lesson.backendId, completeLessonMutation, addProgressItem]);
 
   const displayTitle = backendLessonData?.title || lesson.title;
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
@@ -1215,6 +1223,42 @@ const LessonView: React.FC<LessonViewProps> = ({
                         That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?
                       </p>
                     </>
+                  )}
+                </div>
+
+                {/* ═══════════════════════════════════════════════════ */}
+                {/* FINISH LESSON BUTTON — Reading mode completion     */}
+                {/* Shows when lesson is not yet completed.            */}
+                {/* Calls completeLessonMutation on backend.           */}
+                {/* ═══════════════════════════════════════════════════ */}
+                <div className="mt-6 pt-4 border-t border-unavailable-button/30">
+                  {!isCompleted && !readingCompleted ? (
+                    <button
+                      onClick={handleFinishReading}
+                      className="w-full py-3 rounded-xl font-medium transition-all duration-300 bg-status-green text-pure-white hover:opacity-90 active:scale-[0.98]"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-medium text-pure-white">
+                          Finish Lesson
+                        </span>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="w-full py-3 rounded-xl bg-status-green/10 border border-status-green/30 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 bg-status-green rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-pure-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="font-medium text-sm text-status-green">
+                          Lesson Complete
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
