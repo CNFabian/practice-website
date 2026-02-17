@@ -33,15 +33,6 @@ export const useCompleteLesson = (
         queryKeys.learning.lesson(lessonId)
       );
 
-      queryClient.setQueryData(
-        queryKeys.learning.lesson(lessonId),
-        (old: any) => ({
-          ...old,
-          is_completed: true,
-          completed: true,
-        })
-      );
-
       return { previousLesson };
     },
 

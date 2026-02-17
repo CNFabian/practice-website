@@ -46,6 +46,7 @@ export interface GYNSceneState {
   moduleNumber: number;
   isWateringAnimationPlaying: boolean;
   isFertilizerAnimationPlaying: boolean;
+  lessonPassed: boolean | null;
 
 
   // UI element references

@@ -803,6 +803,9 @@ export function showCompletion(
   const coinButtonFontSize = Math.round(panelWidth * 0.03);
   const moduleButtonFontSize = Math.round(panelWidth * 0.034);
 
+  // Determine if this was a failed lesson attempt
+  const isLessonFailed = state.gameMode === 'lesson' && state.lessonPassed === false;
+
   // Title
   const title = scene.add.text(
     panelWidth / 2,
@@ -822,12 +825,12 @@ export function showCompletion(
     state.rightPanel.add(bird);
   }
 
-  // "Questions Completed!" text
+  // Completion / failure headline
   const completionTextY = birdY + panelHeight * 0.14;
   const completionText = scene.add.text(
     panelWidth / 2,
     completionTextY,
-    'Questions Completed!',
+    isLessonFailed ? 'Almost There!' : 'Questions Completed!',
     createTextStyle('H2', COLORS.TEXT_PRIMARY, {
       fontSize: `${completionTextFontSize}px`,
     })
@@ -835,8 +838,25 @@ export function showCompletion(
   completionText.setOrigin(0.5, 0.5);
   state.rightPanel.add(completionText);
 
+  // Failure hint text — only shown when lesson failed
+  if (isLessonFailed) {
+    const hintFontSize = Math.round(panelWidth * 0.028);
+    const hintText = scene.add.text(
+      panelWidth / 2,
+      completionTextY + panelHeight * 0.06,
+      'You need 3/3 correct to complete.\nTry again — you\'ve got this!',
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
+        fontSize: `${hintFontSize}px`,
+        align: 'center',
+        lineSpacing: 4,
+      })
+    );
+    hintText.setOrigin(0.5, 0.5);
+    state.rightPanel.add(hintText);
+  }
+
   // Two stat boxes side by side
-  const boxY = completionTextY + panelHeight * 0.12;
+  const boxY = completionTextY + panelHeight * (isLessonFailed ? 0.18 : 0.12);
   const boxSpacing = panelWidth * 0.02;
   const boxWidth = (contentWidth - boxSpacing) / 2;
   const boxHeight = panelHeight * 0.12;
@@ -845,7 +865,7 @@ export function showCompletion(
   // Left box — Growth Earned
   const leftBoxX = horizontalPadding;
   const leftBoxBg = scene.add.graphics();
-  leftBoxBg.lineStyle(2, COLORS.ELEGANT_BLUE);
+  leftBoxBg.lineStyle(2, isLessonFailed ? COLORS.TEXT_GREY : COLORS.ELEGANT_BLUE);
   leftBoxBg.strokeRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
   state.rightPanel.add(leftBoxBg);
 
@@ -853,7 +873,7 @@ export function showCompletion(
     leftBoxX + boxWidth / 2,
     boxY + boxHeight * 0.32,
     'Growth Earned',
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+    createTextStyle('BODY_BOLD', isLessonFailed ? COLORS.TEXT_SECONDARY : COLORS.TEXT_SUCCESS, {
       fontSize: `${boxTitleFontSize}px`,
     })
   );
@@ -865,7 +885,7 @@ export function showCompletion(
     leftBoxX + boxWidth / 2,
     boxY + boxHeight * 0.68,
     `Water +${waterEarned}`,
-    createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
+    createTextStyle('BODY_MEDIUM', isLessonFailed ? COLORS.TEXT_SECONDARY : COLORS.TEXT_SUCCESS, {
       fontSize: `${boxValueFontSize}px`,
       align: 'center',
       lineSpacing: 2,
@@ -877,7 +897,7 @@ export function showCompletion(
   // Right box — Accuracy
   const rightBoxX = leftBoxX + boxWidth + boxSpacing;
   const rightBoxBg = scene.add.graphics();
-  rightBoxBg.lineStyle(2, COLORS.ELEGANT_BLUE);
+  rightBoxBg.lineStyle(2, isLessonFailed ? COLORS.TEXT_GREY : COLORS.ELEGANT_BLUE);
   rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
   state.rightPanel.add(rightBoxBg);
 
@@ -901,7 +921,7 @@ export function showCompletion(
     rightBoxX + boxWidth / 2,
     boxY + boxHeight * 0.38,
     accuracyMessage,
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+    createTextStyle('BODY_BOLD', isLessonFailed ? COLORS.TEXT_WARNING : COLORS.TEXT_SUCCESS, {
       fontSize: `${boxTitleFontSize}px`,
     })
   );
@@ -912,21 +932,21 @@ export function showCompletion(
     rightBoxX + boxWidth / 2,
     boxY + boxHeight * 0.68,
     `${accuracy}% Accuracy`,
-    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+    createTextStyle('BODY_BOLD', isLessonFailed ? COLORS.TEXT_WARNING : COLORS.TEXT_SUCCESS, {
       fontSize: `${boxValueFontSize}px`,
     })
   );
   accuracyValue.setOrigin(0.5, 0.5);
   state.rightPanel.add(accuracyValue);
 
-  // Coin earned button
+  // Coin / status pill
   const coinButtonY = boxY + boxHeight + panelHeight * 0.045;
   const coinButtonWidth = contentWidth * 0.65;
   const coinButtonHeight = panelHeight * 0.08;
   const coinButtonRadius = coinButtonHeight / 2;
 
   const coinButton = scene.add.graphics();
-  coinButton.fillStyle(COLORS.ELEGANT_BLUE);
+  coinButton.fillStyle(isLessonFailed ? COLORS.TEXT_GREY : COLORS.ELEGANT_BLUE);
   coinButton.fillRoundedRect(
     panelWidth / 2 - coinButtonWidth / 2,
     coinButtonY,
@@ -937,9 +957,14 @@ export function showCompletion(
   state.rightPanel.add(coinButton);
 
   const coinsEarned = state.totalCoinsEarned;
-  const coinDisplayText = coinsEarned > 0
-    ? `You earned ${coinsEarned}\nNest Coins!`
-    : `Keep learning to\nearn more coins!`;
+  let coinDisplayText: string;
+  if (isLessonFailed) {
+    coinDisplayText = `${state.score}/${state.questions.length} correct\nGet all 3 to earn rewards!`;
+  } else if (coinsEarned > 0) {
+    coinDisplayText = `You earned ${coinsEarned}\nNest Coins!`;
+  } else {
+    coinDisplayText = `Keep learning to\nearn more coins!`;
+  }
   const coinText = scene.add.text(
     panelWidth / 2,
     coinButtonY + coinButtonHeight / 2,
@@ -953,66 +978,146 @@ export function showCompletion(
   coinText.setOrigin(0.5, 0.5);
   state.rightPanel.add(coinText);
 
-  // MODULE return button
+  // Bottom button area
   const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
   const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
-  const moduleButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
-  const moduleButtonY = panelHeight - nextButtonMargin;
 
-  const moduleButtonWidth = panelWidth * 0.24;
-  const moduleButtonHeight = panelWidth * 0.08;
-  const moduleButtonRadius = moduleButtonHeight / 2;
+  if (isLessonFailed) {
+    // ── "TRY AGAIN" button — re-fetches questions and restarts the scene ──
+    const tryAgainButtonWidth = panelWidth * 0.36;
+    const tryAgainButtonHeight = panelWidth * 0.10;
+    const tryAgainButtonRadius = tryAgainButtonHeight / 2;
+    const tryAgainButtonX = panelWidth / 2;
+    const tryAgainButtonY = panelHeight - nextButtonMargin;
 
-  state.completionReturnButton = scene.add.container(moduleButtonX, moduleButtonY);
+    const tryAgainContainer = scene.add.container(tryAgainButtonX, tryAgainButtonY);
 
-  const moduleButtonBg = scene.add.graphics();
-  moduleButtonBg.fillStyle(COLORS.LOGO_BLUE);
-  moduleButtonBg.fillRoundedRect(
-    -moduleButtonWidth / 2,
-    -moduleButtonHeight / 2,
-    moduleButtonWidth,
-    moduleButtonHeight,
-    moduleButtonRadius
-  );
+    const tryAgainBg = scene.add.graphics();
+    tryAgainBg.fillStyle(COLORS.LOGO_BLUE);
+    tryAgainBg.fillRoundedRect(
+      -tryAgainButtonWidth / 2,
+      -tryAgainButtonHeight / 2,
+      tryAgainButtonWidth,
+      tryAgainButtonHeight,
+      tryAgainButtonRadius
+    );
 
-  const moduleButtonText = scene.add.text(
-    -moduleButtonWidth * 0.12,
-    0,
-    'MODULE',
-    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
-      fontSize: `${moduleButtonFontSize}px`,
-    })
-  );
-  moduleButtonText.setOrigin(0.5, 0.5);
+    const tryAgainText = scene.add.text(
+      0,
+      0,
+      'TRY AGAIN',
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${moduleButtonFontSize}px`,
+      })
+    );
+    tryAgainText.setOrigin(0.5, 0.5);
 
-  const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
-  const arrow = scene.add.text(
-    moduleButtonWidth * 0.22,
-    0,
-    '→',
-    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
-      fontSize: `${arrowFontSize}px`,
-    })
-  );
-  arrow.setOrigin(0.5, 0.5);
+    tryAgainContainer.add([tryAgainBg, tryAgainText]);
 
-  state.completionReturnButton.add([moduleButtonBg, moduleButtonText, arrow]);
+    const tryAgainHitArea = scene.add.rectangle(
+      0, 0, tryAgainButtonWidth, tryAgainButtonHeight, 0x000000, 0
+    );
+    tryAgainHitArea.setInteractive({ useHandCursor: true });
+    tryAgainHitArea.on('pointerdown', () => {
+      // Re-fetch questions from the API and restart the scene cleanly
+      const gyn = scene as any;
+      if (gyn.lessonId && gyn.moduleId) {
+        import('../../../../../../../services/growYourNestAPI').then(({ getLessonQuestions, transformGYNQuestionsForMinigame }) => {
+          getLessonQuestions(gyn.lessonId).then((response: any) => {
+            const transformedQuestions = transformGYNQuestionsForMinigame(response.questions);
+            scene.scene.restart({
+              mode: 'lesson',
+              lessonId: gyn.lessonId,
+              moduleId: gyn.moduleId,
+              questions: transformedQuestions,
+              treeState: response.tree_state,
+              moduleNumber: gyn.moduleNumber || 1,
+              showStartScreen: false,
+            });
+          }).catch(() => {
+            // Fallback: restart with the same questions
+            scene.scene.restart({
+              mode: 'lesson',
+              lessonId: gyn.lessonId,
+              moduleId: gyn.moduleId,
+              questions: state.questions.map((q) => ({
+                id: q.id,
+                question: q.question,
+                options: q.options,
+                correctAnswerId: null,
+                explanation: q.explanation || '',
+              })),
+              treeState: state.treeState,
+              moduleNumber: gyn.moduleNumber || 1,
+              showStartScreen: false,
+            });
+          });
+        });
+      }
+    });
+    tryAgainContainer.add(tryAgainHitArea);
+    tryAgainContainer.sendToBack(tryAgainHitArea);
+    state.rightPanel.add(tryAgainContainer);
+  } else {
+    // ── MODULE return button (normal pass / free roam flow) ──
+    const moduleButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
+    const moduleButtonY = panelHeight - nextButtonMargin;
 
-  const hitArea = scene.add.rectangle(
-    0,
-    0,
-    moduleButtonWidth,
-    moduleButtonHeight,
-    0x000000,
-    0
-  );
-  hitArea.setInteractive({ useHandCursor: true });
-  hitArea.on('pointerdown', () => {
-    onReturn();
-  });
-  state.completionReturnButton.add(hitArea);
-  state.completionReturnButton.sendToBack(hitArea);
-  state.rightPanel.add(state.completionReturnButton);
+    const moduleButtonWidth = panelWidth * 0.24;
+    const moduleButtonHeight = panelWidth * 0.08;
+    const moduleButtonRadius = moduleButtonHeight / 2;
+
+    state.completionReturnButton = scene.add.container(moduleButtonX, moduleButtonY);
+
+    const moduleButtonBg = scene.add.graphics();
+    moduleButtonBg.fillStyle(COLORS.LOGO_BLUE);
+    moduleButtonBg.fillRoundedRect(
+      -moduleButtonWidth / 2,
+      -moduleButtonHeight / 2,
+      moduleButtonWidth,
+      moduleButtonHeight,
+      moduleButtonRadius
+    );
+
+    const moduleButtonText = scene.add.text(
+      -moduleButtonWidth * 0.12,
+      0,
+      'MODULE',
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${moduleButtonFontSize}px`,
+      })
+    );
+    moduleButtonText.setOrigin(0.5, 0.5);
+
+    const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
+    const arrow = scene.add.text(
+      moduleButtonWidth * 0.22,
+      0,
+      '→',
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${arrowFontSize}px`,
+      })
+    );
+    arrow.setOrigin(0.5, 0.5);
+
+    state.completionReturnButton.add([moduleButtonBg, moduleButtonText, arrow]);
+
+    const hitArea = scene.add.rectangle(
+      0,
+      0,
+      moduleButtonWidth,
+      moduleButtonHeight,
+      0x000000,
+      0
+    );
+    hitArea.setInteractive({ useHandCursor: true });
+    hitArea.on('pointerdown', () => {
+      onReturn();
+    });
+    state.completionReturnButton.add(hitArea);
+    state.completionReturnButton.sendToBack(hitArea);
+    state.rightPanel.add(state.completionReturnButton);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

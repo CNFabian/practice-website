@@ -87,6 +87,7 @@ export interface LessonSubmitRequest {
 /** POST /api/grow-your-nest/lesson/{lesson_id}/submit - Response */
 export interface LessonSubmitResponse {
   success: boolean;
+  passed: boolean;
   correct_count: number;
   total_questions: number;
   growth_points_earned: number;

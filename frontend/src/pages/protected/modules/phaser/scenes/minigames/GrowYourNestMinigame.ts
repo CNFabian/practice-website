@@ -83,6 +83,7 @@ export default class GrowYourNestMinigame extends BaseScene {
   private awardedQuestionIds: Set<string> = new Set();
   private lastAnswerAlreadyAwarded: boolean = false;
   private lastAnswerCoinsEarned: number = 0;
+  private lessonPassed: boolean | null = null;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -110,6 +111,7 @@ export default class GrowYourNestMinigame extends BaseScene {
       moduleNumber: this.moduleNumber,
       isWateringAnimationPlaying: this.isWateringAnimationPlaying,
       isFertilizerAnimationPlaying: this.isFertilizerAnimationPlaying,
+      lessonPassed: this.lessonPassed,
       leftPanel: this.leftPanel,
       rightPanel: this.rightPanel,
       questionText: this.questionText,
@@ -222,6 +224,7 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.awardedQuestionIds = new Set(data.awardedQuestionIds || []);
 
     this.lastAnswerAlreadyAwarded = false;
+    this.lessonPassed = null;
 
     this.questions = data.questions.map((q) => ({
       id: q.id,
@@ -449,6 +452,7 @@ export default class GrowYourNestMinigame extends BaseScene {
         this.score = r.correct_count;
         this.totalGrowthPointsEarned = r.growth_points_earned;
         this.totalCoinsEarned = r.coins_earned;
+        this.lessonPassed = r.passed;
         if (r.fertilizer_bonus) this.fertilizerBonusCount++;
 
         this.treeState = {
@@ -462,10 +466,11 @@ export default class GrowYourNestMinigame extends BaseScene {
         console.log('🌳 Lesson submitted:', {
           correct: r.correct_count,
           total: r.total_questions,
+          passed: r.passed,
         });
 
-        // Invalidate lesson cache so grow_your_nest_played is fresh
-        if (this.lessonId) {
+        // Only invalidate caches when lesson was actually marked complete (3/3 correct)
+        if (r.passed && this.lessonId) {
           queryClient.invalidateQueries({ queryKey: queryKeys.learning.lesson(this.lessonId) });
           queryClient.invalidateQueries({ queryKey: ['learning'] });
           queryClient.invalidateQueries({ queryKey: ['gyn'] });
