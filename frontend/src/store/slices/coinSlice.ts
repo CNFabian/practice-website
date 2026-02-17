@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface CoinState {
-  // Frontend cached balance - starts at 100, increases with quiz completions
+  // Frontend cached balance - starts at 200 (onboarding bonus), updated from backend
   cachedBalance: number;
   
   // Track if we should use cached vs backend data
@@ -12,7 +12,7 @@ interface CoinState {
 }
 
 const initialState: CoinState = {
-  cachedBalance: 100, // Start with 100 coins
+  cachedBalance: 200, // Start with 200 coins (onboarding bonus)
   useCache: true, // Use cached balance by default
   isAnimating: false,
 };

@@ -6,6 +6,7 @@ import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import { logoutUser } from '../../services/authAPI';
 import { useCoinSystem } from '../../hooks/useCoinSystem';
+import { useCoinBalance } from '../../hooks/queries/useCoinBalance';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { useMyProgress } from '../../hooks/queries/useMyProgress';
 import { 
@@ -27,12 +28,20 @@ const Header: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { data: progressData } = useMyProgress();
 
-  // Use the new frontend coin system instead of backend
-  const { currentBalance, isAnimating } = useCoinSystem();
+  // Backend coin balance is source of truth; Redux used only for animation state
+  const { isAnimating, setBalance } = useCoinSystem();
+  const { data: coinData } = useCoinBalance();
   const { data: unreadCountData } = useUnreadCount();
   
-  // Use cached balance instead of backend balance
-  const totalCoins = currentBalance;
+  // Sync backend balance to Redux whenever it changes
+  const backendBalance = coinData?.current_balance ?? 0;
+  React.useEffect(() => {
+    if (backendBalance > 0) {
+      setBalance(backendBalance);
+    }
+  }, [backendBalance, setBalance]);
+
+  const totalCoins = backendBalance;
   const unreadCount = unreadCountData?.unread_count || 0;
 
   const handleLogout = async () => {

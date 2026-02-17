@@ -2,54 +2,67 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { completeLesson } from '../../services/learningAPI';
 
-// --- Updated mutation params type ---
 interface CompleteLessonParams {
   lessonId: string;
-  completionData?: {
-    completionMethod?: 'auto' | 'manual' | 'milestone';
-    videoProgressSeconds?: number | null;
-    transcriptProgressPercentage?: number | null;
-    timeSpentSeconds?: number;
-    contentType?: 'video' | 'transcript' | null;
-  };
 }
 
-export const useCompleteLesson = (lessonId: string, moduleId?: string) => {
+interface CompleteLessonResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface MutationContext {
+  previousLesson?: any;
+}
+
+export const useCompleteLesson = (
+  lessonId: string | number,
+  moduleId: string | number
+) => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (params: CompleteLessonParams) =>
-      completeLesson(params.lessonId, params.completionData),
+  return useMutation<CompleteLessonResponse, Error, CompleteLessonParams, MutationContext>({
+    mutationFn: ({ lessonId }) => completeLesson(lessonId),
 
     onMutate: async () => {
-      // Optimistic update: mark lesson as completed in cache
       await queryClient.cancelQueries({
         queryKey: queryKeys.learning.lesson(lessonId),
       });
 
+      const previousLesson = queryClient.getQueryData(
+        queryKeys.learning.lesson(lessonId)
+      );
+
       queryClient.setQueryData(
         queryKeys.learning.lesson(lessonId),
-        (old: any) => (old ? { ...old, is_completed: true } : old)
+        (old: any) => ({
+          ...old,
+          is_completed: true,
+          completed: true,
+        })
       );
+
+      return { previousLesson };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previousLesson) {
+        queryClient.setQueryData(
+          queryKeys.learning.lesson(lessonId),
+          context.previousLesson
+        );
+      }
     },
 
     onSettled: () => {
-      // Invalidate all related queries after completion
       queryClient.invalidateQueries({
         queryKey: queryKeys.learning.lesson(lessonId),
       });
-
-      if (moduleId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.learning.module(moduleId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.learning.moduleLessons(moduleId),
-        });
-      }
-
       queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.modules(),
+        queryKey: queryKeys.learning.module(moduleId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.learning.progress.all(),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.overview(),

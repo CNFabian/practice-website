@@ -232,8 +232,10 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   // GYN "just unlocked" notification state
   const [showGYNUnlockedNotification, setShowGYNUnlockedNotification] = useState(false);
+  const [showCoinNotification, setShowCoinNotification] = useState(false);
   const prevIsCompletedRef = useRef<boolean | undefined>(undefined);
   const gynNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const coinNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
@@ -251,10 +253,15 @@ const LessonView: React.FC<LessonViewProps> = ({
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
     setShowGYNUnlockedNotification(false);
+    setShowCoinNotification(false);
     prevIsCompletedRef.current = undefined;
     if (gynNotificationTimerRef.current) {
       clearTimeout(gynNotificationTimerRef.current);
       gynNotificationTimerRef.current = null;
+    }
+    if (coinNotificationTimerRef.current) {
+      clearTimeout(coinNotificationTimerRef.current);
+      coinNotificationTimerRef.current = null;
     }
 
     return () => {
@@ -386,6 +393,19 @@ const LessonView: React.FC<LessonViewProps> = ({
       }, 5000);
     }
 
+    // Show +5 coin notification on first lesson completion
+    if (wasCompleted === false && isCompleted) {
+      setShowCoinNotification(true);
+
+      if (coinNotificationTimerRef.current) {
+        clearTimeout(coinNotificationTimerRef.current);
+      }
+      coinNotificationTimerRef.current = setTimeout(() => {
+        setShowCoinNotification(false);
+        coinNotificationTimerRef.current = null;
+      }, 5000);
+    }
+
     // Track current value for next render
     prevIsCompletedRef.current = isCompleted;
 
@@ -393,6 +413,10 @@ const LessonView: React.FC<LessonViewProps> = ({
       if (gynNotificationTimerRef.current) {
         clearTimeout(gynNotificationTimerRef.current);
         gynNotificationTimerRef.current = null;
+      }
+      if (coinNotificationTimerRef.current) {
+        clearTimeout(coinNotificationTimerRef.current);
+        coinNotificationTimerRef.current = null;
       }
     };
   }, [isCompleted, backendLessonData?.grow_your_nest_played]);
@@ -1068,6 +1092,39 @@ const LessonView: React.FC<LessonViewProps> = ({
                             animation: gynSlideIn 0.3s ease-out;
                           }
                           @keyframes gynSlideIn {
+                            from { opacity: 0; transform: translateY(-8px); }
+                            to { opacity: 1; transform: translateY(0); }
+                          }
+                        `}</style>
+                      </div>
+                    )}
+                    {/* +5 Coin earned notification on first lesson completion */}
+                    {showCoinNotification && (
+                      <div className="mb-2 bg-status-yellow/10 border border-status-yellow/30 rounded-xl px-3 py-2 flex items-center gap-2 animate-coin-slide-in">
+                        <span className="text-base flex-shrink-0">🪙</span>
+                        <p className="text-xs text-status-yellow font-medium">
+                          +5 NestCoins earned! Visit the Reward Shop to redeem.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setShowCoinNotification(false);
+                            if (coinNotificationTimerRef.current) {
+                              clearTimeout(coinNotificationTimerRef.current);
+                              coinNotificationTimerRef.current = null;
+                            }
+                          }}
+                          className="ml-auto flex-shrink-0 text-status-yellow/60 hover:text-status-yellow transition-colors"
+                          aria-label="Dismiss coin notification"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <style>{`
+                          .animate-coin-slide-in {
+                            animation: coinSlideIn 0.3s ease-out;
+                          }
+                          @keyframes coinSlideIn {
                             from { opacity: 0; transform: translateY(-8px); }
                             to { opacity: 1; transform: translateY(0); }
                           }

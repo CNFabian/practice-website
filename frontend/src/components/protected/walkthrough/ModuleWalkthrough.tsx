@@ -577,7 +577,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           lineHeight="relaxed" 
           className="text-base text-pure-white/90"
         >
-          <span className="text-logo-yellow font-bold">225 coins</span> have been added to your balance. Get started on your home-buying journey and earn more!
+          <span className="text-logo-yellow font-bold">200 coins</span> have been added to your balance. Get started on your home-buying journey and earn more!
         </OnestFont>
       );
     }

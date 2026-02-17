@@ -667,7 +667,8 @@ export function updateNextButton(state: GYNSceneState, enabled: boolean): void {
 export function showFeedbackBanner(
   scene: Phaser.Scene,
   state: GYNSceneState,
-  isCorrect: boolean
+  isCorrect: boolean,
+  coinsEarned: number = 0
 ): void {
   // Clear any existing banner first
   clearFeedbackBanner(state);
@@ -686,18 +687,17 @@ export function showFeedbackBanner(
 
   const bannerGap = panelHeight * 0.025;
   const bannerY = lastOptionY + lastOptionHeight / 2 + bannerGap;
-  const bannerHeight = panelHeight * 0.075;
-  const bannerRadius = bannerHeight / 2;
+  const hasCoinMessage = isCorrect && coinsEarned > 0;
+  const bannerHeight = hasCoinMessage ? panelHeight * 0.11 : panelHeight * 0.075;
+  const bannerRadius = panelHeight * 0.075 / 2;
 
   state.feedbackBanner = scene.add.container(0, bannerY);
 
   // Background with gradient-style fill
   const bg = scene.add.graphics();
   if (isCorrect) {
-    // Green gradient matching the uploaded image
     bg.fillStyle(COLORS.STATUS_GREEN, 1);
   } else {
-    // Red for incorrect
     bg.fillStyle(COLORS.STATUS_RED, 1);
   }
   bg.fillRoundedRect(
@@ -709,12 +709,13 @@ export function showFeedbackBanner(
   );
   state.feedbackBanner.add(bg);
 
-  // Text
-  const bannerText = isCorrect ? 'CORRECT!' : 'INCORRECT';
+  // Text — "CORRECT!" or "INCORRECT"
   const fontSize = Math.round(panelWidth * 0.045);
+  const bannerText = isCorrect ? 'CORRECT!' : 'INCORRECT';
+  const textYOffset = hasCoinMessage ? -bannerHeight * 0.18 : 0;
   const text = scene.add.text(
     panelWidth / 2,
-    0,
+    textYOffset,
     bannerText,
     createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
       fontSize: `${fontSize}px`,
@@ -723,14 +724,28 @@ export function showFeedbackBanner(
   text.setOrigin(0.5, 0.5);
   state.feedbackBanner.add(text);
 
+  // Coin message below main text when stage transition awards coins
+  if (hasCoinMessage) {
+    const coinFontSize = Math.round(panelWidth * 0.03);
+    const coinText = scene.add.text(
+      panelWidth / 2,
+      bannerHeight * 0.18,
+      `+${coinsEarned} NestCoins! 🌳 Your tree grew!`,
+      createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${coinFontSize}px`,
+        align: 'center',
+      })
+    );
+    coinText.setOrigin(0.5, 0.5);
+    state.feedbackBanner.add(coinText);
+  }
+
   state.rightPanel.add(state.feedbackBanner);
 
   // ─── Entrance animation ───
-  // Start scaled down and transparent
   state.feedbackBanner.setScale(0.3, 0.3);
   state.feedbackBanner.setAlpha(0);
 
-  // Pop in with overshoot
   scene.tweens.add({
     targets: state.feedbackBanner,
     scaleX: 1,
@@ -740,7 +755,6 @@ export function showFeedbackBanner(
     ease: 'Back.easeOut',
     onComplete: () => {
       if (!state.feedbackBanner) return;
-      // Subtle pulse after landing
       scene.tweens.add({
         targets: state.feedbackBanner,
         scaleX: 1.03,
@@ -923,10 +937,13 @@ export function showCompletion(
   state.rightPanel.add(coinButton);
 
   const coinsEarned = state.totalCoinsEarned;
+  const coinDisplayText = coinsEarned > 0
+    ? `You earned ${coinsEarned}\nNest Coins!`
+    : `Keep learning to\nearn more coins!`;
   const coinText = scene.add.text(
     panelWidth / 2,
     coinButtonY + coinButtonHeight / 2,
-    `You earned ${coinsEarned}\nNest Coins!`,
+    coinDisplayText,
     createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
       fontSize: `${coinButtonFontSize}px`,
       align: 'center',
@@ -1220,10 +1237,14 @@ export function showTreeFullyGrownScreen(
   sessionTitle.setOrigin(0.5, 0.5);
   state.rightPanel.add(sessionTitle);
 
+  const sessionCoins = state.totalCoinsEarned;
+  const sessionDisplayText = sessionCoins > 0
+    ? `+${state.totalGrowthPointsEarned} growth  |  +${sessionCoins} coins`
+    : `+${state.totalGrowthPointsEarned} growth  |  Practice mode`;
   const sessionValue = scene.add.text(
     rightBoxX + boxWidth / 2,
     boxY + boxHeight * 0.68,
-    `+${state.totalGrowthPointsEarned} growth  |  +${state.totalCoinsEarned} coins`,
+    sessionDisplayText,
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
       fontSize: `${boxValueFontSize}px`,
     })
@@ -1237,7 +1258,7 @@ export function showTreeFullyGrownScreen(
   const note = scene.add.text(
     panelWidth / 2,
     noteY,
-    'You can still revisit Free Roam to practice questions!',
+    'You can still revisit Free Roam to practice questions!\nReplaying is for learning — no additional coins are earned.',
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
       fontSize: `${noteFontSize}px`,
       align: 'center',

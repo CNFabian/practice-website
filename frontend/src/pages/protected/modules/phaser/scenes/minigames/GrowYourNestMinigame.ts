@@ -82,6 +82,7 @@ export default class GrowYourNestMinigame extends BaseScene {
   private feedbackBanner?: Phaser.GameObjects.Container;
   private awardedQuestionIds: Set<string> = new Set();
   private lastAnswerAlreadyAwarded: boolean = false;
+  private lastAnswerCoinsEarned: number = 0;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -359,6 +360,12 @@ export default class GrowYourNestMinigame extends BaseScene {
               if (r.fertilizer_bonus) this.fertilizerBonusCount++;
               this.totalGrowthPointsEarned += r.growth_points_earned;
               this.totalCoinsEarned += r.coins_earned;
+              this.lastAnswerCoinsEarned = r.coins_earned;
+
+              // Refresh header coin display when coins are earned
+              if (r.coins_earned > 0) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.coins() });
+              }
 
               this.treeState = {
                 growth_points: r.tree_state.growth_points,
@@ -462,6 +469,7 @@ export default class GrowYourNestMinigame extends BaseScene {
           queryClient.invalidateQueries({ queryKey: queryKeys.learning.lesson(this.lessonId) });
           queryClient.invalidateQueries({ queryKey: ['learning'] });
           queryClient.invalidateQueries({ queryKey: ['gyn'] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.coins() });
         }
 
         this.doShowCompletion();
@@ -498,8 +506,9 @@ export default class GrowYourNestMinigame extends BaseScene {
     updatePlantGrowth(this, state);
     this.syncState(state);
 
-    // Show the feedback banner below the options
-    showFeedbackBanner(this, state, isCorrect);
+    // Show the feedback banner below the options (with coin message on stage transition)
+    showFeedbackBanner(this, state, isCorrect, this.lastAnswerCoinsEarned);
+    this.lastAnswerCoinsEarned = 0;
     this.syncState(state);
 
       if (isCorrect) {
