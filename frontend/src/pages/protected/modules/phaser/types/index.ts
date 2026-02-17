@@ -165,4 +165,5 @@ export interface BackendLessonData {
   nest_coins_reward: number;
   is_completed: boolean;
   progress_seconds: number;
+  grow_your_nest_played?: boolean;
 }

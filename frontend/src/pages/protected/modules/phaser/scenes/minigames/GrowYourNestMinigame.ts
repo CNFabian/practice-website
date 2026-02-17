@@ -30,6 +30,7 @@ import {
   updateQuestion,
   updateNextButton,
   showCompletion,
+  showTreeFullyGrownScreen,
   showFeedbackBanner,
 } from './grow-your-nest/GYNRightPanel';
 import { BaseScene } from '../BaseScene';
@@ -533,7 +534,14 @@ export default class GrowYourNestMinigame extends BaseScene {
 
   private doShowCompletion(): void {
     const state = this.getState();
-    showCompletion(this, state, this.getCallbacks().onReturn);
+
+    // If tree is fully grown, show the special celebratory screen
+    if (this.treeState?.completed && this.gameMode === 'freeroam') {
+      showTreeFullyGrownScreen(this, state, this.getCallbacks().onReturn);
+    } else {
+      showCompletion(this, state, this.getCallbacks().onReturn);
+    }
+
     this.syncState(state);
     updatePlantGrowth(this, state);
     this.syncState(state);

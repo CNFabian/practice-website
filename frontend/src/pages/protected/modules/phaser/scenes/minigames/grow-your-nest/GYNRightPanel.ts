@@ -997,3 +997,315 @@ export function showCompletion(
   state.completionReturnButton.sendToBack(hitArea);
   state.rightPanel.add(state.completionReturnButton);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TREE FULLY GROWN — Special celebratory completion screen
+// Shown when the tree reaches max growth during free roam.
+// Distinct from showCompletion: golden theme, unique messaging,
+// emphasis on the milestone achievement.
+// ═══════════════════════════════════════════════════════════════
+
+export function showTreeFullyGrownScreen(
+  scene: Phaser.Scene,
+  state: GYNSceneState,
+  onReturn: () => void
+): void {
+  const panelWidth = state.rightPanel.getData('panelWidth') as number;
+  const panelHeight = state.rightPanel.getData('panelHeight') as number;
+
+  // Clear all children except the panel background (index 0)
+  const children = state.rightPanel.getAll();
+  children.slice(1).forEach((child) => child.destroy());
+  state.feedbackBanner = undefined;
+
+  const HORIZONTAL_PADDING_PERCENT = 0.08;
+  const horizontalPadding = panelWidth * HORIZONTAL_PADDING_PERCENT;
+  const contentWidth = panelWidth - horizontalPadding * 2;
+
+  // ── Golden gradient overlay on the panel ──
+  const goldOverlay = scene.add.graphics();
+  const cornerRadius = 16;
+  goldOverlay.fillStyle(COLORS.LOGO_YELLOW, 0.08);
+  goldOverlay.fillRoundedRect(0, 0, panelWidth, panelHeight, cornerRadius);
+  state.rightPanel.add(goldOverlay);
+
+  // ── Sparkle particles (simple star emojis with tweens) ──
+  const sparklePositions = [
+    { x: panelWidth * 0.15, y: panelHeight * 0.12 },
+    { x: panelWidth * 0.85, y: panelHeight * 0.15 },
+    { x: panelWidth * 0.1, y: panelHeight * 0.42 },
+    { x: panelWidth * 0.9, y: panelHeight * 0.38 },
+    { x: panelWidth * 0.2, y: panelHeight * 0.65 },
+    { x: panelWidth * 0.82, y: panelHeight * 0.62 },
+  ];
+  const sparkleChars = ['✦', '✧', '⭐', '✦', '✧', '⭐'];
+  const sparkleFontSizes = [16, 14, 18, 15, 13, 17];
+
+  sparklePositions.forEach((pos, i) => {
+    const sparkle = scene.add.text(
+      pos.x,
+      pos.y,
+      sparkleChars[i % sparkleChars.length],
+      {
+        fontSize: `${sparkleFontSizes[i % sparkleFontSizes.length]}px`,
+      }
+    );
+    sparkle.setOrigin(0.5, 0.5);
+    sparkle.setAlpha(0);
+    state.rightPanel.add(sparkle);
+
+    // Fade in with staggered delay, then pulse
+    scene.tweens.add({
+      targets: sparkle,
+      alpha: { from: 0, to: 0.7 },
+      scale: { from: 0.3, to: 1 },
+      duration: 600,
+      delay: 300 + i * 150,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        scene.tweens.add({
+          targets: sparkle,
+          alpha: { from: 0.7, to: 0.3 },
+          scale: { from: 1, to: 0.7 },
+          duration: 1200 + i * 200,
+          ease: 'Sine.easeInOut',
+          yoyo: true,
+          repeat: -1,
+        });
+      },
+    });
+  });
+
+  // ── Title ──
+  const titleFontSize = Math.round(panelWidth * 0.068);
+  const title = scene.add.text(
+    panelWidth / 2,
+    40,
+    'Question Cards',
+    createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${titleFontSize}px` })
+  );
+  title.setOrigin(0.5, 0);
+  state.rightPanel.add(title);
+
+  // ── Bird celebration image (scaled up, with bounce-in) ──
+  const birdSize = panelWidth * 0.35;
+  const birdY = panelHeight * 0.28;
+  let birdImage: Phaser.GameObjects.Image | null = null;
+  if (scene.textures.exists('bird_celebration')) {
+    birdImage = scene.add.image(panelWidth / 2, birdY, 'bird_celebration');
+    birdImage.setDisplaySize(birdSize, birdSize);
+    birdImage.setScale(0);
+    state.rightPanel.add(birdImage);
+
+    // Bounce-in animation
+    scene.tweens.add({
+      targets: birdImage,
+      scaleX: birdSize / birdImage.width,
+      scaleY: birdSize / birdImage.height,
+      duration: 700,
+      delay: 200,
+      ease: 'Back.easeOut',
+    });
+  }
+
+  // ── "Tree Fully Grown!" headline ──
+  const headlineFontSize = Math.round(panelWidth * 0.065);
+  const headlineY = birdY + birdSize * 0.55 + panelHeight * 0.04;
+  const headline = scene.add.text(
+    panelWidth / 2,
+    headlineY,
+    'Tree Fully Grown!',
+    createTextStyle('H2', COLORS.TEXT_PRIMARY, {
+      fontSize: `${headlineFontSize}px`,
+    })
+  );
+  headline.setOrigin(0.5, 0.5);
+  headline.setAlpha(0);
+  state.rightPanel.add(headline);
+
+  scene.tweens.add({
+    targets: headline,
+    alpha: 1,
+    y: headlineY,
+    duration: 500,
+    delay: 500,
+    ease: 'Power2',
+  });
+
+  // ── Subtitle description ──
+  const subtitleFontSize = Math.round(panelWidth * 0.03);
+  const subtitleY = headlineY + panelHeight * 0.06;
+  const subtitle = scene.add.text(
+    panelWidth / 2,
+    subtitleY,
+    'Congratulations! Your tree has reached full growth\nand the bird has built her nest.',
+    createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
+      fontSize: `${subtitleFontSize}px`,
+      align: 'center',
+      wordWrap: { width: contentWidth * 0.9 },
+      lineSpacing: subtitleFontSize * 0.5,
+    })
+  );
+  subtitle.setOrigin(0.5, 0);
+  subtitle.setAlpha(0);
+  state.rightPanel.add(subtitle);
+
+  scene.tweens.add({
+    targets: subtitle,
+    alpha: 1,
+    duration: 500,
+    delay: 700,
+    ease: 'Power2',
+  });
+
+  // ── Stats row: Growth Total | Total Coins ──
+  const boxY = subtitleY + subtitle.height + panelHeight * 0.06;
+  const boxSpacing = panelWidth * 0.02;
+  const boxWidth = (contentWidth - boxSpacing) / 2;
+  const boxHeight = panelHeight * 0.12;
+  const boxRadius = panelHeight * 0.018;
+  const boxTitleFontSize = Math.round(panelWidth * 0.028);
+  const boxValueFontSize = Math.round(panelWidth * 0.024);
+
+  // Left box — Total Growth
+  const leftBoxX = horizontalPadding;
+  const leftBoxBg = scene.add.graphics();
+  leftBoxBg.lineStyle(2, COLORS.STATUS_GREEN);
+  leftBoxBg.fillStyle(COLORS.STATUS_GREEN, 0.08);
+  leftBoxBg.fillRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
+  leftBoxBg.strokeRoundedRect(leftBoxX, boxY, boxWidth, boxHeight, boxRadius);
+  state.rightPanel.add(leftBoxBg);
+
+  const totalStages = state.treeState?.total_stages ?? 5;
+  const totalPoints = totalStages * (state.treeState?.points_per_stage ?? 50);
+  const growthTitle = scene.add.text(
+    leftBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.32,
+    'Tree Complete',
+    createTextStyle('BODY_BOLD', COLORS.TEXT_SUCCESS, {
+      fontSize: `${boxTitleFontSize}px`,
+    })
+  );
+  growthTitle.setOrigin(0.5, 0.5);
+  state.rightPanel.add(growthTitle);
+
+  const growthValue = scene.add.text(
+    leftBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.68,
+    `${totalPoints}/${totalPoints} pts`,
+    createTextStyle('BODY_MEDIUM', COLORS.TEXT_SUCCESS, {
+      fontSize: `${boxValueFontSize}px`,
+    })
+  );
+  growthValue.setOrigin(0.5, 0.5);
+  state.rightPanel.add(growthValue);
+
+  // Right box — Session Stats
+  const rightBoxX = leftBoxX + boxWidth + boxSpacing;
+  const rightBoxBg = scene.add.graphics();
+  rightBoxBg.lineStyle(2, COLORS.ELEGANT_BLUE);
+  rightBoxBg.fillStyle(COLORS.ELEGANT_BLUE, 0.08);
+  rightBoxBg.fillRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
+  rightBoxBg.strokeRoundedRect(rightBoxX, boxY, boxWidth, boxHeight, boxRadius);
+  state.rightPanel.add(rightBoxBg);
+
+  const sessionTitle = scene.add.text(
+    rightBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.32,
+    'This Session',
+    createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
+      fontSize: `${boxTitleFontSize}px`,
+    })
+  );
+  sessionTitle.setOrigin(0.5, 0.5);
+  state.rightPanel.add(sessionTitle);
+
+  const sessionValue = scene.add.text(
+    rightBoxX + boxWidth / 2,
+    boxY + boxHeight * 0.68,
+    `+${state.totalGrowthPointsEarned} growth  |  +${state.totalCoinsEarned} coins`,
+    createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
+      fontSize: `${boxValueFontSize}px`,
+    })
+  );
+  sessionValue.setOrigin(0.5, 0.5);
+  state.rightPanel.add(sessionValue);
+
+  // ── "You can still play Free Roam" note ──
+  const noteFontSize = Math.round(panelWidth * 0.024);
+  const noteY = boxY + boxHeight + panelHeight * 0.04;
+  const note = scene.add.text(
+    panelWidth / 2,
+    noteY,
+    'You can still revisit Free Roam to practice questions!',
+    createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
+      fontSize: `${noteFontSize}px`,
+      align: 'center',
+      fontStyle: 'italic',
+    })
+  );
+  note.setOrigin(0.5, 0.5);
+  state.rightPanel.add(note);
+
+  // ── MODULE return button ──
+  const moduleButtonFontSize = Math.round(panelWidth * 0.034);
+  const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
+  const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
+  const moduleButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
+  const moduleButtonY = panelHeight - nextButtonMargin;
+
+  const moduleButtonWidth = panelWidth * 0.24;
+  const moduleButtonHeight = panelWidth * 0.08;
+  const moduleButtonRadius = moduleButtonHeight / 2;
+
+  state.completionReturnButton = scene.add.container(moduleButtonX, moduleButtonY);
+
+  const moduleButtonBg = scene.add.graphics();
+  moduleButtonBg.fillStyle(COLORS.LOGO_BLUE);
+  moduleButtonBg.fillRoundedRect(
+    -moduleButtonWidth / 2,
+    -moduleButtonHeight / 2,
+    moduleButtonWidth,
+    moduleButtonHeight,
+    moduleButtonRadius
+  );
+
+  const moduleButtonText = scene.add.text(
+    -moduleButtonWidth * 0.12,
+    0,
+    'MODULE',
+    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+      fontSize: `${moduleButtonFontSize}px`,
+    })
+  );
+  moduleButtonText.setOrigin(0.5, 0.5);
+
+  const arrowFontSize = Math.round(moduleButtonFontSize * 1.15);
+  const arrow = scene.add.text(
+    moduleButtonWidth * 0.22,
+    0,
+    '→',
+    createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+      fontSize: `${arrowFontSize}px`,
+    })
+  );
+  arrow.setOrigin(0.5, 0.5);
+
+  state.completionReturnButton.add([moduleButtonBg, moduleButtonText, arrow]);
+
+  const hitArea = scene.add.rectangle(
+    0,
+    0,
+    moduleButtonWidth,
+    moduleButtonHeight,
+    0x000000,
+    0
+  );
+  hitArea.setInteractive({ useHandCursor: true });
+  hitArea.on('pointerdown', () => {
+    onReturn();
+  });
+  state.completionReturnButton.add(hitArea);
+  state.completionReturnButton.sendToBack(hitArea);
+  state.rightPanel.add(state.completionReturnButton);
+}

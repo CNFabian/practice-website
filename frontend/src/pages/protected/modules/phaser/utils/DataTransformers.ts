@@ -98,7 +98,8 @@ export function transformBackendLessonsToFrontend(
         description: lesson.description || '',
         image: lesson.image_url || '/placeholder-lesson.jpg',
         coins: lesson.nest_coins_reward || 0,
-        videoUrl: lesson.video_url || ''
+        videoUrl: lesson.video_url || '',
+        grow_your_nest_played: lesson.grow_your_nest_played || false,
       };
     })
   };

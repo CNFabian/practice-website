@@ -259,12 +259,10 @@ export default class HouseScene extends BaseScene {
         return;
       }
 
-      // Check if tree is already completed
-      if (stateResponse.completed) {
-        console.log('🌳 Tree is already fully grown!');
-        this.isTransitioning = false;
-        // Optionally show a "tree completed" message instead of launching
-        return;
+      // Check if tree is already completed — still allow entry for practice
+      const treeAlreadyCompleted = stateResponse.completed === true;
+      if (treeAlreadyCompleted) {
+        console.log('🌳 Tree is already fully grown — entering practice mode');
       }
 
       const transformedQuestions = transformGYNQuestionsForMinigame(
@@ -541,10 +539,8 @@ export default class HouseScene extends BaseScene {
       0x000000,
       0
     );
-    // Only make interactive if tree is not completed
-    if (!treeCompleted) {
-      hitArea.setInteractive({ useHandCursor: true });
-    }
+    // Only make interactive (free roam is accessible even when tree is completed)
+    hitArea.setInteractive({ useHandCursor: true });
     container.add(hitArea);
 
     hitArea.on('pointerover', () => {
@@ -566,7 +562,7 @@ export default class HouseScene extends BaseScene {
     });
 
     hitArea.on('pointerdown', () => {
-    if (this.isTransitioning || treeCompleted) return;
+    if (this.isTransitioning) return;
     this.isTransitioning = true;
     
     if (this.moduleBackendId) {
@@ -589,26 +585,37 @@ export default class HouseScene extends BaseScene {
    */
   private onLessonsDataChanged(_parent: any, _key: string, data: Record<string, any>): void {
     if (!this.moduleBackendId || !data[this.moduleBackendId]) return;
-    if (this.module && this.module.lessons.length > 0) return;
 
-    console.log('📋 HouseScene: Late-arriving lessons data detected, rebuilding UI');
-    this.module = data[this.moduleBackendId];
+    // Always update the stored module reference with fresh data
+    const freshData = data[this.moduleBackendId];
 
-    // Destroy loading placeholder
-    if (this.loadingText) {
-      this.loadingText.destroy();
-      this.loadingText = undefined;
+    // If lessons haven't been loaded yet, do the full rebuild
+    if (!this.module || this.module.lessons.length === 0) {
+      console.log('📋 HouseScene: Late-arriving lessons data detected, rebuilding UI');
+      this.module = freshData;
+
+      // Destroy loading placeholder
+      if (this.loadingText) {
+        this.loadingText.destroy();
+        this.loadingText = undefined;
+      }
+
+      this.lessonContainers.forEach((container) => container.destroy());
+      this.lessonContainers = [];
+      this.roomHitZones.forEach((zone) => zone.destroy());
+      this.roomHitZones = [];
+
+      if (this.module && this.module.lessons.length > 0) {
+        this.createLessonCards();
+        this.createRoomHitZones();
+      }
+    } else {
+      // Lessons already loaded — update reference silently for fresh grow_your_nest_played values
+      this.module = freshData;
     }
 
-    this.lessonContainers.forEach((container) => container.destroy());
-    this.lessonContainers = [];
-    this.roomHitZones.forEach((zone) => zone.destroy());
-    this.roomHitZones = [];
-
-    if (this.module && this.module.lessons.length > 0) {
-      this.createLessonCards();
-      this.createRoomHitZones();
-    }
+    // Re-check free roam unlock with the fresh data
+    this.checkFreeRoamUnlockCondition();
   }
 
   // ═══════════════════════════════════════════════════════════

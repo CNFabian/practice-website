@@ -459,7 +459,11 @@ export const isMockLessonId = (lessonId: string): boolean =>
 export const isMockQuestionId = (questionId: string): boolean =>
   questionId.startsWith('00000000-0000-4000-c');
 
-export const getMockLessonsForModule = (_moduleId: string): any[] => MOCK_LESSONS_DATA;
+export const getMockLessonsForModule = (_moduleId: string): any[] =>
+  MOCK_LESSONS_DATA.map((lesson) => ({
+    ...lesson,
+    grow_your_nest_played: mockGYNPlayedLessons.has(lesson.id),
+  }));
 
 export const getMockQuizForLesson = (lessonId: string): any[] => {
   if (lessonId.startsWith('mock-lesson-')) {
