@@ -380,6 +380,73 @@ const MOCK_CORRECT_ANSWERS: Record<string, number> = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// MOCK TREE STATE ACCUMULATOR — TODO: REMOVE BEFORE PRODUCTION
+// Persists tree growth points across minigame sessions for mock
+// data testing. Keyed by module ID. Clears on full page refresh.
+// ═══════════════════════════════════════════════════════════════
+
+interface MockTreeState {
+  growth_points: number;
+  current_stage: number;
+  total_stages: number;
+  points_per_stage: number;
+  completed: boolean;
+}
+
+const mockTreeStateMap = new Map<string, MockTreeState>();
+
+const getMockTreeStateForModule = (moduleId: string): MockTreeState => {
+  const resolvedId = moduleId === 'mock-module-1' ? MOCK_MODULE_ID : moduleId;
+  if (!mockTreeStateMap.has(resolvedId)) {
+    mockTreeStateMap.set(resolvedId, {
+      growth_points: 0,
+      current_stage: 0,
+      total_stages: 5,
+      points_per_stage: 50,
+      completed: false,
+    });
+  }
+  return { ...mockTreeStateMap.get(resolvedId)! };
+};
+
+const updateMockTreeState = (moduleId: string, pointsToAdd: number): MockTreeState => {
+  const resolvedId = moduleId === 'mock-module-1' ? MOCK_MODULE_ID : moduleId;
+  const current = getMockTreeStateForModule(resolvedId);
+  const maxPoints = current.total_stages * current.points_per_stage;
+  const newPoints = Math.min(current.growth_points + pointsToAdd, maxPoints);
+  const newStage = Math.min(
+    Math.floor(newPoints / current.points_per_stage),
+    current.total_stages
+  );
+
+  const updated: MockTreeState = {
+    ...current,
+    growth_points: newPoints,
+    current_stage: newStage,
+    completed: newPoints >= maxPoints,
+  };
+  mockTreeStateMap.set(resolvedId, updated);
+  return { ...updated };
+};
+
+// ═══════════════════════════════════════════════════════════════
+// PER-QUESTION POINT DEDUPLICATION — TODO: REMOVE BEFORE PRODUCTION
+// Tracks which question IDs have already awarded base growth points.
+// Each question can only award points once, ever (across all attempts).
+// ═══════════════════════════════════════════════════════════════
+
+export const mockAwardedQuestionIds = new Set<string>();
+
+// ═══════════════════════════════════════════════════════════════
+// MOCK GYN PLAYED TRACKER — TODO: REMOVE BEFORE PRODUCTION
+// Tracks which lessons have had 3/3 correct (minigame completed).
+// Exported so LessonView and growYourNestAPI can check it.
+// Only set on perfect score (3/3), NOT on launch.
+// ═══════════════════════════════════════════════════════════════
+
+export const mockGYNPlayedLessons = new Set<string>();
+
+// ═══════════════════════════════════════════════════════════════
 // PUBLIC HELPERS
 // ═══════════════════════════════════════════════════════════════
 
@@ -405,6 +472,7 @@ export const getMockQuizForLesson = (lessonId: string): any[] => {
 };
 
 export const getMockFreeRoamQuestions = (_moduleId: string): any => {
+  const moduleId = _moduleId === 'mock-module-1' ? MOCK_MODULE_ID : _moduleId;
   const allLessonQuestions = MOCK_LESSON_IDS.flatMap((id) => MOCK_QUIZ_DATA[id] || []);
   const allQuestions = [...allLessonQuestions, ...MOCK_FREE_ROAM_EXTRA_QUESTIONS];
   const shuffled = [...allQuestions];
@@ -412,16 +480,35 @@ export const getMockFreeRoamQuestions = (_moduleId: string): any => {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
+  // Return accumulated tree state instead of always-zero
+  const treeState = getMockTreeStateForModule(moduleId);
+  const remainder = treeState.growth_points % treeState.points_per_stage;
   return {
     questions: shuffled,
-    tree_state: { growth_points: 0, current_stage: 0, total_stages: 5, points_per_stage: 50, points_to_next_stage: 50, points_to_complete: 250, completed: false, completed_at: null },
+    tree_state: {
+      ...treeState,
+      points_to_next_stage: remainder === 0 && treeState.growth_points > 0
+        ? treeState.points_per_stage
+        : treeState.points_per_stage - remainder,
+      points_to_complete: (treeState.total_stages * treeState.points_per_stage) - treeState.growth_points,
+      completed_at: null,
+    },
   };
 };
 
-export const getMockFreeRoamState = () => ({
-  growth_points: 0, current_stage: 0, total_stages: 5, points_per_stage: 50,
-  points_to_next_stage: 50, points_to_complete: 250, completed: false, completed_at: null,
-});
+export const getMockFreeRoamState = (_moduleId?: string) => {
+  const moduleId = (_moduleId === 'mock-module-1' ? MOCK_MODULE_ID : _moduleId) || MOCK_MODULE_ID;
+  const treeState = getMockTreeStateForModule(moduleId);
+  const remainder = treeState.growth_points % treeState.points_per_stage;
+  return {
+    ...treeState,
+    points_to_next_stage: remainder === 0 && treeState.growth_points > 0
+      ? treeState.points_per_stage
+      : treeState.points_per_stage - remainder,
+    points_to_complete: (treeState.total_stages * treeState.points_per_stage) - treeState.growth_points,
+    completed_at: treeState.completed ? new Date().toISOString() : null,
+  };
+};
 
 export const validateMockAnswer = (questionId: string, answerId: string): { is_correct: boolean; explanation: string } => {
   const correctIndex = MOCK_CORRECT_ANSWERS[questionId];
@@ -437,31 +524,120 @@ export const getMockGYNValidateAnswer = (questionId: string, answerId: string) =
   return { is_correct: result.is_correct, explanation: result.explanation };
 };
 
-export const getMockGYNLessonSubmit = (answers: { question_id: string; answer_id: string }[]) => {
+export const getMockGYNLessonSubmit = (
+  answers: { question_id: string; answer_id: string }[],
+  lessonId?: string
+) => {
   let correctCount = 0;
-  answers.forEach(({ question_id, answer_id }) => { if (validateMockAnswer(question_id, answer_id).is_correct) correctCount++; });
+  let newPointsEarned = 0;
+
+  answers.forEach(({ question_id, answer_id }) => {
+    const isCorrect = validateMockAnswer(question_id, answer_id).is_correct;
+    if (isCorrect) {
+      correctCount++;
+      // Only award base points if this question hasn't been awarded before
+      if (!mockAwardedQuestionIds.has(question_id)) {
+        mockAwardedQuestionIds.add(question_id);
+        newPointsEarned += 10;
+      }
+    }
+  });
+
+  // Fertilizer bonus: only on 3/3 correct (full completion)
+  const isPerfect = correctCount === answers.length && answers.length === 3;
+  const fertilizerBonus = isPerfect ? 20 : 0;
+  const totalPointsEarned = newPointsEarned + fertilizerBonus;
+
+  // Mark lesson as GYN-played only on perfect score (3/3)
+  if (isPerfect && lessonId) {
+    mockGYNPlayedLessons.add(lessonId);
+  }
+
+  // Get previous state for transition info
+  const prevState = getMockTreeStateForModule(MOCK_MODULE_ID);
+  const previousStage = prevState.current_stage;
+
+  // Accumulate into persistent mock state
+  const newState = updateMockTreeState(MOCK_MODULE_ID, totalPointsEarned);
+  const remainder = newState.growth_points % newState.points_per_stage;
+
   return {
     success: true,
-    correct_count: correctCount, total_questions: answers.length,
-    growth_points_earned: correctCount * 10, fertilizer_bonus: false, coins_earned: correctCount * 5,
+    correct_count: correctCount,
+    total_questions: answers.length,
+    growth_points_earned: totalPointsEarned,
+    fertilizer_bonus: isPerfect,
+    coins_earned: correctCount * 5,
     tree_state: {
-      growth_points: correctCount * 10, current_stage: correctCount >= 2 ? 1 : 0, total_stages: 5, points_per_stage: 50,
-      points_to_next_stage: 50 - (correctCount * 10), completed: false,
-      previous_stage: 0, stage_increased: correctCount >= 2, just_completed: false,
+      growth_points: newState.growth_points,
+      current_stage: newState.current_stage,
+      total_stages: newState.total_stages,
+      points_per_stage: newState.points_per_stage,
+      points_to_next_stage: remainder === 0 && newState.growth_points > 0
+        ? newState.points_per_stage
+        : newState.points_per_stage - remainder,
+      completed: newState.completed,
+      previous_stage: previousStage,
+      stage_increased: newState.current_stage > previousStage,
+      just_completed: newState.completed && !prevState.completed,
     },
   };
 };
 
-export const getMockGYNFreeRoamAnswer = (questionId: string, answerId: string) => {
+export const getMockGYNFreeRoamAnswer = (
+  questionId: string,
+  answerId: string,
+  consecutiveCorrect?: number
+) => {
   const result = validateMockAnswer(questionId, answerId);
+
+  let basePointsEarned = 0;
+  let newConsecutive = consecutiveCorrect || 0;
+
+  if (result.is_correct) {
+    newConsecutive++;
+    // Only award base points if this question hasn't been awarded before
+    if (!mockAwardedQuestionIds.has(questionId)) {
+      mockAwardedQuestionIds.add(questionId);
+      basePointsEarned = 10;
+    }
+  } else {
+    newConsecutive = 0;
+  }
+
+  // Fertilizer bonus: every 3 consecutive correct
+  const isFertilizer = result.is_correct && newConsecutive > 0 && newConsecutive % 3 === 0;
+  const fertilizerBonus = isFertilizer ? 20 : 0;
+  const totalPointsEarned = basePointsEarned + fertilizerBonus;
+
+  // Get previous state for transition info
+  const prevState = getMockTreeStateForModule(MOCK_MODULE_ID);
+  const previousStage = prevState.current_stage;
+
+  // Accumulate into persistent mock state
+  const newState = updateMockTreeState(MOCK_MODULE_ID, totalPointsEarned);
+  const remainder = newState.growth_points % newState.points_per_stage;
+
   return {
     success: true,
-    is_correct: result.is_correct, explanation: result.explanation,
-    growth_points_earned: result.is_correct ? 10 : 0, fertilizer_bonus: false, coins_earned: result.is_correct ? 5 : 0,
+    is_correct: result.is_correct,
+    explanation: result.explanation,
+    growth_points_earned: totalPointsEarned,
+    fertilizer_bonus: isFertilizer,
+    coins_earned: result.is_correct ? 5 : 0,
     tree_state: {
-      growth_points: result.is_correct ? 10 : 0, current_stage: 0, total_stages: 5, points_per_stage: 50,
-      points_to_next_stage: result.is_correct ? 40 : 50, points_to_complete: 250,
-      completed: false, previous_stage: 0, stage_increased: false, just_completed: false,
+      growth_points: newState.growth_points,
+      current_stage: newState.current_stage,
+      total_stages: newState.total_stages,
+      points_per_stage: newState.points_per_stage,
+      points_to_next_stage: remainder === 0 && newState.growth_points > 0
+        ? newState.points_per_stage
+        : newState.points_per_stage - remainder,
+      points_to_complete: (newState.total_stages * newState.points_per_stage) - newState.growth_points,
+      completed: newState.completed,
+      previous_stage: previousStage,
+      stage_increased: newState.current_stage > previousStage,
+      just_completed: newState.completed && !prevState.completed,
     },
   };
 };

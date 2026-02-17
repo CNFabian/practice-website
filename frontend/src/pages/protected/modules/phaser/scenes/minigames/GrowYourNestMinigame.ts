@@ -79,6 +79,8 @@ export default class GrowYourNestMinigame extends BaseScene {
   private fertilizerImage?: Phaser.GameObjects.Image;
   private isFertilizerAnimationPlaying: boolean = false;
   private feedbackBanner?: Phaser.GameObjects.Container;
+  private awardedQuestionIds: Set<string> = new Set();
+  private lastAnswerAlreadyAwarded: boolean = false;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -215,6 +217,9 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.treeState = data.treeState || null;
     this.moduleNumber = data.moduleNumber || 1;
     this.showingStartScreen = data.showStartScreen !== false;
+    this.awardedQuestionIds = new Set(data.awardedQuestionIds || []);
+
+    this.lastAnswerAlreadyAwarded = false;
 
     this.questions = data.questions.map((q) => ({
       id: q.id,
@@ -293,7 +298,10 @@ export default class GrowYourNestMinigame extends BaseScene {
 
               // Update treeState locally so progress bar reflects changes per-question
               // Water = 10 pts per correct; Fertilizer = 20 bonus pts at 3 consecutive
-              const waterPoints = 10;
+              // Only award base points if this question hasn't been awarded before (deduplication)
+              const alreadyAwarded = this.awardedQuestionIds.has(q.id);
+              this.lastAnswerAlreadyAwarded = alreadyAwarded;
+              const waterPoints = alreadyAwarded ? 0 : 10;
               const isFertilizerStreak = this.consecutiveCorrect > 0 && this.consecutiveCorrect % 3 === 0;
               const fertilizerBonus = isFertilizerStreak ? 20 : 0;
               const pointsEarned = waterPoints + fertilizerBonus;
@@ -301,7 +309,12 @@ export default class GrowYourNestMinigame extends BaseScene {
               this.pendingFertilizer = isFertilizerStreak;
               this.totalGrowthPointsEarned += pointsEarned;
 
-              if (this.treeState) {
+              // Track this question as awarded locally for this session
+              if (!alreadyAwarded) {
+                this.awardedQuestionIds.add(q.id);
+              }
+
+              if (this.treeState && pointsEarned > 0) {
                 this.treeState = {
                   ...this.treeState,
                   growth_points: this.treeState.growth_points + pointsEarned,
@@ -313,6 +326,7 @@ export default class GrowYourNestMinigame extends BaseScene {
               }
             } else {
               this.consecutiveCorrect = 0;
+              this.lastAnswerAlreadyAwarded = false;
             }
 
             this.isSubmitting = false;
@@ -487,10 +501,10 @@ export default class GrowYourNestMinigame extends BaseScene {
     showFeedbackBanner(this, state, isCorrect);
     this.syncState(state);
 
-    if (isCorrect) {
+      if (isCorrect) {
       playWateringAnimation(this, state, () => {
         this.isWateringAnimationPlaying = false;
-      });
+      }, this.lastAnswerAlreadyAwarded);
       this.syncState(state);
 
       // Check for fertilizer bonus (3 consecutive correct)

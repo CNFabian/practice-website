@@ -11,6 +11,7 @@ import type { BatchProgressItem } from '../../../services/learningAPI';
 import GYNLessonButton from '../../../components/protected/modules/GYNLessonButton';
 import { getLessonQuestions } from '../../../services/growYourNestAPI';
 import gameManager from './phaser/managers/GameManager';
+import { mockGYNPlayedLessons, mockAwardedQuestionIds } from '../../../services/mockLearningData';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -74,6 +75,14 @@ interface BackendQuizQuestion {
   order_index: number;
   answers: BackendQuizAnswer[];
 }
+
+// ═══════════════════════════════════════════════════════════
+// MOCK COMPLETION TRACKER — TODO: REMOVE BEFORE PRODUCTION
+// Persists mock lesson completions across component remounts
+// so the GYN button stays Active after navigating away and back.
+// Clears on full page refresh (not stored in localStorage).
+// ═══════════════════════════════════════════════════════════
+const mockCompletedLessons = new Set<string>();
 
 const MOCK_QUIZ_QUESTIONS = [
   {
@@ -326,8 +335,35 @@ const LessonView: React.FC<LessonViewProps> = ({
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
 
   // Derive completion state from backend data
-  const isCompleted = !!backendLessonData?.is_completed;
-  
+  // ═══════════════════════════════════════════════════════════
+  // MOCK LESSON OVERRIDE — TODO: REMOVE BEFORE PRODUCTION
+  // Mock endpoints skip mutations, so is_completed never flips
+  // in backendLessonData. We use local video/reading completion
+  // state to drive the GYN button for mock lessons only.
+  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // MOCK LESSON OVERRIDE — TODO: REMOVE BEFORE PRODUCTION
+  // Mock endpoints skip mutations, so is_completed never flips
+  // in backendLessonData. We use a module-level Set to persist
+  // mock completions across component remounts, plus local
+  // video/reading state for the initial completion trigger.
+  // ═══════════════════════════════════════════════════════════
+  const isMockLesson = useMemo(() => {
+    const id = lesson?.backendId || '';
+    return /^0{8}-0{4}-4000-b000-0{11}[0-9a-f]$/i.test(id);
+  }, [lesson?.backendId]);
+
+  // Derive completion state from backend data (with mock override)
+  const isCompleted = isMockLesson
+    ? (videoCompleted || readingCompleted || mockCompletedLessons.has(lesson.backendId || '') || !!backendLessonData?.is_completed)
+    : !!backendLessonData?.is_completed;
+
+  // Persist mock completion so it survives remounts — TODO: REMOVE BEFORE PRODUCTION
+  useEffect(() => {
+    if (isMockLesson && isCompleted && lesson.backendId) {
+      mockCompletedLessons.add(lesson.backendId);
+    }
+  }, [isMockLesson, isCompleted, lesson.backendId]);
   // ═══════════════════════════════════════════════════════════
   // GYN "JUST UNLOCKED" notification — detects is_completed
   // transitioning from falsy → true while GYN not yet played
@@ -808,11 +844,27 @@ const LessonView: React.FC<LessonViewProps> = ({
           gynData
         );
 
+        // Pass already-awarded question IDs so the Phaser scene
+        // doesn't show inflated local points for repeat correct answers
+        // TODO: REMOVE BEFORE PRODUCTION — real backend handles this server-side
+        if (isMockLesson) {
+          initData.awardedQuestionIds = Array.from(mockAwardedQuestionIds);
+        }
+        // Ensure Tier 3 (GYN) assets are loaded before launching minigame
+        // Normal flow goes through ModulesPage navState='minigame' which triggers this,
+        // but the GYN Lesson Button bypasses that path via direct HouseScene launch.
+        gameManager.loadDeferredAssets();
+
         onBack();
 
         setTimeout(() => {
           const phaserGame = gameManager.getGame();
-          if (phaserGame) {
+          if (!phaserGame) {
+            console.error('🌳 [GYN Play] Phaser game instance not found');
+            return;
+          }
+
+          const launchMinigame = () => {
             const houseScene = phaserGame.scene.getScene('HouseScene') as any;
             if (houseScene && houseScene.launchLessonMinigame) {
               houseScene.launchLessonMinigame(initData);
@@ -820,8 +872,27 @@ const LessonView: React.FC<LessonViewProps> = ({
             } else {
               console.error('🌳 [GYN Play] HouseScene or launchLessonMinigame not found');
             }
+          };
+
+          // Wait for Tier 3 assets if not yet loaded
+          if (phaserGame.registry.get('deferredAssetsLoaded')) {
+            launchMinigame();
           } else {
-            console.error('🌳 [GYN Play] Phaser game instance not found');
+            console.log('🌳 [GYN Play] Waiting for Tier 3 assets before launching...');
+            const onLoaded = () => {
+              phaserGame.registry.events.off('changedata-deferredAssetsLoaded', onLoaded);
+              launchMinigame();
+            };
+            phaserGame.registry.events.on('changedata-deferredAssetsLoaded', onLoaded);
+
+            // Safety timeout — launch anyway after 3s to avoid infinite wait
+            setTimeout(() => {
+              phaserGame.registry.events.off('changedata-deferredAssetsLoaded', onLoaded);
+              if (!phaserGame.registry.get('deferredAssetsLoaded')) {
+                console.warn('🌳 [GYN Play] Tier 3 asset timeout — launching anyway');
+              }
+              launchMinigame();
+            }, 3000);
           }
         }, 500);
       } else {
@@ -1004,8 +1075,11 @@ const LessonView: React.FC<LessonViewProps> = ({
                       </div>
                     )}
                     <GYNLessonButton
-                      lessonCompleted={!!backendLessonData?.is_completed}
-                      gynPlayed={!!backendLessonData?.grow_your_nest_played}
+                      lessonCompleted={isCompleted}
+                      gynPlayed={
+                        !!backendLessonData?.grow_your_nest_played ||
+                        (isMockLesson && mockGYNPlayedLessons.has(lesson.backendId || ''))
+                      }
                       onPlay={handleGYNPlay}
                       isLoading={isLoadingLesson}
                     />

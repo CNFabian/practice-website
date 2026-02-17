@@ -87,12 +87,13 @@ export const getLessonQuestions = async (lessonId: string): Promise<LessonQuesti
   }
 
   // Return mock data for mock lesson IDs
+  // Use accumulated tree state so minigame starts where it left off
   if (isMockLessonId(lessonId)) {
     console.log(`📋 Using mock GYN lesson questions for mock lesson: ${lessonId}`);
     const quizData = getMockQuizForLesson(lessonId);
     return {
       questions: quizData,
-      tree_state: getDefaultTreeState(),
+      tree_state: getMockFreeRoamState() as any,
     } as LessonQuestionsResponse;
   }
 
@@ -133,10 +134,11 @@ export const submitLessonAnswers = async (
   }
 
   // Return mock data for mock lesson IDs
+  // Pass lessonId so mock can track GYN-played on 3/3 perfect score
   if (isMockLessonId(lessonId)) {
     console.log(`📋 Using mock GYN lesson submit for mock lesson: ${lessonId}`);
     const answers = (submission as any).answers || [];
-    return getMockGYNLessonSubmit(answers) as LessonSubmitResponse;
+    return getMockGYNLessonSubmit(answers, lessonId) as LessonSubmitResponse;
   }
 
   try {
@@ -229,11 +231,13 @@ export const submitFreeRoamAnswer = async (
   }
 
   // Return mock data for mock module IDs
+  // Pass consecutiveCorrect so mock can calculate fertilizer streaks
   if (isMockModuleId(moduleId)) {
     console.log(`📋 Using mock free roam answer for mock module: ${moduleId}`);
     return getMockGYNFreeRoamAnswer(
       String(answerData.question_id),
-      String(answerData.answer_id)
+      String(answerData.answer_id),
+      answerData.consecutive_correct
     ) as FreeRoamAnswerResponse;
   }
 

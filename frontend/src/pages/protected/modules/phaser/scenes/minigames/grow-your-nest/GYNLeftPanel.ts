@@ -300,7 +300,8 @@ function updateProgressBar(state: GYNSceneState, progressPercent: number): void 
 export function playWateringAnimation(
   scene: Phaser.Scene,
   state: GYNSceneState,
-  onComplete?: () => void
+  onComplete?: () => void,
+  alreadyAwarded?: boolean
 ): void {
   if (state.isWateringAnimationPlaying) return;
 
@@ -354,8 +355,8 @@ export function playWateringAnimation(
           state.wateringCanImage.setTexture(ASSET_KEYS.WATERING_CAN_POURING);
           state.wateringCanImage.setAngle(15);
 
-          // Show "+1 Water" text
-          showWaterText(scene, state, pouringX, pouringY, panelWidth);
+          // Show "+1 Water" or "Already Earned" text
+          showWaterText(scene, state, pouringX, pouringY, panelWidth, alreadyAwarded);
 
           // Step 4: Hold pouring
           scene.time.delayedCall(1200, () => {
@@ -407,14 +408,19 @@ function showWaterText(
   state: GYNSceneState,
   x: number,
   y: number,
-  panelWidth: number
+  panelWidth: number,
+  alreadyAwarded?: boolean
 ): void {
   const fontSize = Math.round(panelWidth * 0.08);
+  const displayText = alreadyAwarded ? 'Already Earned' : '+1 Water';
+  const textColor = alreadyAwarded
+    ? `#${COLORS.UNAVAILABLE_BUTTON.toString(16).padStart(6, '0')}`
+    : `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`;
   const waterText = scene.add.text(
     x - 175,
     y - 100,
-    '+1 Water',
-    createTextStyle('BODY_BOLD', `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`, {
+    displayText,
+    createTextStyle('BODY_BOLD', textColor, {
       fontSize: `${fontSize}px`,
     })
   );

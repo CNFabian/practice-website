@@ -198,6 +198,8 @@ export interface GYNMinigameInitData {
   moduleNumber?: number;
   /** Whether to show start screen or jump right into questions */
   showStartScreen?: boolean;
+  /** Question IDs that have already awarded base growth points (for deduplication) */
+  awardedQuestionIds?: string[];
 }
 
 /** Result emitted when the minigame session completes */
