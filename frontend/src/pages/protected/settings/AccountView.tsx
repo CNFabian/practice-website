@@ -8,12 +8,15 @@ import { requestPasswordReset } from '../../../services/authAPI';
 import { wipeUserData } from '../../../services/authAPI';
 import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
 import { clearAuthData } from '../../../services/authAPI';
+import { useWalkthrough } from '../../../contexts/WalkthroughContext';
 import type { RootState } from '../../../store/store';
 
 const AccountView: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
+  const { startWalkthrough, isWalkthroughActive, hasCompletedWalkthrough } = useWalkthrough();
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -65,6 +68,7 @@ const AccountView: React.FC = () => {
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
       });
+
       await updateUserProfile({ photoURL: base64 });
       dispatch(updateUserProfileAction({ photoURL: base64 }));
       console.log('Profile picture uploaded successfully');
@@ -80,9 +84,11 @@ const AccountView: React.FC = () => {
       setResetPasswordError('No email address found on your account.');
       return;
     }
+
     setIsResettingPassword(true);
     setResetPasswordMessage(null);
     setResetPasswordError(null);
+
     try {
       await requestPasswordReset(user.email);
       setResetPasswordMessage('A password reset link has been sent to your email.');
@@ -98,13 +104,17 @@ const AccountView: React.FC = () => {
     setIsWiping(true);
     setWipeMessage(null);
     setWipeError(null);
+
     try {
       await wipeUserData();
       setWipeMessage('All data wiped successfully. Logging you out...');
       setShowWipeConfirm(false);
+
       // Log the user out after a brief delay so they can see the success message
       setTimeout(() => {
         clearAuthData();
+        localStorage.removeItem('nestnav_walkthrough_completed');
+        localStorage.removeItem('moduleNavState');
         dispatch(logout());
         navigate('/auth/login');
       }, 2000);
@@ -113,6 +123,14 @@ const AccountView: React.FC = () => {
       setWipeError('Failed to wipe data. Please try again.');
       setIsWiping(false);
     }
+  };
+
+  const handleStartWalkthrough = () => {
+    // Navigate to modules page first, then start walkthrough
+    navigate('/app');
+    setTimeout(() => {
+      startWalkthrough();
+    }, 300);
   };
 
   return (
@@ -301,6 +319,7 @@ const AccountView: React.FC = () => {
               </OnestFont>
             </div>
           )}
+
           {resetPasswordError && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-status-red/10 text-status-red text-sm">
               <OnestFont weight={500} lineHeight="relaxed">
@@ -330,7 +349,6 @@ const AccountView: React.FC = () => {
           >
             Phone Number
           </OnestFont>
-
           <div>
             <label className="block text-sm text-text-grey mb-2">
               <OnestFont weight={500} lineHeight="relaxed">
@@ -435,8 +453,55 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* TEMPORARY: Wipe User Data — Beta Testing Only               */}
-        {/* Remove this entire section before production launch          */}
+        {/* Module Tour */}
+        {/* ============================================================ */}
+        <div className="border-t border-light-background-blue py-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-logo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <OnestFont
+                as="h3"
+                weight={700}
+                lineHeight="relaxed"
+                className="text-base text-text-blue-black mb-1"
+              >
+                Module Tour
+              </OnestFont>
+              <OnestFont
+                as="p"
+                weight={300}
+                lineHeight="relaxed"
+                className="text-sm text-text-grey mb-4"
+              >
+                {hasCompletedWalkthrough
+                  ? 'Retake the guided tour to revisit how the platform works, including neighborhoods, houses, lessons, and minigames.'
+                  : 'Take a guided tour of the platform to learn how neighborhoods, houses, lessons, and minigames work.'
+                }
+              </OnestFont>
+              <button
+                onClick={handleStartWalkthrough}
+                disabled={isWalkthroughActive}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-opacity ${
+                  isWalkthroughActive
+                    ? 'bg-unavailable-button text-text-grey cursor-not-allowed'
+                    : 'bg-logo-blue text-pure-white hover:opacity-90'
+                }`}
+              >
+                <OnestFont weight={500} lineHeight="relaxed">
+                  {isWalkthroughActive ? 'Tour in Progress...' : hasCompletedWalkthrough ? 'Restart Tour' : 'Start Tour'}
+                </OnestFont>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* TEMPORARY: Wipe User Data — Beta Testing Only */}
+        {/* Remove this entire section before production launch */}
         {/* ============================================================ */}
         <div className="border-t border-light-background-blue py-6">
           <div className="flex items-start gap-3">
@@ -470,6 +535,7 @@ const AccountView: React.FC = () => {
                   </OnestFont>
                 </div>
               )}
+
               {wipeError && (
                 <div className="mb-4 px-4 py-3 rounded-lg bg-status-red/10 text-status-red text-sm">
                   <OnestFont weight={500} lineHeight="relaxed">

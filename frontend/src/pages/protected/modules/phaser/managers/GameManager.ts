@@ -17,6 +17,7 @@ class GameManager {
   private resizeDebounceTimer: NodeJS.Timeout | null = null;
   private dpiMediaQuery: MediaQueryList | null = null;
   private dpiChangeHandler: (() => void) | null = null;
+  private _isDestroying: boolean = false;
 
   private constructor() {}
 
@@ -293,12 +294,22 @@ class GameManager {
         this.resizeDebounceTimer = null;
       }
 
+      this._isDestroying = true;
       this.game.destroy(true);
+      this._isDestroying = false;
       this.game = null;
       this.assetsLoaded = false;
       this.isPhaserReady = false;
       this.currentSidebarOffset = 192;
     }
+  }
+
+  /**
+   * Check if game is currently being destroyed (used by scenes
+   * to skip DOM cleanup like clearing section-background)
+   */
+  get isDestroying(): boolean {
+    return this._isDestroying;
   }
 
   /**

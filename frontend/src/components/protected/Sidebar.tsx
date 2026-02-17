@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Disclosure, Transition } from '@headlessui/react';
 import { RootState } from '../../store/store';
 import { selectIsAdmin } from '../../store/slices/authSlice';
-import { 
-  HomeIcon, 
-  ModuleIcon, 
-  SavedIcon, 
-  RewardsIcon, 
-  BadgesIcon, 
-  GetHelpIcon, 
+import {
+  HomeIcon,
+  ModuleIcon,
+  SavedIcon,
+  RewardsIcon,
+  BadgesIcon,
+  GetHelpIcon,
   SettingsIcon,
   CalculatorDarkIcon,
   DocumentDarkIcon,
@@ -22,16 +22,15 @@ import {
 } from '../../assets';
 import OnBoardingPage from './onboarding/OnBoardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { useWalkthrough } from '../../contexts/WalkthroughContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
-  const { startWalkthrough, isWalkthroughActive } = useWalkthrough();
+
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.unread_count ?? 0;
+
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = selectIsAdmin(user);
 
@@ -60,12 +59,11 @@ const Sidebar: React.FC = () => {
     if (path === '/app') {
       return location.pathname === '/app';
     }
-
     if (path.includes('?')) {
       const [pathname, queryString] = path.split('?');
       const currentParams = new URLSearchParams(location.search);
       const linkParams = new URLSearchParams(queryString);
-      
+
       if (location.pathname === pathname) {
         for (const [key, value] of linkParams.entries()) {
           if (currentParams.get(key) !== value) {
@@ -79,27 +77,16 @@ const Sidebar: React.FC = () => {
     return location.pathname === path || location.pathname.startsWith(path.split('?')[0]);
   };
 
-  const handleStartWalkthrough = () => {
-    if (location.pathname !== '/app') {
-      navigate('/app');
-      setTimeout(() => {
-        startWalkthrough();
-      }, 300);
-    } else {
-      startWalkthrough();
-    }
-  };
-
   return (
     <>
-      <aside 
+      <aside
         data-walkthrough="modules-nav"
         className={`fixed left-2 top-2 bottom-2 flex flex-col rounded-xl shadow-sm z-50 transition-all duration-300 ease-in-out bg-gradient-to-b from-light-background-blue to-tab-active ${
           isCollapsed ? 'w-16' : 'w-44'
         }`}
       >
         <div className="px-4 pt-4 flex items-center justify-center border-b border-pure-white/20">
-          <button 
+          <button
             onClick={toggleCollapsed}
             className="transition-transform duration-200 hover:scale-110"
           >
@@ -115,10 +102,11 @@ const Sidebar: React.FC = () => {
                 to={item.path}
                 className={`
                   flex items-center rounded-2xl transition-all duration-200
-                  ${isActive(item.path) 
-                    ? 'bg-tab-active font-medium shadow-sm' 
+                  ${isActive(item.path)
+                    ? 'bg-tab-active font-medium shadow-sm'
                     : 'hover:bg-pure-white/50'
-                  } text-text-blue-black hover:text-text-blue-black
+                  }
+                  text-text-blue-black hover:text-text-blue-black
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
               >
@@ -130,7 +118,7 @@ const Sidebar: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <OnestFont 
+                <OnestFont
                   weight={500}
                   lineHeight="relaxed"
                   className={`text-sm whitespace-nowrap transition-all duration-300 ${
@@ -150,9 +138,10 @@ const Sidebar: React.FC = () => {
                       className={`
                         w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
                         ${location.pathname.startsWith('/app/materials')
-                          ? 'bg-tab-active font-medium shadow-sm' 
+                          ? 'bg-tab-active font-medium shadow-sm'
                           : 'hover:bg-pure-white/50'
-                        } text-text-blue-black hover:text-text-blue-black
+                        }
+                        text-text-blue-black hover:text-text-blue-black
                       `}
                     >
                       <img src={SavedIcon} alt="Materials" className="w-5 h-5 flex-shrink-0" />
@@ -184,9 +173,10 @@ const Sidebar: React.FC = () => {
                             className={`
                               flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200
                               ${isActive(subItem.path)
-                                ? 'bg-tab-active font-medium' 
+                                ? 'bg-tab-active font-medium'
                                 : 'hover:bg-pure-white/50'
-                              } text-text-blue-black hover:text-text-blue-black
+                              }
+                              text-text-blue-black hover:text-text-blue-black
                             `}
                           >
                             <img src={subItem.icon} alt={subItem.label} className="w-4 h-4 flex-shrink-0" />
@@ -208,9 +198,10 @@ const Sidebar: React.FC = () => {
                 className={`
                   flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-200
                   ${location.pathname.startsWith('/app/materials')
-                    ? 'bg-tab-active font-medium shadow-sm' 
+                    ? 'bg-tab-active font-medium shadow-sm'
                     : 'hover:bg-pure-white/50'
-                  } text-text-blue-black hover:text-text-blue-black
+                  }
+                  text-text-blue-black hover:text-text-blue-black
                 `}
               >
                 <img src={SavedIcon} alt="Materials" className="w-5 h-5" />
@@ -223,67 +214,11 @@ const Sidebar: React.FC = () => {
           <div className="space-y-1">
             {!isCollapsed && (
               <button
-                onClick={handleStartWalkthrough}
-                disabled={isWalkthroughActive}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 ${
-                  isWalkthroughActive 
-                    ? 'bg-unavailable-button/50 cursor-not-allowed' 
-                    : 'bg-logo-blue hover:opacity-90'
-                } text-pure-white font-medium`}
-              >
-                <svg 
-                  className="w-4 h-4" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" 
-                  />
-                </svg>
-                <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                  Module Tour
-                </OnestFont>
-              </button>
-            )}
-
-            {isCollapsed && (
-              <button
-                onClick={handleStartWalkthrough}
-                disabled={isWalkthroughActive}
-                title="Start Module Tour"
-                className={`w-full flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-200 ${
-                  isWalkthroughActive 
-                    ? 'bg-unavailable-button/50 cursor-not-allowed' 
-                    : 'bg-logo-blue hover:opacity-90'
-                } text-pure-white`}
-              >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" 
-                  />
-                </svg>
-              </button>
-            )}
-
-            {!isCollapsed && (
-              <button
                 onClick={() => setShowOnboarding(true)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-opacity duration-200 bg-status-red hover:opacity-90 text-pure-white font-medium"
               >
                 <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                  🧪 Test Onboarding
+                  Test Onboarding
                 </OnestFont>
               </button>
             )}
@@ -294,15 +229,16 @@ const Sidebar: React.FC = () => {
                 to={item.path}
                 className={`
                   flex items-center rounded-2xl transition-all duration-200
-                  ${isActive(item.path) 
-                    ? 'bg-tab-active font-medium shadow-sm' 
+                  ${isActive(item.path)
+                    ? 'bg-tab-active font-medium shadow-sm'
                     : 'hover:bg-pure-white/50'
-                  } text-text-blue-black hover:text-text-blue-black
+                  }
+                  text-text-blue-black hover:text-text-blue-black
                   ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
                 `}
               >
                 <img src={item.icon} alt={item.label} className="w-5 h-5 flex-shrink-0" />
-                <OnestFont 
+                <OnestFont
                   weight={500}
                   lineHeight="relaxed"
                   className={`text-sm whitespace-nowrap transition-all duration-300 ${
@@ -325,9 +261,9 @@ const Sidebar: React.FC = () => {
       </aside>
 
       {showOnboarding && (
-        <OnBoardingPage 
-          isOpen={showOnboarding} 
-          onClose={() => setShowOnboarding(false)} 
+        <OnBoardingPage
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
         />
       )}
     </>

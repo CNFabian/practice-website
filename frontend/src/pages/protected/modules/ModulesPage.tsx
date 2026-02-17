@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { 
   HouseBackground,
   NeighborhoodMap,
-  NeighborhoodBackground
+  NeighborhoodBackground,
+  LessonViewBackground
 } from '../../../assets';
 import GameManager from './phaser/managers/GameManager';
 import LessonView from './LessonView';
@@ -643,6 +644,21 @@ const ModulesPage: React.FC = () => {
         return {};
     }
   };
+
+  // Set section-background for lesson/minigame views directly,
+  // independent of Phaser lifecycle to avoid race conditions
+  // where Phaser destroy clears the background after LessonView sets it
+  useEffect(() => {
+    if (navState.currentView === 'lesson' || navState.currentView === 'minigame') {
+      const bgElement = document.getElementById('section-background');
+      if (bgElement) {
+        bgElement.style.setProperty('background', `url(${LessonViewBackground})`, 'important');
+        bgElement.style.backgroundSize = 'cover';
+        bgElement.style.backgroundPosition = 'center';
+        bgElement.style.backgroundRepeat = 'no-repeat';
+      }
+    }
+  }, [navState.currentView]);
 
   return (
     <div className="w-full h-screen overflow-hidden relative">

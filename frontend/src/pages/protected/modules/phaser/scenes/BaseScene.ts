@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { UIComponents } from '../ui/UIComponents';
 // Add Typography import for future consistency (even though not directly used)
 import { createTextStyle } from '../constants/Typography';
+import GameManager from '../managers/GameManager';
 
 export class BaseScene extends Phaser.Scene {
   protected coinCounter?: Phaser.GameObjects.Container;
@@ -16,7 +17,12 @@ export class BaseScene extends Phaser.Scene {
 
   shutdown(): void {
     this.cleanupCoinCounter();
-    this.clearBackgroundImage();
+    // Only clear background when transitioning between Phaser scenes,
+    // NOT during game.destroy(). When the game is destroyed (e.g. stale
+    // canvas), React owns the background and will set it appropriately.
+    if (!GameManager.isDestroying) {
+      this.clearBackgroundImage();
+    }
   }
 
   protected createCoinCounter(): void {

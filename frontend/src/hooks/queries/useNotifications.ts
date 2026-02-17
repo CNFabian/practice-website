@@ -29,13 +29,13 @@ export const useNotifications = (params?: NotificationsParams) => {
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: getUnreadCount,
 
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
 
-    gcTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
 
-    refetchInterval: 30 * 1000,
+    refetchInterval: 60 * 1000,
 
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
 
     retry: 1,
   });
