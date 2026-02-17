@@ -297,22 +297,14 @@ def submit_minigame(
     EventTracker.track_minigame_attempted(db, current_user.id, module_id, attempt_number)
     EventTracker.track_minigame_result(db, current_user.id, module_id, float(score), passed)
     
-    # Award coins and badges if passed
+    # Award badges if passed (coins come from tree stages + module completion, not quiz)
     coins_earned = 0
     badges_earned = []
     module_completed = False
     
     if passed:
-        # Calculate total coins from all lessons in module
-        total_lesson_coins = sum(lesson.nest_coins_reward for lesson in lessons)
-        coins_earned = QuizManager.calculate_coin_reward(total_lesson_coins, score)
-        
-        if coins_earned > 0:
-            CoinManager.award_coins(
-                db, current_user.id, coins_earned,
-                "minigame_passed", attempt.id,
-                f"Completed Grow Your Nest for: {module.title}"
-            )
+        # NOTE: Module quiz no longer awards coins directly.
+        # Coins come from tree stage growth and module completion.
         
         # Get or CREATE module progress
         module_progress = db.query(UserModuleProgress).filter(
@@ -353,6 +345,14 @@ def submit_minigame(
             
             # Track module completion event ONLY on first completion (prevents duplicates)
             _, created = EventTracker.track_module_completed(db, current_user.id, module_id, module.title)
+            
+            # Award 250 coins for first module completion (coin economy alignment)
+            coins_earned = 250  # Scales with module difficulty in future
+            CoinManager.award_coins(
+                db, current_user.id, coins_earned,
+                "module_completion", module_id,
+                f"Completed module: {module.title}"
+            )
     
     db.commit()
     
@@ -442,4 +442,3 @@ def get_minigame_statistics(
         "best_score": round(best_score, 2),
         "modules_completed": modules_completed
     }
-

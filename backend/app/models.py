@@ -616,6 +616,7 @@ class UserModuleProgress(Base):
     tree_growth_points: Mapped[int] = mapped_column(Integer, default=0)
     tree_current_stage: Mapped[int] = mapped_column(Integer, default=0)
     tree_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    coins_awarded_stages: Mapped[int] = mapped_column(Integer, default=0)  # Highest stage that has paid out coins
     tree_completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
@@ -1069,4 +1070,3 @@ class MaterialDownload(Base):
     # Relationships
     user: Mapped[Optional["User"]] = relationship()
     material: Mapped["MaterialResource"] = relationship()
-

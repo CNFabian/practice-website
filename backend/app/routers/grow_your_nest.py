@@ -298,7 +298,36 @@ def submit_lesson_game(
         else:
             consecutive_correct = 0
     
-    # Calculate growth points
+    # GYN lesson mode requires ALL 3 questions correct in a single session
+    # If user didn't get all correct, return results but do NOT persist anything
+    all_correct = correct_count == total_questions
+    
+    # Get current tree state for response (read-only if not all correct)
+    module_progress = get_or_create_module_progress(db, current_user.id, lesson.module_id)
+    old_stage = module_progress.tree_current_stage
+    
+    if not all_correct:
+        # User failed — return results without persisting, allow retry
+        return {
+            "success": True,
+            "passed": False,
+            "correct_count": correct_count,
+            "total_questions": total_questions,
+            "growth_points_earned": 0,
+            "fertilizer_bonus": False,
+            "tree_state": {
+                "growth_points": module_progress.tree_growth_points,
+                "current_stage": module_progress.tree_current_stage,
+                "previous_stage": old_stage,
+                "stage_increased": False,
+                "total_stages": TREE_TOTAL_STAGES,
+                "completed": module_progress.tree_completed,
+                "just_completed": False
+            },
+            "coins_earned": 0
+        }
+    
+    # All 3 correct — calculate growth points and persist
     # Each correct answer = 1 Water = 10 points
     growth_points_earned = correct_count * WATER_POINTS
     # Fertilizer bonus for every 3 consecutive correct (count streaks)
@@ -317,9 +346,6 @@ def submit_lesson_game(
     fertilizer_bonus = growth_points_earned > (correct_count * WATER_POINTS)
     
     # Update module progress (tree state)
-    module_progress = get_or_create_module_progress(db, current_user.id, lesson.module_id)
-    
-    old_stage = module_progress.tree_current_stage
     module_progress.tree_growth_points += growth_points_earned
     module_progress.tree_current_stage = calculate_tree_stage(module_progress.tree_growth_points)
     new_stage = module_progress.tree_current_stage
@@ -331,9 +357,9 @@ def submit_lesson_game(
         module_progress.tree_completed_at = datetime.now()
         tree_just_completed = True
     
-    # Mark lesson game as played
+    # Mark lesson game as played (only on perfect score)
     lesson_progress.quiz_attempts = 1
-    lesson_progress.quiz_best_score = Decimal((correct_count / total_questions) * 100) if total_questions > 0 else Decimal(0)
+    lesson_progress.quiz_best_score = Decimal(100)
     
     db.commit()
     
@@ -354,6 +380,7 @@ def submit_lesson_game(
     
     return {
         "success": True,
+        "passed": True,
         "correct_count": correct_count,
         "total_questions": total_questions,
         "growth_points_earned": growth_points_earned,

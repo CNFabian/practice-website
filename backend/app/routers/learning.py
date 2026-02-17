@@ -33,7 +33,7 @@ from schemas import (
     BatchProgressUpdate,
     LessonProgressResponse,
 )
-from utils import ProgressManager, OnboardingManager
+from utils import ProgressManager, OnboardingManager, CoinManager
 from analytics.event_tracker import EventTracker
 import traceback
 
@@ -787,6 +787,16 @@ def complete_lesson(
         progress.status = "completed"
         progress.completed_at = datetime.now()
         progress.last_accessed_at = datetime.now()
+        
+        # Award 5 coins for first lesson completion (coin economy alignment)
+        CoinManager.award_coins(
+            db,
+            current_user.id,
+            5,  # Flat 5 coins per lesson (100 coins = $1)
+            "lesson_completion",
+            lesson_id,
+            f"Completed lesson: {lesson.title}"
+        )
         
         # Track event
         _, created = EventTracker.track_lesson_completed(db, current_user.id, lesson_id, lesson.title)

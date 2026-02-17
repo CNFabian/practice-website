@@ -300,6 +300,18 @@ class ProgressManager:
             progress.status = status
             if status == "completed" and not progress.completed_at:
                 progress.completed_at = datetime.now()
+                
+                # Award 5 coins for first lesson completion (coin economy alignment)
+                lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+                if lesson:
+                    CoinManager.award_coins(
+                        db,
+                        user_id,
+                        5,  # Flat 5 coins per lesson (100 coins = $1)
+                        "lesson_completion",
+                        lesson_id,
+                        f"Completed lesson: {lesson.title}"
+                    )
         
         progress.last_accessed_at = datetime.now()
         db.commit()
@@ -368,6 +380,15 @@ class ProgressManager:
                 module_progress.status = "completed"
                 if not module_progress.completed_at:
                     module_progress.completed_at = datetime.now()
+                    
+                    # Award 250 coins for first module completion (coin economy alignment)
+                    module = db.query(Module).filter(Module.id == module_id).first()
+                    if module:
+                        CoinManager.award_coins(
+                            db, user_id, 250,
+                            "module_completion", module_id,
+                            f"Completed module: {module.title}"
+                        )
             else:
                 # New status: lessons done but mini-game not passed yet
                 module_progress.status = "lessons_complete"
@@ -572,7 +593,7 @@ class OnboardingManager:
             CoinManager.award_coins(
                 db,
                 user_id,
-                100,  # Welcome bonus
+                200,  # Welcome bonus (coin economy: 100 coins = $1)
                 "onboarding_complete",
                 description="Welcome bonus for completing onboarding!"
             )
@@ -583,7 +604,7 @@ class OnboardingManager:
                 user_id,
                 "onboarding_complete",
                 "Welcome to the Learning Platform!",
-                "You've successfully completed your onboarding and earned 100 bonus coins!",
+                "You've successfully completed your onboarding and earned 200 bonus coins!",
                 "high"
             )
         

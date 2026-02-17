@@ -18,7 +18,7 @@ from schemas import (
     QuizAnswerCreate, QuizQuestionResponse, QuizAnswerResponse
 )
 from utils import (
-    QuizManager, CoinManager, BadgeManager, ProgressManager, NotificationManager
+    QuizManager, BadgeManager, ProgressManager, NotificationManager
 )
 from analytics.event_tracker import EventTracker
 
@@ -209,24 +209,11 @@ def submit_quiz(
     if not lesson_progress.quiz_best_score or score > lesson_progress.quiz_best_score:
         lesson_progress.quiz_best_score = score
     
-    # Award coins and badges if passed
+    # Award badges if passed (coins are earned via lesson completion, not quiz pass)
     coins_earned = 0
     badges_earned = []
     
     if passed:
-        # Calculate coin reward
-        coins_earned = QuizManager.calculate_coin_reward(lesson.nest_coins_reward, score)
-        
-        if coins_earned > 0:
-            CoinManager.award_coins(
-                db,
-                current_user.id,
-                coins_earned,
-                "quiz_passed",
-                quiz_attempt.id,
-                f"Passed quiz for lesson: {lesson.title}"
-            )
-        
         # Check and award badges
         awarded_badges = BadgeManager.check_and_award_lesson_badges(
             db, current_user.id, quiz_data.lesson_id
@@ -237,8 +224,6 @@ def submit_quiz(
         achievement_message = f"Congratulations! You scored {score}% on the quiz"
         if badges_earned:
             achievement_message += f" and earned {len(badges_earned)} badge(s)"
-        if coins_earned > 0:
-            achievement_message += f" and {coins_earned} coins"
         achievement_message += "!"
         
         NotificationManager.create_notification(
