@@ -53,7 +53,15 @@ export const useGYNLessonQuestions = (lessonId: string) => {
     queryFn: () => getLessonQuestions(lessonId),
     enabled: !!lessonId && !/^\d+$/.test(lessonId),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    // Don't retry 400 errors — these are validation errors
+    // ("Please complete the lesson video first", "already been played")
+    // not transient failures. Only retry on 5xx / network errors.
+    retry: (failureCount: number, error: Error) => {
+      if (failureCount >= 2) return false;
+      const msg = error?.message || '';
+      if (msg.includes('status: 400') || msg.includes('status: 404')) return false;
+      return true;
+    },
   });
 };
 

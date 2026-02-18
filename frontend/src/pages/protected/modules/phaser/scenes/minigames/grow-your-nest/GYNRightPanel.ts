@@ -46,6 +46,9 @@ export function createRightPanel(
 
   if (state.showingStartScreen) {
     showStartScreen(scene, state, callbacks);
+  } else if (state.currentQuestionIndex >= state.questions.length && state.lessonPassed !== null) {
+    // All questions answered and results received — re-show completion on resize
+    showCompletion(scene, state, callbacks.onReturn);
   } else {
     updateQuestion(scene, state, callbacks);
   }
@@ -278,8 +281,9 @@ export function updateQuestion(
   }
 ): void {
   if (state.currentQuestionIndex >= state.questions.length) {
-    // Signal main scene to handle completion
-    callbacks.onNext();
+    // All questions answered — don't trigger onNext here as this may be
+    // called from a resize/re-render. The main scene handles completion
+    // via handleNextQuestion after the last answer.
     return;
   }
 

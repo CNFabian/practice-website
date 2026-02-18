@@ -125,8 +125,9 @@ const transformQuizQuestions = (backendQuestions: BackendQuizQuestion[]) => {
     
     let correctAnswerIndex = sortedAnswers.findIndex(ans => ans.is_correct === true);
     
+    // Backend intentionally omits is_correct for security (server-side validation only).
+    // Fallback to 0 — this only affects the quiz info display count, not answer validation.
     if (correctAnswerIndex === -1) {
-      console.warn('⚠️ No is_correct field found, assuming first answer is correct for question:', q.id);
       correctAnswerIndex = 0;
     }
     
@@ -233,6 +234,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   // GYN "just unlocked" notification state
   const [showGYNUnlockedNotification, setShowGYNUnlockedNotification] = useState(false);
   const [showCoinNotification, setShowCoinNotification] = useState(false);
+  const [gynAlreadyPlayed, setGynAlreadyPlayed] = useState(false);
   const prevIsCompletedRef = useRef<boolean | undefined>(undefined);
   const gynNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const coinNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -249,6 +251,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     // Reset all per-lesson state when lesson changes
     setVideoCompleted(false);
     setReadingCompleted(false);
+    setGynAlreadyPlayed(false);
     milestonesReachedRef.current.clear();
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
@@ -338,7 +341,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   const { 
     data: backendLessonData, 
     isLoading: isLoadingLesson, 
-    error: lessonError 
+    error: lessonError,
+    isFetching: isFetchingLesson,
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
 
   // Derive completion state from backend data
@@ -423,12 +427,17 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   // ═══════════════════════════════════════════════════════════
   // GYN QUESTIONS — Only fetch when server confirms:
-  //   1. Lesson is completed
+  //   1. Lesson is completed (confirmed, not optimistic)
   //   2. GYN has NOT been played yet
+  //   3. Query is not mid-refetch (avoids firing during optimistic update settle)
+  // The optimistic update in useCompleteLesson sets is_completed=true
+  // but never sets grow_your_nest_played, so we require grow_your_nest_played
+  // to be explicitly false (not undefined) to ensure we have real server data.
   // ═══════════════════════════════════════════════════════════
   const shouldFetchGYN = !!(
     backendLessonData?.is_completed &&
-    backendLessonData?.grow_your_nest_played === false
+    backendLessonData?.grow_your_nest_played === false &&
+    !isFetchingLesson
   );
   useGYNLessonQuestions(
     shouldFetchGYN ? (lesson.backendId || '') : ''
@@ -924,6 +933,12 @@ const LessonView: React.FC<LessonViewProps> = ({
       }
     } catch (error) {
       console.error('🌳 [GYN Play] Failed to fetch GYN questions:', error);
+      // If backend says "already been played", update local state so
+      // the button transitions to Completed without waiting for cache refresh
+      const msg = (error as Error)?.message || '';
+      if (msg.includes('status: 400')) {
+        setGynAlreadyPlayed(true);
+      }
     }
   }, [lesson.backendId, module.orderIndex, onBack]);
 
@@ -1135,6 +1150,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                       lessonCompleted={isCompleted}
                       gynPlayed={
                         !!backendLessonData?.grow_your_nest_played ||
+                        gynAlreadyPlayed ||
                         (isMockLesson && mockGYNPlayedLessons.has(lesson.backendId || ''))
                       }
                       onPlay={handleGYNPlay}
