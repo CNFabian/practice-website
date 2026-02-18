@@ -1,17 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { loginUser, getCurrentUser, requestPasswordReset } from '../../services/authAPI'
 import { setUser } from '../../store/slices/authSlice'
-import { LoginImage, Eye, Blind, OnestFont } from '../../assets'
+import { birdWithPencil, PublicBackground, Eye, Blind, OnestFont } from '../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -23,15 +21,7 @@ const LoginPage: React.FC = () => {
   const [resetMessage, setResetMessage] = useState('')
   const [resetError, setResetError] = useState('')
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -40,8 +30,8 @@ const LoginPage: React.FC = () => {
       console.log('LoginPage: Starting login process...');
 
       await loginUser({
-        email: formData.email,
-        password: formData.password
+        email: email.trim(),
+        password,
       });
 
       console.log('LoginPage: Login successful, fetching user profile...');
@@ -71,10 +61,10 @@ const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, password, dispatch, navigate])
 
-  const handleForgotPassword = async () => {
-    const emailToReset = resetEmail.trim() || formData.email.trim()
+  const handleForgotPassword = useCallback(async () => {
+    const emailToReset = resetEmail.trim() || email.trim()
     if (!emailToReset) {
       setResetError('Please enter your email address.')
       return
@@ -92,167 +82,177 @@ const LoginPage: React.FC = () => {
     } finally {
       setResetLoading(false)
     }
-  }
+  }, [resetEmail, email])
+
+  // Shared input className
+  const inputClassName =
+    'w-full px-6 py-3.5 rounded-full bg-light-background-blue text-text-blue-black placeholder-unavailable-button border border-transparent-elegant-blue focus:outline-none focus:ring-2 focus:ring-logo-blue focus:border-logo-blue focus:bg-pure-white transition-colors'
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center px-6 lg:px-8 my-8">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black mb-4">
-              Welcome Back!
-            </OnestFont>
-            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-lg">
-              Sign in to continue your learning journey
-            </OnestFont>
+    <div className="relative w-full">
+      {/* Background image section */}
+      <div className="relative min-h-[600px] flex items-center overflow-hidden">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${PublicBackground})` }}
+        />
+        {/* Blue overlay */}
+        <div className="absolute inset-0 bg-logo-blue/30" />
+        {/* Bottom gradient fade to white */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-pure-white to-transparent" />
+
+        {/* Content container */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex items-center justify-between py-12">
+          {/* Left side - Bird with pencil */}
+          <div className="hidden lg:flex flex-1 items-center justify-center">
+            <img
+              src={birdWithPencil}
+              alt="Nest Navigate bird character with pencil"
+              className="max-w-md w-full h-auto object-contain drop-shadow-lg"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-status-red/10 border border-status-red rounded-lg p-3">
-                <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm">
-                  {error}
-                </OnestFont>
-              </div>
-            )}
-
-            <input
-              type="email"
-              name="email"
-              placeholder="email"
-              value={formData.email}
-              onChange={handleChange}
-              autoComplete="email"
-              required
-              className="w-full px-4 py-3 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
-            />
-
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="password"
-                value={formData.password}
-                onChange={handleChange}
-                onPaste={(e) => e.preventDefault()}
-                autoComplete="current-password"
-                required
-                className="w-full px-4 py-3 pr-12 border-0 rounded-lg bg-light-background-blue text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue focus:bg-pure-white"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
-              >
-                <img 
-                  src={showPassword ? Eye : Blind} 
-                  alt={showPassword ? "Hide password" : "Show password"} 
-                  className="w-5 h-5" 
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="stayLoggedIn"
-                  name="stayLoggedIn"
-                  type="checkbox"
-                  className="h-4 w-4 text-logo-blue focus:ring-logo-blue border-light-background-blue rounded"
-                />
-                <label htmlFor="stayLoggedIn" className="ml-2 block">
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-blue-black">
-                    Stay logged in
+          {/* Right side - Form card */}
+          <div className="flex-1 flex items-center justify-center lg:justify-end">
+            <div className="w-full max-w-lg bg-pure-white/95 backdrop-blur-sm rounded-2xl border border-unavailable-button/30 shadow-lg p-8 md:p-10">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="text-center space-y-3">
+                  <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
+                    Welcome Back!
                   </OnestFont>
-                </label>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForgotPassword(!showForgotPassword)
-                  setResetEmail(formData.email)
-                  setResetMessage('')
-                  setResetError('')
-                }}
-                className="focus:outline-none"
-              >
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue hover:underline">
-                  Forgot Password?
-                </OnestFont>
-              </button>
-            </div>
+                  <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
+                    Continue your home buying learning journey today
+                    and get one step closer to your dream home!
+                  </OnestFont>
+                </div>
 
-            {/* Forgot Password Inline Section */}
-            {showForgotPassword && (
-              <div className="bg-light-background-blue rounded-lg p-4 space-y-3">
-                <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-                  Enter your email and we'll send you a link to reset your password.
-                </OnestFont>
+                {error && (
+                  <div className="bg-status-red/10 border border-status-red rounded-lg p-3">
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
+                      {error}
+                    </OnestFont>
+                  </div>
+                )}
+
                 <input
                   type="email"
                   placeholder="email address"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-0 rounded-lg bg-pure-white text-text-blue-black placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-logo-blue"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                  className={inputClassName}
                 />
-                {resetMessage && (
-                  <div className="px-3 py-2 rounded-lg bg-status-green/10">
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-status-green text-sm">
-                      {resetMessage}
+
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
+                    autoComplete="current-password"
+                    required
+                    className={`${inputClassName} pr-12`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
+                  >
+                    <img
+                      src={showPassword ? Eye : Blind}
+                      alt={showPassword ? 'Hide password' : 'Show password'}
+                      className="w-5 h-5"
+                    />
+                  </button>
+                </div>
+
+                {/* Forgot Password link */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(!showForgotPassword)
+                      setResetEmail(email)
+                      setResetMessage('')
+                      setResetError('')
+                    }}
+                    className="focus:outline-none"
+                  >
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue hover:underline">
+                      Forgot Password?
                     </OnestFont>
+                  </button>
+                </div>
+
+                {/* Forgot Password Inline Section */}
+                {showForgotPassword && (
+                  <div className="bg-light-background-blue rounded-xl p-4 space-y-3">
+                    <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-sm text-text-grey text-center">
+                      Enter your email and we'll send you a link to reset your password.
+                    </OnestFont>
+                    <input
+                      type="email"
+                      placeholder="email address"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full px-6 py-3 rounded-full bg-pure-white text-text-blue-black placeholder-unavailable-button border border-transparent-elegant-blue focus:outline-none focus:ring-2 focus:ring-logo-blue"
+                    />
+                    {resetMessage && (
+                      <div className="px-3 py-2 rounded-lg bg-status-green/10">
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-status-green text-sm text-center">
+                          {resetMessage}
+                        </OnestFont>
+                      </div>
+                    )}
+                    {resetError && (
+                      <div className="px-3 py-2 rounded-lg bg-status-red/10">
+                        <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
+                          {resetError}
+                        </OnestFont>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={resetLoading}
+                      className="w-full bg-elegant-blue text-pure-white py-2.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    >
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                        {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                      </OnestFont>
+                    </button>
                   </div>
                 )}
-                {resetError && (
-                  <div className="px-3 py-2 rounded-lg bg-status-red/10">
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm">
-                      {resetError}
+
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-48 bg-logo-blue text-pure-white py-3.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
+                  >
+                    {loading && (
+                      <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
+                    )}
+                    <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
+                      LOG IN
                     </OnestFont>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={resetLoading}
-                  className="w-full bg-elegant-blue text-pure-white py-2.5 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                >
-                  <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                    {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </div>
+
+                <div className="text-center pt-2">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
+                    No account yet? Register{' '}
+                    <a href="/auth/signup" className="text-logo-blue hover:underline">
+                      here
+                    </a>
                   </OnestFont>
-                </button>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="mx-auto w-48 bg-logo-blue text-pure-white py-3 px-6 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              ) : null}
-              <OnestFont weight={700} lineHeight="relaxed" className="text-lg">
-                Log In
-              </OnestFont>
-            </button>
-          </form>
-
-          <div className="text-center">
-            <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
-              No account yet? Register <a href='/auth/signup' className="text-logo-blue hover:underline">here</a>
-            </OnestFont>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Right Side - Image */}
-      <div className="hidden lg:flex flex-1 items-center justify-center m-10">
-        <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
-          <img 
-            src={LoginImage} 
-            alt="Home ownership journey image" 
-            className="max-w-full max-h-full object-cover rounded-2xl"
-          />
         </div>
       </div>
     </div>

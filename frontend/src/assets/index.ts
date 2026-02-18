@@ -6,6 +6,7 @@ export { default as Typography } from '../components/common/Typography';
 export * from './icons';
 export * from './onboarding';
 export * from './phaser';
+export * from './birdCharacter'
 
 // Static Images
 export { default as SignupImage } from './images/static/signup_page.png'
@@ -25,3 +26,4 @@ export { default as birdWithPencil } from './images/birdChracter/bird_with_penci
 
 // Background Images
 export { default as LessonViewBackground } from './images/backgrounds/lessonView_background.png'
+export { default as PublicBackground } from './images/backgrounds/public_background.jpg'
