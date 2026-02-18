@@ -59,6 +59,8 @@ export default class HouseScene extends BaseScene {
   private isTransitioning: boolean = false;
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
+  private minigameButtonGlowTween?: Phaser.Tweens.Tween;
+  private freeRoamJustUnlocked: boolean = false;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
   private roomHitZones: Phaser.GameObjects.Rectangle[] = [];
   private minigameShutdownHandler?: () => void;
@@ -138,6 +140,11 @@ export default class HouseScene extends BaseScene {
     super.shutdown();
     this.transitionManager.cleanup();
 
+    if (this.minigameButtonGlowTween) {
+      this.minigameButtonGlowTween.stop();
+      this.minigameButtonGlowTween = undefined;
+    }
+
     if (this.minigameShutdownHandler) {
       const minigameScene = this.scene.get('GrowYourNestMinigame');
       if (minigameScene) {
@@ -153,6 +160,7 @@ export default class HouseScene extends BaseScene {
     this.destroyHoverTooltip(true);
     this.lessonContainers = [];
     this.roomHitZones = [];
+    this.freeRoamJustUnlocked = false;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -247,11 +255,45 @@ export default class HouseScene extends BaseScene {
     try {
       console.log('🌳 Launching Free Roam for module:', moduleBackendId);
 
-      // Fetch questions and current state in parallel
-      const [questionsResponse, stateResponse] = await Promise.all([
-        getFreeRoamQuestions(moduleBackendId),
-        getFreeRoamState(moduleBackendId),
-      ]);
+      // Ensure Tier 3 (deferred) assets are loaded before launching
+      if (!this.registry.get('deferredAssetsLoaded')) {
+        const preloader = this.scene.get('PreloaderScene') as any;
+        if (preloader?.loadDeferredAssets) {
+          preloader.loadDeferredAssets();
+          // Wait for deferred assets to finish loading
+          await new Promise<void>((resolve) => {
+            if (this.registry.get('deferredAssetsLoaded')) {
+              resolve();
+              return;
+            }
+            const handler = (_parent: any, _key: string, value: any) => {
+              if (value) {
+                this.registry.events.off('changedata-deferredAssetsLoaded', handler);
+                resolve();
+              }
+            };
+            this.registry.events.on('changedata-deferredAssetsLoaded', handler);
+          });
+        }
+      }
+
+      // Fetch state first to check if tree is already completed
+      const stateResponse = await getFreeRoamState(moduleBackendId);
+      const treeAlreadyCompleted = stateResponse.completed === true;
+
+      // Fetch questions — backend may return 400 if tree is fully grown
+      let questionsResponse;
+      try {
+        questionsResponse = await getFreeRoamQuestions(moduleBackendId);
+      } catch (questionsError) {
+        if (treeAlreadyCompleted) {
+          // Tree is fully grown — backend rejects new questions, this is expected
+          console.log('🌳 Tree fully grown — no more questions available from backend');
+          this.isTransitioning = false;
+          return;
+        }
+        throw questionsError;
+      }
 
       if (questionsResponse.questions.length === 0) {
         console.warn('🌳 No free roam questions available');
@@ -259,8 +301,6 @@ export default class HouseScene extends BaseScene {
         return;
       }
 
-      // Check if tree is already completed — still allow entry for practice
-      const treeAlreadyCompleted = stateResponse.completed === true;
       if (treeAlreadyCompleted) {
         console.log('🌳 Tree is already fully grown — entering practice mode');
       }
@@ -350,11 +390,22 @@ export default class HouseScene extends BaseScene {
           this.slideInHouseComponents();
           this.isTransitioning = false;
 
-          // Check if all lesson minigames are now complete (Free Roam unlock condition)
-          // Delay until after the 800ms slide-in animation so the user sees HouseScene first
-          this.time.delayedCall(900, () => {
-            this.checkFreeRoamUnlockCondition();
-          });
+          // Only check free roam unlock after LESSON mode minigame completions
+          // Free roam completions should not re-trigger the unlock modal
+          if (initData.mode === 'lesson') {
+            this.time.delayedCall(900, () => {
+              this.checkFreeRoamUnlockCondition(true);
+            });
+          } else if (initData.mode === 'freeroam') {
+            // After free roam, recreate button to reflect updated tree progress
+            this.time.delayedCall(900, () => {
+              if (this.minigameButton) {
+                this.minigameButton.destroy();
+                this.minigameButton = undefined;
+              }
+              this.createMinigameButton();
+            });
+          }
         };
         minigameScene.events.once(
           'minigameCompleted',
@@ -371,7 +422,7 @@ export default class HouseScene extends BaseScene {
   // in this module now have grow_your_nest_played === true.
   // If so, signal React via registry to show the unlock modal.
   // ═══════════════════════════════════════════════════════════
-  private checkFreeRoamUnlockCondition(): void {
+  private checkFreeRoamUnlockCondition(fromMinigameCompletion: boolean = false): void {
     if (!this.moduleBackendId) return;
 
     const moduleLessonsData: Record<string, any> =
@@ -401,10 +452,15 @@ export default class HouseScene extends BaseScene {
       }
       this.createMinigameButton();
 
-      // Signal React to show the Free Roam unlock modal
-      // React (MainLayout) watches for this registry value
-      this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
-      console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React');
+      // Only show the modal ONCE — when triggered by the minigame completion callback
+      if (fromMinigameCompletion) {
+        this.freeRoamJustUnlocked = true;
+        this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
+        console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React');
+
+        // Add highlight glow to the button
+        this.highlightMinigameButton();
+      }
     }
   }
 
@@ -417,6 +473,44 @@ export default class HouseScene extends BaseScene {
 
     this.minigameButton = this.createCircularMinigameButton(buttonX, buttonY);
     this.minigameButton.setDepth(100);
+  }
+
+  private highlightMinigameButton(): void {
+    if (!this.minigameButton) return;
+
+    // Stop any existing glow tween
+    if (this.minigameButtonGlowTween) {
+      this.minigameButtonGlowTween.stop();
+      this.minigameButtonGlowTween = undefined;
+    }
+
+    // Add a glowing ring behind the button
+    const glowCircle = this.add.graphics();
+    const glowRadius = scale(32);
+    glowCircle.fillStyle(COLORS.STATUS_GREEN, 0.3);
+    glowCircle.fillCircle(0, 0, glowRadius);
+    this.minigameButton.addAt(glowCircle, 0); // behind everything
+
+    // Pulsing scale animation on the glow
+    this.minigameButtonGlowTween = this.tweens.add({
+      targets: glowCircle,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      alpha: 0,
+      duration: 1000,
+      ease: 'Sine.easeOut',
+      repeat: -1,
+    });
+
+    // Also pulse the whole button slightly
+    this.tweens.add({
+      targets: this.minigameButton,
+      scale: 1.15,
+      duration: 600,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: 3,
+    });
   }
 
   private createCircularMinigameButton(

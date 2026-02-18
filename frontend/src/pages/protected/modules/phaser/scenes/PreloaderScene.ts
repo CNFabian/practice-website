@@ -20,8 +20,6 @@ import {
   stage3Tree,
   stage4Tree,
   stage5Tree,
-  stage6Tree,
-  stage7Tree,
   Neighborhood1,
   Neighborhood2,
   Neighborhood3,
@@ -100,8 +98,6 @@ const SECONDARY_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.TREE_STAGE_3, path: stage3Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_4, path: stage4Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_5, path: stage5Tree, type: 'image' },
-  { key: ASSET_KEYS.TREE_STAGE_6, path: stage6Tree, type: 'image' },
-  { key: ASSET_KEYS.TREE_STAGE_7, path: stage7Tree, type: 'image' },
 ];
 
 /** Tier 3: GrowYourNest minigame — load on-demand when minigame starts (5 assets) */

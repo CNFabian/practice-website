@@ -61,8 +61,8 @@ export function createLeftPanel(
   title.setOrigin(0.5, 0);
   state.leftPanel.add(title);
 
-  // Plant/tree graphics container
-  state.plantGraphics = scene.add.container(panelWidth / 2, panelHeight / 2 + 20);
+  // Plant/tree graphics container — positioned lower to sit on ground area of background
+  state.plantGraphics = scene.add.container(panelWidth / 2, panelHeight * 0.8);
   state.leftPanel.add(state.plantGraphics);
 
   createProgressSection(scene, state, panelWidth, panelHeight);
@@ -191,9 +191,9 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
   // Progressive scaling: Stage 1: 1.0x, Stage 7: 2.0x
   const stageScaleMultiplier = 1.0 + ((stage - 1) / 4) * 1.0;
 
-  // Shadow
+  // Shadow — fixed position at tree base
   if (scene.textures.exists(ASSET_KEYS.TREE_SHADOW)) {
-    const shadowYOffset = 200 + (stage - 1) * 50;
+    const shadowYOffset = 10;
     const treeShadow = scene.add.image(0, shadowYOffset, ASSET_KEYS.TREE_SHADOW);
     const shadowBaseScale = 0.8 + ((stage - 1) / 4) * 0.7;
     treeShadow.setScale(shadowBaseScale);
@@ -211,10 +211,11 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
     });
   }
 
-  // Tree image
+  // Tree image — anchored from bottom so tree grows upward across stages
   const treeKey = `tree_stage_${stage}`;
   if (scene.textures.exists(treeKey)) {
     const treeImage = scene.add.image(0, 0, treeKey);
+    treeImage.setOrigin(0.5, 1); // anchor at bottom-center
 
     const maxTreeHeight = 350;
     const maxTreeWidth = 280;
@@ -322,13 +323,13 @@ export function playWateringAnimation(
   const panelWidth = state.leftPanel.getData('panelWidth') as number;
   const panelHeight = state.leftPanel.getData('panelHeight') as number;
 
-  const startX = panelWidth * 0.7;
-  const startY = panelHeight * 0.45;
-  const pouringX = panelWidth * 0.65;
-  const pouringY = panelHeight * 0.5;
+  const startX = panelWidth * 0.75;
+  const startY = panelHeight * 0.55;
+  const pouringX = panelWidth * 0.68;
+  const pouringY = panelHeight * 0.63;
 
   state.wateringCanImage = scene.add.image(startX, startY, ASSET_KEYS.WATERING_CAN_STILL);
-  state.wateringCanImage.setScale(1.5);
+  state.wateringCanImage.setScale(2.0);
   state.wateringCanImage.setAlpha(0);
   state.leftPanel.add(state.wateringCanImage);
 
@@ -488,13 +489,13 @@ export function playFertilizerAnimation(
   const panelHeight = state.leftPanel.getData('panelHeight') as number;
 
   // Left side of the tree (mirrored from watering can which is on the right)
-  const startX = panelWidth * 0.3;
-  const startY = panelHeight * 0.65;
-  const pouringX = panelWidth * 0.35;
-  const pouringY = panelHeight * 0.7;
+  const startX = panelWidth * 0.25;
+  const startY = panelHeight * 0.73;
+  const pouringX = panelWidth * 0.32;
+  const pouringY = panelHeight * 0.75;
 
   state.fertilizerImage = scene.add.image(startX, startY, ASSET_KEYS.FERTILIZER_STILL);
-  state.fertilizerImage.setScale(0.25);
+  state.fertilizerImage.setScale(0.2);
   state.fertilizerImage.setAlpha(0);
   state.leftPanel.add(state.fertilizerImage);
 

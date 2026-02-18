@@ -43,8 +43,6 @@ export { default as stage2Tree } from '../images/phaser/minigames/tree_stages/st
 export { default as stage3Tree } from '../images/phaser/minigames/tree_stages/stage_3.png'
 export { default as stage4Tree } from '../images/phaser/minigames/tree_stages/stage_4.png'
 export { default as stage5Tree } from '../images/phaser/minigames/tree_stages/stage_5.png'
-export { default as stage6Tree } from '../images/phaser/minigames/tree_stages/stage_6.png'
-export { default as stage7Tree } from '../images/phaser/minigames/tree_stages/stage_7.png'
 export { default as TreeShadow } from '../images/phaser/minigames/tree_shadow.png'
 
 // Minigame tools (GrowYourNest minigame)
