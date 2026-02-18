@@ -450,18 +450,27 @@ export default class GrowYourNestMinigame extends BaseScene {
         this.isSubmitting = false;
         this.lastServerResponse = r.tree_state;
         this.score = r.correct_count;
-        this.totalGrowthPointsEarned = r.growth_points_earned;
-        this.totalCoinsEarned = r.coins_earned;
         this.lessonPassed = r.passed;
         if (r.fertilizer_bonus) this.fertilizerBonusCount++;
 
-        this.treeState = {
-          growth_points: r.tree_state.growth_points,
-          current_stage: r.tree_state.current_stage,
-          total_stages: r.tree_state.total_stages,
-          points_per_stage: r.tree_state.points_per_stage || 50,
-          completed: r.tree_state.completed || r.tree_state.just_completed,
-        };
+        if (r.passed) {
+          // Lesson passed (3/3 correct) — use authoritative server values
+          this.totalGrowthPointsEarned = r.growth_points_earned;
+          this.totalCoinsEarned = r.coins_earned;
+          this.treeState = {
+            growth_points: r.tree_state.growth_points,
+            current_stage: r.tree_state.current_stage,
+            total_stages: r.tree_state.total_stages,
+            points_per_stage: r.tree_state.points_per_stage || 50,
+            completed: r.tree_state.completed || r.tree_state.just_completed,
+          };
+        } else {
+          // Lesson failed — server returns 0 growth because nothing was persisted.
+          // Keep the locally tracked optimistic values so the completion screen
+          // shows what the user actually earned during the session (even though
+          // it won't be saved until they pass). The tree state also keeps its
+          // optimistic local updates so the left panel doesn't visually regress.
+        }
 
         console.log('🌳 Lesson submitted:', {
           correct: r.correct_count,

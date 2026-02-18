@@ -150,7 +150,8 @@ export const useGYNFreeRoamState = (moduleId: string, enabled: boolean = true) =
 export const buildLessonModeInitData = (
   lessonId: string,
   moduleNumber: number,
-  questionsResponse: LessonQuestionsResponse
+  questionsResponse: LessonQuestionsResponse,
+  moduleId?: string
 ): GYNMinigameInitData => {
   const transformedQuestions: GYNMinigameQuestion[] = transformGYNQuestionsForMinigame(
     questionsResponse.questions
@@ -159,6 +160,7 @@ export const buildLessonModeInitData = (
   return {
     mode: 'lesson',
     lessonId,
+    moduleId,
     questions: transformedQuestions,
     treeState: questionsResponse.tree_state,
     moduleNumber,

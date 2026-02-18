@@ -1068,6 +1068,20 @@ export function showCompletion(
       // Capture data before stopping the scene — closures referencing
       // scene state will be invalidated once shutdown runs.
       const gyn = scene as any;
+
+      // On a failed lesson attempt the server doesn't persist any growth.
+      // However, questions that the user already answered correctly DID
+      // earn local growth points.  We must carry two things forward so
+      // the retry mirrors the mock-data behaviour:
+      //
+      //  1. awardedQuestionIds — so already-correct questions don't
+      //     double-award base growth points on the next attempt.
+      //  2. The locally-accumulated treeState (NOT the server baseline)
+      //     so the progress bar / stage display doesn't visually regress.
+      //
+      // This matches how the mock data worked: mockAwardedQuestionIds
+      // persisted across retries, and the mock tree state accumulated.
+
       const restartData = {
         mode: 'lesson' as const,
         lessonId: gyn.lessonId,
@@ -1079,9 +1093,12 @@ export function showCompletion(
           correctAnswerId: null,
           explanation: q.explanation || '',
         })),
+        // Keep the locally-accumulated tree state so progress doesn't reset
         treeState: state.treeState ? { ...state.treeState } : undefined,
         moduleNumber: gyn.moduleNumber || 1,
         showStartScreen: false,
+        // Carry forward which questions already awarded growth points
+        awardedQuestionIds: Array.from(gyn.awardedQuestionIds || []),
       };
 
       if (!restartData.lessonId || !restartData.moduleId) return;
@@ -1090,12 +1107,23 @@ export function showCompletion(
       // scene.scene.restart() is unreliable for overlay scenes
       // launched via scene.launch(), so we stop first then re-launch.
       const houseScene = scene.scene.get('HouseScene');
+
+      // HouseScene is paused, so its time clock won't fire delayedCalls.
+      // Temporarily resume it so the re-launch callback can execute,
+      // then re-pause after launching the new GYN scene.
+      if (houseScene) {
+        scene.scene.resume('HouseScene');
+      }
+
       scene.scene.stop('GrowYourNestMinigame');
 
       if (houseScene) {
         // Short delay lets Phaser finish the stop lifecycle
         houseScene.time.delayedCall(50, () => {
           houseScene.scene.launch('GrowYourNestMinigame', restartData);
+
+          // Re-pause HouseScene so it stays in the background
+          houseScene.scene.pause('HouseScene');
 
           // Re-attach completion listener so HouseScene slides back on exit
           const newScene = houseScene.scene.get('GrowYourNestMinigame');

@@ -864,7 +864,8 @@ const LessonView: React.FC<LessonViewProps> = ({
         const initData: GYNMinigameInitData = buildLessonModeInitData(
           lesson.backendId,
           (module.orderIndex ?? 0) + 1,
-          gynData
+          gynData,
+          module.backendId
         );
 
         // Pass already-awarded question IDs so the Phaser scene
