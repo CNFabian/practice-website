@@ -1,10 +1,3 @@
-// OPT-05: Main barrel file — re-exports from scoped sub-barrels
-// Existing imports from '../../assets' continue to work unchanged.
-// New code should import from the scoped sub-barrels directly:
-//   assets/phaser     — Phaser game assets (PreloaderScene)
-//   assets/icons      — UI icons (React components)
-//   assets/onboarding — Onboarding images
-
 // Onest typography components
 export { default as OnestFont } from '../components/common/OnestFont';
 export { default as Typography } from '../components/common/Typography';
@@ -25,6 +18,10 @@ export { default as TryAgainImage } from './images/static/tryagain-image.png'
 export { default as AccessibilityDoc } from './downloadables/Accessibility_Statement.pdf?url'
 export { default as PrivacyPolicyDoc } from './downloadables/Privacy_Policy.pdf?url'
 export { default as TermsConditionsDoc } from './downloadables/Terms_Conditions.pdf?url'
+
+// Bird Character Images
+export { default as birdAtDesk } from './images/birdChracter/bird_at_computer.png'
+export { default as birdWithPencil } from './images/birdChracter/bird_with_pencil.png'
 
 // Background Images
 export { default as LessonViewBackground } from './images/backgrounds/lessonView_background.png'

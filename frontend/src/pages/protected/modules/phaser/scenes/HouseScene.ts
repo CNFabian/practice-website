@@ -351,7 +351,10 @@ export default class HouseScene extends BaseScene {
           this.isTransitioning = false;
 
           // Check if all lesson minigames are now complete (Free Roam unlock condition)
-          this.checkFreeRoamUnlockCondition();
+          // Delay until after the 800ms slide-in animation so the user sees HouseScene first
+          this.time.delayedCall(900, () => {
+            this.checkFreeRoamUnlockCondition();
+          });
         };
         minigameScene.events.once(
           'minigameCompleted',
@@ -391,6 +394,13 @@ export default class HouseScene extends BaseScene {
     );
 
     if (allGYNCompleted) {
+      // Recreate the minigame button so it appears as active/visible
+      if (this.minigameButton) {
+        this.minigameButton.destroy();
+        this.minigameButton = undefined;
+      }
+      this.createMinigameButton();
+
       // Signal React to show the Free Roam unlock modal
       // React (MainLayout) watches for this registry value
       this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
@@ -615,7 +625,11 @@ export default class HouseScene extends BaseScene {
     }
 
     // Re-check free roam unlock with the fresh data
-    this.checkFreeRoamUnlockCondition();
+    // Skip if GYN minigame is currently active — the check will run after the user exits
+    const gynActive = this.scene.isActive('GrowYourNestMinigame') || this.scene.isPaused('GrowYourNestMinigame');
+    if (!gynActive) {
+      this.checkFreeRoamUnlockCondition();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

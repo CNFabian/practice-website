@@ -1,0 +1,39 @@
+{% extends "sqladmin/base.html" %}
+{% block body %}
+<div class="page page-center nn-admin nn-login">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <h1 class="navbar-brand mb-0" style="font-size: 1.75rem; color: #1e3a2f;">{{ admin.title }}</h1>
+      <p class="text-muted">Sign in to manage content</p>
+    </div>
+    <div class="card card-md shadow-sm" style="border-radius: 12px; border: none;">
+      <div class="card-body">
+        <h2 class="card-title text-center mb-4" style="color: #1a2e24; font-weight: 600;">Login</h2>
+        <form action="{{ url_for('login') }}" method="post">
+          <div class="mb-3">
+            <label class="form-label" for="username">Email</label>
+            <input type="text" class="form-control" id="username" name="username" placeholder="admin@example.com" required autofocus
+              style="border-radius: 8px;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required
+              style="border-radius: 8px;">
+          </div>
+          {% if error %}
+          <div class="alert alert-danger py-2 mb-3" style="border-radius: 8px;" role="alert">
+            {{ error }}
+          </div>
+          {% endif %}
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px; font-weight: 500; background: #2d6a4f; border-color: #2d6a4f;">
+              Sign in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <p class="text-center text-muted mt-4 small">Use your admin email and password.</p>
+  </div>
+</div>
+{% endblock %}

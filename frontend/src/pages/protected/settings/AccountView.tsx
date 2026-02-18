@@ -9,6 +9,7 @@ import { wipeUserData } from '../../../services/authAPI';
 import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
 import { clearAuthData } from '../../../services/authAPI';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
+import GameManager from '../modules/phaser/managers/GameManager';
 import type { RootState } from '../../../store/store';
 
 const AccountView: React.FC = () => {
@@ -126,11 +127,27 @@ const AccountView: React.FC = () => {
   };
 
   const handleStartWalkthrough = () => {
-    // Navigate to modules page first, then start walkthrough
+    // Navigate to modules page first, then wait for Phaser assets before starting walkthrough
     navigate('/app');
-    setTimeout(() => {
-      startWalkthrough();
-    }, 300);
+    
+    // Poll for Phaser game assets to be loaded before starting walkthrough
+    // This prevents the race condition where walkthrough fires before textures are ready
+    let attempts = 0;
+    const maxAttempts = 40; // 40 * 150ms = 6s max wait
+    const pollInterval = setInterval(() => {
+      attempts++;
+      const game = GameManager.getGame();
+      if (game?.registry.get('assetsLoaded')) {
+        clearInterval(pollInterval);
+        startWalkthrough();
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval);
+        // Fallback: start anyway after timeout
+        startWalkthrough();
+      }
+    }, 150);
   };
 
   return (

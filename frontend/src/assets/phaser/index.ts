@@ -5,7 +5,7 @@
 export { default as Neighborhood1 } from '../images/phaser/neighborhoods/neighborhood_1.png'
 export { default as Neighborhood2 } from '../images/phaser/neighborhoods/neighborhood_2.png'
 export { default as Neighborhood3 } from '../images/phaser/neighborhoods/neighborhood_3.png'
-export { default as NeighborhoodMap } from '../images/phaser/neighborhoods/neighborhood_map.png'
+export { default as NeighborhoodMap } from '../images/phaser/neighborhoods/neighborhood_map.jpg'
 export { default as NeighborhoodBackground } from '../images/phaser/neighborhoods/neighborhood_background.png'
 export { default as NeighborhoodShadow } from '../images/phaser/neighborhoods/neighborhood_shadow.png'
 export { default as LockIcon } from '../images/phaser/neighborhoods/Lock.png'

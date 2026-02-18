@@ -7,7 +7,7 @@ import GameManager from '../../../pages/protected/modules/phaser/managers/GameMa
 import { 
   NoticeBirdIcon,
   CoinStack,
-  TreasureChest
+  TreasureChest,
 } from '../../../assets';
 
 interface WalkthroughStep {
@@ -92,7 +92,18 @@ const walkthroughSteps: WalkthroughStep[] = [
       buttonText: 'GET STARTED',
     },
   },
-  // ---- STEP 4: Neighborhood Intro (highlight on MapScene) ----
+  // ---- STEP 4: Beta Thank You ----
+  {
+    id: 'beta-thank-you',
+    type: 'fullscreen',
+    content: {
+      image: NoticeBirdIcon,
+      title: 'Thank you for testing our beta version',
+      description: "Some features are still in development. Thanks for your patience—and we'd love your feedback on how we can improve as we prepare for our official launch!",
+      buttonText: 'CONTINUE',
+    },
+  },
+  // ---- STEP 5: Neighborhood Intro (highlight on MapScene) ----
   {
     id: 'neighborhood-intro',
     type: 'highlight',

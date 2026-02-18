@@ -27,10 +27,13 @@ export class UIComponents {
     container.add(background);
 
     // Coin icon (on the left) - using image instead of emoji
-    const coinIcon = scene.add.image(-scale(30), 0, 'coinIcon');
-    coinIcon.setDisplaySize(scale(30), scale(30));
-    coinIcon.setOrigin(0.5);
-    container.add(coinIcon);
+    // OPT-02: Check texture exists (may not be loaded yet if walkthrough triggered early)
+    if (scene.textures.exists('coinIcon')) {
+      const coinIcon = scene.add.image(-scale(30), 0, 'coinIcon');
+      coinIcon.setDisplaySize(scale(30), scale(30));
+      coinIcon.setOrigin(0.5);
+      container.add(coinIcon);
+    }
 
     // Coin text (on the right)
     const coinText = scene.add.text(scale(15), 0, coins.toString(),

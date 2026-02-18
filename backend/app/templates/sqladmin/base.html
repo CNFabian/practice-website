@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/fontawesome.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  {% if admin.favicon_url %}
+  <link rel="icon" href="{{ admin.favicon_url }}">
+  {% endif %}
+  {% block head %}
+  <style>
+    /* Nest Navigate Admin – warm, structured, easy on the eyes */
+    :root {
+      --nn-sidebar-bg: #1e3a2f;
+      --nn-sidebar-text: #e8f0ec;
+      --nn-sidebar-hover: #2d5a47;
+      --nn-sidebar-active: #3d7a5c;
+      --nn-accent: #2d6a4f;
+      --nn-accent-soft: #40916c;
+      --nn-card-radius: 12px;
+      --nn-card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --nn-input-radius: 8px;
+      --nn-body-bg: #f6f9f7;
+      --nn-heading: #1a2e24;
+    }
+    body { background: var(--nn-body-bg) !important; color: #37423c; }
+    .navbar { background: linear-gradient(135deg, var(--nn-sidebar-bg) 0%, #2d5a47 100%) !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .navbar .navbar-brand { color: var(--nn-sidebar-text) !important; font-weight: 600; font-size: 1.15rem; }
+    .navbar .nav-link { color: rgba(255,255,255,0.9) !important; }
+    .navbar .nav-link:hover { color: #fff !important; background: rgba(255,255,255,0.1); border-radius: 8px; }
+    .navbar-vertical.navbar-dark { background: var(--nn-sidebar-bg) !important; }
+    .navbar-vertical .nav-link { color: var(--nn-sidebar-text) !important; border-radius: 8px; margin: 2px 8px; }
+    .navbar-vertical .nav-link:hover { background: var(--nn-sidebar-hover) !important; color: #fff !important; }
+    .navbar-vertical .nav-link.active { background: var(--nn-sidebar-active) !important; color: #fff !important; font-weight: 500; }
+    .navbar-vertical .navbar-nav .nav-link .nav-icon { opacity: 0.9; }
+    .sidebar { background: var(--nn-sidebar-bg) !important; }
+    .sidebar .nav-link { color: var(--nn-sidebar-text) !important; border-radius: 8px; margin: 2px 8px; }
+    .sidebar .nav-link:hover { background: var(--nn-sidebar-hover) !important; color: #fff !important; }
+    .sidebar .nav-link.active { background: var(--nn-sidebar-active) !important; color: #fff !important; font-weight: 500; }
+    .page .page-header { margin-bottom: 1.5rem; }
+    .page .page-title { color: var(--nn-heading); font-weight: 600; font-size: 1.5rem; }
+    .card { border-radius: var(--nn-card-radius); box-shadow: var(--nn-card-shadow); border: none; }
+    .card-header { background: #fff; border-bottom: 1px solid #e8eee9; font-weight: 600; color: var(--nn-heading); border-radius: var(--nn-card-radius) var(--nn-card-radius) 0 0; padding: 1rem 1.25rem; }
+    .table { border-radius: var(--nn-card-radius); overflow: hidden; }
+    .table thead th { background: #f0f4f2 !important; color: var(--nn-heading); font-weight: 600; border-bottom: 2px solid #e0e8e2; padding: 0.85rem 1rem; }
+    .table tbody tr:hover { background: #f8fbf9 !important; }
+    .table tbody td { padding: 0.85rem 1rem; vertical-align: middle !important; }
+    .btn-primary { background: var(--nn-accent) !important; border-color: var(--nn-accent) !important; border-radius: var(--nn-input-radius); font-weight: 500; }
+    .btn-primary:hover { background: var(--nn-accent-soft) !important; border-color: var(--nn-accent-soft) !important; }
+    .btn-success { border-radius: var(--nn-input-radius); }
+    .btn-danger { border-radius: var(--nn-input-radius); }
+    .btn-outline-primary { border-radius: var(--nn-input-radius); color: var(--nn-accent); border-color: var(--nn-accent); }
+    .btn-outline-primary:hover { background: rgba(45, 106, 79, 0.08); color: var(--nn-accent-soft); border-color: var(--nn-accent-soft); }
+    .form-control, .form-select { border-radius: var(--nn-input-radius); border-color: #d4ddd6; }
+    .form-control:focus, .form-select:focus { border-color: var(--nn-accent-soft); box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15); }
+    .form-label { font-weight: 500; color: var(--nn-heading); }
+    .dropdown-menu { border-radius: var(--nn-input-radius); box-shadow: var(--nn-card-shadow); }
+    .pagination .page-link { border-radius: 6px !important; }
+    .pagination .page-item.active .page-link { background: var(--nn-accent); border-color: var(--nn-accent); }
+    .badge { border-radius: 6px; font-weight: 500; }
+    .alert-danger { border-radius: var(--nn-input-radius); }
+    .modal-content { border-radius: var(--nn-card-radius); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+    .input-group .form-control { border-radius: var(--nn-input-radius); }
+    select.form-control { appearance: auto; }
+    .nn-login .page-center { min-height: 100vh; display: flex; align-items: center; background: linear-gradient(160deg, #f6f9f7 0%, #e8f0ec 100%); }
+    .nn-login .card { max-width: 400px; margin: 0 auto; }
+    .nn-login .btn-primary:hover { background: #40916c !important; border-color: #40916c !important; }
+    .row-cards > .card { margin-bottom: 1.25rem; }
+    .list-group-item { border-radius: 6px !important; }
+    .breadcrumb { background: transparent; }
+    .nn-admin .page-pretitle { color: #6b7f76; font-size: 0.875rem; }
+  </style>
+  {% endblock %}
+  <title>{{ admin.title }}</title>
+</head>
+<body>
+  {% block body %}
+  <main>
+    {% block main %}
+    {% endblock %}
+  </main>
+  {% endblock %}
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
+  {% block tail %}
+  {% endblock %}
+</body>
+</html>
