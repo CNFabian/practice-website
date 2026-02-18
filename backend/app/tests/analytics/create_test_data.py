@@ -33,6 +33,9 @@ def create_test_data():
         existing_users = db.query(User).count()
         if existing_users > 0:
             print(f"\n⚠️  Warning: {existing_users} users already exist")
+            if os.environ.get("CI"):
+                print("CI mode: skipping additional test data (using existing).")
+                return True
             response = input("Do you want to create additional test data? (y/n): ")
             if response.lower() != 'y':
                 print("Aborted.")

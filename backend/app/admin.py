@@ -1,8 +1,7 @@
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
-from wtforms.validators import DataRequired, Optional as OptionalValidator, NumberRange
+from wtforms.validators import DataRequired, NumberRange
 from models import (
     Module, Lesson, QuizQuestion, QuizAnswer, RewardCoupon, Badge, User,
     UserLeadScore, UserBehaviorEvent, LeadScoreHistory
@@ -92,7 +91,6 @@ class ModuleAdmin(ModelView, model=Module):
     column_formatters = {
         Module.description: lambda m, a: _truncate(m.description, 80),
     }
-    column_filters = [Module.is_active, Module.difficulty_level]
 
     # Form: logical order, text areas for long fields
     form_columns = [
@@ -155,7 +153,6 @@ class LessonAdmin(ModelView, model=Lesson):
     column_formatters = {
         Lesson.description: lambda m, a: _truncate(m.description, 80),
     }
-    column_filters = [Lesson.is_active]
 
     # AJAX refs so module dropdown is searchable and doesn't load everything at once
     form_ajax_refs = {
@@ -222,7 +219,6 @@ class QuizQuestionAdmin(ModelView, model=QuizQuestion):
         QuizQuestion.question_text: lambda m, a: _truncate(m.question_text, 70),
         "lesson": lambda m, a: getattr(m.lesson, "title", None) or "—",
     }
-    column_filters = [QuizQuestion.is_active, QuizQuestion.question_type]
 
     form_ajax_refs = {
         "lesson": {"fields": ("title",), "order_by": "order_index"},
@@ -278,7 +274,6 @@ class QuizAnswerAdmin(ModelView, model=QuizAnswer):
         "question": lambda m, a: _truncate(getattr(m.question, "question_text", None), 45) if m.question else "—",
         QuizAnswer.is_correct: lambda m, a: "✓ Yes" if m.is_correct else "✗ No",
     }
-    column_filters = [QuizAnswer.is_correct]
 
     form_ajax_refs = {
         "question": {"fields": ("question_text",), "order_by": "order_index"},
@@ -327,7 +322,6 @@ class RewardCouponAdmin(ModelView, model=RewardCoupon):
     ]
     column_searchable_list = [RewardCoupon.title, RewardCoupon.partner_company]
     column_sortable_list = [RewardCoupon.cost_in_coins, RewardCoupon.created_at]
-    column_filters = [RewardCoupon.is_active]
     column_labels = {
         "cost_in_coins": "Cost (Coins)",
         "partner_company": "Partner",
@@ -371,7 +365,6 @@ class BadgeAdmin(ModelView, model=Badge):
     column_list = [Badge.name, Badge.badge_type, Badge.rarity, Badge.is_active]
     column_searchable_list = [Badge.name, Badge.description]
     column_sortable_list = [Badge.name, Badge.created_at]
-    column_filters = [Badge.is_active, Badge.badge_type, Badge.rarity]
     column_labels = {
         "icon_url": "Icon URL",
         "badge_type": "Type",
@@ -417,7 +410,6 @@ class UserAdmin(ModelView, model=User):
     ]
     column_searchable_list = [User.email, User.first_name, User.last_name]
     column_sortable_list = [User.created_at, User.email]
-    column_filters = [User.is_active, User.is_verified, User.is_admin]
     form_excluded_columns = [User.password_hash]
     can_delete = False
     column_labels = {

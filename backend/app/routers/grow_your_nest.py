@@ -48,12 +48,14 @@ ROUTE_TAG_GROW_YOUR_NEST = "Grow Your Nest"
 COIN_REASON_LESSON = "grow_your_nest_lesson"
 COIN_REASON_FREEROAM = "grow_your_nest_freeroam"
 COIN_REASON_MODULE_PASSED = "grow_your_nest_module_passed"
+COIN_REASON_STAGE = "grow_your_nest_stage"
 
 TREE_TOTAL_STAGES = 5
 POINTS_PER_STAGE = 50
 WATER_POINTS = 10
 FERTILIZER_POINTS = 20
 MAX_COINS_PER_TREE = 250
+COINS_PER_STAGE = MAX_COINS_PER_TREE // TREE_TOTAL_STAGES  # 50 coins per stage
 
 
 # ================================

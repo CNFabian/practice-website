@@ -5,7 +5,7 @@ Custom dashboard page showing lead analytics, distributions, and insights.
 """
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func
 
 from models import UserLeadScore, UserBehaviorEvent, User, UserModuleProgress, UserLessonProgress
 from analytics.classifier import BulkClassifier

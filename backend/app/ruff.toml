@@ -1,0 +1,13 @@
+# Ruff config for app/ (CI runs from app/ with: ruff check .)
+# Ignore style/unused rules that are widespread; fail on real logic/syntax errors.
+[lint]
+extend-ignore = [
+    "F401",   # Unused imports
+    "F841",   # Unused variables
+    "F541",   # f-string without placeholders
+    "F811",   # Redefinition of unused name
+    "E402",   # Import not at top (alembic/env.py)
+    "E712",   # Comparison to True/False (use `if x:` style)
+    "E741",   # Ambiguous variable name (e.g. l, I)
+]
+exclude = ["alembic/versions"]
