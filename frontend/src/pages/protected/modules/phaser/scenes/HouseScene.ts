@@ -60,10 +60,10 @@ export default class HouseScene extends BaseScene {
   private backButton?: Phaser.GameObjects.Container;
   private minigameButton?: Phaser.GameObjects.Container;
   private minigameButtonGlowTween?: Phaser.Tweens.Tween;
-  private freeRoamJustUnlocked: boolean = false;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
   private roomHitZones: Phaser.GameObjects.Rectangle[] = [];
   private minigameShutdownHandler?: () => void;
+  private isRefreshingTreeState: boolean = false;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private transitionManager!: SceneTransitionManager;
   private loadingText?: Phaser.GameObjects.Text;
@@ -96,6 +96,7 @@ export default class HouseScene extends BaseScene {
 
   init(data: HouseSceneData) {
     this.isTransitioning = false;
+    this.isRefreshingTreeState = false;
     this.lessonContainers = [];
     this.roomHitZones = [];
     this.hoverTooltip = undefined;
@@ -134,6 +135,9 @@ export default class HouseScene extends BaseScene {
     this.checkForLessonsUpdate();
     this.registry.events.on('changedata-moduleLessonsData', this.onLessonsDataChanged, this);
 
+    // Data is often already in registry by the time HouseScene starts —
+    // run the free roam check immediately to update the button with accurate tree state
+    this.checkFreeRoamUnlockCondition();
   }
 
   shutdown() {
@@ -160,7 +164,6 @@ export default class HouseScene extends BaseScene {
     this.destroyHoverTooltip(true);
     this.lessonContainers = [];
     this.roomHitZones = [];
-    this.freeRoamJustUnlocked = false;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -256,24 +259,30 @@ export default class HouseScene extends BaseScene {
       console.log('🌳 Launching Free Roam for module:', moduleBackendId);
 
       // Ensure Tier 3 (deferred) assets are loaded before launching
-      if (!this.registry.get('deferredAssetsLoaded')) {
+      const deferredLoaded = this.registry.get('deferredAssetsLoaded');
+
+      if (!deferredLoaded) {
         const preloader = this.scene.get('PreloaderScene') as any;
         if (preloader?.loadDeferredAssets) {
           preloader.loadDeferredAssets();
-          // Wait for deferred assets to finish loading
-          await new Promise<void>((resolve) => {
-            if (this.registry.get('deferredAssetsLoaded')) {
-              resolve();
-              return;
-            }
-            const handler = (_parent: any, _key: string, value: any) => {
-              if (value) {
+          // loadDeferredAssets may complete synchronously if assets are cached —
+          // check registry again before awaiting the event
+          if (!this.registry.get('deferredAssetsLoaded')) {
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
                 this.registry.events.off('changedata-deferredAssetsLoaded', handler);
                 resolve();
-              }
-            };
-            this.registry.events.on('changedata-deferredAssetsLoaded', handler);
-          });
+              }, 5000);
+              const handler = (_parent: any, _key: string, value: any) => {
+                if (value) {
+                  clearTimeout(timeout);
+                  this.registry.events.off('changedata-deferredAssetsLoaded', handler);
+                  resolve();
+                }
+              };
+              this.registry.events.on('changedata-deferredAssetsLoaded', handler);
+            });
+          }
         }
       }
 
@@ -281,19 +290,8 @@ export default class HouseScene extends BaseScene {
       const stateResponse = await getFreeRoamState(moduleBackendId);
       const treeAlreadyCompleted = stateResponse.completed === true;
 
-      // Fetch questions — backend may return 400 if tree is fully grown
-      let questionsResponse;
-      try {
-        questionsResponse = await getFreeRoamQuestions(moduleBackendId);
-      } catch (questionsError) {
-        if (treeAlreadyCompleted) {
-          // Tree is fully grown — backend rejects new questions, this is expected
-          console.log('🌳 Tree fully grown — no more questions available from backend');
-          this.isTransitioning = false;
-          return;
-        }
-        throw questionsError;
-      }
+      // Fetch questions
+      const questionsResponse = await getFreeRoamQuestions(moduleBackendId);
 
       if (questionsResponse.questions.length === 0) {
         console.warn('🌳 No free roam questions available');
@@ -397,13 +395,9 @@ export default class HouseScene extends BaseScene {
               this.checkFreeRoamUnlockCondition(true);
             });
           } else if (initData.mode === 'freeroam') {
-            // After free roam, recreate button to reflect updated tree progress
+            // After free roam, fetch fresh tree state from API before recreating button
             this.time.delayedCall(900, () => {
-              if (this.minigameButton) {
-                this.minigameButton.destroy();
-                this.minigameButton = undefined;
-              }
-              this.createMinigameButton();
+              this.refreshTreeStateAndRecreateButton();
             });
           }
         };
@@ -445,21 +439,27 @@ export default class HouseScene extends BaseScene {
     );
 
     if (allGYNCompleted) {
-      // Recreate the minigame button so it appears as active/visible
-      if (this.minigameButton) {
-        this.minigameButton.destroy();
-        this.minigameButton = undefined;
+      // Fetch fresh tree state then recreate the minigame button with accurate data
+      this.refreshTreeStateAndRecreateButton();
+
+      // Preload Tier 3 (deferred) assets in the background so they're ready
+      // when the user clicks the free roam button — eliminates launch lag
+      if (!this.registry.get('deferredAssetsLoaded')) {
+        const preloader = this.scene.get('PreloaderScene') as any;
+        if (preloader?.loadDeferredAssets) {
+          preloader.loadDeferredAssets();
+        }
       }
-      this.createMinigameButton();
 
       // Only show the modal ONCE — when triggered by the minigame completion callback
       if (fromMinigameCompletion) {
-        this.freeRoamJustUnlocked = true;
         this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
         console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React');
 
-        // Add highlight glow to the button
-        this.highlightMinigameButton();
+        // Add highlight glow to the button after a small delay for recreation
+        this.time.delayedCall(500, () => {
+          this.highlightMinigameButton();
+        });
       }
     }
   }
@@ -473,6 +473,64 @@ export default class HouseScene extends BaseScene {
 
     this.minigameButton = this.createCircularMinigameButton(buttonX, buttonY);
     this.minigameButton.setDepth(100);
+  }
+
+  /**
+   * Fetch fresh tree state from the backend API and update the learningModules
+   * registry so the minigame button reflects accurate progression/stage.
+   * Guarded against concurrent calls to prevent multiple API requests and button flicker.
+   */
+  private async refreshTreeStateAndRecreateButton(): Promise<void> {
+    if (this.isRefreshingTreeState) return;
+    if (!this.moduleBackendId) {
+      this.recreateMinigameButton();
+      return;
+    }
+
+    this.isRefreshingTreeState = true;
+
+    try {
+      const stateResponse = await getFreeRoamState(this.moduleBackendId);
+
+      // Update learningModules in registry with fresh tree state
+      const learningModules: any[] | undefined = this.registry.get('learningModules');
+      if (learningModules) {
+        const mod = learningModules.find((m: any) => m.id === this.moduleBackendId);
+        if (mod) {
+          mod.tree_growth_points = stateResponse.growth_points;
+          mod.tree_current_stage = stateResponse.current_stage;
+          mod.tree_total_stages = stateResponse.total_stages;
+          mod.tree_completed = stateResponse.completed;
+        }
+      }
+
+      // Also update dashboardModules if present
+      const dashboardModules: any[] | undefined = this.registry.get('dashboardModules');
+      if (dashboardModules) {
+        const dashEntry = dashboardModules.find(
+          (entry: any) => entry.module?.id === this.moduleBackendId
+        );
+        if (dashEntry?.module) {
+          dashEntry.module.tree_growth_points = stateResponse.growth_points;
+          dashEntry.module.tree_current_stage = stateResponse.current_stage;
+          dashEntry.module.tree_total_stages = stateResponse.total_stages;
+          dashEntry.module.tree_completed = stateResponse.completed;
+        }
+      }
+    } catch (error) {
+      console.warn('🌳 Failed to fetch fresh tree state, button may show stale data:', error);
+    }
+
+    this.isRefreshingTreeState = false;
+    this.recreateMinigameButton();
+  }
+
+  private recreateMinigameButton(): void {
+    if (this.minigameButton) {
+      this.minigameButton.destroy();
+      this.minigameButton = undefined;
+    }
+    this.createMinigameButton();
   }
 
   private highlightMinigameButton(): void {

@@ -365,6 +365,9 @@ export default class GrowYourNestMinigame extends BaseScene {
               this.totalCoinsEarned += r.coins_earned;
               this.lastAnswerCoinsEarned = r.coins_earned;
 
+              // When tree is completed, no more growth points are awarded
+              this.lastAnswerAlreadyAwarded = r.growth_points_earned === 0 && r.is_correct;
+
               // Refresh header coin display when coins are earned
               if (r.coins_earned > 0) {
                 queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.coins() });
@@ -378,8 +381,8 @@ export default class GrowYourNestMinigame extends BaseScene {
                 completed: r.tree_state.completed || r.tree_state.just_completed,
               };
 
-              // If tree just completed, show completion after feedback
-              if (this.treeState?.completed) {
+              // If tree just completed this answer, show completion after feedback
+              if (r.tree_state.just_completed) {
                 this.showAnswerFeedback(r.is_correct);
                 this.time.delayedCall(2000, () => {
                   this.doShowCompletion();
@@ -414,8 +417,8 @@ export default class GrowYourNestMinigame extends BaseScene {
         return;
       }
 
-      // Free roam: check if tree is complete
-      if (this.treeState?.completed) {
+      // Free roam: if tree just completed during this session, show completion
+      if (this.treeState?.completed && this.totalGrowthPointsEarned > 0) {
         this.doShowCompletion();
         return;
       }

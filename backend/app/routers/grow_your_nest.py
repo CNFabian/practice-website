@@ -497,13 +497,6 @@ def get_freeroam_questions(
     # Get current tree state
     module_progress = get_or_create_module_progress(db, current_user.id, module_id)
     
-    # Check if tree is already complete
-    if module_progress.tree_completed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tree is already fully grown for this module"
-        )
-    
     # Get questions from ALL lessons in the module
     questions = db.query(QuizQuestion).filter(
         and_(
@@ -580,12 +573,16 @@ def submit_freeroam_answer(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
 
     module_progress = get_or_create_module_progress(db, current_user.id, module_id)
+    
+    # Always validate the answer so feedback is accurate (even in practice mode)
+    is_correct, explanation = validate_single_answer(db, body.question_id, body.answer_id)
+    
     if module_progress.tree_completed:
         return {
             "success": True,
             "message": "Tree is already fully grown",
-            "is_correct": False,
-            "explanation": None,
+            "is_correct": is_correct,
+            "explanation": explanation,
             "tree_state": {
                 "growth_points": module_progress.tree_growth_points,
                 "current_stage": module_progress.tree_current_stage,
@@ -594,9 +591,9 @@ def submit_freeroam_answer(
             },
             "growth_points_earned": 0,
             "coins_earned": 0,
+            "fertilizer_bonus": False,
         }
 
-    is_correct, explanation = validate_single_answer(db, body.question_id, body.answer_id)
     consecutive_correct = body.consecutive_correct or 0
 
     growth_points_earned = 0

@@ -413,7 +413,7 @@ function showWaterText(
   alreadyAwarded?: boolean
 ): void {
   const fontSize = Math.round(panelWidth * 0.08);
-  const displayText = alreadyAwarded ? 'Already Earned' : '+1 Water';
+  const displayText = alreadyAwarded ? 'Max Growth Points' : '+1 Water';
   const textColor = alreadyAwarded
     ? `#${COLORS.UNAVAILABLE_BUTTON.toString(16).padStart(6, '0')}`
     : `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`;
