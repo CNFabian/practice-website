@@ -354,8 +354,20 @@ export const transformGYNQuestionsForMinigame = (
     // Sort answers by order_index
     const sortedAnswers = [...q.answers].sort((a, b) => a.order_index - b.order_index);
 
+    // Deduplicate answers by answer_text (handles seed script re-runs creating duplicates)
+    const seen = new Set<string>();
+    const uniqueAnswers = sortedAnswers.filter((ans) => {
+      const key = ans.answer_text.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Cap at 4 options maximum (standard multiple choice)
+    const cappedAnswers = uniqueAnswers.slice(0, 4);
+
     const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const options = sortedAnswers.map((ans, idx) => ({
+    const options = cappedAnswers.map((ans, idx) => ({
       letter: letters[idx] || String.fromCharCode(65 + idx),
       text: ans.answer_text,
       answerId: ans.id,
