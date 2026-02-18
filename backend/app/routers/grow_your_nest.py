@@ -116,6 +116,40 @@ def get_or_create_module_progress(db: Session, user_id: UUID, module_id: UUID) -
     return progress
 
 
+def award_stage_coins(
+    db: Session,
+    user_id: UUID,
+    module_progress,
+    old_stage: int,
+    new_stage: int,
+    source_id,
+    description: str,
+) -> int:
+    """
+    Award coins for newly reached tree stages (50 coins per stage).
+    Uses coins_awarded_stages as idempotency guard to prevent re-earning.
+    Returns total coins awarded.
+    """
+    already_paid = module_progress.coins_awarded_stages or 0
+    # Only award for stages above the highest already-paid stage
+    payable_from = max(old_stage, already_paid)
+    if new_stage <= payable_from:
+        return 0
+    
+    stages_to_pay = new_stage - payable_from
+    coins_earned = stages_to_pay * COINS_PER_STAGE
+    
+    if coins_earned > 0:
+        CoinManager.award_coins(
+            db, user_id, coins_earned,
+            COIN_REASON_STAGE, source_id, description,
+        )
+        module_progress.coins_awarded_stages = new_stage
+        db.commit()
+    
+    return coins_earned
+
+
 # ================================
 # VALIDATE SINGLE ANSWER (all modes)
 # ================================
@@ -285,6 +319,12 @@ def submit_lesson_game(
         )
     
     # Validate each answer on server and compute correct_count + consecutive_correct
+    if len(submission.answers) != 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Expected exactly 3 answers, got {len(submission.answers)}"
+        )
+    
     results = []
     for item in submission.answers:
         is_correct, _ = validate_single_answer(db, item.question_id, item.answer_id)
@@ -300,7 +340,7 @@ def submit_lesson_game(
     
     # GYN lesson mode requires ALL 3 questions correct in a single session
     # If user didn't get all correct, return results but do NOT persist anything
-    all_correct = correct_count == total_questions
+    all_correct = correct_count == total_questions and total_questions == 3
     
     # Get current tree state for response (read-only if not all correct)
     module_progress = get_or_create_module_progress(db, current_user.id, lesson.module_id)
