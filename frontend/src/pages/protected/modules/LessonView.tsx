@@ -4,7 +4,7 @@ import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQuer
 import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
 import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
-import { useGYNLessonQuestions, buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
+import { buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
@@ -342,7 +342,6 @@ const LessonView: React.FC<LessonViewProps> = ({
     data: backendLessonData, 
     isLoading: isLoadingLesson, 
     error: lessonError,
-    isFetching: isFetchingLesson,
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
 
   // Derive completion state from backend data
@@ -426,22 +425,13 @@ const LessonView: React.FC<LessonViewProps> = ({
   }, [isCompleted, backendLessonData?.grow_your_nest_played]);
 
   // ═══════════════════════════════════════════════════════════
-  // GYN QUESTIONS — Only fetch when server confirms:
-  //   1. Lesson is completed (confirmed, not optimistic)
-  //   2. GYN has NOT been played yet
-  //   3. Query is not mid-refetch (avoids firing during optimistic update settle)
-  // The optimistic update in useCompleteLesson sets is_completed=true
-  // but never sets grow_your_nest_played, so we require grow_your_nest_played
-  // to be explicitly false (not undefined) to ensure we have real server data.
+  // GYN QUESTIONS — Fetched on-demand in handleGYNPlay when the user
+  // clicks the GYN button. Pre-fetching via useGYNLessonQuestions was
+  // removed because the optimistic update in useCompleteLesson sets
+  // is_completed=true before the backend has committed, causing the
+  // /questions endpoint to return 400 ("Please complete the lesson
+  // video first") in a race condition.
   // ═══════════════════════════════════════════════════════════
-  const shouldFetchGYN = !!(
-    backendLessonData?.is_completed &&
-    backendLessonData?.grow_your_nest_played === false &&
-    !isFetchingLesson
-  );
-  useGYNLessonQuestions(
-    shouldFetchGYN ? (lesson.backendId || '') : ''
-  );
 
   const { 
     data: quizData,

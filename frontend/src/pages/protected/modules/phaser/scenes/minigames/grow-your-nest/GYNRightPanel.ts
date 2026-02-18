@@ -987,23 +987,65 @@ export function showCompletion(
   const nextButtonMargin = panelHeight * NEXT_BUTTON_MARGIN_PERCENT;
 
   if (isLessonFailed) {
-    // ── "TRY AGAIN" button — re-fetches questions and restarts the scene ──
-    const tryAgainButtonWidth = panelWidth * 0.36;
-    const tryAgainButtonHeight = panelWidth * 0.10;
-    const tryAgainButtonRadius = tryAgainButtonHeight / 2;
-    const tryAgainButtonX = panelWidth / 2;
-    const tryAgainButtonY = panelHeight - nextButtonMargin;
+    // ── Two buttons side-by-side: MODULE (left) and TRY AGAIN (right) ──
+    const buttonAreaY = panelHeight - nextButtonMargin;
+    const gapBetweenButtons = panelWidth * 0.03;
+    const buttonHeight = panelWidth * 0.10;
+    const buttonRadius = buttonHeight / 2;
 
-    const tryAgainContainer = scene.add.container(tryAgainButtonX, tryAgainButtonY);
+    // ── MODULE return button (left) ──
+    const moduleReturnButtonWidth = panelWidth * 0.28;
+    const moduleReturnButtonX = panelWidth * 0.30;
+
+    const moduleReturnContainer = scene.add.container(moduleReturnButtonX, buttonAreaY);
+
+    const moduleReturnBg = scene.add.graphics();
+    moduleReturnBg.fillStyle(COLORS.TEXT_GREY);
+    moduleReturnBg.fillRoundedRect(
+      -moduleReturnButtonWidth / 2,
+      -buttonHeight / 2,
+      moduleReturnButtonWidth,
+      buttonHeight,
+      buttonRadius
+    );
+
+    const moduleReturnText = scene.add.text(
+      0,
+      0,
+      'MODULE',
+      createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
+        fontSize: `${moduleButtonFontSize}px`,
+      })
+    );
+    moduleReturnText.setOrigin(0.5, 0.5);
+
+    moduleReturnContainer.add([moduleReturnBg, moduleReturnText]);
+
+    const moduleReturnHitArea = scene.add.rectangle(
+      0, 0, moduleReturnButtonWidth, buttonHeight, 0x000000, 0
+    );
+    moduleReturnHitArea.setInteractive({ useHandCursor: true });
+    moduleReturnHitArea.on('pointerdown', () => {
+      onReturn();
+    });
+    moduleReturnContainer.add(moduleReturnHitArea);
+    moduleReturnContainer.sendToBack(moduleReturnHitArea);
+    state.rightPanel.add(moduleReturnContainer);
+
+    // ── TRY AGAIN button (right) ──
+    const tryAgainButtonWidth = panelWidth * 0.34;
+    const tryAgainButtonX = panelWidth * 0.30 + moduleReturnButtonWidth / 2 + gapBetweenButtons + tryAgainButtonWidth / 2;
+
+    const tryAgainContainer = scene.add.container(tryAgainButtonX, buttonAreaY);
 
     const tryAgainBg = scene.add.graphics();
     tryAgainBg.fillStyle(COLORS.LOGO_BLUE);
     tryAgainBg.fillRoundedRect(
       -tryAgainButtonWidth / 2,
-      -tryAgainButtonHeight / 2,
+      -buttonHeight / 2,
       tryAgainButtonWidth,
-      tryAgainButtonHeight,
-      tryAgainButtonRadius
+      buttonHeight,
+      buttonRadius
     );
 
     const tryAgainText = scene.add.text(
@@ -1019,43 +1061,48 @@ export function showCompletion(
     tryAgainContainer.add([tryAgainBg, tryAgainText]);
 
     const tryAgainHitArea = scene.add.rectangle(
-      0, 0, tryAgainButtonWidth, tryAgainButtonHeight, 0x000000, 0
+      0, 0, tryAgainButtonWidth, buttonHeight, 0x000000, 0
     );
     tryAgainHitArea.setInteractive({ useHandCursor: true });
     tryAgainHitArea.on('pointerdown', () => {
-      // Re-fetch questions from the API and restart the scene cleanly
+      // Capture data before stopping the scene — closures referencing
+      // scene state will be invalidated once shutdown runs.
       const gyn = scene as any;
-      if (gyn.lessonId && gyn.moduleId) {
-        import('../../../../../../../services/growYourNestAPI').then(({ getLessonQuestions, transformGYNQuestionsForMinigame }) => {
-          getLessonQuestions(gyn.lessonId).then((response: any) => {
-            const transformedQuestions = transformGYNQuestionsForMinigame(response.questions);
-            scene.scene.restart({
-              mode: 'lesson',
-              lessonId: gyn.lessonId,
-              moduleId: gyn.moduleId,
-              questions: transformedQuestions,
-              treeState: response.tree_state,
-              moduleNumber: gyn.moduleNumber || 1,
-              showStartScreen: false,
-            });
-          }).catch(() => {
-            // Fallback: restart with the same questions
-            scene.scene.restart({
-              mode: 'lesson',
-              lessonId: gyn.lessonId,
-              moduleId: gyn.moduleId,
-              questions: state.questions.map((q) => ({
-                id: q.id,
-                question: q.question,
-                options: q.options,
-                correctAnswerId: null,
-                explanation: q.explanation || '',
-              })),
-              treeState: state.treeState,
-              moduleNumber: gyn.moduleNumber || 1,
-              showStartScreen: false,
-            });
-          });
+      const restartData = {
+        mode: 'lesson' as const,
+        lessonId: gyn.lessonId,
+        moduleId: gyn.moduleId,
+        questions: state.questions.map((q) => ({
+          id: q.id,
+          question: q.question,
+          options: q.options.map((o) => ({ ...o })),
+          correctAnswerId: null,
+          explanation: q.explanation || '',
+        })),
+        treeState: state.treeState ? { ...state.treeState } : undefined,
+        moduleNumber: gyn.moduleNumber || 1,
+        showStartScreen: false,
+      };
+
+      if (!restartData.lessonId || !restartData.moduleId) return;
+
+      // Stop + re-launch via HouseScene's scene manager.
+      // scene.scene.restart() is unreliable for overlay scenes
+      // launched via scene.launch(), so we stop first then re-launch.
+      const houseScene = scene.scene.get('HouseScene');
+      scene.scene.stop('GrowYourNestMinigame');
+
+      if (houseScene) {
+        // Short delay lets Phaser finish the stop lifecycle
+        houseScene.time.delayedCall(50, () => {
+          houseScene.scene.launch('GrowYourNestMinigame', restartData);
+
+          // Re-attach completion listener so HouseScene slides back on exit
+          const newScene = houseScene.scene.get('GrowYourNestMinigame');
+          const hs = houseScene as any;
+          if (newScene && hs.minigameShutdownHandler) {
+            newScene.events.once('minigameCompleted', hs.minigameShutdownHandler);
+          }
         });
       }
     });
