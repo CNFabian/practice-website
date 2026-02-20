@@ -8,6 +8,8 @@ import FreeRoamUnlockModal from '../components/protected/modals/FreeroamUnlockMo
 import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
 import { getModuleLessons } from '../services/learningAPI';
 import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../services/growYourNestAPI';
+import { queryClient } from '../lib/queryClient';
+import { queryKeys } from '../lib/queryKeys';
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
@@ -17,33 +19,67 @@ const MainLayoutContent: React.FC = () => {
   // FREE ROAM UNLOCK MODAL — Registry bridge from HouseScene
   // ═══════════════════════════════════════════════════════════
   const [showFreeRoamModal, setShowFreeRoamModal] = useState(false);
+  const [freeRoamModuleTitle, setFreeRoamModuleTitle] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const game = GameManager.getGame();
-    if (!game) return;
+    let cleanupFn: (() => void) | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
-    const handleRegistryChange = (_parent: any, _key: string, value: any) => {
-      if (value) {
-        console.log('🌳 [MainLayout] Free Roam unlock signal received for module:', value);
-        setShowFreeRoamModal(true);
+    const handleFreeRoamUnlocked = (moduleBackendId: string) => {
+      console.log('🌳 [MainLayout] Free Roam unlock signal received for module:', moduleBackendId);
+
+      const game = GameManager.getGame();
+
+      // Look up module title from learningModules registry
+      const learningModules: any[] | undefined = game?.registry.get('learningModules');
+      if (learningModules) {
+        const mod = learningModules.find((m: any) => m.id === moduleBackendId);
+        if (mod?.title) {
+          setFreeRoamModuleTitle(mod.title);
+        }
       }
+
+      // Refresh coin balance — backend awards 250 coins on module completion
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.coins() });
+
+      setShowFreeRoamModal(true);
     };
 
-    game.registry.events.on('changedata-showFreeRoamUnlockModal', handleRegistryChange);
+    const tryAttachListener = (): boolean => {
+      const game = GameManager.getGame();
+      if (!game) return false;
+
+      game.events.on('freeRoamUnlocked', handleFreeRoamUnlocked);
+      console.log('🌳 [MainLayout] Free Roam game event listener attached');
+
+      cleanupFn = () => {
+        game.events.off('freeRoamUnlocked', handleFreeRoamUnlocked);
+      };
+      return true;
+    };
+
+    // Try immediately; if game isn't ready yet, poll until it is
+    if (!tryAttachListener()) {
+      pollInterval = setInterval(() => {
+        if (tryAttachListener()) {
+          clearInterval(pollInterval!);
+          pollInterval = null;
+        }
+      }, 500);
+    }
 
     return () => {
-      game.registry.events.off('changedata-showFreeRoamUnlockModal', handleRegistryChange);
+      if (pollInterval) clearInterval(pollInterval);
+      cleanupFn?.();
     };
   }, []);
 
   const handleLaunchFreeRoam = useCallback(() => {
     setShowFreeRoamModal(false);
+    setFreeRoamModuleTitle(undefined);
 
     const game = GameManager.getGame();
     if (game) {
-      // Clear the registry signal
-      game.registry.set('showFreeRoamUnlockModal', null);
-
       const houseScene = game.scene.getScene('HouseScene') as any;
       if (houseScene && houseScene.launchFreeRoamFromReact) {
         houseScene.launchFreeRoamFromReact();
@@ -56,11 +92,7 @@ const MainLayoutContent: React.FC = () => {
 
   const handleDismissFreeRoam = useCallback(() => {
     setShowFreeRoamModal(false);
-
-    const game = GameManager.getGame();
-    if (game) {
-      game.registry.set('showFreeRoamUnlockModal', null);
-    }
+    setFreeRoamModuleTitle(undefined);
   }, []);
 
   // Handle scene transitions for walkthrough
@@ -345,6 +377,7 @@ const MainLayoutContent: React.FC = () => {
 
       <FreeRoamUnlockModal
         isOpen={showFreeRoamModal}
+        moduleTitle={freeRoamModuleTitle}
         onLaunchFreeRoam={handleLaunchFreeRoam}
         onDismiss={handleDismissFreeRoam}
       />

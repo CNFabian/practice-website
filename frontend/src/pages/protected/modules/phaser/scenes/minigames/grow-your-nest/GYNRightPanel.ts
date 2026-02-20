@@ -671,8 +671,7 @@ export function updateNextButton(state: GYNSceneState, enabled: boolean): void {
 export function showFeedbackBanner(
   scene: Phaser.Scene,
   state: GYNSceneState,
-  isCorrect: boolean,
-  coinsEarned: number = 0
+  isCorrect: boolean
 ): void {
   // Clear any existing banner first
   clearFeedbackBanner(state);
@@ -691,8 +690,7 @@ export function showFeedbackBanner(
 
   const bannerGap = panelHeight * 0.025;
   const bannerY = lastOptionY + lastOptionHeight / 2 + bannerGap;
-  const hasCoinMessage = isCorrect && coinsEarned > 0;
-  const bannerHeight = hasCoinMessage ? panelHeight * 0.11 : panelHeight * 0.075;
+  const bannerHeight = panelHeight * 0.075;
   const bannerRadius = panelHeight * 0.075 / 2;
 
   state.feedbackBanner = scene.add.container(0, bannerY);
@@ -716,10 +714,9 @@ export function showFeedbackBanner(
   // Text — "CORRECT!" or "INCORRECT"
   const fontSize = Math.round(panelWidth * 0.045);
   const bannerText = isCorrect ? 'CORRECT!' : 'INCORRECT';
-  const textYOffset = hasCoinMessage ? -bannerHeight * 0.18 : 0;
   const text = scene.add.text(
     panelWidth / 2,
-    textYOffset,
+    0,
     bannerText,
     createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
       fontSize: `${fontSize}px`,
@@ -727,22 +724,6 @@ export function showFeedbackBanner(
   );
   text.setOrigin(0.5, 0.5);
   state.feedbackBanner.add(text);
-
-  // Coin message below main text when stage transition awards coins
-  if (hasCoinMessage) {
-    const coinFontSize = Math.round(panelWidth * 0.03);
-    const coinText = scene.add.text(
-      panelWidth / 2,
-      bannerHeight * 0.18,
-      `+${coinsEarned} NestCoins! 🌳 Your tree grew!`,
-      createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
-        fontSize: `${coinFontSize}px`,
-        align: 'center',
-      })
-    );
-    coinText.setOrigin(0.5, 0.5);
-    state.feedbackBanner.add(coinText);
-  }
 
   state.rightPanel.add(state.feedbackBanner);
 

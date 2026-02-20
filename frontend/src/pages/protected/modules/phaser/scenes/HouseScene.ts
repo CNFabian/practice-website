@@ -453,8 +453,9 @@ export default class HouseScene extends BaseScene {
 
       // Only show the modal ONCE — when triggered by the minigame completion callback
       if (fromMinigameCompletion) {
-        this.registry.set('showFreeRoamUnlockModal', this.moduleBackendId);
-        console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React');
+        // Use direct game event instead of registry changedata (more reliable)
+        this.game.events.emit('freeRoamUnlocked', this.moduleBackendId);
+        console.log('🌳 [FreeRoam Check] ✅ All lesson minigames complete — signaling React via game event');
 
         // Add highlight glow to the button after a small delay for recreation
         this.time.delayedCall(500, () => {
