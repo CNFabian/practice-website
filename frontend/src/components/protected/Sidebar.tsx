@@ -20,7 +20,7 @@ import {
   Logo,
   OnestFont
 } from '../../assets';
-import OnBoardingPage from './onboarding/OnBoardingPage';
+import OnBoardingPage from '../../features/onboarding/pages/OnBoardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 const Sidebar: React.FC = () => {

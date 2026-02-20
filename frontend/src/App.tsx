@@ -15,14 +15,14 @@ import ModulesPage from './pages/protected/modules/ModulesPage'
 
 const LoginPage = lazy(() => import('./pages/public/LoginPage'))
 const SignupPage = lazy(() => import('./pages/public/SignupPage'))
-const OnboardingPage = lazy(() => import('./components/protected/onboarding/OnBoardingPage'))
+const OnboardingPage = lazy(() => import('./features/onboarding/pages/OnBoardingPage'))
 const OverviewPage = lazy(() => import('./pages/protected/overview/OverviewPage'))
-const MaterialsPage = lazy(() => import('./pages/protected/MaterialsPage'))
+const MaterialsPage = lazy(() => import('./features/materials/pages/MaterialsPage'))
 const RewardsPage = lazy(() => import('./pages/protected/rewards/RewardsPage'))
 const BadgesPage = lazy(() => import('./pages/protected/badges/BadgesPage'))
 const SettingsPage = lazy(() => import('./pages/protected/settings/SettingsPage'))
 const HelpPage = lazy(() => import('./pages/protected/help/HelpPage'))
-const NotificationsPage = lazy(() => import('./pages/protected/notifications/NotificationsPage'))
+const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'))
 const AdminDashboardPage = lazy(() => import('./pages/protected/admin/AdminDashboardPage'))
 
 // ═══════════════════════════════════════════════════════════
