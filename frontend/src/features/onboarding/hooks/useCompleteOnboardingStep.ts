@@ -3,7 +3,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 import {
   completeOnboardingAllSteps,
   type CompleteOnboardingData
-} from '../services/onBoardingAPI';
+} from '../services/onboardingAPI';
 
 export const useCompleteOnboardingStep = () => {
   const queryClient = useQueryClient();

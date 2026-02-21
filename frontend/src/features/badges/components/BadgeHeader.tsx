@@ -15,7 +15,7 @@ export const BadgeHeader = ({ progress }: BadgeHeaderProps) => {
         Collect badges by completing modules and achieving milestones in your homeownership journey
       </OnestFont>
       
-      <div className="inline-flex items-center justify-center px-6 py-3 text-white rounded-2xl mb-6" style={{background: 'linear-gradient(135deg, #677ae5 0%, #7650a7 100%)'}}>
+      <div className="inline-flex items-center justify-center px-6 py-3 text-white rounded-2xl mb-6 bg-linear-blue-1">
         <div className="text-center">
           <OnestFont as="div" weight={700} lineHeight="tight" className="text-xl">
             {progress.earned}

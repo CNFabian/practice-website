@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
-import OnBoardingPage from '../../../features/onboarding/pages/OnBoardingPage';
+import OnboardingPage from '../../../features/onboarding/pages/OnboardingPage';
 import { useOnboardingStatus } from '../../onboarding/hooks/useOnboardingStatus';
 import { OnestFont } from "../../../assets";
 import {
@@ -163,8 +163,8 @@ const OverviewPage: React.FC = () => {
   const onboardingModal = showOnboarding
     ? createPortal(
         <>
-          {console.log('OverviewPage: Rendering OnBoardingPage with isOpen:', showOnboarding)}
-          <OnBoardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
+          {console.log('OverviewPage: Rendering OnboardingPage with isOpen:', showOnboarding)}
+          <OnboardingPage isOpen={showOnboarding} onClose={handleCloseOnboarding} />
         </>,
         document.body
       )

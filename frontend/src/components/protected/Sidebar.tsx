@@ -20,7 +20,7 @@ import {
   Logo,
   OnestFont
 } from '../../assets';
-import OnBoardingPage from '../../features/onboarding/pages/OnBoardingPage';
+import OnboardingPage from '../../features/onboarding/pages/OnboardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 const Sidebar: React.FC = () => {
@@ -261,7 +261,7 @@ const Sidebar: React.FC = () => {
       </aside>
 
       {showOnboarding && (
-        <OnBoardingPage
+        <OnboardingPage
           isOpen={showOnboarding}
           onClose={() => setShowOnboarding(false)}
         />

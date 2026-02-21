@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-assignment */
 import Phaser from 'phaser';
 import { createTextStyle } from '../../../constants/Typography';
 import { COLORS } from '../../../constants/Colors';

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingImage1, OnboardingImage2, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
-import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../services/onBoardingAPI';
+import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../services/onboardingAPI';
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 import { searchCities, type PlacePrediction } from '../services/googlePlacesAPI';
 
-interface OnBoardingPageProps {
+interface OnboardingPageProps {
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose }) => {
+const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose }) => {
   const nav = useNavigate();
   const { refetch: refetchOnboardingStatus } = useOnboardingStatus();
 
@@ -718,4 +718,4 @@ const OnBoardingPage: React.FC<OnBoardingPageProps> = ({ isOpen = true, onClose 
   );
 };
 
-export default OnBoardingPage;
+export default OnboardingPage;

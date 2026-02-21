@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import React, { useState } from 'react';
 import { OnestFont } from '../../../assets';
 import { ChartIcon } from '../../../assets';

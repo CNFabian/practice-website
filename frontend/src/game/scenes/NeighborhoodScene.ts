@@ -650,11 +650,11 @@ public expandProgressCard(houseIndex: number): void {
     const isUShapeSection = sectionIndex % 2 === 0;
     const isTransitionPath = startHouseIndex % 2 === 1;
     
-    let controlX: number;
+    
     let controlY: number;
     
     const curveDepth = distance * 0.7;
-    controlX = midX;
+    const controlX = midX;
     
     if (isUShapeSection) {
       controlY = midY + curveDepth;

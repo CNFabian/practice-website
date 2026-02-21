@@ -117,7 +117,7 @@ const MainLayoutContent: React.FC = () => {
           console.log('🎬 Walkthrough: Stopping GrowYourNestMinigame');
           game!.scene.stop('GrowYourNestMinigame');
         }
-      } catch (e) { /* scene may not exist yet */ }
+      } catch (_e) { /* scene may not exist yet */ }
 
       // Reset navState to map via handleBackToMap
       const handleBackToMap = game?.registry.get('handleBackToMap');
@@ -262,7 +262,7 @@ const MainLayoutContent: React.FC = () => {
                 game.scene.start('GrowYourNestMinigame', initData);
                 launched = true;
               }
-            } catch (apiError) {
+            } catch (_apiError) {
               console.warn('⚠️ Walkthrough: API rejected GYN questions (likely lesson not completed), using demo data');
             }
           }

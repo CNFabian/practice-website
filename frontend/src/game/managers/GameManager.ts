@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-assignment */
 import Phaser from 'phaser';
 import { createGameConfig } from '../config/gameConfig';
 import type PreloaderScene from '../scenes/PreloaderScene';

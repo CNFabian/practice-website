@@ -7,7 +7,7 @@ import {
   completeOnboardingAllSteps,
   getOnboardingData,
   getOnboardingProgress
-} from '../services/onBoardingAPI'
+} from '../services/onboardingAPI'
 import { useOnboardingStatus } from './useOnboardingStatus'
 
 export interface OnboardingAnswers {

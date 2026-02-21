@@ -15,7 +15,7 @@ import ModulesPage from './features/modules/pages/ModulesPage'
 
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'))
 const SignupPage = lazy(() => import('./features/auth/pages/SignupPage'))
-const OnboardingPage = lazy(() => import('./features/onboarding/pages/OnBoardingPage'))
+const OnboardingPage = lazy(() => import('./features/onboarding/pages/OnboardingPage'))
 const OverviewPage = lazy(() => import('./features/dashboard/pages/OverviewPage'))
 const MaterialsPage = lazy(() => import('./features/materials/pages/MaterialsPage'))
 const RewardsPage = lazy(() => import('./features/rewards/pages/RewardsPage'))
@@ -208,8 +208,8 @@ function App() {
   }, [reduxIsAuthenticated, needsOnboarding])
 
   // ═══════════════════════════════════════════════════════════
-  // Listen for onboarding completion event from OnBoardingPage.
-  // This breaks the loop: when OnBoardingPage finishes, it
+  // Listen for onboarding completion event from OnboardingPage.
+  // This breaks the loop: when OnboardingPage finishes, it
   // dispatches 'onboarding-completed' BEFORE navigating to /app.
   // App.tsx catches it here and sets needsOnboarding = false so
   // the /app route guard lets the user through immediately.

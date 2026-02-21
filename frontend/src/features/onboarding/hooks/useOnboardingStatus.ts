@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
-import { getOnboardingStatus } from '../services/onBoardingAPI';
+import { getOnboardingStatus } from '../services/onboardingAPI';
 
 export const useOnboardingStatus = () => {
   return useQuery({

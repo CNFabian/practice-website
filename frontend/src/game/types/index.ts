@@ -15,7 +15,7 @@ export type Module = AppModule;
 /**
  * Data passed to MapScene on initialization
  */
-export interface MapSceneData {
+export type MapSceneData = Record<string, never> & {
   // No data needed for map scene currently
 }
 

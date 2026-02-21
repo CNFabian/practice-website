@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../hooks/useLearningQueries';

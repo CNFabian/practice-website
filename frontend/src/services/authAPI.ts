@@ -83,7 +83,7 @@ const refreshAccessToken = async (): Promise<string> => {
 
 // Unified fetch with authentication and automatic token refresh
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  let token = getAccessToken();
+  const token = getAccessToken();
   
   if (!token) {
     console.error('AuthAPI: No authentication token found');
@@ -116,7 +116,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         const newToken = await refreshAccessToken();
         console.log('AuthAPI: Token refreshed, retrying request...');
         response = await makeRequest(newToken);
-      } catch (refreshError) {
+      } catch (_refreshError) {
         console.error('AuthAPI: Token refresh failed, cannot retry request');
         throw new Error('Authentication failed - please log in again');
       }
@@ -131,7 +131,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         if (errorData.detail) {
           console.error('AuthAPI: Error details:', errorData.detail);
         }
-      } catch (parseError) {
+      } catch (_parseError) {
+        /* JSON parse failed */
       }
       
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -166,7 +167,7 @@ export const fetchWithoutAuth = async (url: string, options: RequestInit = {}): 
         console.error('AuthAPI: Error details:', errorData.detail);
         errorDetail = errorData.detail;
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       // Response wasn't JSON
     }
     

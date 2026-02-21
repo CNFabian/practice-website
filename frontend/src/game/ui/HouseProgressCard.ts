@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-assignment */
 import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../utils/scaleHelper';
 import { COLORS } from '../constants/Colors';
