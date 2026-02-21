@@ -1,4 +1,4 @@
-import { OnestFont } from '../../../../assets';
+import { OnestFont } from '../../../assets';
 import { FILTER_BUTTONS } from '../constants';
 
 interface BadgeFiltersProps {

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { OnestFont } from '../../../../assets';
-import { useLeadDetail, useLeadHistory, useCalculateUserScore } from '../../../../hooks/queries/useAnalyticsAdmin';
+import { OnestFont } from '../../../assets';
+import { useLeadDetail, useLeadHistory, useCalculateUserScore } from '../hooks/useAnalyticsAdmin';
 import ScoreBreakdown from './ScoreBreakdown';
 import ScoreHistoryChart from './ScoreHistoryChart';
 

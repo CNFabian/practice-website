@@ -1,5 +1,5 @@
-import { OnestFont } from '../../../../assets';
-import type { BadgeProgress } from '../../../../services';
+import { OnestFont } from '../../../assets';
+import type { BadgeProgress } from '../services/badgesAPI';
 
 interface BadgeHeaderProps {
   progress: BadgeProgress;

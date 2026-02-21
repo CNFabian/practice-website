@@ -1,6 +1,6 @@
 import React from 'react';
-import { OnestFont } from '../../../../assets';
-import { useRewardStatistics } from '../../../../hooks/queries/useRewardsQueries';
+import { OnestFont } from '../../../assets';
+import { useRewardStatistics } from '../hooks/useRewardsQueries';
 
 interface RewardStats {
   total_redemptions: number;

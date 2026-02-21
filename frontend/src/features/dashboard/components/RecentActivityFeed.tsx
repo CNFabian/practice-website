@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { OnestFont } from "../../../assets";
-import { useRecentActivity } from "../../../hooks/queries/useRecentActivity";
+import { useRecentActivity } from "../hooks/useRecentActivity";
 import SectionError from "./SectionError";
 
 // ────────────────────────────────────────────────────────

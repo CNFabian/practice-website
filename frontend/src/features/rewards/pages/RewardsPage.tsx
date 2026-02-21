@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationButton } from './types/rewards.types';
-import { type Coupon } from '../../../services';
+import { NavigationButton } from '../types/rewards.types';
+import { type Coupon } from '../services/rewardsAPI';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
-import { useRedeemCoupon } from '../../../hooks/mutations/useRedeemCoupon';
-import { useMarkRedemptionUsed } from '../../../hooks/mutations/useMarkRedemptionUsed';
-import { useCoupons, useMyRedemptions } from '../../../hooks/queries/useRewardsQueries';
+import { useRedeemCoupon } from '../hooks/useRedeemCoupon';
+import { useMarkRedemptionUsed } from '../hooks/useMarkRedemptionUsed';
+import { useCoupons, useMyRedemptions } from '../hooks/useRewardsQueries';
 import {
   RewardsHeader,
   RewardsNavigation,
@@ -13,7 +13,7 @@ import {
   CoinTransactionHistory,
   RewardStatsSummary,
   RewardPreferences
-} from "./components";
+} from "../components";
 
 // Fallback mock data for when API is empty or fails
 const FALLBACK_COUPONS: Coupon[] = [

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { OnestFont } from '../../../assets';
-import GameManager from '../../../pages/protected/modules/phaser/managers/GameManager';
+import GameManager from '../../../game/managers/GameManager';
 
 // Import assets
 import { 

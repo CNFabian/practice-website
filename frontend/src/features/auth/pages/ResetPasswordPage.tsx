@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { OnestFont, LoginImage, Eye, Blind } from '../../assets';
-import { useConfirmPasswordReset } from '../../hooks/queries/useAuthMutations';
+import { OnestFont, LoginImage, Eye, Blind } from '../../../assets';
+import { useConfirmPasswordReset } from '../hooks/useAuthMutations';
 
 const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();

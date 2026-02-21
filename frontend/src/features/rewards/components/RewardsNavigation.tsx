@@ -1,5 +1,5 @@
 import React from 'react';
-import { OnestFont } from '../../../../assets/index';
+import { OnestFont } from '../../../assets/index';
 import { NavigationButton } from '../types/rewards.types';
 
 interface RewardsNavigationProps {

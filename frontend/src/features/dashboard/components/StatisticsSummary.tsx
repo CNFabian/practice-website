@@ -1,6 +1,6 @@
 import React from "react";
 import { OnestFont } from "../../../assets";
-import { useUserStatistics } from "../../../hooks/queries/useUserStatistics";
+import { useUserStatistics } from "../hooks/useUserStatistics";
 import { useMyProgress } from "../../../hooks/queries/useMyProgress";
 import SectionError from "./SectionError";
 

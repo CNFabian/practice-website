@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { OnestFont } from '../../../assets';
-import { TabNavigation, FAQSection, ContactForm } from './components';
+import { TabNavigation, FAQSection, ContactForm } from '../components';
 
 const HelpPage: React.FC = () => {
 

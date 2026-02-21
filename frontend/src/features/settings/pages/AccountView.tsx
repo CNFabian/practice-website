@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { OnestFont } from '../../../assets';
-import { ProfilePictureModal } from '../../../components';
+import ProfilePictureModal from '../components/ProfilePictureModal';
 import { updateUserProfile } from '../../../services/authAPI';
 import { requestPasswordReset } from '../../../services/authAPI';
 import { wipeUserData } from '../../../services/authAPI';
 import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
 import { clearAuthData } from '../../../services/authAPI';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
-import GameManager from '../../../pages/protected/modules/phaser/managers/GameManager';
+import GameManager from '../../../game/managers/GameManager';
 import type { RootState } from '../../../store/store';
 
 const AccountView: React.FC = () => {

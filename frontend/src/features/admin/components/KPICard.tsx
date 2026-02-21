@@ -1,5 +1,5 @@
 import React from 'react';
-import { OnestFont } from '../../../../assets';
+import { OnestFont } from '../../../assets';
 
 interface KPICardProps {
   title: string;

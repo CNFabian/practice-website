@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { OnestFont } from '../../../assets';
 import { useNotifications } from '../../../hooks/queries/useNotifications';
-import { useUpdateNotification } from '../../../hooks/mutations/useUpdateNotification';
-import { useMarkAllNotificationsRead } from '../../../hooks/mutations/useMarkAllNotificationsRead';
-import { useDeleteNotification } from '../../../hooks/mutations/useDeleteNotification';
+import { useUpdateNotification } from '../hooks/useUpdateNotification';
+import { useMarkAllNotificationsRead } from '../hooks/useMarkAllNotificationsRead';
+import { useDeleteNotification } from '../hooks/useDeleteNotification';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 

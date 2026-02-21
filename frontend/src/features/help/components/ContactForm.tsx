@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { OnestFont } from '../../../../assets';
-import { useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
-import { useSubmitSupportTicket } from '../../../../hooks/mutations/useSubmitSupportTicket';
-import type { SupportTicketRequest } from '../../../../types/help.types';
+import { OnestFont } from '../../../assets';
+import { useFAQCategories } from '../hooks/useHelpQueries';
+import { useSubmitSupportTicket } from '../hooks/useSubmitSupportTicket';
+import type { SupportTicketRequest } from '../types/help.types';
 
 interface FormData {
   firstName: string;

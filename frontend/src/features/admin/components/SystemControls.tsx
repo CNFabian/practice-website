@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { OnestFont } from '../../../../assets';
+import { OnestFont } from '../../../assets';
 import {
   useSchedulerStatus,
   useRecalculateScores,
   useTriggerBatchRecalculation,
   useTriggerSnapshotCreation,
   useTriggerEventCleanup,
-} from '../../../../hooks/queries/useAnalyticsAdmin';
+} from '../hooks/useAnalyticsAdmin';
 
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return 'Never';

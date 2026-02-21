@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { OnestFont } from "../../../../assets";
-import { useCoinTransactions } from "../../../../hooks/queries/useCoinTransactions";
+import { OnestFont } from "../../../assets";
+import { useCoinTransactions } from "../hooks/useCoinTransactions";
 
 // ────────────────────────────────────────────────────────
 // Relative timestamp helper

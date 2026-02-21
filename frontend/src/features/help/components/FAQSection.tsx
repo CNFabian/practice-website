@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { OnestFont } from '../../../../assets';
-import { useFAQs, useFAQCategories } from '../../../../hooks/queries/useHelpQueries';
-import type { FAQ } from '../../../../types/help.types';
+import { OnestFont } from '../../../assets';
+import { useFAQs, useFAQCategories } from '../hooks/useHelpQueries';
+import type { FAQ } from '../types/help.types';
 
 const FALLBACK_FAQS: FAQ[] = [
   {

@@ -9,7 +9,7 @@ import { queryClient } from './lib/queryClient'
 import { store, persistor } from './store/store'
 import { WalkthroughProvider } from './contexts/WalkthroughContext'
 import App from './App'
-import ResetPasswordPage from './pages/public/ResetPasswordPage'
+import ResetPasswordPage from './features/auth/pages/ResetPasswordPage'
 import './index.css'
 
 const isResetPasswordRoute = window.location.pathname.startsWith('/reset-password')

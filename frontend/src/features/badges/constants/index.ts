@@ -12,8 +12,8 @@ import {
   BadgePrize,
   BadgeRocket,
   BadgeTrophy
-} from '../../../../assets';
-import type { BadgeRarity, BadgeType, BadgeStyleConfig } from '../../../../services';
+} from '../../../assets';
+import type { BadgeRarity, BadgeType, BadgeStyleConfig } from '../services/badgesAPI';
 
 export interface FilterButton {
   key: string;

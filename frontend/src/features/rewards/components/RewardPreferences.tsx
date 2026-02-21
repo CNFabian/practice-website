@@ -9,7 +9,7 @@ import {
   HomeLivingRewards,
   HomeImprovementRewards,
   MovingRewards,
-} from '../../../../assets';
+} from '../../../assets';
 
 // ─── Reward category definitions ───
 const REWARD_CATEGORIES = [

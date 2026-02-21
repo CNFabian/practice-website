@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { OnestFont } from '../../../../assets';
-import type { LeadScoreHistoryResponse } from '../../../../services/analyticsAPI';
+import { OnestFont } from '../../../assets';
+import type { LeadScoreHistoryResponse } from '../../../services/analyticsAPI';
 
 interface ScoreHistoryChartProps {
   history: LeadScoreHistoryResponse[];

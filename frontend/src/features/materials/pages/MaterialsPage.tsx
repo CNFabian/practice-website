@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { OnestFont } from '../../../assets';
 import {
-  MortgageCalculator,
-  DebtToIncomeCalculator,
-  CreditScoreCalculator,
-  FirstTimeBuyerChecklist,
-  HomeInspectionChecklist,
   BetaTooltip,
 } from '../../../components';
-import InfoModal from '../../../components/protected/materials/InfoModal';
+import MortgageCalculator from '../components/MortgageCalculator';
+import DebtToIncomeCalculator from '../components/DebtToIncomeCalculator';
+import CreditScoreCalculator from '../components/CreditScoreCalculator';
+import FirstTimeBuyerChecklist from '../components/FirstTimeBuyerChecklist';
+import HomeInspectionChecklist from '../components/HomeInspectionChecklist';import InfoModal from '../components/InfoModal';
 import {
   CalculatorIcon,
   DocumentIcon,
@@ -23,14 +22,14 @@ import {
   AnalyzeIcon,
   InfoGreen,
 } from '../../../assets';
-import ExpenseTrackingPDF from '../../assets/downloadables/expense-tracking-worksheet.pdf';
-import BudgetPlanningPDF from '../../assets/downloadables/budget-planning-worksheet.pdf';
+import ExpenseTrackingPDF from '../../../assets/downloadables/expense-tracking-worksheet.pdf';
+import BudgetPlanningPDF from '../../../assets/downloadables/budget-planning-worksheet.pdf';
 import {
   useAvailableCalculators,
   useMaterialChecklists,
   useMaterialsByType,
-} from '../../../hooks/queries/useMaterialsQueries';
-import { useTrackMaterialDownload } from '../../../hooks/mutations/useTrackMaterialDownload';
+} from '../hooks/useMaterialsQueries';
+import { useTrackMaterialDownload } from '../hooks/useTrackMaterialDownload';
 
 const MaterialsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -406,7 +405,7 @@ const MaterialsPage: React.FC = () => {
           onSuccess: () => {
             console.log('Download tracked for resource:', backendItem.id);
           },
-          onError: (error) => {
+          onError: (error: unknown) => {
             console.error('Error tracking download:', error);
           },
         }

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { OnestFont } from '../../../../assets';
-import { useAllLeads, useCalculateUserScore } from '../../../../hooks/queries/useAnalyticsAdmin';
-import type { LeadSummary, LeadFilters } from '../../../../services/analyticsAPI';
+import { OnestFont } from '../../../assets';
+import { useAllLeads, useCalculateUserScore } from '../hooks/useAnalyticsAdmin';
+import type { LeadSummary, LeadFilters } from '../../../services/analyticsAPI';
 
 const PAGE_SIZE = 20;
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CoinIcon, OnestFont } from '../../../../assets/index';
+import { CoinIcon, OnestFont } from '../../../assets/index';
 
 interface RewardsHeaderProps {
   coinBalance: number;

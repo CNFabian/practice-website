@@ -6,17 +6,17 @@ import {
   NeighborhoodBackground,
   LessonViewBackground
 } from '../../../assets';
-import GameManager from './phaser/managers/GameManager';
-import LessonView from './LessonView';
+import GameManager from '../../../game/managers/GameManager';
+import LessonView from '../../lessons/pages/LessonView';
 import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
-import { useModuleLessons } from '../../../hooks/queries/useLearningQueries';
+import { useModuleLessons } from '../../lessons/hooks/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { getModuleLessons } from '../../../services/learningAPI';
 import { useSidebar } from '../../../contexts/SidebarContext';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
-import { useBatchProgressSync } from '../../../hooks/queries/useBatchProgressSync';
+import { useBatchProgressSync } from '../../lessons/hooks/useBatchProgressSync';
 
 interface NavState {
   currentView: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';

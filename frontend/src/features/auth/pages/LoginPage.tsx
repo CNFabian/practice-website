@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { loginUser, getCurrentUser, requestPasswordReset } from '../../services/authAPI'
-import { setUser } from '../../store/slices/authSlice'
-import { birdWithPencil, PublicBackground, Eye, Blind, OnestFont } from '../../assets'
+import { loginUser, getCurrentUser, requestPasswordReset } from '../../../services/authAPI'
+import { setUser } from '../../../store/slices/authSlice'
+import { birdWithPencil, PublicBackground, Eye, Blind, OnestFont } from '../../../assets'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()

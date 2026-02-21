@@ -5,7 +5,7 @@ import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
 import { useWalkthrough } from '../contexts/WalkthroughContext'
 import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
 import FreeRoamUnlockModal from '../components/protected/modals/FreeroamUnlockModal'
-import GameManager from '../pages/protected/modules/phaser/managers/GameManager'
+import GameManager from '../game/managers/GameManager'
 import { getModuleLessons } from '../services/learningAPI';
 import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../services/growYourNestAPI';
 import { queryClient } from '../lib/queryClient';

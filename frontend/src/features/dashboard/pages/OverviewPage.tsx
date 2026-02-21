@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../store/store';
 import { openOnboardingModal, closeOnboardingModal } from '../../../store/slices/uiSlice';
 import OnBoardingPage from '../../../features/onboarding/pages/OnBoardingPage';
-import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
+import { useOnboardingStatus } from '../../onboarding/hooks/useOnboardingStatus';
 import { OnestFont } from "../../../assets";
 import {
   HeroModuleCard,
@@ -14,15 +14,15 @@ import {
   StreakCard,
   DailyGoalsCard,
   LeaderboardCard,
-} from "./components";
-import { LeaderboardEntry } from "./types/overview.types";
-import { Icons, Images } from './images';
+} from "../components";
+import { LeaderboardEntry } from "../types/overview.types";
+import { Icons, Images } from '../images';
 import { useCoinBalance } from "../../../hooks/queries/useCoinBalance";
-import { useDashboardOverview } from "../../../hooks/queries/useDashboardOverview";
+import { useDashboardOverview } from "../hooks/useDashboardOverview";
 import { useDashboardModules } from "../../../hooks/queries/useDashboardModules";
-import { useQuizLeaderboard } from "../../../hooks/queries/useQuizLeaderboard";
+import { useQuizLeaderboard } from "../../quiz/hooks/useQuizLeaderboard";
 import { useMyProgress } from "../../../hooks/queries/useMyProgress";
-import type { QuizLeaderboardEntry } from "../../../hooks/queries/useQuizLeaderboard";
+import type { QuizLeaderboardEntry } from "../../quiz/hooks/useQuizLeaderboard";
 import { BetaTooltip } from "../../../components";
 
 // ─── Transform helpers ───────────────────────────────────────────

@@ -1,6 +1,6 @@
 import React from "react";
-import { OnestFont } from "../../../../assets";
-import { useRewardCategories } from "../../../../hooks/queries/useRewardsQueries";
+import { OnestFont } from "../../../assets";
+import { useRewardCategories } from "../hooks/useRewardsQueries";
 
 // ────────────────────────────────────────────────────────
 // Props

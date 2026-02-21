@@ -7,9 +7,9 @@ import {
   sendVerificationCode,
   verifyEmailCode,
   resendVerificationCode,
-} from '../../services/authAPI'
-import { setUser } from '../../store/slices/authSlice'
-import { birdAtDesk, PublicBackground, Eye, Blind, OnestFont } from '../../assets'
+} from '../../../services/authAPI'
+import { setUser } from '../../../store/slices/authSlice'
+import { birdAtDesk, PublicBackground, Eye, Blind, OnestFont } from '../../../assets'
 
 type SignupStep = 'email' | 'code' | 'register'
 

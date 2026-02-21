@@ -1,9 +1,9 @@
 import React from 'react';
-import { OnestFont } from '../../../../assets';
-import { useAnalyticsInsights, useHotLeads, useSchedulerStatus } from '../../../../hooks/queries/useAnalyticsAdmin';
-import KPICard from '../../admin/components/KPICard';
+import { OnestFont } from '../../../assets';
+import { useAnalyticsInsights, useHotLeads, useSchedulerStatus } from '../hooks/useAnalyticsAdmin';
+import KPICard from './KPICard';
 import DistributionChart from './DistributionChart';
-import type { LeadSummary } from '../../../../services/analyticsAPI';
+import type { LeadSummary } from '../../../services/analyticsAPI';
 
 const getTemperatureBadge = (temp: string | null): { bg: string; text: string; label: string } => {
   switch (temp) {

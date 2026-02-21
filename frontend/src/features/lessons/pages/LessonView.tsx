@@ -1,16 +1,16 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Module, Lesson } from '../../../types/modules';
-import { useLesson, useLessonQuiz } from '../../../hooks/queries/useLearningQueries';
-import { useCompleteLesson } from '../../../hooks/mutations/useCompleteLesson';
-import { useUpdateLessonProgress } from '../../../hooks/mutations/useUpdateLessonProgress';
+import { useLesson, useLessonQuiz } from '../hooks/useLearningQueries';
+import { useCompleteLesson } from '../hooks/useCompleteLesson';
+import { useUpdateLessonProgress } from '../hooks/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
-import { buildLessonModeInitData } from '../../../hooks/queries/useGrowYourNest';
+import { buildLessonModeInitData } from '../hooks/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
-import { useTrackLessonMilestone } from '../../../hooks/queries/useTrackLessonMilestone';
+import { useTrackLessonMilestone } from '../hooks/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
-import GYNLessonButton from '../../../components/protected/modules/GYNLessonButton';
+import GYNLessonButton from '../components/GYNLessonButton';
 import { getLessonQuestions } from '../../../services/growYourNestAPI';
-import gameManager from './phaser/managers/GameManager';
+import gameManager from '../../../game/managers/GameManager';
 import { mockGYNPlayedLessons, mockAwardedQuestionIds } from '../../../services/mockLearningData';
 
 // YouTube Player Type Definitions

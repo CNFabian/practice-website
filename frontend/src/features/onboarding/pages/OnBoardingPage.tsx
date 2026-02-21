@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingImage1, OnboardingImage2, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
-import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../../../services/onBoardingAPI';
-import { useOnboardingStatus } from '../../../hooks/queries/useOnboardingStatus';
-import { searchCities, type PlacePrediction } from '../../../services/googlePlacesAPI';
+import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../services/onBoardingAPI';
+import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
+import { searchCities, type PlacePrediction } from '../services/googlePlacesAPI';
 
 interface OnBoardingPageProps {
   isOpen?: boolean;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BadgeHeader, BadgeFilters, BadgeGrid } from './components';
+import { BadgeHeader, BadgeFilters, BadgeGrid } from '../components';
 import { OnestFont } from '../../../assets';
-import { useBadges } from '../../../hooks/queries/useBadges';
+import { useBadges } from '../hooks/useBadges';
 import { useMyProgress } from '../../../hooks/queries/useMyProgress';
 
 const BadgesPage = () => {

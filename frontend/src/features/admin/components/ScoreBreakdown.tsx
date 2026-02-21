@@ -1,6 +1,6 @@
 import React from 'react';
-import { OnestFont } from '../../../../assets';
-import type { LeadScoreResponse } from '../../../../services/analyticsAPI';
+import { OnestFont } from '../../../assets';
+import type { LeadScoreResponse } from '../../../services/analyticsAPI';
 
 const getBarColor = (score: number): string => {
   if (score <= 25) return 'bg-status-red';

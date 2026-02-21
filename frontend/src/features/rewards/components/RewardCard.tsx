@@ -1,6 +1,6 @@
 import React from 'react';
-import { CoinIcon, OnestFont } from '../../../../assets/index';
-import { Coupon } from '../../../../services';
+import { CoinIcon, OnestFont } from '../../../assets/index';
+import { Coupon } from '../services/rewardsAPI';
 
 interface RewardCardProps {
   coupon: Coupon;

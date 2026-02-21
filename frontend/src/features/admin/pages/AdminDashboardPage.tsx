@@ -5,7 +5,7 @@ import {
   AllLeadsTable,
   LeadDetailView,
   SystemControls,
-} from './components';
+} from '../components';
 
 type AdminTab = 'overview' | 'leads' | 'system';
 

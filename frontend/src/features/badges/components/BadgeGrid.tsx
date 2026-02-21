@@ -1,5 +1,5 @@
-import { OnestFont } from '../../../../assets';
-import type { Badge } from '../../../../services';
+import { OnestFont } from '../../../assets';
+import type { Badge } from '../services/badgesAPI';
 import { BadgeCard } from './BadgeCard';
 
 interface BadgeGridProps {
