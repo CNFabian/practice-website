@@ -79,6 +79,18 @@ export class UIComponents {
       const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
       birdIcon.setDisplaySize(scale(64), scale(64));
       container.add(birdIcon);
+    } else {
+      const onTextureAdd = (key: string) => {
+        if (key === ASSET_KEYS.BIRD_CELEBRATION) {
+          scene.textures.off('addtexture', onTextureAdd);
+          if (container && container.scene) {
+            const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
+            birdIcon.setDisplaySize(scale(64), scale(64));
+            container.add(birdIcon);
+          }
+        }
+      };
+      scene.textures.on('addtexture', onTextureAdd);
     }
 
     // Tooltip text - 15px font size

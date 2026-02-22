@@ -895,6 +895,10 @@ public expandProgressCard(houseIndex: number): void {
         isLocked: false,
         status: getModuleStatus(),
         completedLessons: moduleProgress?.lessons_completed || 0,
+        treeGrowthPoints: moduleProgress?.module.tree_growth_points ?? 0,
+        treeCurrentStage: moduleProgress?.module.tree_current_stage ?? 0,
+        treeTotalStages: moduleProgress?.module.tree_total_stages ?? 5,
+        treeCompleted: moduleProgress?.module.tree_completed ?? false,
       };
 
       const progressCard = HouseProgressCard.createProgressCard(

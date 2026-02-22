@@ -61,7 +61,6 @@ export default class HouseScene extends BaseScene {
   private minigameButton?: Phaser.GameObjects.Container;
   private minigameButtonGlowTween?: Phaser.Tweens.Tween;
   private lessonContainers: Phaser.GameObjects.Container[] = [];
-  private roomHitZones: Phaser.GameObjects.Rectangle[] = [];
   private minigameShutdownHandler?: () => void;
   private isRefreshingTreeState: boolean = false;
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
@@ -98,7 +97,6 @@ export default class HouseScene extends BaseScene {
     this.isTransitioning = false;
     this.isRefreshingTreeState = false;
     this.lessonContainers = [];
-    this.roomHitZones = [];
     this.hoverTooltip = undefined;
     this.hoverTooltipLessonId = undefined;
     this.tooltipDestroyTimer = undefined;
@@ -163,7 +161,6 @@ export default class HouseScene extends BaseScene {
     this.destroyBird();
     this.destroyHoverTooltip(true);
     this.lessonContainers = [];
-    this.roomHitZones = [];
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -191,10 +188,9 @@ export default class HouseScene extends BaseScene {
     // Layer 1 (depth 2): Lesson house image with transparent background
     // OPT-02: Check texture exists (Tier 2 may still be loading)
     if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
-      this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
-      this.lessonHouse.setDepth(1);
-
-      const houseScale = Math.min(width, height) * 0.00121;
+      this.lessonHouse = this.add.image(width / 2, height, ASSET_KEYS.LESSON_HOUSE);
+      this.lessonHouse.setOrigin(0.5, 1);      this.lessonHouse.setDepth(1);
+      const houseScale = Math.min(width, height) * 0.001375
       this.lessonHouse.setScale(houseScale);
     } else {
       // Listen for secondary assets and create house when ready
@@ -202,9 +198,10 @@ export default class HouseScene extends BaseScene {
         this.registry.events.off('changedata-secondaryAssetsLoaded', onLoaded);
         if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
           const { width, height } = this.scale;
-          this.lessonHouse = this.add.image(width / 2, height / 2, ASSET_KEYS.LESSON_HOUSE);
+          this.lessonHouse = this.add.image(width / 2, height, ASSET_KEYS.LESSON_HOUSE);
+          this.lessonHouse.setOrigin(0.5, 1);
           this.lessonHouse.setDepth(1);
-          const houseScale = Math.min(width, height) * 0.00121;
+          const houseScale = Math.min(width, height) * 0.001375
           this.lessonHouse.setScale(houseScale);
         }
       };
@@ -222,7 +219,6 @@ export default class HouseScene extends BaseScene {
 
     if (this.module && this.module.lessons.length > 0) {
       this.createLessonCards();
-      this.createRoomHitZones();
     } else {
       this.createLoadingPlaceholder();
     }
@@ -765,12 +761,9 @@ export default class HouseScene extends BaseScene {
 
       this.lessonContainers.forEach((container) => container.destroy());
       this.lessonContainers = [];
-      this.roomHitZones.forEach((zone) => zone.destroy());
-      this.roomHitZones = [];
 
       if (this.module && this.module.lessons.length > 0) {
         this.createLessonCards();
-        this.createRoomHitZones();
       }
     } else {
       // Lessons already loaded — update reference silently for fresh grow_your_nest_played values
@@ -800,10 +793,10 @@ export default class HouseScene extends BaseScene {
     const { width, height } = this.scale;
 
     const defaultPositions = [
-      { x: 29, y: 32 },
-      { x: 76.5, y: 31.5 },
-      { x: 29, y: 70 },
-      { x: 63, y: 70 },
+      { x: 31, y: 33 },   // Top-left room (bedroom screen)
+      { x: 66, y: 33 },   // Top-right room (dining screen)
+      { x: 28, y: 70 },   // Bottom-left room (living room screen)
+      { x: 69, y: 70 },   // Bottom-right room (kitchen screen)
     ];
 
     const defaultPos = defaultPositions[index] || { x: 50, y: 50 };
@@ -883,7 +876,14 @@ export default class HouseScene extends BaseScene {
 
     this.createStatusBadge(lessonContainer, lesson, cardWidth, cardHeight);
 
-    // NOTE: No interactivity added to lesson cards — they are visual only
+    card.setInteractive({ useHandCursor: !lesson.locked });
+    card.on('pointerover', () => {
+      this.cancelTooltipDestroyTimer();
+      this.showHoverTooltip(lesson, x, y);
+    });
+    card.on('pointerout', () => {
+      this.scheduleTooltipDestroy();
+    });
   }
 
   private createStatusBadge(
@@ -941,64 +941,6 @@ export default class HouseScene extends BaseScene {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // ROOM QUADRANT HIT ZONES (transparent hover areas)
-  // ═══════════════════════════════════════════════════════════
-
-  private createRoomHitZones(): void {
-    if (!this.module || !this.lessonHouse) return;
-
-    const { width, height } = this.scale;
-
-    // Get the actual rendered bounds of the house image
-    const houseScale = this.lessonHouse.scaleX;
-    const houseDisplayW = this.lessonHouse.width * houseScale;
-    const houseDisplayH = this.lessonHouse.height * houseScale;
-    const houseLeft = (width - houseDisplayW) / 2;
-    const houseTop = (height - houseDisplayH) / 2;
-
-    const roomQuadrants = [
-      { left: 0.2, top: 0.25, right: 0.45, bottom: 0.5 }, // Room 0: top-left
-      { left: 0.55, top: 0.25, right: 0.825, bottom: 0.45 }, // Room 1: top-right
-      { left: 0.2, top: 0.575, right: 0.45, bottom: 0.87 }, // Room 2: bottom-left
-      { left: 0.55, top: 0.575, right: 0.825, bottom: 0.87 }, // Room 3: bottom-right
-    ];
-
-    this.module.lessons.forEach((lesson, index) => {
-      if (index >= roomQuadrants.length) return;
-
-      const quad = roomQuadrants[index];
-      const zoneX =
-        houseLeft + ((quad.left + quad.right) / 2) * houseDisplayW;
-      const zoneY =
-        houseTop + ((quad.top + quad.bottom) / 2) * houseDisplayH;
-      const zoneW = (quad.right - quad.left) * houseDisplayW;
-      const zoneH = (quad.bottom - quad.top) * houseDisplayH;
-
-      // Transparent rectangle covering the room quadrant
-      const hitZone = this.add.rectangle(
-        zoneX,
-        zoneY,
-        zoneW,
-        zoneH,
-        COLORS.ELEGANT_BLUE,
-        0.3
-      );
-      hitZone.setDepth(15); // Above lesson cards (10) so it receives hover
-      hitZone.setInteractive({ useHandCursor: !lesson.locked });
-      this.roomHitZones.push(hitZone);
-
-      hitZone.on('pointerover', () => {
-        this.cancelTooltipDestroyTimer();
-        this.showHoverTooltip(lesson, zoneX, zoneY);
-      });
-
-      hitZone.on('pointerout', () => {
-        this.scheduleTooltipDestroy();
-      });
-    });
-  }
-
-  // ═══════════════════════════════════════════════════════════
   // TOOLTIP DESTROY TIMER (delayed destroy so button is clickable)
   // ═══════════════════════════════════════════════════════════
 
@@ -1051,7 +993,6 @@ export default class HouseScene extends BaseScene {
     const descFontSize = minDim * 0.017;
     const btnFontSize = minDim * 0.018;
     const unlockFontSize = minDim * 0.014;
-    const closeBtnSize = minDim * 0.022;
 
     // ── Fixed layout slots (top-down, all relative to tooltip top) ──
     const topPad = scale(16);
@@ -1136,54 +1077,6 @@ export default class HouseScene extends BaseScene {
       cornerRadius
     );
     this.hoverTooltip.add(tooltipBg);
-
-    // ── Close (X) icon (clickable — destroys tooltip) ──
-    const closeX = tooltipWidth / 2 - scale(16);
-    const closeIconY = offsetY + scale(16);
-
-    const closeBg = this.add.circle(
-      closeX,
-      closeIconY,
-      closeBtnSize,
-      COLORS.TEXT_BLUE_BLACK,
-      1
-    );
-    this.hoverTooltip.add(closeBg);
-
-    const closeText = this.add
-      .text(
-        closeX,
-        closeIconY,
-        '✕',
-        createTextStyle('BADGE', COLORS.TEXT_PURE_WHITE, {
-          fontSize: `${closeBtnSize}px`,
-        })
-      )
-      .setOrigin(0.5);
-    this.hoverTooltip.add(closeText);
-
-    // Close button hit area
-    const closeHit = this.add.circle(
-      closeX,
-      closeIconY,
-      closeBtnSize + scale(4),
-      0x000000,
-      0
-    );
-    closeHit.setInteractive({ useHandCursor: true });
-    closeHit.on('pointerover', () => {
-      this.isPointerOverTooltip = true;
-      this.cancelTooltipDestroyTimer();
-    });
-    closeHit.on('pointerout', () => {
-      this.isPointerOverTooltip = false;
-      this.scheduleTooltipDestroy();
-    });
-    closeHit.on('pointerdown', () => {
-      this.isPointerOverTooltip = false;
-      this.destroyHoverTooltip();
-    });
-    this.hoverTooltip.add(closeHit);
 
     // ── Title (max ~2 lines, cropped if overflow) ──
     const titleY = offsetY + titleSlotY;
@@ -1443,9 +1336,6 @@ export default class HouseScene extends BaseScene {
     this.lessonContainers.forEach((container) => {
       if (container) allComponents.push(container);
     });
-    this.roomHitZones.forEach((zone) => {
-      if (zone) allComponents.push(zone);
-    });
     if (this.minigameButton) allComponents.push(this.minigameButton);
 
     // Store original positions before sliding out
@@ -1476,9 +1366,6 @@ export default class HouseScene extends BaseScene {
     if (this.lessonHouse) allComponents.push(this.lessonHouse);
     this.lessonContainers.forEach((container) => {
       if (container) allComponents.push(container);
-    });
-    this.roomHitZones.forEach((zone) => {
-      if (zone) allComponents.push(zone);
     });
     if (this.minigameButton) allComponents.push(this.minigameButton);
 
@@ -1573,17 +1460,7 @@ export default class HouseScene extends BaseScene {
         }
       });
     }
-
-    // Re-enable room hit zones
-    this.roomHitZones.forEach((zone, index) => {
-      if (zone && !zone.input) {
-        const lesson = this.module?.lessons[index];
-        zone.setInteractive({
-          useHandCursor: lesson ? !lesson.locked : false,
-        });
-      }
-    });
-
+    
     this.isTransitioning = false;
     console.log(
       '✅ Buttons re-enabled, isTransitioning:',
@@ -1604,11 +1481,8 @@ export default class HouseScene extends BaseScene {
 
         this.lessonContainers.forEach((container) => container.destroy());
         this.lessonContainers = [];
-        this.roomHitZones.forEach((zone) => zone.destroy());
-        this.roomHitZones = [];
 
         this.createLessonCards();
-        this.createRoomHitZones();
       }
     }
   }
@@ -1641,21 +1515,16 @@ export default class HouseScene extends BaseScene {
 
     // Destroy and recreate lesson cards
     this.lessonContainers.forEach((container) => container.destroy());
-    this.lessonContainers = [];
-
-    // Destroy and recreate room hit zones
-    this.roomHitZones.forEach((zone) => zone.destroy());
-    this.roomHitZones = [];
+    this.lessonContainers = []
 
     if (this.module && this.module.lessons.length > 0) {
       this.createLessonCards();
-      this.createRoomHitZones();
     }
 
     if (this.lessonHouse) {
       const { width, height } = this.scale;
-      this.lessonHouse.setPosition(width / 2, height / 2);
-      const houseScale = Math.min(width, height) * 0.00121;
+      this.lessonHouse.setPosition(width / 2, height);
+      const houseScale = Math.min(width, height) * 0.001375
       this.lessonHouse.setScale(houseScale);
     }
   }

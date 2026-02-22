@@ -15,8 +15,12 @@ export interface HouseProgressData {
   quizCount?: number;
   coinReward?: number;
   isLocked?: boolean;
-  status?: 'start' | 'continue' | 'locked'; // Button text status
-  completedLessons?: number; // Number of completed lessons
+  status?: 'start' | 'continue' | 'locked';
+  completedLessons?: number;
+  treeGrowthPoints?: number;
+  treeCurrentStage?: number;
+  treeTotalStages?: number;
+  treeCompleted?: boolean;
 }
 
 export class HouseProgressCard {
@@ -313,50 +317,46 @@ export class HouseProgressCard {
       progressContainer.add(progressCircleBg);
       
       // Draw circular progress fill (green arc based on completed lessons)
-      let progressPercentForCircle = 0;
-      if (totalLessons > 0 && completedLessons > 0) {
-        progressPercentForCircle = (completedLessons / totalLessons) * 100;
+      const treeGrowthPoints = data.treeGrowthPoints ?? 0;
+      const treeCurrentStage = data.treeCurrentStage ?? 0;
+      const treeTotalStages = data.treeTotalStages ?? 5;
+      const treeCompleted = data.treeCompleted ?? false;
+      const pointsPerStage = 50;
+      const treeTotalPoints = treeTotalStages * pointsPerStage;
+
+      let treeProgressPercent = 0;
+      if (treeCompleted) {
+        treeProgressPercent = 100;
+      } else if (treeTotalPoints > 0) {
+        treeProgressPercent = (treeGrowthPoints / treeTotalPoints) * 100;
       }
-      
+
       const progressCircleFill = scene.add.graphics();
-      progressCircleFill.lineStyle(scale(3), COLORS.STATUS_GREEN, 1); // StatusGreen - Success green
-      
-      // Draw arc from top (270 degrees) clockwise
+      progressCircleFill.lineStyle(scale(3), COLORS.STATUS_GREEN, 1);
+
       const startAngle = Phaser.Math.DegToRad(270);
-      const endAngle = Phaser.Math.DegToRad(270 + (360 * progressPercentForCircle / 100));
-      
-      if (progressPercentForCircle > 0) {
+      const endAngle = Phaser.Math.DegToRad(270 + (360 * treeProgressPercent / 100));
+
+      if (treeProgressPercent > 0) {
         progressCircleFill.beginPath();
         progressCircleFill.arc(circleX, bottomY, circleRadius, startAngle, endAngle, false);
         progressCircleFill.strokePath();
       }
       progressContainer.add(progressCircleFill);
 
-      // Map progress percentage to tree stages (1-7)
-      let treeStage: number;
-      if (progressPercentForCircle === 0) {
-        treeStage = 1;
-      } else if (progressPercentForCircle === 100) {
-        treeStage = 7; // Final stage when complete
-      } else {
-        // Stages 2-6 for progress in between
-        treeStage = Math.floor((progressPercentForCircle / 100) * 5) + 2;
-        treeStage = Math.min(treeStage, 6); // Cap at stage 6 until 100%
-      }
+      // Use actual tree stage from backend (1-indexed for display, clamped to 1-5)
+      let treeStage = treeCurrentStage + 1;
+      if (treeStage > 5) treeStage = 5;
+      if (treeStage < 1) treeStage = 1;
 
-      // Display the tree stage image — guarded with textures.exists()
-      // Tree stages are Tier 2 assets; may still be loading on fast navigation
+      // Display the tree stage image
       const treeKey = `tree_stage_${treeStage}`;
       if (scene.textures.exists(treeKey)) {
         const treeIcon = scene.add.image(circleX, bottomY, treeKey);
-
-        // Scale the tree to fit in the circular progress indicator
-        // The circle has radius of scale(16), so tree should fit within ~scale(28) diameter
         const targetSize = scale(28);
         const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
         treeIcon.setScale(treeScale);
         treeIcon.setOrigin(0.5);
-
         progressContainer.add(treeIcon);
       }
 
