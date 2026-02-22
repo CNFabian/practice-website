@@ -33,6 +33,21 @@ export class UIComponents {
       coinIcon.setDisplaySize(scale(30), scale(30));
       coinIcon.setOrigin(0.5);
       container.add(coinIcon);
+    } else {
+      // Texture not ready yet — add it as soon as it becomes available
+      const onTextureAdd = (key: string) => {
+        if (key === 'coinIcon') {
+          scene.textures.off('addtexture', onTextureAdd);
+          // Verify container still exists (scene may have been destroyed)
+          if (container && container.scene) {
+            const coinIcon = scene.add.image(-scale(30), 0, 'coinIcon');
+            coinIcon.setDisplaySize(scale(30), scale(30));
+            coinIcon.setOrigin(0.5);
+            container.add(coinIcon);
+          }
+        }
+      };
+      scene.textures.on('addtexture', onTextureAdd);
     }
 
     // Coin text (on the right)

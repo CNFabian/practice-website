@@ -87,13 +87,19 @@ export function transformBackendLessonsToFrontend(
     lessons: lessonsData.map((lesson: BackendLessonData, index: number) => {
       const frontendId = generateFrontendId(lesson.id || `lesson-${index}`, 20000);
 
+      // Sequential unlock: first lesson always unlocked,
+      // subsequent lessons unlock when the previous lesson is completed
+      const isLocked = index === 0
+        ? false
+        : !(lessonsData[index - 1]?.is_completed || false);
+
       return {
         id: frontendId,
         backendId: lesson.id,
         title: lesson.title || `Lesson ${index + 1}`,
         type: 'Video/Reading',
         completed: lesson.is_completed || false,
-        locked: false,
+        locked: isLocked,
         duration: `${lesson.estimated_duration_minutes || 10} min`,
         description: lesson.description || '',
         image: lesson.image_url || '/placeholder-lesson.jpg',

@@ -5,12 +5,12 @@ import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { queryClient } from './lib/queryClient'
-import { store, persistor } from './store/store'
-import { WalkthroughProvider } from './contexts/WalkthroughContext'
+import { queryClient } from '../lib/queryClient'
+import { store, persistor } from '../store/store'
+import { WalkthroughProvider } from '../contexts/WalkthroughContext'
 import App from './App'
-import ResetPasswordPage from './features/auth/pages/ResetPasswordPage'
-import './index.css'
+import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage'
+import '../index.css'
 
 const isResetPasswordRoute = window.location.pathname.startsWith('/reset-password')
 

@@ -112,8 +112,7 @@ class GameManager {
 
       // Only start PreloaderScene if assets haven't been loaded yet
       if (!this.assetsLoaded && this.game) {
-        console.log('=== STARTING PRELOADER SCENE (FIRST TIME) ===');
-        this.game.scene.start('PreloaderScene');
+        console.log('=== PRELOADER SCENE AUTO-STARTED BY PHASER — POLLING FOR COMPLETION ===');
 
         // Poll for assets loaded
         const checkInterval = setInterval(() => {

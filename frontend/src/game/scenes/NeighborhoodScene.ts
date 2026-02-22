@@ -56,6 +56,14 @@ export default class NeighborhoodScene extends BaseScene {
   private backgroundClouds: Phaser.GameObjects.Image[] = [];
   private cloudTweens: Phaser.Tweens.Tween[] = [];
 
+  // Scrollbar properties
+  private scrollbarTrack?: Phaser.GameObjects.Graphics;
+  private scrollbarThumb?: Phaser.GameObjects.Graphics;
+  private scrollbarThumbZone?: Phaser.GameObjects.Zone;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartX: number = 0;
+  private scrollbarDragStartScrollX: number = 0;
+
   // Bird character properties
   private bird?: BirdCharacter;
   private currentHouseIndex: number = 0;
@@ -213,6 +221,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Setup camera for horizontal scrolling
     this.setupCamera();
+    this.createScrollbar();
 
     const dashboardModules = this.registry.get('dashboardModules') || [];
     
@@ -249,7 +258,7 @@ export default class NeighborhoodScene extends BaseScene {
     
     // Setup mouse/touch drag controls for horizontal scrolling
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.isDown && !this.isTransitioning && !this.isBirdTraveling) {
+      if (pointer.isDown && !this.isTransitioning && !this.isBirdTraveling && !this.isScrollbarDragging) {
         // Drag camera horizontally only
         const dragSpeedX = pointer.velocity.x * 0.1;
         const newScrollX = this.cameras.main.scrollX - dragSpeedX;
@@ -276,6 +285,169 @@ export default class NeighborhoodScene extends BaseScene {
     });
     
     console.log(`📷 Camera setup: World ${worldWidth}x${worldHeight}, Viewport ${width}x${height}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SCROLLBAR
+  // ═══════════════════════════════════════════════════════════
+  private createScrollbar(): void {
+    const { width, height } = this.scale;
+    const worldWidth = width * 2.5;
+
+    // Scrollbar dimensions
+    const trackHeight = scale(6);
+    const trackMarginX = scale(40);
+    const trackY = height - scale(20);
+    const trackWidth = width - trackMarginX * 2;
+
+    // Thumb width is proportional to how much of the world is visible
+    const viewRatio = width / worldWidth;
+    const thumbWidth = Math.max(trackWidth * viewRatio, scale(40));
+
+    // Track (background)
+    this.scrollbarTrack = this.add.graphics();
+    this.scrollbarTrack.fillStyle(COLORS.UNAVAILABLE_BUTTON, 0.3);
+    this.scrollbarTrack.fillRoundedRect(trackMarginX, trackY - trackHeight / 2, trackWidth, trackHeight, trackHeight / 2);
+    this.scrollbarTrack.setScrollFactor(0);
+    this.scrollbarTrack.setDepth(100);
+
+    // Thumb (draggable indicator)
+    this.scrollbarThumb = this.add.graphics();
+    this.scrollbarThumb.fillStyle(COLORS.LOGO_BLUE, 0.5);
+    this.scrollbarThumb.fillRoundedRect(0, 0, thumbWidth, trackHeight, trackHeight / 2);
+    this.scrollbarThumb.setScrollFactor(0);
+    this.scrollbarThumb.setDepth(101);
+    this.scrollbarThumb.setPosition(trackMarginX, trackY - trackHeight / 2);
+
+    // Interactive zone for thumb dragging
+    this.scrollbarThumbZone = this.add.zone(
+      trackMarginX + thumbWidth / 2,
+      trackY,
+      thumbWidth,
+      scale(30) // Larger hit area for easier grabbing
+    );
+    this.scrollbarThumbZone.setScrollFactor(0);
+    this.scrollbarThumbZone.setDepth(102);
+    this.scrollbarThumbZone.setInteractive({ useHandCursor: true, draggable: true });
+
+    // Drag events
+    this.input.setDraggable(this.scrollbarThumbZone);
+
+    this.scrollbarThumbZone.on('dragstart', (pointer: Phaser.Input.Pointer) => {
+      this.isScrollbarDragging = true;
+      this.scrollbarDragStartX = pointer.x;
+      this.scrollbarDragStartScrollX = this.cameras.main.scrollX;
+      // Increase thumb opacity on drag
+      if (this.scrollbarThumb) {
+        this.scrollbarThumb.clear();
+        this.scrollbarThumb.fillStyle(COLORS.LOGO_BLUE, 0.8);
+        this.scrollbarThumb.fillRoundedRect(0, 0, thumbWidth, trackHeight, trackHeight / 2);
+      }
+    });
+
+    this.scrollbarThumbZone.on('drag', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isScrollbarDragging) return;
+
+      const dragDeltaX = pointer.x - this.scrollbarDragStartX;
+      const maxScrollX = worldWidth - width;
+      const scrollableTrackWidth = trackWidth - thumbWidth;
+
+      // Convert track drag to camera scroll
+      const scrollRatio = maxScrollX / scrollableTrackWidth;
+      const newScrollX = this.scrollbarDragStartScrollX + dragDeltaX * scrollRatio;
+      const clampedScrollX = Phaser.Math.Clamp(newScrollX, 0, maxScrollX);
+
+      this.cameras.main.setScroll(clampedScrollX, 0);
+    });
+
+    this.scrollbarThumbZone.on('dragend', () => {
+      this.isScrollbarDragging = false;
+      // Restore thumb opacity
+      if (this.scrollbarThumb) {
+        this.scrollbarThumb.clear();
+        this.scrollbarThumb.fillStyle(COLORS.LOGO_BLUE, 0.5);
+        this.scrollbarThumb.fillRoundedRect(0, 0, thumbWidth, trackHeight, trackHeight / 2);
+      }
+    });
+
+    // Hover effects
+    this.scrollbarThumbZone.on('pointerover', () => {
+      if (!this.isScrollbarDragging && this.scrollbarThumb) {
+        this.scrollbarThumb.clear();
+        this.scrollbarThumb.fillStyle(COLORS.LOGO_BLUE, 0.7);
+        this.scrollbarThumb.fillRoundedRect(0, 0, thumbWidth, trackHeight, trackHeight / 2);
+      }
+    });
+
+    this.scrollbarThumbZone.on('pointerout', () => {
+      if (!this.isScrollbarDragging && this.scrollbarThumb) {
+        this.scrollbarThumb.clear();
+        this.scrollbarThumb.fillStyle(COLORS.LOGO_BLUE, 0.5);
+        this.scrollbarThumb.fillRoundedRect(0, 0, thumbWidth, trackHeight, trackHeight / 2);
+      }
+    });
+
+    // Click on track to jump to position
+    const trackZone = this.add.zone(
+      width / 2,
+      trackY,
+      trackWidth,
+      scale(30)
+    );
+    trackZone.setScrollFactor(0);
+    trackZone.setDepth(99); // Below thumb
+    trackZone.setInteractive({ useHandCursor: true });
+    trackZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const clickX = pointer.x - trackMarginX;
+      const maxScrollX = worldWidth - width;
+      const scrollableTrackWidth = trackWidth - thumbWidth;
+      const ratio = Phaser.Math.Clamp((clickX - thumbWidth / 2) / scrollableTrackWidth, 0, 1);
+      const targetScrollX = ratio * maxScrollX;
+
+      // Smooth scroll to position
+      this.tweens.add({
+        targets: this.cameras.main,
+        scrollX: targetScrollX,
+        duration: 300,
+        ease: 'Cubic.easeOut'
+      });
+    });
+  }
+
+  private updateScrollbarPosition(): void {
+    if (!this.scrollbarThumb || !this.scrollbarThumbZone) return;
+
+    const { width } = this.scale;
+    const worldWidth = width * 2.5;
+    const trackMarginX = scale(40);
+    const trackWidth = width - trackMarginX * 2;
+    const viewRatio = width / worldWidth;
+    const thumbWidth = Math.max(trackWidth * viewRatio, scale(40));
+    const scrollableTrackWidth = trackWidth - thumbWidth;
+    const maxScrollX = worldWidth - width;
+
+    const scrollRatio = maxScrollX > 0 ? this.cameras.main.scrollX / maxScrollX : 0;
+    const thumbX = trackMarginX + scrollRatio * scrollableTrackWidth;
+
+    this.scrollbarThumb.setPosition(thumbX, this.scrollbarThumb.y);
+    this.scrollbarThumbZone.setPosition(thumbX + thumbWidth / 2, this.scrollbarThumbZone.y);
+  }
+
+  private destroyScrollbar(): void {
+    if (this.scrollbarTrack) {
+      this.scrollbarTrack.destroy();
+      this.scrollbarTrack = undefined;
+    }
+    if (this.scrollbarThumb) {
+      this.scrollbarThumb.destroy();
+      this.scrollbarThumb = undefined;
+    }
+    if (this.scrollbarThumbZone) {
+      this.scrollbarThumbZone.removeAllListeners();
+      this.scrollbarThumbZone.destroy();
+      this.scrollbarThumbZone = undefined;
+    }
+    this.isScrollbarDragging = false;
   }
 
   shutdown() {
@@ -335,6 +507,7 @@ export default class NeighborhoodScene extends BaseScene {
       this.grassLayer = undefined;
     }
     
+    this.destroyScrollbar();
     this.tweens.killAll();
     this.progressCards.forEach(card => card.destroy());
     this.progressCards.clear();
@@ -771,6 +944,14 @@ public expandProgressCard(houseIndex: number): void {
       cloud.setAlpha(0);
     });
 
+    // Set scrollbar invisible
+    if (this.scrollbarTrack) {
+      this.scrollbarTrack.setAlpha(0);
+    }
+    if (this.scrollbarThumb) {
+      this.scrollbarThumb.setAlpha(0);
+    }
+
     // Keep locked tooltips hidden (they only appear on hover)
     this.lockedTooltips.forEach((tooltip) => {
       tooltip.setAlpha(0);
@@ -1193,6 +1374,24 @@ public expandProgressCard(houseIndex: number): void {
       });
     }
 
+    // Fade in scrollbar
+    if (this.scrollbarTrack) {
+      this.tweens.add({
+        targets: this.scrollbarTrack,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+    if (this.scrollbarThumb) {
+      this.tweens.add({
+        targets: this.scrollbarThumb,
+        alpha: 1,
+        duration: fadeDuration,
+        ease: 'Cubic.easeOut'
+      });
+    }
+
     // Locked tooltips stay hidden (only appear on hover)
     this.lockedTooltips.forEach((tooltip) => {
       tooltip.setAlpha(0);
@@ -1204,6 +1403,8 @@ public expandProgressCard(houseIndex: number): void {
     if (this.bird) {
       this.bird.enforceAlpha();
     }
+    // Keep scrollbar thumb in sync with camera scroll
+    this.updateScrollbarPosition();
   }
 
   private createPlaceholder(): void {
@@ -1390,18 +1591,24 @@ public expandProgressCard(houseIndex: number): void {
 
     this.handleCoinCounterResize();
     
+    // Destroy and recreate scrollbar for new dimensions
+    this.destroyScrollbar();
+
     // Recalculate camera bounds for new size
     const { width, height } = this.scale;
     const worldWidth = width * 2.5;
     const worldHeight = height;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-    
+
     // Reset camera scroll if it's out of new bounds
     const maxScrollX = Math.max(0, worldWidth - width);
     const currentScrollX = this.cameras.main.scrollX;
     if (currentScrollX > maxScrollX) {
       this.cameras.main.setScroll(maxScrollX, 0);
     }
+
+    // Recreate scrollbar with new dimensions
+    this.createScrollbar();
     
     // Use consistent positioning formula - same as createBird() and travelToHouse()
     if (this.bird && this.houses.length > 0) {

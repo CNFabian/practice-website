@@ -810,8 +810,8 @@ export default class HouseScene extends BaseScene {
         ? (lesson.y / 100) * height
         : (defaultPos.y / 100) * height;
 
-    const cardWidth = width * 0.24;
-    const cardHeight = height * 0.175;
+    const cardWidth = width * 0.27;
+    const cardHeight = height * 0.19;
 
     const lessonContainer = this.add.container(x, y);
     lessonContainer.setDepth(10);
@@ -825,14 +825,40 @@ export default class HouseScene extends BaseScene {
       cardWidth,
       cardHeight,
       COLORS.PURE_WHITE,
-      0.7
+      1
     );
     const strokeWidth = Math.max(2, width * 0.002);
     card.setStrokeStyle(strokeWidth, COLORS.UNAVAILABLE_BUTTON);
     lessonContainer.add(card);
 
+    // Lesson number badge (top-left of card)
+    const lessonNumber = index + 1;
+    const badgeRadius = Math.min(width, height) * 0.018;
+    const numberBadgeX = -cardWidth * 0.4;
+    const numberBadgeY = -cardHeight * 0.35;
+    const numberBadgeBg = this.add.circle(
+      numberBadgeX,
+      numberBadgeY,
+      badgeRadius,
+      COLORS.LOGO_BLUE
+    );
+    lessonContainer.add(numberBadgeBg);
+
+    const numberSize = Math.min(width, height) * 0.018;
+    const numberText = this.add
+      .text(
+        numberBadgeX,
+        numberBadgeY,
+        `${lessonNumber}`,
+        createTextStyle('BADGE', COLORS.TEXT_WHITE_HEX, {
+          fontSize: `${numberSize}px`,
+        })
+      )
+      .setOrigin(0.5);
+    lessonContainer.add(numberText);
+
     const titleSize = Math.min(width, height) * 0.022;
-    const titleOffsetY = -cardHeight * 0.3;
+    const titleOffsetY = -cardHeight * 0.12;
     const titleText = this.add
       .text(
         0,
@@ -841,14 +867,14 @@ export default class HouseScene extends BaseScene {
         createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
           fontSize: `${titleSize}px`,
           align: 'center',
-          wordWrap: { width: cardWidth * 0.9 },
+          wordWrap: { width: cardWidth * 0.75 },
         })
       )
       .setOrigin(0.5);
     lessonContainer.add(titleText);
 
     const typeSize = Math.min(width, height) * 0.016;
-    const typeOffsetY = -cardHeight * 0.1;
+    const typeOffsetY = titleOffsetY + titleText.height + scale(4);
     const typeText = this.add
       .text(
         0,

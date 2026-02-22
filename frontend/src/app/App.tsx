@@ -1,29 +1,29 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useEffect, useState, useRef, lazy, Suspense } from 'react'
-import type { RootState } from './store/store'
-import { setLoading, logout, setUser } from './store/slices/authSlice'
-import { getCurrentUser, clearAuthData, isAuthenticated } from './services/authAPI'
-import { checkOnboardingStatus } from './services/learningAPI'
-import PublicLayout from './layouts/PublicLayout'
-import MainLayout from './layouts/MainLayout'
-import ProtectedRoute from './components/common/ProtectedRoute'
-import AdminRoute from './components/common/AdminRoute'
-import LoadingSpinner from './components/common/LoadingSpinner'
-import MobileGate from './components/common/MobileGate'
-import ModulesPage from './features/modules/pages/ModulesPage'
+import type { RootState } from '../store/store'
+import { setLoading, logout, setUser } from '../store/slices/authSlice'
+import { getCurrentUser, clearAuthData, isAuthenticated } from '../services/authAPI'
+import { checkOnboardingStatus } from '../services/learningAPI'
+import PublicLayout from '../layouts/PublicLayout'
+import MainLayout from '../layouts/MainLayout'
+import ProtectedRoute from '../components/common/ProtectedRoute'
+import AdminRoute from '../components/common/AdminRoute'
+import LoadingSpinner from '../components/common/LoadingSpinner'
+import MobileGate from '../components/common/MobileGate'
+import ModulesPage from '../features/modules/pages/ModulesPage'
 
-const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'))
-const SignupPage = lazy(() => import('./features/auth/pages/SignupPage'))
-const OnboardingPage = lazy(() => import('./features/onboarding/pages/OnboardingPage'))
-const OverviewPage = lazy(() => import('./features/dashboard/pages/OverviewPage'))
-const MaterialsPage = lazy(() => import('./features/materials/pages/MaterialsPage'))
-const RewardsPage = lazy(() => import('./features/rewards/pages/RewardsPage'))
-const BadgesPage = lazy(() => import('./features/badges/pages/BadgesPage'))
-const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'))
-const HelpPage = lazy(() => import('./features/help/pages/HelpPage'))
-const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'))
-const AdminDashboardPage = lazy(() => import('./features/admin/pages/AdminDashboardPage'))
+const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'))
+const SignupPage = lazy(() => import('../features/auth/pages/SignupPage'))
+const OnboardingPage = lazy(() => import('../features/onboarding/pages/OnboardingPage'))
+const OverviewPage = lazy(() => import('../features/dashboard/pages/OverviewPage'))
+const MaterialsPage = lazy(() => import('../features/materials/pages/MaterialsPage'))
+const RewardsPage = lazy(() => import('../features/rewards/pages/RewardsPage'))
+const BadgesPage = lazy(() => import('../features/badges/pages/BadgesPage'))
+const SettingsPage = lazy(() => import('../features/settings/pages/SettingsPage'))
+const HelpPage = lazy(() => import('../features/help/pages/HelpPage'))
+const NotificationsPage = lazy(() => import('../features/notifications/pages/NotificationsPage'))
+const AdminDashboardPage = lazy(() => import('../features/admin/pages/AdminDashboardPage'))
 
 // ═══════════════════════════════════════════════════════════
 // Cache helpers — persist auth state so refreshes are instant
