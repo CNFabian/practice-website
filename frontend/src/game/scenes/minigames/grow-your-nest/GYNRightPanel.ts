@@ -682,15 +682,8 @@ export function showFeedbackBanner(
   const HORIZONTAL_PADDING = panelWidth * 0.08;
   const contentWidth = panelWidth - HORIZONTAL_PADDING * 2;
 
-  // Position the banner below the last option button, above the next button
-  const lastOptionBtn = state.optionButtons[state.optionButtons.length - 1];
-  const lastOptionY = lastOptionBtn ? lastOptionBtn.y : panelHeight * 0.6;
-  const lastOptionHeight = lastOptionBtn
-    ? (lastOptionBtn.getData('buttonHeight') as number) || 0
-    : 0;
-
-  const bannerGap = panelHeight * 0.025;
-  const bannerY = lastOptionY + lastOptionHeight / 2 + bannerGap;
+  // Position the banner at the TOP of the question area to avoid overlapping option D
+  const bannerY = panelHeight * 0.12;
   const bannerHeight = panelHeight * 0.075;
   const bannerRadius = panelHeight * 0.075 / 2;
 

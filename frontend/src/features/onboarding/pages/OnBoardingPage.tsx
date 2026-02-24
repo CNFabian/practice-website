@@ -460,12 +460,12 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
               </div>
 
               <div className="max-w-xl mx-auto space-y-6">
-                <div className="text-center">
-                  <OnestFont weight={700} lineHeight="tight" className="text-4xl mb-2 text-elegant-blue">
+                <div className="flex flex-col items-center gap-1">
+                  <OnestFont weight={700} lineHeight="tight" className="text-4xl text-elegant-blue block">
                     {formatTimeline(formData.homeownership_timeline_months)}
                   </OnestFont>
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-                    Estimated timeline
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey block">
+                    (Estimated timeline)
                   </OnestFont>
                 </div>
 
@@ -536,8 +536,8 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                 </OnestFont>
               </div>
 
-              <div className="max-w-xl mx-auto space-y-2">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue text-right">
+              <div className="max-w-xl mx-auto space-y-4">
+                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue text-center">
                   Search by City Name or ZIP Code
                 </OnestFont>
                 <div className="relative">
@@ -643,7 +643,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
 
                 {/* Helper Text */}
                 {!cityInput && selectedCities.length === 0 && (
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-4 text-center">
                     Start typing to search for your city
                   </OnestFont>
                 )}

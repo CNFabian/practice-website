@@ -1456,10 +1456,9 @@ public expandProgressCard(houseIndex: number): void {
     
     // Use consistent positioning formula
     const progressCardOffsetX = scale(250);
-    const collapsedHeight = scale(70);
     
     const birdX = houseX + progressCardOffsetX + scale(100);
-    const birdY = houseY + (collapsedHeight / 10) - scale(15); // Bottom of card
+    const birdY = houseY - scale(50); // Top of card area
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
@@ -1494,10 +1493,9 @@ public expandProgressCard(houseIndex: number): void {
     
     // Use consistent positioning formula - same as createBird()
     const progressCardOffsetX = scale(250);
-    const collapsedHeight = scale(70);
     
     const finalX = targetX + progressCardOffsetX + scale(100);
-    const finalY = targetY + (collapsedHeight / 10) - scale(40); // Progress bar
+    const finalY = targetY - scale(50); // Top of card area
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
@@ -1616,11 +1614,10 @@ public expandProgressCard(houseIndex: number): void {
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
       
       const progressCardOffsetX = scale(250);
-      const collapsedHeight = scale(70);
       
       const birdX = x + progressCardOffsetX + scale(100);
-      const birdY = y + (collapsedHeight / 10) - scale(15);
-      
+      const birdY = y - scale(50);
+
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();
     }

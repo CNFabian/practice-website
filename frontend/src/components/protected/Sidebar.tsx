@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 import { Link, useLocation } from 'react-router-dom';
 import { Disclosure, Transition } from '@headlessui/react';
 import { RootState } from '../../store/store';
-import { selectIsAdmin } from '../../store/slices/authSlice';
+import { selectIsAdmin, logout } from '../../store/slices/authSlice';
 import {
   HomeIcon,
   ModuleIcon,
@@ -22,10 +23,15 @@ import {
 } from '../../assets';
 import OnboardingPage from '../../features/onboarding/pages/OnboardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { logoutUser } from '../../services/authAPI';
+import { featureFlags } from '../../utils/featureFlags';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
 
   const { data: unreadData } = useUnreadCount();
@@ -34,11 +40,24 @@ const Sidebar: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = selectIsAdmin(user);
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logoutUser();
+      dispatch(logout());
+      navigate('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      dispatch(logout());
+      navigate('/auth/login');
+    }
+  };
+
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app/overview', icon: HomeIcon },
     { id: 'modules', label: 'Modules', path: '/app', icon: ModuleIcon },
-    { id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon },
-    { id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon },
+    ...(featureFlags.rewards ? [{ id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon }] : []),
+    ...(featureFlags.badges ? [{ id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon }] : []),
     { id: 'notifications', label: 'Notifications', path: '/app/notifications', icon: GetHelpIcon },
   ];
 
@@ -130,7 +149,7 @@ const Sidebar: React.FC = () => {
               </Link>
             ))}
 
-            {!isCollapsed && (
+            {!isCollapsed && featureFlags.materials && (
               <Disclosure defaultOpen={location.pathname.startsWith('/app/materials')}>
                 {({ open }) => (
                   <>
@@ -192,7 +211,7 @@ const Sidebar: React.FC = () => {
               </Disclosure>
             )}
 
-            {isCollapsed && (
+            {isCollapsed && featureFlags.materials && (
               <Link
                 to="/app/materials"
                 className={`
@@ -256,6 +275,32 @@ const Sidebar: React.FC = () => {
                 )}
               </Link>
             ))}
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={`
+                flex items-center rounded-2xl transition-all duration-200
+                text-text-grey hover:text-status-red hover:bg-status-red/10
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'}
+                w-full
+              `}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <OnestFont
+                weight={500}
+                lineHeight="relaxed"
+                className={`text-sm whitespace-nowrap transition-all duration-300 ${
+                  isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                }`}
+              >
+                {isLoggingOut ? 'Logging out...' : 'Log Out'}
+              </OnestFont>
+            </button>
           </div>
         </div>
       </aside>

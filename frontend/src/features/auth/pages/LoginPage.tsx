@@ -116,141 +116,190 @@ const LoginPage: React.FC = () => {
           {/* Right side - Form card */}
           <div className="flex-1 flex items-center justify-center lg:justify-end">
             <div className="w-full max-w-lg bg-pure-white/95 backdrop-blur-sm rounded-2xl border border-unavailable-button/30 shadow-lg p-8 md:p-10">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="text-center space-y-3">
-                  <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
-                    Welcome Back!
-                  </OnestFont>
-                  <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
-                    Continue your home buying learning journey today
-                    and get one step closer to your dream home!
-                  </OnestFont>
-                </div>
-
-                {error && (
-                  <div className="bg-status-red/10 border border-status-red rounded-lg p-3">
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
-                      {error}
-                    </OnestFont>
-                  </div>
-                )}
-
-                <input
-                  type="email"
-                  placeholder="email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  required
-                  className={inputClassName}
-                />
-
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onPaste={(e) => e.preventDefault()}
-                    autoComplete="current-password"
-                    required
-                    className={`${inputClassName} pr-12`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
-                  >
-                    <img
-                      src={showPassword ? Eye : Blind}
-                      alt={showPassword ? 'Hide password' : 'Show password'}
-                      className="w-5 h-5"
-                    />
-                  </button>
-                </div>
-
-                {/* Forgot Password link */}
-                <div className="text-right">
+              {showForgotPassword ? (
+                /* ──── Forgot Password View ──── */
+                <div className="space-y-6">
+                  {/* Back to Login button */}
                   <button
                     type="button"
                     onClick={() => {
-                      setShowForgotPassword(!showForgotPassword)
-                      setResetEmail(email)
+                      setShowForgotPassword(false)
                       setResetMessage('')
                       setResetError('')
                     }}
-                    className="focus:outline-none"
+                    className="flex items-center gap-1 text-logo-blue hover:underline focus:outline-none"
                   >
-                    <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue hover:underline">
-                      Forgot Password?
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
+                      Back to Login
                     </OnestFont>
                   </button>
-                </div>
 
-                {/* Forgot Password Inline Section */}
-                {showForgotPassword && (
-                  <div className="bg-light-background-blue rounded-xl p-4 space-y-3">
-                    <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-sm text-text-grey text-center">
+                  <div className="text-center space-y-3">
+                    <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
+                      Reset Password
+                    </OnestFont>
+                    <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
                       Enter your email and we'll send you a link to reset your password.
                     </OnestFont>
-                    <input
-                      type="email"
-                      placeholder="email address"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      className="w-full px-6 py-3 rounded-full bg-pure-white text-text-blue-black placeholder-unavailable-button border border-transparent-elegant-blue focus:outline-none focus:ring-2 focus:ring-logo-blue"
-                    />
-                    {resetMessage && (
-                      <div className="px-3 py-2 rounded-lg bg-status-green/10">
-                        <OnestFont weight={500} lineHeight="relaxed" className="text-status-green text-sm text-center">
-                          {resetMessage}
-                        </OnestFont>
-                      </div>
-                    )}
-                    {resetError && (
-                      <div className="px-3 py-2 rounded-lg bg-status-red/10">
-                        <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
-                          {resetError}
-                        </OnestFont>
-                      </div>
-                    )}
+                  </div>
+
+                  {resetMessage && (
+                    <div className="px-3 py-2 rounded-lg bg-status-green/10 border border-status-green">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-status-green text-sm text-center">
+                        {resetMessage}
+                      </OnestFont>
+                    </div>
+                  )}
+                  {resetError && (
+                    <div className="px-3 py-2 rounded-lg bg-status-red/10 border border-status-red">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
+                        {resetError}
+                      </OnestFont>
+                    </div>
+                  )}
+
+                  <input
+                    type="email"
+                    placeholder="email address"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className={inputClassName}
+                  />
+
+                  <div className="flex justify-center pt-2">
                     <button
                       type="button"
                       onClick={handleForgotPassword}
                       disabled={resetLoading}
-                      className="w-full bg-elegant-blue text-pure-white py-2.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                      className="w-48 bg-logo-blue text-pure-white py-3.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
                     >
-                      <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                        {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                      {resetLoading && (
+                        <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
+                      )}
+                      <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
+                        {resetLoading ? 'SENDING...' : 'SEND LINK'}
                       </OnestFont>
                     </button>
                   </div>
-                )}
 
-                <div className="flex justify-center pt-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-48 bg-logo-blue text-pure-white py-3.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
-                  >
-                    {loading && (
-                      <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
-                    )}
-                    <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-                      LOG IN
+                  <div className="text-center pt-2">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
+                      Remember your password?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForgotPassword(false)
+                          setResetMessage('')
+                          setResetError('')
+                        }}
+                        className="text-logo-blue hover:underline"
+                      >
+                        Log in
+                      </button>
                     </OnestFont>
-                  </button>
+                  </div>
                 </div>
+              ) : (
+                /* ──── Login View ──── */
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="text-center space-y-3">
+                    <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
+                      Welcome Back!
+                    </OnestFont>
+                    <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
+                      Continue your home buying learning journey today
+                      and get one step closer to your dream home!
+                    </OnestFont>
+                  </div>
 
-                <div className="text-center pt-2">
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
-                    No account yet? Register{' '}
-                    <a href="/auth/signup" className="text-logo-blue hover:underline">
-                      here
-                    </a>
-                  </OnestFont>
-                </div>
-              </form>
+                  {error && (
+                    <div className="bg-status-red/10 border border-status-red rounded-lg p-3">
+                      <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-sm text-center">
+                        {error}
+                      </OnestFont>
+                    </div>
+                  )}
+
+                  <input
+                    type="email"
+                    placeholder="email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                    className={inputClassName}
+                  />
+
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onPaste={(e) => e.preventDefault()}
+                      autoComplete="current-password"
+                      required
+                      className={`${inputClassName} pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-unavailable-button hover:text-text-grey focus:outline-none"
+                    >
+                      <img
+                        src={showPassword ? Eye : Blind}
+                        alt={showPassword ? 'Hide password' : 'Show password'}
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  </div>
+
+                  {/* Forgot Password link */}
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true)
+                        setResetEmail(email)
+                        setResetMessage('')
+                        setResetError('')
+                      }}
+                      className="focus:outline-none"
+                    >
+                      <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue hover:underline">
+                        Forgot Password?
+                      </OnestFont>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-center pt-2">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-48 bg-logo-blue text-pure-white py-3.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
+                    >
+                      {loading && (
+                        <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
+                      )}
+                      <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
+                        LOG IN
+                      </OnestFont>
+                    </button>
+                  </div>
+
+                  <div className="text-center pt-2">
+                    <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
+                      No account yet? Register{' '}
+                      <a href="/auth/signup" className="text-logo-blue hover:underline">
+                        here
+                      </a>
+                    </OnestFont>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

@@ -8,9 +8,17 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { queryClient } from '../lib/queryClient'
 import { store, persistor } from '../store/store'
 import { WalkthroughProvider } from '../contexts/WalkthroughContext'
+import { ToastProvider } from '../contexts/ToastContext'
+import ToastContainer from '../components/shared/ToastContainer'
+import ReactGA from 'react-ga4'
 import App from './App'
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage'
 import '../index.css'
+
+// Initialize Google Analytics
+const GA_TRACKING_ID = 'G-MFJ1V9NWW0'
+ReactGA.initialize(GA_TRACKING_ID)
+ReactGA.send({ hitType: 'pageview', page: window.location.pathname })
 
 const isResetPasswordRoute = window.location.pathname.startsWith('/reset-password')
 
@@ -27,9 +35,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <PersistGate loading={<div>Loading...</div>} persistor={persistor}>
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
-              <WalkthroughProvider>
-                <App />
-              </WalkthroughProvider>
+              <ToastProvider>
+                <WalkthroughProvider>
+                  <App />
+                </WalkthroughProvider>
+                <ToastContainer />
+              </ToastProvider>
             </BrowserRouter>
             {/* React Query DevTools - only included in development builds */}
             <ReactQueryDevtools initialIsOpen={false} />

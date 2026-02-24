@@ -174,39 +174,39 @@ static createBackButton(
   // Create transparent rounded background that shows on hover
   const hoverBg = scene.add.graphics();
   hoverBg.fillStyle(0x000000, 0);
-  hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+  hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
   container.add(hoverBg);
 
-  // Create arrow icon - extra large
+  // Create arrow icon
   const arrow = scene.add.text(0, 0, '←', {
-    fontSize: '48px',  // Fixed size, not scaled
+    fontSize: '36px',
     fontFamily: FONT_FAMILY,
-    color: COLORS.TEXT_PRIMARY,  // TextBlueBlack
+    color: COLORS.TEXT_PRIMARY,
     fontStyle: 'bold',
   }).setOrigin(0, 0.5);
   container.add(arrow);
 
-  // Create "Back" text - extra large
-  const backText = scene.add.text(scale(55), 0, 'Back', {
-    fontSize: '32px',  // Fixed size, not scaled
+  // Create "Back" text
+  const backText = scene.add.text(scale(22), 0, 'Back', {
+    fontSize: '28px',
     fontFamily: FONT_FAMILY,
-    color: COLORS.TEXT_PRIMARY,  // TextBlueBlack
+    color: COLORS.TEXT_PRIMARY,
     fontStyle: 'bold',
   }).setOrigin(0, 0.5);
   container.add(backText);
 
   // Create interactive area for hover effects
-  const interactiveZone = scene.add.zone(scale(50), 0, scale(140), scale(50));
+  const interactiveZone = scene.add.zone(scale(35), 0, scale(90), scale(44));
   interactiveZone.setInteractive({ useHandCursor: true })
     .on('pointerover', () => {
       hoverBg.clear();
-      hoverBg.fillStyle(0x000000, 0.1); // Show transparent black on hover
-      hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+      hoverBg.fillStyle(0x000000, 0.1);
+      hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
     })
     .on('pointerout', () => {
       hoverBg.clear();
-      hoverBg.fillStyle(0x000000, 0); // Hide background when not hovering
-      hoverBg.fillRoundedRect(scale(-20), scale(-25), scale(140), scale(50), scale(12));
+      hoverBg.fillStyle(0x000000, 0);
+      hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
     })
     .on('pointerdown', onClick);
   container.add(interactiveZone);

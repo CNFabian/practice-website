@@ -278,7 +278,7 @@ export class HouseProgressCard {
       // Bottom section with icons and button
       const bottomY = progressY + scale(35);
 
-      // Lesson count (video icon)
+      // Lesson count (video icon) - grouped closer with count
       // OPT-02: Check texture exists (Tier 2 may still be loading)
       if (scene.textures.exists('videoProgressIcon')) {
         const videoIcon = scene.add.image(-cardWidth / 2 + scale(40), bottomY, 'videoProgressIcon');
@@ -287,21 +287,21 @@ export class HouseProgressCard {
         progressContainer.add(videoIcon);
       }
 
-      const lessonCount = scene.add.text(-cardWidth / 2 + scale(70), bottomY, `${data.lessonCount || 0}`,
+      const lessonCount = scene.add.text(-cardWidth / 2 + scale(60), bottomY, `${data.lessonCount || 0}`,
         createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(lessonCount);
 
-      // Quiz count (document icon) - keep relative spacing
+      // Quiz count (document icon) - grouped closer with count, more separation from videos
       // OPT-02: Check texture exists (Tier 2 may still be loading)
       if (scene.textures.exists('documentProgressIcon')) {
-        const documentIcon = scene.add.image(-cardWidth / 2 + scale(120), bottomY, 'documentProgressIcon');
+        const documentIcon = scene.add.image(-cardWidth / 2 + scale(140), bottomY, 'documentProgressIcon');
         documentIcon.setDisplaySize(scale(24), scale(24));
         documentIcon.setOrigin(0.5);
         progressContainer.add(documentIcon);
       }
 
-      const quizCount = scene.add.text(-cardWidth / 2 + scale(150), bottomY, `${data.quizCount || 0}`,
+      const quizCount = scene.add.text(-cardWidth / 2 + scale(160), bottomY, `${data.quizCount || 0}`,
         createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: scaleFontSize(16) })
       ).setOrigin(0, 0.5);
       progressContainer.add(quizCount);

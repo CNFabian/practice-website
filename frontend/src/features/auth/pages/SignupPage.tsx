@@ -24,6 +24,7 @@ const SignupPage: React.FC = () => {
   const [verificationCode, setVerificationCode] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -217,6 +218,7 @@ const SignupPage: React.FC = () => {
           password,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
+          ...(phone.trim() ? { phone: phone.trim() } : {}),
         })
 
         const userProfile = await getCurrentUser()
@@ -469,7 +471,7 @@ const SignupPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
-          placeholder="first name"
+          placeholder="first name *"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           autoComplete="given-name"
@@ -478,7 +480,7 @@ const SignupPage: React.FC = () => {
         />
         <input
           type="text"
-          placeholder="last name"
+          placeholder="last name *"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
           autoComplete="family-name"
@@ -495,11 +497,21 @@ const SignupPage: React.FC = () => {
         className={disabledInputClassName}
       />
 
+      {/* Phone number (optional) */}
+      <input
+        type="tel"
+        placeholder="phone number (optional)"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        autoComplete="tel"
+        className={inputClassName}
+      />
+
       {/* Password */}
       <div className="relative">
         <input
           type={showPassword ? 'text' : 'password'}
-          placeholder="password"
+          placeholder="password *"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onPaste={(e) => e.preventDefault()}
@@ -524,7 +536,7 @@ const SignupPage: React.FC = () => {
       <div className="relative">
         <input
           type={showConfirmPassword ? 'text' : 'password'}
-          placeholder="confirm password"
+          placeholder="confirm password *"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           onPaste={(e) => e.preventDefault()}

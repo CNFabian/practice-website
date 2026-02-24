@@ -817,7 +817,7 @@ export default class GrowYourNestMinigame extends BaseScene {
 
   private createPanels(width: number, height: number): void {
     const panelY = 120;
-    const panelHeight = height - panelY - 40;
+    const panelHeight = height - panelY - 80;
     const panelWidth = (width - 80) / 2 - 20;
 
     const state = this.getState();

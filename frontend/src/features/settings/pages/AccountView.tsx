@@ -9,6 +9,7 @@ import { wipeUserData } from '../../../services/authAPI';
 import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
 import { clearAuthData } from '../../../services/authAPI';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
+import { useToast } from '../../../contexts/ToastContext';
 
 import type { RootState } from '../../../store/store';
 
@@ -17,6 +18,7 @@ const AccountView: React.FC = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { resetAllSegments, isWalkthroughActive, hasCompletedWalkthrough } = useWalkthrough();
+  const { addToast } = useToast();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
@@ -32,7 +34,7 @@ const AccountView: React.FC = () => {
   const [wipeError, setWipeError] = useState<string | null>(null);
 
   const handleSaveSettings = () => {
-    console.log('Settings saved!');
+    addToast('Settings saved successfully', 'success');
   };
 
   const handleUploadPicture = () => {
@@ -45,8 +47,10 @@ const AccountView: React.FC = () => {
       await updateUserProfile({ photoURL: avatarUrl });
       dispatch(updateUserProfileAction({ photoURL: avatarUrl }));
       console.log('Avatar selected and saved:', avatarId);
+      addToast('Avatar updated successfully', 'success');
     } catch (error) {
       console.error('Failed to save avatar selection:', error);
+      addToast('Failed to update avatar. Please try again.', 'error');
     }
   };
 
@@ -55,8 +59,10 @@ const AccountView: React.FC = () => {
       await updateUserProfile({ photoURL: '' });
       dispatch(updateUserProfileAction({ photoURL: '' }));
       console.log('Profile picture deleted');
+      addToast('Profile picture removed', 'success');
     } catch (error) {
       console.error('Failed to delete profile picture:', error);
+      addToast('Failed to remove profile picture. Please try again.', 'error');
     }
   };
 
