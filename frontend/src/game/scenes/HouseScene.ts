@@ -377,6 +377,21 @@ export default class HouseScene extends BaseScene {
 
       this.scene.launch('GrowYourNestMinigame', initData);
 
+      // Signal the walkthrough system that we're in the minigame view
+      // Write directly to localStorage (read by MainLayout polling) instead of calling
+      // handleMinigameSelect() which triggers React state updates that pause scenes and
+      // change backgrounds. Delay allows GYN scene to fully create and slide in.
+      setTimeout(() => {
+        try {
+          const saved = localStorage.getItem('moduleNavState');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            parsed.currentView = 'minigame';
+            localStorage.setItem('moduleNavState', JSON.stringify(parsed));
+          }
+        } catch { /* ignore */ }
+      }, 1200);
+
       // Setup completion listener to slide house components back in
       const minigameScene = this.scene.get('GrowYourNestMinigame');
       if (minigameScene) {

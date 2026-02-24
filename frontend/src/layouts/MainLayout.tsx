@@ -4,7 +4,9 @@ import { Sidebar } from '../components/index'
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
 import { useWalkthrough } from '../contexts/WalkthroughContext'
 import ModuleWalkthrough from '../components/protected/walkthrough/ModuleWalkthrough'
+import { WALKTHROUGH_SEGMENTS } from '../components/protected/walkthrough/walkthroughSegments'
 import FreeRoamUnlockModal from '../components/protected/modals/FreeroamUnlockModal'
+import FreeRoamWalkthrough from '../components/protected/walkthrough/FreeRoamWalkthrough'
 import GameManager from '../game/managers/GameManager'
 import { getModuleLessons } from '../services/learningAPI';
 import { getLessonQuestions, transformGYNQuestionsForMinigame } from '../services/growYourNestAPI';
@@ -13,13 +15,61 @@ import { queryKeys } from '../lib/queryKeys';
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
-  const { isWalkthroughActive, exitWalkthrough, completeWalkthrough } = useWalkthrough();
+  const {
+    activeSegmentId,
+    startSegment,
+    completeSegment,
+    exitSegment,
+    isSegmentCompleted,
+    isWalkthroughActive,
+    hasCompletedWalkthrough,
+  } = useWalkthrough();
+
+  // ═══════════════════════════════════════════════════════════
+  // NAV STATE TRACKING — For interactive walkthrough steps
+  // ═══════════════════════════════════════════════════════════
+  const [currentNavView, setCurrentNavView] = useState<string>('map');
+
+  // Poll navState: needed both during active walkthrough (for auto-advance)
+  // and when segments remain incomplete (to detect first visits and auto-trigger)
+  useEffect(() => {
+    if (hasCompletedWalkthrough && !isWalkthroughActive) return;
+
+    const handler = () => {
+      const saved = localStorage.getItem('moduleNavState');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const newView = parsed.currentView || 'map';
+          setCurrentNavView(prev => prev !== newView ? newView : prev);
+        } catch { /* ignore */ }
+      }
+    };
+
+    handler();
+    const interval = setInterval(handler, 300);
+    return () => clearInterval(interval);
+  }, [hasCompletedWalkthrough, isWalkthroughActive]);
+
+  // Auto-trigger segments on first visit to each scene
+  useEffect(() => {
+    if (!currentNavView || activeSegmentId) return;
+
+    for (const segment of Object.values(WALKTHROUGH_SEGMENTS)) {
+      if (segment.triggerNavState === currentNavView && !isSegmentCompleted(segment.id)) {
+        // Small delay to let scene settle before showing walkthrough
+        setTimeout(() => startSegment(segment.id), 500);
+        break;
+      }
+    }
+  }, [currentNavView, activeSegmentId, isSegmentCompleted, startSegment]);
 
   // ═══════════════════════════════════════════════════════════
   // FREE ROAM UNLOCK MODAL — Registry bridge from HouseScene
   // ═══════════════════════════════════════════════════════════
   const [showFreeRoamModal, setShowFreeRoamModal] = useState(false);
   const [freeRoamModuleTitle, setFreeRoamModuleTitle] = useState<string | undefined>(undefined);
+  const [freeRoamModuleId, setFreeRoamModuleId] = useState<string>('');
 
   useEffect(() => {
     let cleanupFn: (() => void) | null = null;
@@ -38,6 +88,9 @@ const MainLayoutContent: React.FC = () => {
           setFreeRoamModuleTitle(mod.title);
         }
       }
+
+      // Store module ID for FreeRoamWalkthrough
+      setFreeRoamModuleId(moduleBackendId);
 
       // Refresh coin balance — backend awards 250 coins on module completion
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.coins() });
@@ -90,13 +143,23 @@ const MainLayoutContent: React.FC = () => {
     }
   }, []);
 
+  // Free Roam Walkthrough state
+  const [showFreeRoamWalkthrough, setShowFreeRoamWalkthrough] = useState(false);
+  const [freeRoamWalkthroughModuleId, setFreeRoamWalkthroughModuleId] = useState('');
+
   const handleDismissFreeRoam = useCallback(() => {
     setShowFreeRoamModal(false);
     setFreeRoamModuleTitle(undefined);
-  }, []);
+    // Show walkthrough after a brief delay for the modal dismiss animation
+    setTimeout(() => {
+      setShowFreeRoamWalkthrough(true);
+      setFreeRoamWalkthroughModuleId(freeRoamModuleId);
+    }, 500);
+  }, [freeRoamModuleId]);
 
   // Handle scene transitions for walkthrough
-  const handleSceneTransition = (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => {
+  // Wrapped in useCallback to prevent the walkthrough's first-step useEffect from re-firing on every render
+  const handleSceneTransition = useCallback((scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => {
     console.log('🎬 Walkthrough: handleSceneTransition called with:', scene);
     
     if (scene === 'NeighborhoodScene') {
@@ -350,7 +413,7 @@ const MainLayoutContent: React.FC = () => {
         }
       }
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -368,18 +431,29 @@ const MainLayoutContent: React.FC = () => {
         <Outlet />
       </main>
       
-      <ModuleWalkthrough
-        isActive={isWalkthroughActive}
-        onExit={exitWalkthrough}
-        onComplete={completeWalkthrough}
-        onSceneTransition={handleSceneTransition}
-      />
+      {activeSegmentId && WALKTHROUGH_SEGMENTS[activeSegmentId] && (
+        <ModuleWalkthrough
+          isActive={true}
+          segmentId={activeSegmentId}
+          steps={WALKTHROUGH_SEGMENTS[activeSegmentId].steps}
+          onExit={exitSegment}
+          onComplete={() => completeSegment(activeSegmentId)}
+          onSceneTransition={handleSceneTransition}
+          currentNavView={currentNavView}
+        />
+      )}
 
       <FreeRoamUnlockModal
         isOpen={showFreeRoamModal}
         moduleTitle={freeRoamModuleTitle}
         onLaunchFreeRoam={handleLaunchFreeRoam}
         onDismiss={handleDismissFreeRoam}
+      />
+
+      <FreeRoamWalkthrough
+        isActive={showFreeRoamWalkthrough}
+        moduleBackendId={freeRoamWalkthroughModuleId}
+        onDismiss={() => setShowFreeRoamWalkthrough(false)}
       />
     </div>
   )

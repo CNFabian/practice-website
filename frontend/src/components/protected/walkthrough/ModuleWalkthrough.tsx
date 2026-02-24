@@ -1,43 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { OnestFont } from '../../../assets';
+import { OnestFont, NoticeBirdIcon } from '../../../assets';
 import GameManager from '../../../game/managers/GameManager';
+import { WalkthroughStep } from './walkthroughSegments';
 
-// Import assets
-import { 
-  NoticeBirdIcon,
-  CoinStack,
-  TreasureChest,
-} from '../../../assets';
-
-interface WalkthroughStep {
-  id: string;
-  type: 'fullscreen' | 'highlight';
-  targetSelector?: string;
-  content: {
-    image?: string;
-    secondaryImage?: string;
-    title: string;
-    description: string | React.ReactNode;
-    buttonText: string;
-  };
-  highlight?: {
-    // For canvas-based highlighting, we use percentage-based regions
-    region?: { x: number; y: number; width: number; height: number };
-    // Or target a DOM element
-    selector?: string;
-  };
-  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right';
-  highlightPadding?: number;
-  // Scene to transition to before showing this step
-  sceneTransition?: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame';
-}
+// Bird sizing constants
+const BIRD_SIZE = 80;
+const BIRD_FLY_DURATION = 800; // ms
 
 interface ModuleWalkthroughProps {
   isActive: boolean;
+  segmentId: string;
+  steps: WalkthroughStep[];
   onExit: () => void;
   onComplete: () => void;
   onSceneTransition?: (scene: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame') => void;
+  currentNavView?: string;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -55,265 +33,44 @@ const TRANSITION_TIMINGS = {
   NO_TRANSITION: 300,        // Steps without scene changes
 } as const;
 
-// Walkthrough steps
-const walkthroughSteps: WalkthroughStep[] = [
-  // ---- STEP 1: Welcome ----
-  {
-    id: 'welcome',
-    type: 'fullscreen',
-    content: {
-      image: NoticeBirdIcon,
-      title: 'Welcome!',
-      description: "We're happy to be with you through your home-buying journey!",
-      buttonText: 'CONTINUE',
-    },
-    sceneTransition: 'MapScene',
-  },
-  // ---- STEP 2: Earn Coins ----
-  {
-    id: 'earn-coins',
-    type: 'fullscreen',
-    content: {
-      image: CoinStack,
-      title: 'Complete Lessons and Minigames to Earn Nest Coins',
-      description: "As you learn, you'll earn rewards! Coins can be spent in the rewards shop to redeem coupons for your favorite stores!",
-      buttonText: 'CONTINUE',
-    },
-  },
-  // ---- STEP 3: Welcome Gift ----
-  {
-    id: 'welcome-gift',
-    type: 'fullscreen',
-    content: {
-      image: TreasureChest,
-      secondaryImage: CoinStack,
-      title: "Here's a Welcome Gift!",
-      description: 'COIN_GIFT',
-      buttonText: 'GET STARTED',
-    },
-  },
-  // ---- STEP 4: Beta Thank You ----
-  {
-    id: 'beta-thank-you',
-    type: 'fullscreen',
-    content: {
-      image: NoticeBirdIcon,
-      title: 'Thank you for testing our beta version',
-      description: "Some features are still in development. Thanks for your patience—and we'd love your feedback on how we can improve as we prepare for our official launch!",
-      buttonText: 'CONTINUE',
-    },
-  },
-  // ---- STEP 5: Neighborhood Intro (highlight on MapScene) ----
-  {
-    id: 'neighborhood-intro',
-    type: 'highlight',
-    content: {
-      title: 'Explore Neighborhoods',
-      description: "Now let's explore where your journey begins! Each neighborhood represents a different stage of your home-buying journey. Complete all the lessons in one neighborhood to unlock the next one!",
-      buttonText: 'NEXT',
-    },
-    highlight: {
-      // Target the Phaser container
-      selector: '[data-walkthrough="phaser-container"]',
-      // Home-Buying Knowledge neighborhood - bottom-left of the canvas
-      region: { x: 3, y: 45, width: 43, height: 40 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 16,
-  },
-  // ---- STEP 5: House Intro (highlight, transitions to NeighborhoodScene) ----
-  {
-    id: 'house-intro',
-    type: 'highlight',
-    content: {
-      title: 'Welcome to Your First House!',
-      description: "Let's step inside this neighborhood! Each house contains lessons on a specific topic. Complete all the lessons in a house to earn bonus coins and unlock new content. The progress bar shows how much you've completed!",
-      buttonText: 'GOT IT',
-    },
-    highlight: {
-      // Target the Phaser container
-      selector: '[data-walkthrough="phaser-container"]',
-      // First house (Homebuying Fundamentals) - upper-left area of the neighborhood scene
-      region: { x: 1, y: 15, width: 55, height: 40 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 16,
-    sceneTransition: 'NeighborhoodScene',
-  },
-  // ---- STEP 6: Module Welcome (fullscreen, transitions to HouseScene) ----
-  {
-    id: 'module-welcome',
-    type: 'fullscreen',
-    content: {
-      title: '',
-      description: "Let's take a look inside! Welcome to the first module — this is where you'll learn everything you need to buy your first home.",
-      buttonText: 'CONTINUE',
-    },
-    sceneTransition: 'HouseScene',
-  },
-  // ---- STEP 7: Module Lessons (highlight lesson card in HouseScene) ----
-  {
-    id: 'module-lessons',
-    type: 'highlight',
-    content: {
-      title: '',
-      description: "Here are your lessons! Each one covers a key topic. You can read lessons and watch videos here.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      // First lesson card - top left of house (position x:29%, y:32%)
-      region: { x: 17, y: 21, width: 25, height: 18 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 12,
-  },
-  // ---- STEP 8: Lesson Video/Reading Toggle (highlight, transitions to LessonView) ----
-  {
-    id: 'lesson-video-reading',
-    type: 'highlight',
-    content: {
-      title: '',
-      description: "Inside each lesson you can watch or read! Use this toggle to switch between watching the video or reading at your own pace.",
-      buttonText: 'CONTINUE',
-    },
-    sceneTransition: 'LessonView',
-    highlight: {
-      selector: '[data-walkthrough="lesson-view-toggle"]',
-    },
-    tooltipPosition: 'bottom',
-    highlightPadding: 8,
-  },
-  // ---- STEP 9: Minigame Intro — Story (transitions to GrowYourNestMinigame to show the minigame) ----
-  {
-    id: 'minigame-intro',
-    type: 'fullscreen',
-    content: {
-      image: NoticeBirdIcon,
-      title: 'One More Thing!',
-      description: "Once you finish a lesson, it's time to help a friend! There's a little bird who needs your help — she's looking for a tree strong enough to build her nest.",
-      buttonText: 'CONTINUE',
-    },
-    sceneTransition: 'GrowYourNestMinigame',
-  },
-  // ---- STEP 10: Minigame Lesson Mode (highlight RIGHT panel - start/intro screen) ----
-  {
-    id: 'minigame-lessons',
-    type: 'highlight',
-    content: {
-      title: 'Play After Each Lesson',
-      description: "After each lesson, you'll play a quick 3-question round to help your tree grow. Complete all the lessons and your tree unlocks free roam — where you can answer questions from every lesson to grow it even more!",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      // Right panel: starts at ~52% from left, takes up ~46% width
-      region: { x: 52, y: 8, width: 46, height: 88 },
-    },
-    tooltipPosition: 'left',
-    highlightPadding: 12,
-  },
-  // ---- STEP 11: Minigame Streak — Fertilizer Bonus (highlight RIGHT panel - start/intro screen) ----
-  {
-    id: 'minigame-streak',
-    type: 'highlight',
-    content: {
-      title: 'Build Your Streak!',
-      description: "Get 3 correct in a row and earn Fertilizer for a bonus growth boost! Don't worry — mistakes won't hurt your tree, they just reset your streak.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      // Right panel: starts at ~52% from left, takes up ~46% width
-      region: { x: 52, y: 8, width: 46, height: 88 },
-    },
-    tooltipPosition: 'left',
-    highlightPadding: 12,
-  },
-  // ---- STEP 12: Minigame Grow — Water Mechanic (highlight LEFT panel - tree area) ----
-  {
-    id: 'minigame-grow',
-    type: 'highlight',
-    content: {
-      title: 'Grow Your Tree!',
-      description: "Answer homebuying questions to water your tree and help it grow. Every correct answer gives your tree a splash of water!",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      // Left panel: starts at ~2% from left, takes up ~48% width
-      region: { x: 2, y: 8, width: 48, height: 88 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 12,
-  },
-  // ---- STEP 13: Minigame Coins (highlight LEFT panel - tree area) ----
-  {
-    id: 'minigame-coins',
-    type: 'highlight',
-    content: {
-      title: 'Earn Nest Coins!',
-      description: "A fully grown tree earns you up to 250 Nest Coins! Spend them in the rewards shop for real-world perks and discounts.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      // Left panel: starts at ~2% from left, takes up ~48% width
-      region: { x: 2, y: 8, width: 48, height: 88 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 12,
-  },
-  // ---- STEP 14: Minigame CTA ----
-  {
-    id: 'minigame-ready',
-    type: 'fullscreen',
-    content: {
-      image: NoticeBirdIcon,
-      title: 'Help Her Build a Nest!',
-      description: "Help your bird build the perfect nest — one answer at a time!",
-      buttonText: 'CONTINUE',
-    },
-  },
-  // ---- STEP 15: Back to Map — Closing ----
-  {
-    id: 'back-to-map',
-    type: 'fullscreen',
-    content: {
-      title: "You're All Set!",
-      description: "This is your home base. Everything starts here — pick a neighborhood, choose a house, and begin your first lesson whenever you're ready!",
-      buttonText: "LET'S GO",
-    },
-    sceneTransition: 'MapScene',
-  },
-];
-
 const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
   isActive,
+  segmentId,
+  steps,
+  onExit,
   onComplete,
   onSceneTransition,
+  currentNavView,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isSceneTransitioning, setIsSceneTransitioning] = useState(false); // NEW: Track scene changes specifically
+  const [isSceneTransitioning, setIsSceneTransitioning] = useState(false);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
-  const currentStep = walkthroughSteps[currentStepIndex];
-  const isLastStep = currentStepIndex === walkthroughSteps.length - 1;
+  // Bird guide state
+  const [birdPos, setBirdPos] = useState<{ x: number; y: number }>({ x: window.innerWidth / 2, y: window.innerHeight / 3 });
+  const [birdFlying, setBirdFlying] = useState(false);
+  const [birdFlip, setBirdFlip] = useState(false);
+  const [birdVisible, setBirdVisible] = useState(true);
+  const prevStepRef = useRef(currentStepIndex);
+  const birdFlyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const currentStep = steps[currentStepIndex];
+  const isLastStep = currentStepIndex === steps.length - 1;
 
   // When walkthrough becomes active, immediately transition to the first step's scene
   useEffect(() => {
     if (isActive && onSceneTransition) {
-      const firstStep = walkthroughSteps[0];
+      const firstStep = steps[0];
       if (firstStep.sceneTransition) {
         onSceneTransition(firstStep.sceneTransition);
       }
     }
   }, [isActive, onSceneTransition]);
 
-  // Calculate highlight position for highlight-type steps
+  // Calculate highlight position for highlight-type and interactive-type steps
   const updateHighlightPosition = useCallback(() => {
-    if (currentStep.type !== 'highlight' || !currentStep.highlight) {
+    if ((currentStep.type !== 'highlight' && currentStep.type !== 'interactive') || !currentStep.highlight) {
       setHighlightRect(null);
       return;
     }
@@ -388,7 +145,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     if (isLastStep) {
       onComplete();
     } else {
-      const nextStep = walkthroughSteps[currentStepIndex + 1];
+      const nextStep = steps[currentStepIndex + 1];
       
       // Check if the next step requires a scene transition
       if (nextStep?.sceneTransition && onSceneTransition) {
@@ -427,49 +184,20 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     }
   };
 
-  // Handle exit - always show final "You're All Set!" step before exiting
+  // Handle exit - dismiss the current segment immediately
   const handleExit = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
-    const lastStepIndex = walkthroughSteps.length - 1;
-    
-    // If not on the last step, jump to the final step first
-    if (currentStepIndex !== lastStepIndex) {
-      setIsTransitioning(true);
-      setIsSceneTransitioning(true); // NEW: This is a scene transition
-      
-      // PHASE 1: Fade out current step
-      setTimeout(() => {
-        // PHASE 2: Transition to MapScene (since that's where the final step is)
-        if (onSceneTransition) {
-          onSceneTransition('MapScene');
-        }
-      }, TRANSITION_TIMINGS.UI_FADE_OUT);
-      
-      // PHASE 3: After scene transition, jump to last step and fade in
-      setTimeout(() => {
-        setCurrentStepIndex(lastStepIndex);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setIsSceneTransitioning(false); // NEW: Scene transition complete
-        }, TRANSITION_TIMINGS.UI_FADE_IN);
-      }, TRANSITION_TIMINGS.STANDARD);
-      
-    } else {
-      // Already on the last step, so actually exit
-      // The last step already has MapScene transition, so just complete
-      onComplete();
-    }
+    onExit();
   };
 
-  // When house-intro step is shown, trigger progress card expand on first house
+  // When click-house step is shown, trigger progress card expand on first house
   useEffect(() => {
     if (!isActive) return;
     
-    if (currentStep.id === 'house-intro') {
+    if (currentStep.id === 'click-house') {
       // Wait for scene transition to complete (800ms) + small buffer (100ms)
       const timer = setTimeout(() => {
         const game = GameManager.getGame();
@@ -513,44 +241,69 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     }
   }, [isActive, currentStepIndex]);
 
+  // Auto-advance for interactive steps when navState matches
+  useEffect(() => {
+    if (!isActive || currentStep.type !== 'interactive' || !currentStep.advanceOnNavState) return;
+
+    if (currentNavView === currentStep.advanceOnNavState) {
+      const delay = currentStep.advanceDelay || 0;
+      const timer = setTimeout(() => {
+        if (isLastStep) {
+          // Last step of this segment — complete it
+          onComplete();
+        } else {
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setCurrentStepIndex(prev => prev + 1);
+            setIsTransitioning(false);
+          }, TRANSITION_TIMINGS.NO_TRANSITION);
+        }
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, currentNavView, currentStep, isLastStep, onComplete]);
+
   // Block all keyboard events from reaching Phaser when walkthrough is active
   useEffect(() => {
     if (!isActive) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation();
-      
+
       if (e.key === 'Escape') {
         handleExit();
       } else if (e.key === 'Enter') {
+        // Don't allow Enter to advance interactive steps — user must click the target
+        if (currentStep.type === 'interactive') return;
+
         if (isLastStep) {
           onComplete();
         } else {
-          const nextStep = walkthroughSteps[currentStepIndex + 1];
-          
+          const nextStep = steps[currentStepIndex + 1];
+
           // Check if the next step requires a scene transition
           if (nextStep?.sceneTransition && onSceneTransition) {
             setIsTransitioning(true);
-            setIsSceneTransitioning(true); // NEW: Mark as scene transition
-            
+            setIsSceneTransitioning(true);
+
             // Fade out UI first
             setTimeout(() => {
               onSceneTransition(nextStep.sceneTransition!);
             }, TRANSITION_TIMINGS.UI_FADE_OUT);
-            
+
             const transitionDelay = getTransitionDelay(nextStep.sceneTransition);
-            
+
             setTimeout(() => {
               setCurrentStepIndex((prev) => prev + 1);
               setTimeout(() => {
                 setIsTransitioning(false);
-                setIsSceneTransitioning(false); // NEW: Scene transition complete
+                setIsSceneTransitioning(false);
               }, TRANSITION_TIMINGS.UI_FADE_IN);
             }, transitionDelay);
-            
+
           } else {
             setIsTransitioning(true);
-            setIsSceneTransitioning(false); // NEW: Not a scene transition
+            setIsSceneTransitioning(false);
             setTimeout(() => {
               setCurrentStepIndex((prev) => prev + 1);
               setIsTransitioning(false);
@@ -562,14 +315,107 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isActive, currentStepIndex, isLastStep, onComplete, onSceneTransition]);
+  }, [isActive, currentStepIndex, isLastStep, onComplete, onSceneTransition, currentStep.type]);
 
-  // Reset step index when walkthrough becomes inactive
+  // Reset step index when walkthrough becomes inactive or segment changes
   useEffect(() => {
     if (!isActive) {
       setCurrentStepIndex(0);
     }
   }, [isActive]);
+
+  useEffect(() => {
+    setCurrentStepIndex(0);
+  }, [segmentId]);
+
+  // ═══════════════════════════════════════════════════════════
+  // BIRD POSITION CALCULATION — flies to target on step change
+  // ═══════════════════════════════════════════════════════════
+  const calculateBirdPosition = useCallback((step: WalkthroughStep, rect: DOMRect | null): { x: number; y: number } => {
+    // For fullscreen steps or when no highlight rect: center above viewport middle
+    if (step.type === 'fullscreen' || !rect || !step.birdPosition) {
+      return { x: window.innerWidth / 2, y: window.innerHeight * 0.25 };
+    }
+
+    const offset = step.birdPosition.offset ?? 10;
+    const birdHalf = BIRD_SIZE / 2;
+
+    switch (step.birdPosition.side) {
+      case 'right':
+        return {
+          x: rect.right + birdHalf + offset,
+          y: rect.top + birdHalf,
+        };
+      case 'left':
+        return {
+          x: rect.left - birdHalf - offset,
+          y: rect.top + birdHalf,
+        };
+      case 'top':
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top - birdHalf - offset,
+        };
+      case 'bottom':
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.bottom + birdHalf + offset,
+        };
+      default:
+        return { x: rect.right + birdHalf + offset, y: rect.top + birdHalf };
+    }
+  }, []);
+
+  // Trigger bird flight when step changes or highlight rect updates
+  useEffect(() => {
+    if (!isActive) return;
+
+    const newPos = calculateBirdPosition(currentStep, highlightRect);
+
+    // Detect step change to trigger flight animation
+    if (prevStepRef.current !== currentStepIndex) {
+      prevStepRef.current = currentStepIndex;
+
+      // Check if position actually changed — skip flight if staying in same place
+      const samePosition =
+        Math.abs(newPos.x - birdPos.x) < 5 && Math.abs(newPos.y - birdPos.y) < 5;
+
+      if (samePosition) {
+        // Just update position without flying
+        setBirdPos(newPos);
+      } else {
+        // Determine flight direction
+        setBirdFlip(newPos.x < birdPos.x);
+
+        // Start flying
+        setBirdFlying(true);
+        setBirdPos(newPos);
+
+        // Clear any existing timer
+        if (birdFlyTimerRef.current) clearTimeout(birdFlyTimerRef.current);
+
+        // End flight after animation completes
+        birdFlyTimerRef.current = setTimeout(() => {
+          setBirdFlying(false);
+          // After landing, face toward the target (face right = default)
+          if (currentStep.birdPosition?.side === 'right') setBirdFlip(true);
+          else if (currentStep.birdPosition?.side === 'left') setBirdFlip(false);
+        }, BIRD_FLY_DURATION);
+      }
+    } else {
+      // Same step, just rect updated — reposition without animation
+      setBirdPos(newPos);
+    }
+
+    return () => {
+      if (birdFlyTimerRef.current) clearTimeout(birdFlyTimerRef.current);
+    };
+  }, [isActive, currentStepIndex, highlightRect, currentStep, calculateBirdPosition]);
+
+  // Hide bird during scene transitions, show after
+  useEffect(() => {
+    setBirdVisible(!isSceneTransitioning);
+  }, [isSceneTransitioning]);
 
   if (!isActive) return null;
 
@@ -738,7 +584,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     );
   };
 
-  // Render highlight step (overlay with spotlight on element)
+  // Render highlight step (bird guides eye, no dark overlay)
   const renderHighlightStep = () => {
     const { content } = currentStep;
     const padding = currentStep.highlightPadding || 16;
@@ -803,7 +649,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     };
 
     return (
-      <div 
+      <div
         className="fixed inset-0 z-[9999]"
         onClick={blockEvent}
         onMouseDown={blockEvent}
@@ -812,55 +658,26 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
         onTouchEnd={blockEvent}
         style={{ pointerEvents: 'all' }}
       >
-        {/* Dark overlay with cutout for highlighted area - Fades ONLY during scene transitions */}
-        <div className={`absolute inset-0 pointer-events-none transition-opacity duration-200 ${
-          isSceneTransitioning ? 'opacity-0' : 'opacity-100'
-        }`}>
-          {/* Highlighted cutout area - the boxShadow creates the dark overlay around it */}
-          {highlightRect && (
-            <div
-              className="absolute rounded-2xl transition-all duration-300"
-              style={{
-                top: highlightRect.top - padding,
-                left: highlightRect.left - padding,
-                width: highlightRect.width + padding * 2,
-                height: highlightRect.height + padding * 2,
-                boxShadow: '0 0 0 9999px rgba(25, 33, 65, 0.7)',
-                background: 'transparent',
-                pointerEvents: 'none',
-              }}
-            >
-              {/* Pulsing border */}
-              <div className="absolute inset-0 rounded-2xl border-2 border-logo-blue animate-pulse" />
-              {/* Glow effect */}
-              <div 
-                className="absolute inset-0 rounded-2xl"
-                style={{ boxShadow: '0 0 30px 8px rgba(54, 88, 236, 0.4)' }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Exit button - Fades ONLY during scene transitions */}
+        {/* Exit button */}
         <button
           onClick={handleExit}
           onMouseDown={blockEvent}
-          className={`absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-pure-white/20 hover:bg-pure-white/30 transition-all duration-200 flex items-center justify-center ${
+          className={`absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-text-blue-black/40 hover:bg-text-blue-black/60 transition-all duration-200 flex items-center justify-center ${
             isSceneTransitioning ? 'opacity-0' : 'opacity-100'
           }`}
           aria-label="Exit walkthrough"
         >
-          <svg 
-            className="w-5 h-5 text-pure-white" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-5 h-5 text-pure-white"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        {/* Tooltip - ALWAYS fades during any transition */}
+        {/* Tooltip */}
         <div
           className={`absolute z-20 w-[400px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
@@ -873,26 +690,23 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           onMouseDown={blockEvent}
         >
           <div className="p-6">
-            {/* Title */}
-            <OnestFont 
-              as="h2" 
-              weight={700} 
-              lineHeight="tight" 
+            <OnestFont
+              as="h2"
+              weight={700}
+              lineHeight="tight"
               className="text-2xl text-pure-white mb-3"
             >
               {content.title}
             </OnestFont>
 
-            {/* Description */}
-            <OnestFont 
-              weight={300} 
-              lineHeight="relaxed" 
+            <OnestFont
+              weight={300}
+              lineHeight="relaxed"
               className="text-base text-pure-white/90"
             >
               {content.description}
             </OnestFont>
 
-            {/* Button with margin-top for spacing */}
             <div className="mt-8">
               <button
                 onClick={handleNext}
@@ -910,21 +724,205 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
     );
   };
 
+  // Render interactive step (bird guides eye, no dark overlay, clicks pass through to target)
+  const renderInteractiveStep = () => {
+    const { content } = currentStep;
+    const padding = currentStep.highlightPadding || 16;
+
+    // Calculate tooltip position (same logic as renderHighlightStep)
+    const getTooltipStyle = (): React.CSSProperties => {
+      if (!highlightRect) {
+        return {
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        };
+      }
+
+      const tooltipWidth = 400;
+      const tooltipHeight = 200;
+      const offset = 24;
+
+      const viewportPadding = 16;
+      let top: number | undefined;
+      let left: number | undefined;
+      let bottom: number | undefined;
+      let right: number | undefined;
+
+      switch (currentStep.tooltipPosition) {
+        case 'top':
+          bottom = window.innerHeight - highlightRect.top + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'bottom':
+          top = highlightRect.bottom + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'left':
+          top = highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2;
+          right = window.innerWidth - highlightRect.left + padding + offset;
+          break;
+        case 'right':
+          top = highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2;
+          left = highlightRect.right + padding + offset;
+          break;
+        default:
+          top = highlightRect.bottom + padding + offset;
+          left = highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2;
+      }
+
+      // Clamp to viewport bounds
+      if (left !== undefined) {
+        left = Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipWidth - viewportPadding));
+      }
+      if (top !== undefined) {
+        top = Math.max(viewportPadding, Math.min(top, window.innerHeight - tooltipHeight - viewportPadding));
+      }
+
+      const style: React.CSSProperties = {};
+      if (top !== undefined) style.top = top;
+      if (left !== undefined) style.left = left;
+      if (bottom !== undefined) style.bottom = bottom;
+      if (right !== undefined) style.right = right;
+
+      return style;
+    };
+
+    return (
+      <div
+        className="fixed inset-0 z-[9999]"
+        style={{ pointerEvents: 'none' }}
+      >
+        {/* Invisible blocker divs — block clicks OUTSIDE the target region */}
+        {highlightRect && (
+          <>
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0,
+              height: highlightRect.top - padding,
+              pointerEvents: 'all',
+            }} />
+            <div style={{
+              position: 'absolute', left: 0, right: 0, bottom: 0,
+              top: highlightRect.bottom + padding,
+              pointerEvents: 'all',
+            }} />
+            <div style={{
+              position: 'absolute', top: highlightRect.top - padding, left: 0,
+              width: highlightRect.left - padding,
+              height: highlightRect.height + padding * 2,
+              pointerEvents: 'all',
+            }} />
+            <div style={{
+              position: 'absolute', top: highlightRect.top - padding,
+              left: highlightRect.right + padding, right: 0,
+              height: highlightRect.height + padding * 2,
+              pointerEvents: 'all',
+            }} />
+          </>
+        )}
+
+        {/* Exit button */}
+        <button
+          onClick={handleExit}
+          onMouseDown={blockEvent}
+          className={`absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-text-blue-black/40 hover:bg-text-blue-black/60 transition-all duration-200 flex items-center justify-center ${
+            isSceneTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{ pointerEvents: 'all' }}
+          aria-label="Exit walkthrough"
+        >
+          <svg className="w-5 h-5 text-pure-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Tooltip — NO button, instruction only */}
+        <div
+          className={`absolute z-20 w-[400px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 ${
+            isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+          }`}
+          style={{
+            ...getTooltipStyle(),
+            background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+            pointerEvents: 'all',
+          }}
+        >
+          <div className="p-6">
+            <OnestFont as="h2" weight={700} lineHeight="tight" className="text-2xl text-pure-white mb-3">
+              {content.title}
+            </OnestFont>
+            <OnestFont weight={300} lineHeight="relaxed" className="text-base text-pure-white/90">
+              {content.description}
+            </OnestFont>
+            {/* Small hint text */}
+            <div className="mt-4 flex items-center gap-2">
+              <div className="w-2 h-2 bg-pure-white rounded-full animate-pulse" />
+              <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-pure-white/60 italic">
+                Click the highlighted area to continue
+              </OnestFont>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render the bird guide character
+  const renderBird = () => {
+    return (
+      <img
+        src={NoticeBirdIcon}
+        alt=""
+        className="fixed z-[10000] pointer-events-none select-none"
+        style={{
+          width: BIRD_SIZE,
+          height: 'auto',
+          left: birdPos.x,
+          top: birdPos.y,
+          transform: `translate(-50%, -50%) scaleX(${birdFlip ? -1 : 1})`,
+          transition: birdFlying
+            ? `left ${BIRD_FLY_DURATION}ms ease-in-out, top ${BIRD_FLY_DURATION}ms ease-in-out`
+            : 'none',
+          opacity: birdVisible && !isTransitioning ? 1 : 0,
+          animation: !birdFlying && birdVisible ? 'birdFloat 2s ease-in-out infinite' : 'none',
+          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+        }}
+      />
+    );
+  };
+
   // Render based on step type
   const renderStep = () => {
     if (currentStep.type === 'fullscreen') {
       return renderFullscreenStep();
     }
-    
+
     if (currentStep.type === 'highlight') {
       return renderHighlightStep();
     }
-    
+
+    if (currentStep.type === 'interactive') {
+      return renderInteractiveStep();
+    }
+
     return renderFullscreenStep();
   };
 
   // Use portal to render at document root
-  return createPortal(renderStep(), document.body);
+  return createPortal(
+    <>
+      {/* Bird floating animation keyframe */}
+      <style>{`
+        @keyframes birdFloat {
+          0%, 100% { transform: translate(-50%, -50%) scaleX(${birdFlip ? -1 : 1}) translateY(0); }
+          50% { transform: translate(-50%, -50%) scaleX(${birdFlip ? -1 : 1}) translateY(-8px); }
+        }
+      `}</style>
+      {renderStep()}
+      {renderBird()}
+    </>,
+    document.body
+  );
 };
 
 export default ModuleWalkthrough;

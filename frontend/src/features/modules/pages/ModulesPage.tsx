@@ -40,7 +40,7 @@ const ModulesPage: React.FC = () => {
   const totalCoins = coinBalanceData?.current_balance || 0;
   const queryClient = useQueryClient();
   const { isCollapsed } = useSidebar();
-  const { isWalkthroughActive, startWalkthrough, hasCompletedWalkthrough } = useWalkthrough();
+  const { activeSegmentId, startSegment, isSegmentCompleted } = useWalkthrough();
   const { addProgressItem, flushProgress } = useBatchProgressSync();
 
   // Calculate sidebar offset based on collapsed state
@@ -66,9 +66,9 @@ const ModulesPage: React.FC = () => {
     };
   });
 
-  // When walkthrough becomes active, reset navState to map so background updates
+  // When map-intro segment is active, reset navState to map so background updates
   useEffect(() => {
-    if (isWalkthroughActive && navState.currentView !== 'map') {
+    if (activeSegmentId === 'map-intro' && navState.currentView !== 'map') {
       setNavState({
         currentView: 'map',
         neighborhoodId: null,
@@ -79,15 +79,15 @@ const ModulesPage: React.FC = () => {
         currentHouseIndex: 0,
       });
     }
-  }, [isWalkthroughActive]);
+  }, [activeSegmentId]);
 
-  // Auto-trigger walkthrough immediately after onboarding completion
+  // Auto-trigger map-intro segment after onboarding completion
   useEffect(() => {
     const fromOnboarding = (location.state as any)?.fromOnboarding === true;
     if (
       fromOnboarding &&
       !walkthroughTriggered.current &&
-      !hasCompletedWalkthrough &&
+      !isSegmentCompleted('map-intro') &&
       isPhaserReady &&
       assetsLoaded
     ) {
@@ -96,10 +96,10 @@ const ModulesPage: React.FC = () => {
       window.history.replaceState({}, document.title);
       // Small delay to ensure Phaser scene is fully rendered
       setTimeout(() => {
-        startWalkthrough();
+        startSegment('map-intro');
       }, 800);
     }
-  }, [location.state, isPhaserReady, assetsLoaded, hasCompletedWalkthrough, startWalkthrough]);
+  }, [location.state, isPhaserReady, assetsLoaded, isSegmentCompleted, startSegment]);
 
   // OPT-04: Derive modules from dashboard response instead of making a separate API call
   // Dashboard response shape: [{ module: {...}, lessons_completed, total_lessons, ... }]

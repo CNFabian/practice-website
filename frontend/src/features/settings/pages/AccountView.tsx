@@ -9,14 +9,14 @@ import { wipeUserData } from '../../../services/authAPI';
 import { updateUserProfile as updateUserProfileAction, logout } from '../../../store/slices/authSlice';
 import { clearAuthData } from '../../../services/authAPI';
 import { useWalkthrough } from '../../../contexts/WalkthroughContext';
-import GameManager from '../../../game/managers/GameManager';
+
 import type { RootState } from '../../../store/store';
 
 const AccountView: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { startWalkthrough, isWalkthroughActive, hasCompletedWalkthrough } = useWalkthrough();
+  const { resetAllSegments, isWalkthroughActive, hasCompletedWalkthrough } = useWalkthrough();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
@@ -114,7 +114,7 @@ const AccountView: React.FC = () => {
       // Log the user out after a brief delay so they can see the success message
       setTimeout(() => {
         clearAuthData();
-        localStorage.removeItem('nestnav_walkthrough_completed');
+        resetAllSegments();
         localStorage.removeItem('moduleNavState');
         dispatch(logout());
         navigate('/auth/login');
@@ -127,27 +127,10 @@ const AccountView: React.FC = () => {
   };
 
   const handleStartWalkthrough = () => {
-    // Navigate to modules page first, then wait for Phaser assets before starting walkthrough
+    // Reset all segments so they re-trigger on first visit
+    resetAllSegments();
+    // Navigate to modules page — map-intro segment will auto-trigger via MainLayout
     navigate('/app');
-    
-    // Poll for Phaser game assets to be loaded before starting walkthrough
-    // This prevents the race condition where walkthrough fires before textures are ready
-    let attempts = 0;
-    const maxAttempts = 40; // 40 * 150ms = 6s max wait
-    const pollInterval = setInterval(() => {
-      attempts++;
-      const game = GameManager.getGame();
-      if (game?.registry.get('assetsLoaded')) {
-        clearInterval(pollInterval);
-        startWalkthrough();
-        return;
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(pollInterval);
-        // Fallback: start anyway after timeout
-        startWalkthrough();
-      }
-    }, 150);
   };
 
   return (
