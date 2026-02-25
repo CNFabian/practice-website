@@ -210,8 +210,8 @@ const LoginPage: React.FC = () => {
                       Welcome Back!
                     </OnestFont>
                     <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
-                      Continue your home buying learning journey today
-                      and get one step closer to your dream home!
+                      Continue building the knowledge you need to buy
+                      with confidence.
                     </OnestFont>
                   </div>
 

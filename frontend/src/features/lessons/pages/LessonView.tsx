@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../hooks/useLearningQueries';
 import { useCompleteLesson } from '../hooks/useCompleteLesson';
+import { useUncompleteLesson } from '../hooks/useUncompleteLesson';
 import { useUpdateLessonProgress } from '../hooks/useUpdateLessonProgress';
 import { LessonViewBackground } from '../../../assets';
 import { buildLessonModeInitData } from '../hooks/useGrowYourNest';
@@ -444,10 +445,15 @@ const LessonView: React.FC<LessonViewProps> = ({
   } = useLessonQuiz(isValidBackendId ? lesson.backendId! : '');
   
   const { mutate: completeLessonMutation } = useCompleteLesson(
-    isValidBackendId ? lesson.backendId! : '', 
+    isValidBackendId ? lesson.backendId! : '',
     module?.backendId || ''
   );
-  
+
+  const { mutate: uncompleteLessonMutation } = useUncompleteLesson(
+    isValidBackendId ? lesson.backendId! : '',
+    module?.backendId || ''
+  );
+
   const { mutate: updateLessonProgressMutation } = useUpdateLessonProgress(
     isValidBackendId ? lesson.backendId! : '', 
     module?.backendId || ''
@@ -814,9 +820,17 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   const handleConfirmUncomplete = useCallback(() => {
     setShowUncompleteModal(false);
-    // TODO: Call uncomplete API when available
-    console.log('🔄 Lesson uncomplete confirmed - API call would go here');
-  }, []);
+    if (isValidBackendId && lesson.backendId) {
+      uncompleteLessonMutation({ lessonId: lesson.backendId }, {
+        onSuccess: () => {
+          console.log('🔄 Lesson marked as incomplete');
+        },
+        onError: (error: Error) => {
+          console.error('❌ Failed to uncomplete lesson:', error);
+        }
+      });
+    }
+  }, [isValidBackendId, lesson.backendId, uncompleteLessonMutation]);
 
   // ═══════════════════════════════════════════════════════════
   // GYN PLAY HANDLER — Launches lesson-mode minigame

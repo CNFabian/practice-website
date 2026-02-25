@@ -74,33 +74,77 @@ export class UIComponents {
     container.setAlpha(0); // Start invisible
     container.setName('coinTooltip');
 
-    // Tooltip background - sized for 15px font
     const tooltipWidth = scale(320);
-    const tooltipHeight = scale(80);
     const cornerRadius = scale(20);
+    const paddingX = scale(14);
+    const paddingY = scale(14);
+    const textStartX = scale(80);
+    const textAreaWidth = tooltipWidth - textStartX - paddingX;
 
+    // --- Measure text first so we can size the background to fit ---
+    const rewardsShopMarker = 'rewards shop!';
+    const markerIndex = text.toLowerCase().indexOf(rewardsShopMarker.toLowerCase());
+
+    // Create text objects off-screen to measure, then reposition
+    let mainTextObj: Phaser.GameObjects.Text | undefined;
+    let linkObj: Phaser.GameObjects.Text | undefined;
+    let plainTextObj: Phaser.GameObjects.Text | undefined;
+
+    const textStyle = {
+      fontFamily: 'Onest, Arial, sans-serif',
+      fontSize: scaleFontSize(15),
+      color: COLORS.TEXT_SECONDARY,
+      wordWrap: { width: textAreaWidth },
+      lineSpacing: scale(4)
+    };
+
+    if (markerIndex >= 0) {
+      const beforeText = text.substring(0, markerIndex).trimEnd();
+      const linkText = text.substring(markerIndex, markerIndex + rewardsShopMarker.length);
+
+      mainTextObj = scene.add.text(0, 0, beforeText, textStyle);
+      linkObj = scene.add.text(0, 0, linkText, {
+        fontFamily: 'Onest, Arial, sans-serif',
+        fontSize: scaleFontSize(15),
+        color: `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`,
+        fontStyle: 'bold'
+      });
+    } else {
+      plainTextObj = scene.add.text(0, 0, text, textStyle);
+    }
+
+    // Calculate required height
+    const contentHeight = mainTextObj && linkObj
+      ? mainTextObj.height + scale(4) + linkObj.height
+      : (plainTextObj?.height ?? 0);
+
+    const birdSize = scale(54);
+    const minContentHeight = birdSize; // At least as tall as the bird icon
+    const actualContentHeight = Math.max(contentHeight, minContentHeight);
+    const tooltipHeight = actualContentHeight + paddingY * 2;
+
+    // --- Draw background ---
     const background = scene.add.graphics();
     background.fillStyle(COLORS.PURE_WHITE, 1);
     background.fillRoundedRect(0, 0, tooltipWidth, tooltipHeight, cornerRadius);
-    
-    // Shadow effect
     background.lineStyle(scale(2), COLORS.UNAVAILABLE_BUTTON, 0.3);
     background.strokeRoundedRect(0, 0, tooltipWidth, tooltipHeight, cornerRadius);
     container.add(background);
 
-    // Blue bird celebration icon on the left
-    // OPT-02: Check texture exists (Tier 2 may still be loading)
+    // --- Bird icon centred vertically ---
+    const birdX = scale(45);
+    const birdY = tooltipHeight / 2;
     if (scene.textures.exists(ASSET_KEYS.BIRD_CELEBRATION)) {
-      const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
-      birdIcon.setDisplaySize(scale(64), scale(64));
+      const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_CELEBRATION);
+      birdIcon.setDisplaySize(birdSize, birdSize);
       container.add(birdIcon);
     } else {
       const onTextureAdd = (key: string) => {
         if (key === ASSET_KEYS.BIRD_CELEBRATION) {
           scene.textures.off('addtexture', onTextureAdd);
           if (container && container.scene) {
-            const birdIcon = scene.add.image(scale(45), tooltipHeight / 2, ASSET_KEYS.BIRD_CELEBRATION);
-            birdIcon.setDisplaySize(scale(64), scale(64));
+            const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_CELEBRATION);
+            birdIcon.setDisplaySize(birdSize, birdSize);
             container.add(birdIcon);
           }
         }
@@ -108,21 +152,39 @@ export class UIComponents {
       scene.textures.on('addtexture', onTextureAdd);
     }
 
-    // Tooltip text - 15px font size
-    const tooltipText = scene.add.text(
-      scale(80), 
-      tooltipHeight / 2, 
-      text,
-      {
-        fontFamily: 'Onest, Arial, sans-serif',
-        fontSize: scaleFontSize(15),
-        color: COLORS.TEXT_SECONDARY,
-        wordWrap: { width: scale(225) },
-        lineSpacing: 3
-      }
-    );
-    tooltipText.setOrigin(0, 0.5);
-    container.add(tooltipText);
+    // --- Position text content centred vertically ---
+    const textBlockTop = (tooltipHeight - contentHeight) / 2;
+
+    if (mainTextObj && linkObj) {
+      mainTextObj.setPosition(textStartX, textBlockTop);
+      mainTextObj.setOrigin(0, 0);
+      container.add(mainTextObj);
+
+      linkObj.setPosition(textStartX, textBlockTop + mainTextObj.height + scale(4));
+      linkObj.setOrigin(0, 0);
+      linkObj.setInteractive({ useHandCursor: true });
+      linkObj.on('pointerover', () => {
+        linkObj!.setStyle({ textDecoration: 'underline' });
+      });
+      linkObj.on('pointerout', () => {
+        linkObj!.setStyle({ textDecoration: 'none' });
+      });
+      linkObj.on('pointerdown', () => {
+        window.dispatchEvent(new CustomEvent('navigate-to', { detail: '/app/rewards' }));
+      });
+      container.add(linkObj);
+    } else if (plainTextObj) {
+      plainTextObj.setPosition(textStartX, tooltipHeight / 2);
+      plainTextObj.setOrigin(0, 0.5);
+      container.add(plainTextObj);
+    }
+
+    // Store dimensions and link reference so the parent can set up hit areas
+    container.setData('tooltipWidth', tooltipWidth);
+    container.setData('tooltipHeight', tooltipHeight);
+    if (linkObj) {
+      container.setData('linkObj', linkObj);
+    }
 
     return container;
   }
@@ -162,29 +224,57 @@ export class UIComponents {
     // Create tooltip positioned to stay on screen
     const tooltip = UIComponents.createTooltip(
       scene,
-      'The coins you earn can be redeemed for coupons in the rewards shop!',
+      'Earn coins as you learn and redeem them for rewards in the rewards shop!',
       tooltipX,
       tooltipY
     );
 
-    // Add hover interactions
-    counter.on('pointerover', () => {
+    // --- Make tooltip interactive so user can hover over it and click the link ---
+    // We use a hit area covering the full tooltip background
+    const tooltipHitArea = new Phaser.Geom.Rectangle(0, 0, tooltipWidth, tooltip.getData('tooltipHeight') || scale(100));
+    tooltip.setInteractive(tooltipHitArea, Phaser.Geom.Rectangle.Contains);
+
+    // Shared hide timer — gives the user time to move from counter → tooltip
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    const HIDE_DELAY = 300; // ms grace period
+
+    const showTooltip = () => {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       scene.tweens.add({
         targets: tooltip,
         alpha: 1,
         duration: 200,
         ease: 'Power2'
       });
-    });
+    };
 
-    counter.on('pointerout', () => {
-      scene.tweens.add({
-        targets: tooltip,
-        alpha: 0,
-        duration: 200,
-        ease: 'Power2'
-      });
-    });
+    const scheduleHide = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        scene.tweens.add({
+          targets: tooltip,
+          alpha: 0,
+          duration: 200,
+          ease: 'Power2'
+        });
+        hideTimer = null;
+      }, HIDE_DELAY);
+    };
+
+    // Counter hover
+    counter.on('pointerover', showTooltip);
+    counter.on('pointerout', scheduleHide);
+
+    // Tooltip hover — cancel hide while user is on the tooltip
+    tooltip.on('pointerover', showTooltip);
+    tooltip.on('pointerout', scheduleHide);
+
+    // Link inside tooltip — keep tooltip visible while hovering/clicking the link
+    const tooltipLink = tooltip.getData('linkObj') as Phaser.GameObjects.Text | undefined;
+    if (tooltipLink) {
+      tooltipLink.on('pointerover', showTooltip);
+      tooltipLink.on('pointerout', scheduleHide);
+    }
 
     return { counter, tooltip };
   }

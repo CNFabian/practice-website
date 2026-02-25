@@ -18,7 +18,6 @@ import '../index.css'
 // Initialize Google Analytics
 const GA_TRACKING_ID = 'G-MFJ1V9NWW0'
 ReactGA.initialize(GA_TRACKING_ID)
-ReactGA.send({ hitType: 'pageview', page: window.location.pathname })
 
 const isResetPasswordRoute = window.location.pathname.startsWith('/reset-password')
 

@@ -8,7 +8,7 @@
 
 export const featureFlags = {
   /** Show Rewards page in sidebar */
-  rewards: false,
+  rewards: true,
   /** Show Badges page in sidebar */
   badges: false,
   /** Show Materials section (Calculators, Worksheets, etc.) in sidebar */

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { OnboardingImage1, OnboardingImage2, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
+import { OnboardingImage1, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
 import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../services/onboardingAPI';
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 import { searchCities, type PlacePrediction } from '../services/googlePlacesAPI';
@@ -80,13 +80,30 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
     return () => clearTimeout(timeoutId);
   }, [cityInput]);
 
-  // Progress calculation (6 total steps)
-  const progress = ((currentStep + 1) / 6) * 100;
+  // Steps: 0=Welcome, 1=Professionals, 2=Expert(conditional), 3=Timeline, 4=City
+  const needsExpertContact = formData.has_realtor === false || formData.has_loan_officer === false;
 
-  // Handle next button click
+  // Progress calculation — fixed at 5 steps so the bar only moves on next/back,
+  // not when toggling "Yes, I am" / "Not yet" answers on screen 2.
+  const progress = ((currentStep + 1) / 5) * 100;
+
+  // Handle next button click (skips expert contact if not needed)
   const handleNext = () => {
-    if (currentStep < 5) {
+    if (currentStep === 1 && !needsExpertContact) {
+      // Skip expert contact, go directly to timeline
+      setCurrentStep(3);
+    } else if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // Handle back button (skips expert contact if not needed)
+  const handleBack = () => {
+    if (currentStep === 3 && !needsExpertContact) {
+      // Skip expert contact, go back to professionals
+      setCurrentStep(1);
+    } else {
+      setCurrentStep(currentStep - 1);
     }
   };
 
@@ -94,15 +111,14 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
   const canProceed = () => {
     switch (currentStep) {
       case 0: // Welcome screen
-      case 1: // Intro screen
         return true;
-      case 2: // Professionals screen
+      case 1: // Professionals screen
         return formData.has_realtor !== null && formData.has_loan_officer !== null;
-      case 3: // Expert contact
+      case 2: // Expert contact
         return formData.wants_expert_contact !== '';
-      case 4: // Timeline
+      case 3: // Timeline
         return formData.homeownership_timeline_months > 0;
-      case 5: // City
+      case 4: // City
         return selectedCities.length > 0;
       default:
         return false;
@@ -148,10 +164,17 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
       console.log('formData at submission:', formData);
       console.log('expert contact value:', formData.wants_expert_contact);
 
-      // Step 2: Expert Contact
-      await completeStep2({
-        wants_expert_contact: formData.wants_expert_contact
-      });
+      // Step 2: Expert Contact (only submit if it was shown)
+      if (needsExpertContact && formData.wants_expert_contact) {
+        await completeStep2({
+          wants_expert_contact: formData.wants_expert_contact
+        });
+      } else {
+        // Default value when expert contact was skipped
+        await completeStep2({
+          wants_expert_contact: 'no_thanks'
+        });
+      }
 
       // Step 3: Timeline
       await completeStep3({
@@ -224,7 +247,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
       {/* Content Area */}
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="max-w-2xl w-full">
-          
+
           {/* Screen 1: Welcome */}
           {currentStep === 0 && (
             <div className="text-center space-y-8 animate-fadeIn">
@@ -233,12 +256,12 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   {/* Bird Image */}
                   <img src={OnboardingImage1} alt="Welcome" className="w-72 h-72 object-contain" />
                   {/* Text Box positioned absolutely above and to the right */}
-                  <div className="absolute -top-24 left-1/2 translate-x-8 w-80">
+                  <div className="absolute -top-16 left-1/2 translate-x-8 w-80">
                     <div className="relative">
                       <img src={TextBox} alt="" className="w-full h-auto" />
                       <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
                         <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center">
-                          Hi! Welcome to<br />NestNavigate!
+                          Welcome! Let's build<br />your learning path.
                         </OnestFont>
                       </div>
                     </div>
@@ -257,53 +280,21 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
             </div>
           )}
 
-          {/* Screen 2: Let's Build */}
+          {/* Screen 2: Professionals */}
           {currentStep === 1 && (
             <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-center">
-                <div className="relative inline-block">
-                  {/* Bird Image */}
-                  <img src={OnboardingImage2} alt="Let's Build" className="w-48 h-72 object-contain" />
-                  {/* Text Box positioned absolutely above and to the right */}
-                  <div className="absolute -top-24 left-1/2 translate-x-8 w-80">
-                    <div className="relative">
-                      <img src={TextBox} alt="" className="w-full h-auto" />
-                      <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
-                        <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center">
-                          Let's build the learning<br />path for you!
-                        </OnestFont>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleNext}
-                className="mx-auto block px-12 py-4 bg-elegant-blue hover:opacity-90 text-pure-white rounded-full transition-opacity shadow-md"
-              >
-                <OnestFont weight={500} lineHeight="relaxed" className="text-lg">
-                  CONTINUE
-                </OnestFont>
-              </button>
-            </div>
-          )}
-
-          {/* Screen 3: Professionals */}
-          {currentStep === 2 && (
-            <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <img src={OnboardingImage3_5} alt="Question" className="w-16 h-16 object-contain" />
+              <div className="relative flex items-center justify-center mb-8">
+                <img src={OnboardingImage3_5} alt="Question" className="absolute right-full mr-2 w-24 h-24 object-contain" />
                 <OnestFont as="h1" weight={700} lineHeight="tight" className="text-2xl text-text-blue-black">
-                  Are you working with a ...
+                  Are you currently working with any of the following?
                 </OnestFont>
               </div>
 
               <div className="space-y-8">
-                {/* Real Estate Officer */}
+                {/* Real Estate Agent */}
                 <div>
                   <OnestFont as="h2" weight={700} lineHeight="relaxed" className="text-xl mb-4 text-elegant-blue">
-                    Real Estate Officer?
+                    Real Estate Agent?
                   </OnestFont>
                   <div className="flex gap-4 justify-center">
                     <button
@@ -370,7 +361,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
               {/* Bottom Navigation Buttons */}
               <div className="flex gap-8 justify-center pt-8">
                 <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
+                  onClick={handleBack}
                   className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
@@ -394,14 +385,19 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
             </div>
           )}
 
-          {/* Screen 4: Expert Contact */}
-          {currentStep === 3 && (
+          {/* Screen 3: Expert Contact (only if user said "Not yet" to realtor or loan officer) */}
+          {currentStep === 2 && needsExpertContact && (
             <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <img src={OnboardingImage4} alt="Expert Contact" className="w-16 h-16 object-contain" />
-                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
-                  Would you like to get in contact with an expert?
-                </OnestFont>
+              <div className="relative flex items-center justify-center mb-8">
+                <img src={OnboardingImage4} alt="Expert Contact" className="absolute right-full mr-2 w-24 h-24 object-contain" />
+                <div>
+                  <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
+                    Would you like help from a home buying professional?
+                  </OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                    We can connect you with trusted experts in your area.
+                  </OnestFont>
+                </div>
               </div>
 
               <div className="space-y-4 max-w-md mx-auto">
@@ -425,7 +421,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
               {/* Bottom Navigation Buttons */}
               <div className="flex gap-8 justify-center pt-8">
                 <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
+                  onClick={handleBack}
                   className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
@@ -449,23 +445,25 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
             </div>
           )}
 
-          {/* Screen 5: Timeline Slider */}
-          {currentStep === 4 && (
+          {/* Screen 4: Timeline Slider */}
+          {currentStep === 3 && (
             <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <img src={OnboardingImage3_5} alt="Timeline" className="w-16 h-16 object-contain" />
-                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
-                  When do you want to achieve homeownership?
-                </OnestFont>
+              <div className="relative flex items-center justify-center mb-8">
+                <img src={OnboardingImage3_5} alt="Timeline" className="absolute right-full mr-2 w-24 h-24 object-contain" />
+                <div>
+                  <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
+                    When would you approximately like to buy a home?
+                  </OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                    This helps us tailor your plan.
+                  </OnestFont>
+                </div>
               </div>
 
               <div className="max-w-xl mx-auto space-y-6">
                 <div className="flex flex-col items-center gap-1">
                   <OnestFont weight={700} lineHeight="tight" className="text-4xl text-elegant-blue block">
                     {formatTimeline(formData.homeownership_timeline_months)}
-                  </OnestFont>
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey block">
-                    (Estimated timeline)
                   </OnestFont>
                 </div>
 
@@ -500,7 +498,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
               {/* Bottom Navigation Buttons */}
               <div className="flex gap-8 justify-center pt-8">
                 <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
+                  onClick={handleBack}
                   className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
@@ -524,22 +522,22 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
             </div>
           )}
 
-          {/* Screen 6: City Search */}
-          {currentStep === 5 && (
+          {/* Screen 5: City Search */}
+          {currentStep === 4 && (
             <div className="text-center space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <img src={OnboardingImage3_5} alt="Location" className="w-16 h-16 object-contain" />
-                <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
-                  Finally, let's find your future home base!
-                  <br />
-                  Select cities you're interested in:
-                </OnestFont>
+              <div className="relative flex items-center justify-center mb-8">
+                <img src={OnboardingImage3_5} alt="Location" className="absolute right-full mr-2 w-24 h-24 object-contain" />
+                <div>
+                  <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
+                    Where are you considering buying a home?
+                  </OnestFont>
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
+                    So we know what information is most relevant to you.
+                  </OnestFont>
+                </div>
               </div>
 
               <div className="max-w-xl mx-auto space-y-4">
-                <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-elegant-blue text-center">
-                  Search by City Name or ZIP Code
-                </OnestFont>
                 <div className="relative">
                   {/* Search Input */}
                   <div
@@ -610,6 +608,13 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   )}
                 </div>
 
+                {/* Helper Text - centered below the form */}
+                {!cityInput && selectedCities.length === 0 && (
+                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-4 text-center">
+                    Start typing to see available locations
+                  </OnestFont>
+                )}
+
                 {/* Selected City Chips - Below Input */}
                 {selectedCities.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -640,13 +645,6 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                     {cityError}
                   </OnestFont>
                 )}
-
-                {/* Helper Text */}
-                {!cityInput && selectedCities.length === 0 && (
-                  <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-4 text-center">
-                    Start typing to search for your city
-                  </OnestFont>
-                )}
               </div>
 
               {error && (
@@ -658,7 +656,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
               {/* Bottom Navigation Buttons */}
               <div className="flex gap-8 justify-center pt-8">
                 <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
+                  onClick={handleBack}
                   className="px-24 py-2 rounded-full border-2 border-elegant-blue text-elegant-blue bg-pure-white hover:bg-elegant-blue/10 transition-colors"
                 >
                   <OnestFont weight={500} lineHeight="relaxed">

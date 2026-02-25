@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { Sidebar } from '../components/index'
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
 import { useWalkthrough } from '../contexts/WalkthroughContext'
@@ -15,6 +15,20 @@ import { queryKeys } from '../lib/queryKeys';
 
 const MainLayoutContent: React.FC = () => {
   const { isCollapsed } = useSidebar();
+  const navigate = useNavigate();
+
+  // Listen for Phaser-dispatched navigation events (e.g., coin tooltip → rewards shop)
+  useEffect(() => {
+    const handleNavigateTo = (e: Event) => {
+      const path = (e as CustomEvent).detail;
+      if (typeof path === 'string') {
+        navigate(path);
+      }
+    };
+    window.addEventListener('navigate-to', handleNavigateTo);
+    return () => window.removeEventListener('navigate-to', handleNavigateTo);
+  }, [navigate]);
+
   const {
     activeSegmentId,
     startSegment,

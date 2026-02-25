@@ -61,6 +61,8 @@ export interface ValidateAnswerRequest {
 export interface ValidateAnswerResponse {
   is_correct: boolean;
   explanation: string | null;
+  /** Optional correct answer ID returned from backend (if available) */
+  correct_answer_id?: string | null;
 }
 
 // ═══════════════════════════════════════════════════════════════

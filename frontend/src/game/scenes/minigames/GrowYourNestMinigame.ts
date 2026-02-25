@@ -334,12 +334,12 @@ export default class GrowYourNestMinigame extends BaseScene {
             }
 
             this.isSubmitting = false;
-            this.showAnswerFeedback(validation.is_correct);
+            this.showAnswerFeedback(validation.is_correct, validation.explanation, validation.correct_answer_id);
           } else if (this.gameMode === 'freeroam') {
           // After validation, submit to freeroam/answer for tree growth + coins
           if (!this.moduleId) {
             this.isSubmitting = false;
-            this.showAnswerFeedback(validation.is_correct);
+            this.showAnswerFeedback(validation.is_correct, validation.explanation, validation.correct_answer_id);
             return;
           }
 
@@ -381,19 +381,19 @@ export default class GrowYourNestMinigame extends BaseScene {
 
               // If tree just completed this answer, show completion after feedback
               if (r.tree_state.just_completed) {
-                this.showAnswerFeedback(r.is_correct);
+                this.showAnswerFeedback(r.is_correct, validation.explanation, validation.correct_answer_id);
                 this.time.delayedCall(2000, () => {
                   this.doShowCompletion();
                 });
                 return;
               }
-              this.showAnswerFeedback(r.is_correct);            })
+              this.showAnswerFeedback(r.is_correct, validation.explanation, validation.correct_answer_id);            })
             .catch((e) => {
               console.error('🌳 freeroam answer error:', e);
               this.isSubmitting = false;
               this.consecutiveCorrect = 0;
               // Still show feedback from validate-answer even if freeroam/answer fails
-              this.showAnswerFeedback(validation.is_correct);
+              this.showAnswerFeedback(validation.is_correct, validation.explanation, validation.correct_answer_id);
             });
         }
       })
@@ -498,8 +498,16 @@ export default class GrowYourNestMinigame extends BaseScene {
 
   // ─── Answer visual feedback (uses option button data from state) ───
 
-  private showAnswerFeedback(isCorrect: boolean): void {
+  private showAnswerFeedback(isCorrect: boolean, explanation?: string | null, correctAnswerId?: string | null): void {
     const state = this.getState();
+    const q = this.questions[this.currentQuestionIndex];
+
+    // Find the correct answer letter from the correct_answer_id (if provided by backend)
+    let correctLetter: string | null = null;
+    if (!isCorrect && correctAnswerId) {
+      const correctOpt = q.options.find((o) => o.answerId === correctAnswerId);
+      if (correctOpt) correctLetter = correctOpt.letter;
+    }
 
     state.optionButtons.forEach((btn) => {
       const bg = btn.getData('bg') as Phaser.GameObjects.Graphics;
@@ -511,8 +519,15 @@ export default class GrowYourNestMinigame extends BaseScene {
 
       bg.clear();
       if (letter === this.selectedAnswer) {
+        // Selected answer: green if correct, red if incorrect
         bg.fillStyle(isCorrect ? COLORS.STATUS_GREEN : COLORS.STATUS_RED, 1);
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
+      } else if (!isCorrect && letter === correctLetter) {
+        // Highlight the correct answer in green when user got it wrong
+        bg.fillStyle(COLORS.STATUS_GREEN, 0.6);
+        bg.lineStyle(2, COLORS.STATUS_GREEN);
+        bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
+        bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
       }
       const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
       if (hitArea) hitArea.disableInteractive();
@@ -521,8 +536,18 @@ export default class GrowYourNestMinigame extends BaseScene {
     updatePlantGrowth(this, state);
     this.syncState(state);
 
+    // Build explanation text for incorrect answers
+    let feedbackExplanation: string | undefined;
+    if (!isCorrect) {
+      // Use server explanation if available, fall back to question-level explanation
+      feedbackExplanation = explanation || q.explanation || undefined;
+      if (correctLetter) {
+        feedbackExplanation = `The correct answer is ${correctLetter}.${feedbackExplanation ? ' ' + feedbackExplanation : ''}`;
+      }
+    }
+
     // Show the feedback banner below the options
-    showFeedbackBanner(this, state, isCorrect);
+    showFeedbackBanner(this, state, isCorrect, feedbackExplanation);
     this.syncState(state);
 
       if (isCorrect) {

@@ -292,22 +292,8 @@ export class HouseProgressCard {
       ).setOrigin(0, 0.5);
       progressContainer.add(lessonCount);
 
-      // Quiz count (document icon) - grouped closer with count, more separation from videos
-      // OPT-02: Check texture exists (Tier 2 may still be loading)
-      if (scene.textures.exists('documentProgressIcon')) {
-        const documentIcon = scene.add.image(-cardWidth / 2 + scale(140), bottomY, 'documentProgressIcon');
-        documentIcon.setDisplaySize(scale(24), scale(24));
-        documentIcon.setOrigin(0.5);
-        progressContainer.add(documentIcon);
-      }
-
-      const quizCount = scene.add.text(-cardWidth / 2 + scale(160), bottomY, `${data.quizCount || 0}`,
-        createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, { fontSize: scaleFontSize(16) })
-      ).setOrigin(0, 0.5);
-      progressContainer.add(quizCount);
-
-      // Tree icon
-      const circleX = -cardWidth / 2 + scale(200);
+      // Tree icon (document icon removed — only video + tree remain)
+      const circleX = -cardWidth / 2 + scale(140);
       const circleRadius = scale(16);
             
       // Draw circular progress background (gray circle)
@@ -498,12 +484,12 @@ export class HouseProgressCard {
           });
         }
 
-        // Bird hop up
+        // Bird hop up (move upward from its resting position)
         if (bird && bird.getSprite() && originalBirdY !== undefined) {
           const birdSprite = bird.getSprite();
           if (birdSprite) {
-            const targetBirdY = y + scale(-30);
-            
+            const targetBirdY = originalBirdY - scale(30);
+
             scene.tweens.add({
               targets: birdSprite,
               y: targetBirdY,

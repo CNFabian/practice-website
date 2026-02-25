@@ -1457,7 +1457,7 @@ public expandProgressCard(houseIndex: number): void {
     // Use consistent positioning formula
     const progressCardOffsetX = scale(250);
     
-    const birdX = houseX + progressCardOffsetX + scale(100);
+    const birdX = houseX + progressCardOffsetX + scale(140);
     const birdY = houseY - scale(50); // Top of card area
 
     this.bird = new BirdCharacter(this);
@@ -1494,8 +1494,8 @@ public expandProgressCard(houseIndex: number): void {
     // Use consistent positioning formula - same as createBird()
     const progressCardOffsetX = scale(250);
     
-    const finalX = targetX + progressCardOffsetX + scale(100);
-    const finalY = targetY - scale(50); // Top of card area
+    const finalX = targetX + progressCardOffsetX + scale(140);
+    const finalY = targetY - scale(80); // Land at hover-state height (resting -50 minus hop -30)
 
     const houseDistance = Math.abs(targetHouseIndex - this.previousHouseIndex);
 
@@ -1615,7 +1615,7 @@ public expandProgressCard(houseIndex: number): void {
       
       const progressCardOffsetX = scale(250);
       
-      const birdX = x + progressCardOffsetX + scale(100);
+      const birdX = x + progressCardOffsetX + scale(140);
       const birdY = y - scale(50);
 
       this.bird.setPosition(birdX, birdY);

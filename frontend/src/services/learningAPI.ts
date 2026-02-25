@@ -271,6 +271,35 @@ export const completeLesson = async (
   }
 };
 
+// POST /api/learning/lessons/{lesson_id}/uncomplete - Reverse lesson completion
+export const uncompleteLesson = async (lessonId: string): Promise<any> => {
+  if (/^\d+$/.test(lessonId)) {
+    console.warn(`⚠️ Uncomplete Lesson ID "${lessonId}" appears to be a frontend ID, not a UUID. Skipping backend call.`);
+    return { success: false, message: 'Frontend ID used instead of UUID' };
+  }
+
+  if (isMockLessonId(lessonId)) {
+    console.log(`📋 Mock: Skipping lesson uncomplete for mock lesson: ${lessonId}`);
+    return { success: true, message: 'Mock lesson uncompleted', data: {} };
+  }
+
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/uncomplete`, {
+      method: 'POST',
+      body: JSON.stringify({ lesson_id: lessonId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error uncompleting lesson:', error);
+    throw error;
+  }
+};
+
 
 export interface LessonMilestoneRequest {
   lesson_id: string;

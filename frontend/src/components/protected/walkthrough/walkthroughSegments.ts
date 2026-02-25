@@ -251,7 +251,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
     type: 'fullscreen',
     content: {
       image: NoticeBirdIcon,
-      title: 'Help Her Build a Nest!',
+      title: 'Help the Nest Bird Get a Home!',
       description: "Help your bird build the perfect nest — one answer at a time!",
       buttonText: 'CONTINUE',
     },

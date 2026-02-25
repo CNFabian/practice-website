@@ -672,7 +672,8 @@ export function updateNextButton(state: GYNSceneState, enabled: boolean): void {
 export function showFeedbackBanner(
   scene: Phaser.Scene,
   state: GYNSceneState,
-  isCorrect: boolean
+  isCorrect: boolean,
+  explanation?: string
 ): void {
   // Clear any existing banner first
   clearFeedbackBanner(state);
@@ -682,14 +683,15 @@ export function showFeedbackBanner(
   const HORIZONTAL_PADDING = panelWidth * 0.08;
   const contentWidth = panelWidth - HORIZONTAL_PADDING * 2;
 
-  // Position the banner at the TOP of the question area to avoid overlapping option D
-  const bannerY = panelHeight * 0.12;
-  const bannerHeight = panelHeight * 0.075;
-  const bannerRadius = panelHeight * 0.075 / 2;
+  // Position the banner between the last option and the Next button
+  // Use a position that doesn't overlap with either
+  const bannerY = panelHeight * 0.78;
+  const bannerHeight = panelHeight * 0.065;
+  const bannerRadius = bannerHeight / 2;
 
   state.feedbackBanner = scene.add.container(0, bannerY);
 
-  // Background with gradient-style fill
+  // Background pill
   const bg = scene.add.graphics();
   if (isCorrect) {
     bg.fillStyle(COLORS.STATUS_GREEN, 1);
@@ -705,9 +707,9 @@ export function showFeedbackBanner(
   );
   state.feedbackBanner.add(bg);
 
-  // Text — "CORRECT!" or "INCORRECT"
-  const fontSize = Math.round(panelWidth * 0.045);
-  const bannerText = isCorrect ? 'CORRECT!' : 'INCORRECT';
+  // Banner text — "correct!" or "Nice try!"
+  const fontSize = Math.round(panelWidth * 0.035);
+  const bannerText = isCorrect ? 'correct!' : 'Nice try!';
   const text = scene.add.text(
     panelWidth / 2,
     0,
@@ -718,6 +720,25 @@ export function showFeedbackBanner(
   );
   text.setOrigin(0.5, 0.5);
   state.feedbackBanner.add(text);
+
+  // If incorrect and explanation provided, show explanation below the banner
+  if (!isCorrect && explanation) {
+    const explFontSize = Math.round(panelWidth * 0.026);
+    const explY = bannerHeight / 2 + panelHeight * 0.025;
+    const explText = scene.add.text(
+      panelWidth / 2,
+      explY,
+      explanation,
+      createTextStyle('BODY_MEDIUM', COLORS.TEXT_SECONDARY, {
+        fontSize: `${explFontSize}px`,
+        align: 'center',
+        wordWrap: { width: contentWidth },
+        lineSpacing: explFontSize * 0.3,
+      })
+    );
+    explText.setOrigin(0.5, 0);
+    state.feedbackBanner.add(explText);
+  }
 
   state.rightPanel.add(state.feedbackBanner);
 

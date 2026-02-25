@@ -276,13 +276,16 @@ const SignupPage: React.FC = () => {
 
   const renderEmailStep = () => (
     <form onSubmit={handleSendCode} className="space-y-6">
-      <div className="text-center space-y-3">
+      <div className="text-center space-y-2">
         <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
           Welcome To Nest!
         </OnestFont>
+        <OnestFont as="p" weight={700} lineHeight="relaxed" className="text-text-blue-black text-base px-4">
+          Build confidence before you buy
+        </OnestFont>
         <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
-          Nest Navigate is a guided, gamified learning platform
-          to help you land your dream home!
+          NestNavigate helps you understand the process, compare
+          options, and make informed decisions.
         </OnestFont>
       </div>
 
@@ -342,11 +345,11 @@ const SignupPage: React.FC = () => {
     <form onSubmit={handleVerifyCode} className="space-y-5">
       <div className="text-center space-y-3">
         <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
-          Welcome To Nest!
+          Verify your email
         </OnestFont>
         <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
-          Nest Navigate is a guided, gamified learning platform
-          to help you land your dream home!
+          We sent a 6-digit code to your email. Enter it below
+          to confirm your account and continue.
         </OnestFont>
       </div>
 
@@ -441,13 +444,11 @@ const SignupPage: React.FC = () => {
     <form onSubmit={handleRegister} className="space-y-4">
       <div className="text-center space-y-2">
         <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
-          Welcome To Nest!
+          Finish setting up your account
         </OnestFont>
-        <OnestFont as="p" weight={700} lineHeight="relaxed" className="text-text-blue-black text-base">
-          Email verified!
-        </OnestFont>
-        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base">
-          Set your name and password to finish registering.
+        <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
+          Your email has been verified. Add your name and create
+          a password to continue.
         </OnestFont>
       </div>
 

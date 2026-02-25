@@ -383,10 +383,8 @@ export default class MapScene extends BaseScene {
     // Lock/Roadblock icon for locked neighborhoods
     let lockIcon: Phaser.GameObjects.Image | undefined;
     if (neighborhood.isLocked) {
-      // Use different icons based on neighborhood type
-      const iconAssetKey = neighborhood.id === 'construction-zone' 
-        ? ASSET_KEYS.ROADBLOCK_ICON 
-        : ASSET_KEYS.LOCK_ICON;
+      // Use construction/roadblock icon for all locked neighborhoods
+      const iconAssetKey = ASSET_KEYS.ROADBLOCK_ICON;
       
       lockIcon = this.add.image(0, 0, iconAssetKey);
       lockIcon.setOrigin(0.5);

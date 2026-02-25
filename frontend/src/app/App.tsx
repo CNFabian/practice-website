@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useEffect, useState, useRef, lazy, Suspense } from 'react'
+import usePageTracking from '../hooks/usePageTracking'
 import type { RootState } from '../store/store'
 import { setLoading, logout, setUser } from '../store/slices/authSlice'
 import { getCurrentUser, clearAuthData, isAuthenticated } from '../services/authAPI'
@@ -62,6 +63,7 @@ const clearCachedAuth = () => {
 }
 
 function App() {
+  usePageTracking()
   const { isAuthenticated: reduxIsAuthenticated } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch()
   const [authInitialized, setAuthInitialized] = useState(false)
