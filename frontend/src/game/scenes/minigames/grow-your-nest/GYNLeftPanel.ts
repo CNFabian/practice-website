@@ -51,15 +51,7 @@ export function createLeftPanel(
     state.leftPanel.add(state.leftPanelBackground);
   }
 
-  // "Growth" title
-  const title = scene.add.text(
-    panelWidth / 2,
-    40,
-    'Growth',
-    createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
-  );
-  title.setOrigin(0.5, 0);
-  state.leftPanel.add(title);
+  // Title removed per design update
 
   // Plant/tree graphics container — positioned lower to sit on ground area of background
   state.plantGraphics = scene.add.container(panelWidth / 2, panelHeight * 0.8);
@@ -97,7 +89,7 @@ function createProgressSection(
   const progressBarRadius = 14;
 
   const progressBarBg = scene.add.graphics();
-  progressBarBg.fillStyle(0xe0e0e0, 1);
+  progressBarBg.fillStyle(COLORS.PURE_WHITE, 1);
   progressBarBg.fillRoundedRect(
     progressBarStartX,
     bottomY - progressBarHeight / 2,
@@ -227,8 +219,27 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
     treeImage.setScale(finalScale);
     state.plantGraphics.add(treeImage);
 
+    // Wrap tree (and optionally bird-in-nest) in a sub-container so they float together
+    const treeGroup = scene.add.container(0, 0);
+    treeGroup.add(treeImage);
+
+    // If tree is completed, overlay bird-in-nest on the tree center
+    if (state.treeState?.completed && scene.textures.exists(ASSET_KEYS.BIRD_NEST_STANDING)) {
+      const treeDisplayHeight = treeImage.height * finalScale;
+      const birdY = -(treeDisplayHeight * 0.53);
+      const birdX = treeDisplayHeight * 0.02;
+      const birdNest = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_NEST_STANDING);
+      const birdTargetHeight = treeDisplayHeight * 0.35;
+      const birdScale = birdTargetHeight / birdNest.height;
+      birdNest.setScale(birdScale);
+      treeGroup.add(birdNest);
+      state.birdNestImage = birdNest;
+    }
+
+    state.plantGraphics.add(treeGroup);
+
     state.floatingTween = scene.tweens.add({
-      targets: treeImage,
+      targets: treeGroup,
       y: -8,
       duration: 2000,
       ease: 'Sine.easeInOut',
@@ -266,6 +277,46 @@ export function updatePlantGrowth(scene: Phaser.Scene, state: GYNSceneState): vo
 
   // Update progress bar fill
   updateProgressBar(state, progressPercent);
+}
+
+/**
+ * Adds the bird-in-nest image to the tree on the left panel.
+ * Called when the tree fully grown screen is shown, even if treeState.completed
+ * is not yet set (e.g. during testing). Skips if bird is already present.
+ */
+export function showBirdNestOnTree(scene: Phaser.Scene, state: GYNSceneState): void {
+  if (state.birdNestImage) return; // already showing
+  if (!scene.textures.exists(ASSET_KEYS.BIRD_NEST_STANDING)) return;
+
+  // Find the tree group container inside plantGraphics
+  const children = state.plantGraphics.getAll();
+  // The tree group is the last container added (contains tree image + optionally bird)
+  let treeGroup: Phaser.GameObjects.Container | null = null;
+  for (let i = children.length - 1; i >= 0; i--) {
+    if (children[i] instanceof Phaser.GameObjects.Container) {
+      treeGroup = children[i] as Phaser.GameObjects.Container;
+      break;
+    }
+  }
+
+  if (!treeGroup) return;
+
+  // Find the tree image inside the group to calculate positioning
+  const treeImage = treeGroup.getAll().find(
+    (child) => child instanceof Phaser.GameObjects.Image && (child as Phaser.GameObjects.Image).texture.key.startsWith('tree_stage_')
+  ) as Phaser.GameObjects.Image | undefined;
+
+  if (!treeImage) return;
+
+  const treeDisplayHeight = treeImage.height * treeImage.scaleY;
+  const birdY = -(treeDisplayHeight * 0.53);
+  const birdX = treeDisplayHeight * 0.02;
+  const birdNest = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_NEST_STANDING);
+  const birdTargetHeight = treeDisplayHeight * 0.35;
+  const birdScale = birdTargetHeight / birdNest.height;
+  birdNest.setScale(birdScale);
+  treeGroup.add(birdNest);
+  state.birdNestImage = birdNest;
 }
 
 function updateProgressBar(state: GYNSceneState, progressPercent: number): void {

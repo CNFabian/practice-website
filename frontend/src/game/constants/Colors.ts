@@ -16,7 +16,7 @@ export const COLORS = {
   LOGO_YELLOW: 0xfdb212,      // #FDB212 - LogoYellow - Logo yellow/orange
   
   // Blues
-  // LINEAR_BLUE_1: linear-gradient(137.38deg, #1D3CC6 6.84%, #837CFF 97.24%)
+  // LINEAR_BLUE_1: linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)
   LINEAR_BLUE_1_START: 0x1d3cc6,  // #1D3CC6 - LinearBlue1 gradient start
   LINEAR_BLUE_1_END: 0x837cff,    // #837CFF - LinearBlue1 gradient end
   ELEGANT_BLUE: 0x6b85f5,         // #6B85F5 - ElegantBlue - Medium blue
@@ -25,7 +25,13 @@ export const COLORS = {
   // System Status
   STATUS_YELLOW: 0xfac86d,    // #FAC86D - StatusYellow - Warning states
   STATUS_RED: 0xff6c4f,       // #FF6C4F - StatusRed - Error states
+  STATUS_RED_BG: 0xf05135,    // #F05135 - StatusRedBackground - Error outline/background
+  STATUS_RED_TINT: 0xf05135,  // #F05135 at 10% opacity - Light red tint for incorrect answer fill
   STATUS_GREEN: 0x76dc94,     // #76DC94 - StatusGreen - Success states
+  // STATUS_GREEN_BACKGROUND: linear-gradient(180deg, #339D5F 0%, #32A68E 100%)
+  STATUS_GREEN_BG_START: 0x339d5f,  // #339D5F - StatusGreenBackground gradient start
+  STATUS_GREEN_BG_END: 0x32a68e,    // #32A68E - StatusGreenBackground gradient end
+  STATUS_GREEN_TINT: 0x76dc94,      // #76DC94 at 10% opacity - Light green tint for correct answer fill
   
   // Background Colors
   LIGHT_BACKGROUND_BLUE: 0xebefff,  // #EBEFFF - LightBackgroundBlue - Primary background

@@ -177,18 +177,18 @@ static createBackButton(
   hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
   container.add(hoverBg);
 
-  // Create arrow icon
+  // Create arrow icon — 24px base, DPR-scaled to match React text-2xl
   const arrow = scene.add.text(0, 0, '←', {
-    fontSize: '36px',
+    fontSize: scaleFontSize(24),
     fontFamily: FONT_FAMILY,
     color: COLORS.TEXT_PRIMARY,
     fontStyle: 'bold',
   }).setOrigin(0, 0.5);
   container.add(arrow);
 
-  // Create "Back" text
+  // Create "Back" text — 18px base, DPR-scaled to match React text-lg
   const backText = scene.add.text(scale(22), 0, 'Back', {
-    fontSize: '28px',
+    fontSize: scaleFontSize(18),
     fontFamily: FONT_FAMILY,
     color: COLORS.TEXT_PRIMARY,
     fontStyle: 'bold',

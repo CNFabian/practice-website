@@ -134,7 +134,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
       <div
         className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-modal-bounce"
         style={{
-          background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+          background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
         }}
       >
         <div className="flex flex-col items-center text-center px-8 pt-10 pb-8">
@@ -251,7 +251,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             onClick={handleLetsGo}
             className="w-full max-w-xs py-4 rounded-full hover:opacity-90 transition-opacity shadow-lg"
             style={{
-              background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+              background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
             }}
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-pure-white tracking-wide">
@@ -368,7 +368,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
                 : 'hover:opacity-90'
             }`}
             style={{
-              background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+              background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
             }}
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-base text-pure-white tracking-wide">

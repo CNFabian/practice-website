@@ -126,7 +126,17 @@ export class BaseScene extends Phaser.Scene {
    */
   protected setBackgroundImage(assetKey: string): void {
     console.log('🎨 BaseScene.setBackgroundImage called with key:', assetKey);
-    
+
+    // If React currently owns the background (LessonView or minigame overlay),
+    // skip Phaser background writes to prevent overwriting React's background.
+    // Uses a synchronous window flag set by handleLessonSelect/handleMinigameSelect
+    // BEFORE React re-renders, so it's always up-to-date (unlike localStorage which
+    // only updates after the useEffect fires).
+    if ((window as any).__nestnav_reactOwnsBackground) {
+      console.log('⏭️ BaseScene.setBackgroundImage skipped — React owns background');
+      return;
+    }
+
     const bgElement = document.getElementById('section-background');
     if (!bgElement) {
       console.error('❌ section-background element not found in DOM');
@@ -164,10 +174,7 @@ export class BaseScene extends Phaser.Scene {
         const dataUrl = canvas.toDataURL('image/png');
         
         console.log('✅ Setting background with data URL');
-        bgElement.style.setProperty('background', `url(${dataUrl})`, 'important');
-        bgElement.style.backgroundSize = 'cover';
-        bgElement.style.backgroundPosition = 'center';
-        bgElement.style.backgroundRepeat = 'no-repeat';
+        bgElement.style.setProperty('background', `url(${dataUrl}) center / cover no-repeat`, 'important');
         console.log('✅ Background image set successfully');
       } else {
         console.error('❌ Could not get canvas context');
@@ -181,12 +188,16 @@ export class BaseScene extends Phaser.Scene {
    * Clear the background image from DOM element
    */
   protected clearBackgroundImage(): void {
+    // If React currently owns the background (LessonView or minigame overlay),
+    // skip clearing to prevent wiping React's background during scene shutdown.
+    if ((window as any).__nestnav_reactOwnsBackground) {
+      console.log('⏭️ BaseScene.clearBackgroundImage skipped — React owns background');
+      return;
+    }
+
     const bgElement = document.getElementById('section-background');
     if (bgElement) {
       bgElement.style.setProperty('background', '', 'important');
-      bgElement.style.backgroundSize = '';
-      bgElement.style.backgroundPosition = '';
-      bgElement.style.backgroundRepeat = '';
     }
   }
 

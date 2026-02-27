@@ -1,2 +1,6 @@
-export { default as birdAtDesk } from '../images/birdChracter/bird_at_computer.png'
-export { default as birdWithPencil } from '../images/birdChracter/bird_with_pencil.png'
+export { default as birdAtDesk } from '../images/birdCharacter/bird_at_computer.png'
+export { default as birdWithPencil } from '../images/birdCharacter/bird_with_pencil.png'
+export { default as birdSad } from '../images/birdCharacter/bird_sad.png'
+export { default as birdCoin } from '../images/birdCharacter/bird_with_coin.png'
+export { default as birdCelebration } from '../images/birdCharacter/bird_celebration.png'
+export { default as birdStandingNest } from '../images/birdCharacter/bird_nest_standing.png'

@@ -522,6 +522,16 @@ class GameManager {
   transitionToHouse(houseId: string | null, moduleBackendId: string | null): void {
     if (!this.game) return;
 
+    // Check if we should skip the HouseScene restart — set by
+    // handleLaunchMinigameFromLesson to avoid destroying the existing HouseScene
+    // when launching a GYN minigame from LessonView.
+    const skipRestart = this.game.registry.get('skipHouseSceneRestart');
+    if (skipRestart) {
+      this.game.registry.set('skipHouseSceneRestart', false);
+      // HouseScene is already woken by the caller — just return
+      return;
+    }
+
     // Find the house to get the moduleId
     let house = this.housesData['downtown']?.find(h => h.id === houseId);
 

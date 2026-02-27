@@ -110,7 +110,7 @@ const FreeRoamWalkthrough: React.FC<FreeRoamWalkthroughProps> = ({
           right: highlightRect
             ? window.innerWidth - highlightRect.left + padding + 24
             : 'auto',
-          background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+          background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
         }}
       >
         <div className="p-6">

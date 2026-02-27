@@ -14,6 +14,9 @@ import {
   BirdIdle,
   BirdFly,
   BirdCelebration,
+  BirdWithPencil,
+  BirdSad,
+  BirdWithCoin,
   CoinCounterIcon,
   stage1Tree,
   stage2Tree,
@@ -38,7 +41,9 @@ import {
   WateringCanWatering,
   FertilizerStill,
   FertilizerPouring,
-  TreeShadow
+  TreeShadow,
+  BirdNestStanding,
+  LessonCard
 } from '../../assets/phaser';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -85,12 +90,17 @@ const SECONDARY_ASSETS: AssetDefinition[] = [
   // HouseScene
   { key: ASSET_KEYS.SUBURBAN_BACKGROUND, path: HouseBackground, type: 'image' },
   { key: ASSET_KEYS.LESSON_HOUSE, path: LessonHouse, type: 'image' },
+  { key: ASSET_KEYS.LESSON_CARD, path: LessonCard, type: 'image' },
   { key: ASSET_KEYS.VIDEO_PROGRESS_ICON, path: VideoProgressIcon, type: 'image' },
   { key: ASSET_KEYS.DOCUMENT_PROGRESS_ICON, path: DocumentProgressIcon, type: 'image' },
   { key: ASSET_KEYS.PROGRESS_STAR_ICON, path: ProgressStarIcon, type: 'image' },
   { key: ASSET_KEYS.FRONT_GRASS, path: FrontGrass, type: 'image' },
   // Bird celebration (SVG with dimensions)
-  { key: ASSET_KEYS.BIRD_CELEBRATION, path: BirdCelebration, type: 'svg', svgWidth: 200, svgHeight: 200 },
+  { key: ASSET_KEYS.BIRD_CELEBRATION, path: BirdCelebration, type: 'image' },
+  { key: ASSET_KEYS.BIRD_WITH_PENCIL, path: BirdWithPencil, type: 'image' },
+  { key: ASSET_KEYS.BIRD_SAD, path: BirdSad, type: 'image' },
+  { key: ASSET_KEYS.BIRD_WITH_COIN, path: BirdWithCoin, type: 'image' },
+  { key: ASSET_KEYS.BIRD_NEST_STANDING, path: BirdNestStanding, type: 'image' },
   // Tree stage images — needed by HouseProgressCard minigame indicator on hover
   // Moved from Tier 3 to Tier 2 so they are available when NeighborhoodScene renders
   { key: ASSET_KEYS.TREE_STAGE_1, path: stage1Tree, type: 'image' },

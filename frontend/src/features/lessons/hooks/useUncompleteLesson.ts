@@ -57,9 +57,11 @@ export const useUncompleteLesson = (
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.lesson(lessonId),
-      });
+      // NOTE: We intentionally do NOT invalidate the lesson query here.
+      // Same reasoning as useCompleteLesson — the optimistic update in
+      // onMutate already set is_completed=false, and any refetch risks
+      // returning stale data that overwrites the correct optimistic state.
+
       queryClient.invalidateQueries({
         queryKey: queryKeys.learning.module(moduleId),
       });
@@ -69,9 +71,7 @@ export const useUncompleteLesson = (
       queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.overview(),
       });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.dashboard.coins(),
-      });
+      // Note: No coin invalidation — uncompleting a lesson does NOT deduct coins
     },
   });
 };

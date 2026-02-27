@@ -47,7 +47,7 @@ export interface GYNSceneState {
   isWateringAnimationPlaying: boolean;
   isFertilizerAnimationPlaying: boolean;
   lessonPassed: boolean | null;
-
+  initialTreeStage: number;
 
   // UI element references
   leftPanel: Phaser.GameObjects.Container;
@@ -67,6 +67,8 @@ export interface GYNSceneState {
   wateringCanImage?: Phaser.GameObjects.Image;
   fertilizerImage?: Phaser.GameObjects.Image;
   feedbackBanner?: Phaser.GameObjects.Container;
+  earnedRewardsRow?: Phaser.GameObjects.Container;
+  birdNestImage?: Phaser.GameObjects.Image;
 }
 
 // Re-export needed types so component files only import from here

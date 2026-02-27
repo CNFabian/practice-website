@@ -282,7 +282,9 @@ export class HouseProgressCard {
       // OPT-02: Check texture exists (Tier 2 may still be loading)
       if (scene.textures.exists('videoProgressIcon')) {
         const videoIcon = scene.add.image(-cardWidth / 2 + scale(40), bottomY, 'videoProgressIcon');
-        videoIcon.setDisplaySize(scale(24), scale(24));
+        const targetIconSize = scale(28);
+        const iconScale = targetIconSize / Math.max(videoIcon.width, videoIcon.height);
+        videoIcon.setScale(iconScale);
         videoIcon.setOrigin(0.5);
         progressContainer.add(videoIcon);
       }

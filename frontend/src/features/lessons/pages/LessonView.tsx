@@ -1,16 +1,18 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Module, Lesson } from '../../../types/modules';
 import { useLesson, useLessonQuiz } from '../hooks/useLearningQueries';
 import { useCompleteLesson } from '../hooks/useCompleteLesson';
 import { useUncompleteLesson } from '../hooks/useUncompleteLesson';
 import { useUpdateLessonProgress } from '../hooks/useUpdateLessonProgress';
-import { LessonViewBackground } from '../../../assets';
+import { LessonViewBackground, PublicBackground, VideoProgressIcon, DocumentProgressIcon } from '../../../assets';
 import { buildLessonModeInitData } from '../hooks/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../hooks/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
 import GYNLessonButton from '../components/GYNLessonButton';
+import LessonCoinCounter from '../components/LessonCoinCounter';
 import { getLessonQuestions } from '../../../services/growYourNestAPI';
 import gameManager from '../../../game/managers/GameManager';
 import { mockGYNPlayedLessons, mockAwardedQuestionIds } from '../../../services/mockLearningData';
@@ -55,6 +57,7 @@ interface LessonViewProps {
   lesson: Lesson;
   module: Module;
   onBack: () => void;
+  onLaunchMinigame?: () => void;
   onNextLesson?: (lessonId: number, moduleBackendId: string) => void;
   addProgressItem?: (item: BatchProgressItem) => void;
   flushProgress?: () => Promise<boolean>;
@@ -204,10 +207,11 @@ const getPlayerStateName = (state: number): string => {
 // Milestone thresholds for progress tracking
 const MILESTONE_THRESHOLDS = [25, 50, 75, 90];
 
-const LessonView: React.FC<LessonViewProps> = ({ 
-  lesson, 
-  module, 
+const LessonView: React.FC<LessonViewProps> = ({
+  lesson,
+  module,
   onBack,
+  onLaunchMinigame,
   onNextLesson,
   addProgressItem,
   flushProgress
@@ -233,25 +237,39 @@ const LessonView: React.FC<LessonViewProps> = ({
   const lessonStartTimeRef = useRef<number>(Date.now());
   const lastProgressSyncRef = useRef<number>(0);
 
+  // Auto-completion guard — prevents concurrent /progress requests from
+  // racing with /complete and causing backend transaction conflicts.
+  const autoCompletedRef = useRef<boolean>(false);
+
   // GYN "just unlocked" notification state
   const [showGYNUnlockedNotification, setShowGYNUnlockedNotification] = useState(false);
-  const [showCoinNotification, setShowCoinNotification] = useState(false);
   const [gynAlreadyPlayed, setGynAlreadyPlayed] = useState(false);
   const prevIsCompletedRef = useRef<boolean | undefined>(undefined);
 
   // Uncomplete confirmation modal state
   const [showUncompleteModal, setShowUncompleteModal] = useState(false);
   const gynNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const coinNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
-    if (bgElement) {
-      bgElement.style.setProperty('background', `url(${LessonViewBackground})`, 'important');
-      bgElement.style.backgroundSize = 'cover';
-      bgElement.style.backgroundPosition = 'center';
-      bgElement.style.backgroundRepeat = 'no-repeat';
-    }
+
+    // Apply the LessonView background to the shared DOM element.
+    // Uses interval-based enforcement for 2s to survive any late Phaser
+    // setBackgroundImage()/clearBackgroundImage() calls.
+    //
+    // IMPORTANT: This cleanup must NOT clear the background. LessonView can
+    // unmount/remount during Phaser game recreation (stale canvas detection)
+    // while navState is still 'lesson'. If cleanup cleared the background,
+    // the user would see white during the remount gap. Background clearing
+    // is handled by ModulesPage's useEffect when navState changes away from 'lesson'.
+    const applyBackground = () => {
+      if (!bgElement) return;
+      bgElement.style.setProperty('background', `url(${PublicBackground}) center / cover no-repeat`, 'important');
+    };
+
+    applyBackground();
+    const intervalId = setInterval(applyBackground, 100);
+    const stopId = setTimeout(() => clearInterval(intervalId), 2000);
 
     // Reset all per-lesson state when lesson changes
     setVideoCompleted(false);
@@ -260,26 +278,18 @@ const LessonView: React.FC<LessonViewProps> = ({
     milestonesReachedRef.current.clear();
     lessonStartTimeRef.current = Date.now();
     lastProgressSyncRef.current = 0;
+    autoCompletedRef.current = false;
     setShowGYNUnlockedNotification(false);
-    setShowCoinNotification(false);
     prevIsCompletedRef.current = undefined;
     if (gynNotificationTimerRef.current) {
       clearTimeout(gynNotificationTimerRef.current);
       gynNotificationTimerRef.current = null;
     }
-    if (coinNotificationTimerRef.current) {
-      clearTimeout(coinNotificationTimerRef.current);
-      coinNotificationTimerRef.current = null;
-    }
 
     return () => {
-      const bgElement = document.getElementById('section-background');
-      if (bgElement) {
-        bgElement.style.setProperty('background', '', 'important');
-        bgElement.style.backgroundSize = '';
-        bgElement.style.backgroundPosition = '';
-        bgElement.style.backgroundRepeat = '';
-      }
+      clearInterval(intervalId);
+      clearTimeout(stopId);
+      // Do NOT clear #section-background here — see comment above
     };
   }, [lesson.id]);
 
@@ -368,10 +378,14 @@ const LessonView: React.FC<LessonViewProps> = ({
     return /^0{8}-0{4}-4000-b000-0{11}[0-9a-f]$/i.test(id);
   }, [lesson?.backendId]);
 
-  // Derive completion state from backend data (with mock override)
+  // Derive completion state from backend data + local completion signals.
+  // For real lessons, we also check videoCompleted/readingCompleted because
+  // the backend may take several seconds to commit the completion after the
+  // /complete API returns 200. Without these local signals, a stale refetch
+  // can overwrite the optimistic update and briefly revert the UI.
   const isCompleted = isMockLesson
     ? (videoCompleted || readingCompleted || mockCompletedLessons.has(lesson.backendId || '') || !!backendLessonData?.is_completed)
-    : !!backendLessonData?.is_completed;
+    : (!!backendLessonData?.is_completed || videoCompleted || readingCompleted);
 
   // Persist mock completion so it survives remounts — TODO: REMOVE BEFORE PRODUCTION
   useEffect(() => {
@@ -386,10 +400,19 @@ const LessonView: React.FC<LessonViewProps> = ({
   useEffect(() => {
     const gynPlayed = !!backendLessonData?.grow_your_nest_played;
     const wasCompleted = prevIsCompletedRef.current;
+    const lessonKey = lesson.backendId ? `nestnav_gyn_toast_shown_${lesson.backendId}` : null;
 
-    // Detect transition: previously falsy → now true, and GYN not played
-    if (wasCompleted === false && isCompleted && !gynPlayed) {
+    // Detect transition: previously false → now true, GYN not played,
+    // and toast hasn't been shown before for this lesson (persisted via localStorage)
+    const alreadyShown = lessonKey ? localStorage.getItem(lessonKey) === 'true' : false;
+
+    if (wasCompleted === false && isCompleted && !gynPlayed && !alreadyShown) {
       setShowGYNUnlockedNotification(true);
+
+      // Mark as shown so it won't appear again on future visits
+      if (lessonKey) {
+        localStorage.setItem(lessonKey, 'true');
+      }
 
       // Auto-dismiss after 5 seconds
       if (gynNotificationTimerRef.current) {
@@ -401,19 +424,6 @@ const LessonView: React.FC<LessonViewProps> = ({
       }, 5000);
     }
 
-    // Show +5 coin notification on first lesson completion
-    if (wasCompleted === false && isCompleted) {
-      setShowCoinNotification(true);
-
-      if (coinNotificationTimerRef.current) {
-        clearTimeout(coinNotificationTimerRef.current);
-      }
-      coinNotificationTimerRef.current = setTimeout(() => {
-        setShowCoinNotification(false);
-        coinNotificationTimerRef.current = null;
-      }, 5000);
-    }
-
     // Track current value for next render
     prevIsCompletedRef.current = isCompleted;
 
@@ -422,12 +432,8 @@ const LessonView: React.FC<LessonViewProps> = ({
         clearTimeout(gynNotificationTimerRef.current);
         gynNotificationTimerRef.current = null;
       }
-      if (coinNotificationTimerRef.current) {
-        clearTimeout(coinNotificationTimerRef.current);
-        coinNotificationTimerRef.current = null;
-      }
     };
-  }, [isCompleted, backendLessonData?.grow_your_nest_played]);
+  }, [isCompleted, backendLessonData?.grow_your_nest_played, lesson.backendId]);
 
   // ═══════════════════════════════════════════════════════════
   // GYN QUESTIONS — Fetched on-demand in handleGYNPlay when the user
@@ -590,12 +596,18 @@ const LessonView: React.FC<LessonViewProps> = ({
         if (duration > 0 && currentTime >= duration - 3 && state === YT_PLAYER_STATES.PLAYING) {
           console.log('🛑 [YouTube Player] Stopping video at', currentTime.toFixed(2), 'to prevent recommendations');
           player.pauseVideo();
-          
+
           setVideoCompleted(true);
+          autoCompletedRef.current = true;
           console.log('✅ [YouTube Player] VIDEO COMPLETED - Player hidden!');
-          
-          handleVideoProgress(Math.floor(duration));
-          
+
+          // NOTE: Do NOT call handleVideoProgress here. Sending a concurrent
+          // POST /progress alongside POST /complete causes a transaction
+          // conflict on the backend that prevents the completion from persisting.
+          // The completion mutation alone is sufficient — it tells the backend
+          // the lesson is done. This is why manual "Mark Complete" works
+          // (it only sends /complete) but auto-complete was failing.
+
           if (isValidBackendId && module?.backendId) {
             console.log('📝 [YouTube Player] Marking lesson as complete on backend');
             completeLessonMutation({ lessonId: lesson.backendId! }, {
@@ -607,7 +619,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               }
             });
           }
-          
+
           return;
         }
         
@@ -660,18 +672,25 @@ const LessonView: React.FC<LessonViewProps> = ({
       case YT_PLAYER_STATES.ENDED:
         console.log('✅ [YouTube Player] VIDEO COMPLETED!');
         setVideoCompleted(true);
-        handleVideoProgress(Math.floor(duration));
-        
-        if (isValidBackendId && module?.backendId) {
-          console.log('📝 [YouTube Player] Marking lesson as complete on backend');
-          completeLessonMutation({ lessonId: lesson.backendId! }, {
-            onSuccess: () => {
-              console.log('✅ [YouTube Player] Lesson marked complete successfully');
-            },
-            onError: (error: Error) => {
-              console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
-            }
-          });
+        // Only fire completion if we haven't already handled it in the
+        // progress interval (duration-3 check). Firing duplicate /complete
+        // requests can cause backend transaction conflicts.
+        if (!autoCompletedRef.current) {
+          autoCompletedRef.current = true;
+          // Don't call handleVideoProgress — same concurrent request issue
+          if (isValidBackendId && module?.backendId) {
+            console.log('📝 [YouTube Player] Marking lesson as complete on backend');
+            completeLessonMutation({ lessonId: lesson.backendId! }, {
+              onSuccess: () => {
+                console.log('✅ [YouTube Player] Lesson marked complete successfully');
+              },
+              onError: (error: Error) => {
+                console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
+              }
+            });
+          }
+        } else {
+          console.log('ℹ️ [YouTube Player] ENDED fired but completion already handled');
         }
         break;
         
@@ -683,7 +702,14 @@ const LessonView: React.FC<LessonViewProps> = ({
         
       case YT_PLAYER_STATES.PAUSED:
         console.log('⏸️ [YouTube Player] Video is paused at', currentTime.toFixed(2), 'seconds');
-        handleVideoProgress(Math.floor(currentTime));
+        // Skip the progress update if we just auto-completed. The pauseVideo()
+        // call in the auto-complete flow triggers this PAUSED event, and
+        // sending POST /progress here would race with POST /complete.
+        if (!autoCompletedRef.current) {
+          handleVideoProgress(Math.floor(currentTime));
+        } else {
+          console.log('ℹ️ [YouTube Player] Skipping progress update — auto-complete in progress');
+        }
         break;
         
       case YT_PLAYER_STATES.BUFFERING:
@@ -874,8 +900,16 @@ const LessonView: React.FC<LessonViewProps> = ({
         // but the GYN Lesson Button bypasses that path via direct HouseScene launch.
         gameManager.loadDeferredAssets();
 
-        onBack();
+        // Use onLaunchMinigame if available — this sets navState to 'minigame'
+        // which just pauses scenes without restarting HouseScene.
+        // Falling back to onBack for backwards compatibility, but onBack sets
+        // navState to 'house' which causes a full HouseScene restart and creates
+        // a race condition with the minigame launch.
+        const dismissLesson = onLaunchMinigame || onBack;
+        dismissLesson();
 
+        // Short delay — just enough for React to flush the unmount.
+        // The old 500ms was overly conservative and caused a visible pause.
         setTimeout(() => {
           const phaserGame = gameManager.getGame();
           if (!phaserGame) {
@@ -884,6 +918,13 @@ const LessonView: React.FC<LessonViewProps> = ({
           }
 
           const launchMinigame = () => {
+            // Wake HouseScene if sleeping — when using onLaunchMinigame the scene
+            // stays sleeping instead of being restarted. We wake it right before
+            // launching so the scene is active and can run slide-out tweens.
+            if (phaserGame.scene.isSleeping('HouseScene')) {
+              phaserGame.scene.wake('HouseScene');
+            }
+
             const houseScene = phaserGame.scene.getScene('HouseScene') as any;
             if (houseScene && houseScene.launchLessonMinigame) {
               houseScene.launchLessonMinigame(initData);
@@ -913,7 +954,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               launchMinigame();
             }, 3000);
           }
-        }, 500);
+        }, 50);
       } else {
         console.warn('🌳 [GYN Play] No GYN questions available');
       }
@@ -926,7 +967,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         setGynAlreadyPlayed(true);
       }
     }
-  }, [lesson.backendId, module.orderIndex, onBack]);
+  }, [lesson.backendId, module.orderIndex, onBack, onLaunchMinigame]);
 
   // ═══════════════════════════════════════════════════════════
   // BACK BUTTON — Navigates directly without interception
@@ -944,175 +985,163 @@ const LessonView: React.FC<LessonViewProps> = ({
     <div className="h-screen flex flex-col bg-transparent">
       {/* Scrollable Main Content Container */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-7 py-2">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleBack}
-              className="flex items-center text-text-blue-black font-bold hover:bg-black/10 rounded-xl px-3 py-2 -ml-3 transition-colors"
-            >
-              <span className="text-2xl mr-2">←</span>
-              <span className="text-l">Back</span>
-            </button>
+        <div className="max-w-7xl mx-auto px-7 pt-4">
+          {/* Two-column nav: Left (Back + House) | Right (Toggle + GYN) */}
+          <div className="flex items-start justify-between relative z-30 pointer-events-none [&>*]:pointer-events-auto">
+            {/* Left column: Back button above, House nav below */}
+            <div className="flex flex-col items-start gap-2">
+              <button
+                onClick={handleBack}
+                className="flex items-center font-bold hover:bg-black/10 transition-colors"
+                style={{
+                  color: '#192141',
+                  borderRadius: 10,
+                  padding: '10px 12px 10px 10px',
+                  marginLeft: -10,
+                }}
+              >
+                <span style={{ fontSize: 24, marginRight: 6, lineHeight: 1 }}>←</span>
+                <span style={{ fontSize: 18, lineHeight: 1.25 }}>Back</span>
+              </button>
 
-            <div data-walkthrough="lesson-view-toggle" className="flex items-center bg-white/60 backdrop-blur-sm rounded-full p-1">
-              <button 
-                onClick={() => setViewMode('video')}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  viewMode === 'video' ? 'bg-white shadow-sm' : 'text-text-grey'
-                }`}
-              >
-                Video Lesson
-              </button>
-              <button 
-                onClick={() => setViewMode('reading')}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  viewMode === 'reading' ? 'bg-white shadow-sm' : 'text-text-grey'
-                }`}
-              >
-                Reading
-              </button>
+              {/* Mini House Progress — clickable rooms */}
+              <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-sm">
+                <div className="relative w-14 h-14">
+                  {/* Roof */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0"
+                    style={{
+                      borderLeft: '32px solid transparent',
+                      borderRight: '32px solid transparent',
+                      borderBottom: '12px solid #6B85F5',
+                    }}
+                  />
+                  {/* House body - 2x2 grid */}
+                  <div className="absolute top-[12px] left-0.5 right-0.5 bottom-0 grid grid-cols-2 grid-rows-2 gap-[2px] rounded-b-md overflow-hidden">
+                    {module.lessons.slice(0, 4).map((l, idx) => {
+                      const isCurrent = idx === currentLessonIndex;
+                      const lessonCompleted = l.completed || (idx === currentLessonIndex && isCompleted);
+                      const isUnlocked = idx === 0 || module.lessons[idx - 1]?.completed;
+                      return (
+                        <button
+                          key={l.id}
+                          onClick={() => {
+                            if (isUnlocked && !isCurrent && onNextLesson && module.backendId) {
+                              if (flushProgress) flushProgress();
+                              if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+                              onNextLesson(l.id, module.backendId);
+                            }
+                          }}
+                          disabled={!isUnlocked || isCurrent}
+                          className={`relative flex items-center justify-center transition-colors duration-200 ${
+                            lessonCompleted
+                              ? 'bg-status-green'
+                              : isUnlocked
+                                ? 'bg-light-background-blue'
+                                : 'bg-unavailable-button/40'
+                          } ${isUnlocked && !isCurrent ? 'cursor-pointer hover:opacity-80' : ''} disabled:cursor-default`}
+                        >
+                          {isCurrent && (
+                            <div className="w-3 h-3 rounded-full bg-logo-blue border-2 border-white shadow-sm" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <span className="text-xs text-text-grey font-medium">
+                  {currentLessonIndex + 1}/{module.lessons.length}
+                </span>
+              </div>
             </div>
-            {/* Mini House Progress — clickable rooms */}
-            <div className="flex flex-col items-center gap-1 ml-3">
-              <div className="relative w-20 h-20">
-                {/* Roof */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0"
-                  style={{
-                    borderLeft: '44px solid transparent',
-                    borderRight: '44px solid transparent',
-                    borderBottom: '16px solid #6B85F5',
-                  }}
-                />
-                {/* House body - 2x2 grid */}
-                <div className="absolute top-[16px] left-1 right-1 bottom-0 grid grid-cols-2 grid-rows-2 gap-[2px] rounded-b-md overflow-hidden">
-                  {module.lessons.slice(0, 4).map((l, idx) => {
-                    const isCurrent = idx === currentLessonIndex;
-                    const lessonCompleted = l.completed || (idx === currentLessonIndex && isCompleted);
-                    const isUnlocked = idx === 0 || module.lessons[idx - 1]?.completed;
-                    return (
-                      <button
-                        key={l.id}
-                        onClick={() => {
-                          if (isUnlocked && !isCurrent && onNextLesson && module.backendId) {
-                            if (flushProgress) flushProgress();
-                            if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
-                            onNextLesson(l.id, module.backendId);
-                          }
-                        }}
-                        disabled={!isUnlocked || isCurrent}
-                        className={`relative flex items-center justify-center transition-colors duration-200 ${
-                          lessonCompleted
-                            ? 'bg-status-green'
-                            : isUnlocked
-                              ? 'bg-light-background-blue'
-                              : 'bg-unavailable-button/40'
-                        } ${isUnlocked && !isCurrent ? 'cursor-pointer hover:opacity-80' : ''} disabled:cursor-default`}
-                      >
-                        {isCurrent && (
-                          <div className="w-3.5 h-3.5 rounded-full bg-logo-blue border-2 border-white shadow-sm" />
-                        )}
-                      </button>
-                    );
-                  })}
+
+            {/* Right column: Coins → Toggle → GYN stacked */}
+            <div className="flex flex-col items-end gap-5 pt-1">
+              {/* Coin Counter */}
+              <LessonCoinCounter />
+
+              {/* Video/Reading toggle */}
+              <div
+                data-walkthrough="lesson-view-toggle"
+                onClick={() => setViewMode(viewMode === 'video' ? 'reading' : 'video')}
+                className="flex items-center bg-logo-blue rounded-full p-0.5 gap-0.5 cursor-pointer"
+                title={viewMode === 'video' ? 'Switch to Reading' : 'Switch to Video'}
+              >
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  viewMode === 'video' ? 'bg-white shadow-sm' : ''
+                }`}>
+                  <img src={VideoProgressIcon} alt="Video" className="w-6 h-6" draggable={false}
+                    style={{ opacity: viewMode === 'video' ? 1 : 0 }} />
+                </div>
+                <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  viewMode === 'reading' ? 'bg-white shadow-sm' : ''
+                }`}>
+                  <img src={DocumentProgressIcon} alt="Reading" className="w-6 h-6" draggable={false}
+                    style={{ opacity: viewMode === 'reading' ? 1 : 0 }} />
                 </div>
               </div>
-              <span className="text-xs text-text-grey font-medium">
-                {currentLessonIndex + 1}/{module.lessons.length}
-              </span>
+
+              {/* GYN Lesson Minigame Button */}
+              {isValidBackendId && (
+                <GYNLessonButton
+                  lessonCompleted={isCompleted}
+                  gynPlayed={
+                    !!backendLessonData?.grow_your_nest_played ||
+                    gynAlreadyPlayed ||
+                    (isMockLesson && mockGYNPlayedLessons.has(lesson.backendId || ''))
+                  }
+                  onPlay={handleGYNPlay}
+                  isLoading={isLoadingLesson}
+                />
+              )}
             </div>
           </div>
-        </div>
+          </div>
 
-        <div className="max-w-3xl mx-auto px-6">
+          {/* Toast Notifications — fixed position, won't affect layout */}
+          <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2" style={{ pointerEvents: 'none' }}>
+            {showGYNUnlockedNotification && (
+              <div className="border border-status-green/30 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg max-w-sm animate-toast-slide-in" style={{ pointerEvents: 'auto', backgroundColor: '#ecfdf5' }}>
+                <span className="text-base flex-shrink-0">🌱</span>
+                <p className="text-xs text-status-green font-medium">
+                  Minigame Unlocked! Help the bird grow her tree.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowGYNUnlockedNotification(false);
+                    if (gynNotificationTimerRef.current) {
+                      clearTimeout(gynNotificationTimerRef.current);
+                      gynNotificationTimerRef.current = null;
+                    }
+                  }}
+                  className="ml-auto flex-shrink-0 text-status-green/60 hover:text-status-green transition-colors"
+                  aria-label="Dismiss notification"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <style>{`
+              .animate-toast-slide-in {
+                animation: toastSlideIn 0.3s ease-out;
+              }
+              @keyframes toastSlideIn {
+                from { opacity: 0; transform: translateX(20px); }
+                to { opacity: 1; transform: translateX(0); }
+              }
+            `}</style>
+          </div>
+
+          <div className="max-w-3xl mx-auto px-6 relative z-[25]" style={{ marginTop: -120 }}>
           <div className="rounded-xl pb-8">
-            <div className="flex items-start justify-between mb-6 bg-text-white rounded-2xl p-6">
+            {/* Lesson title + description + complete button */}
+            <div className="flex items-start justify-between mb-4 bg-text-white rounded-2xl p-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-text-blue-black">{displayTitle}</h1>
                 <p className="text-sm text-text-grey mt-1">{displayDescription}</p>
-
-                {/* GYN Lesson Minigame Button + Unlock Notification */}
-                {isValidBackendId && (
-                  <div className="mt-3">
-                    {/* "Just Unlocked" celebration notification */}
-                    {showGYNUnlockedNotification && (
-                      <div className="mb-2 bg-status-green/10 border border-status-green/30 rounded-xl px-3 py-2 flex items-center gap-2 animate-gyn-slide-in">
-                        <span className="text-base flex-shrink-0">🌱</span>
-                        <p className="text-xs text-status-green font-medium">
-                          Minigame Unlocked! Help the bird grow her tree.
-                        </p>
-                        <button
-                          onClick={() => {
-                            setShowGYNUnlockedNotification(false);
-                            if (gynNotificationTimerRef.current) {
-                              clearTimeout(gynNotificationTimerRef.current);
-                              gynNotificationTimerRef.current = null;
-                            }
-                          }}
-                          className="ml-auto flex-shrink-0 text-status-green/60 hover:text-status-green transition-colors"
-                          aria-label="Dismiss notification"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                        <style>{`
-                          .animate-gyn-slide-in {
-                            animation: gynSlideIn 0.3s ease-out;
-                          }
-                          @keyframes gynSlideIn {
-                            from { opacity: 0; transform: translateY(-8px); }
-                            to { opacity: 1; transform: translateY(0); }
-                          }
-                        `}</style>
-                      </div>
-                    )}
-                    {/* +5 Coin earned notification on first lesson completion */}
-                    {showCoinNotification && (
-                      <div className="mb-2 bg-status-yellow/10 border border-status-yellow/30 rounded-xl px-3 py-2 flex items-center gap-2 animate-coin-slide-in">
-                        <span className="text-base flex-shrink-0">🪙</span>
-                        <p className="text-xs text-status-yellow font-medium">
-                          +5 NestCoins earned! Visit the Reward Shop to redeem.
-                        </p>
-                        <button
-                          onClick={() => {
-                            setShowCoinNotification(false);
-                            if (coinNotificationTimerRef.current) {
-                              clearTimeout(coinNotificationTimerRef.current);
-                              coinNotificationTimerRef.current = null;
-                            }
-                          }}
-                          className="ml-auto flex-shrink-0 text-status-yellow/60 hover:text-status-yellow transition-colors"
-                          aria-label="Dismiss coin notification"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                        <style>{`
-                          .animate-coin-slide-in {
-                            animation: coinSlideIn 0.3s ease-out;
-                          }
-                          @keyframes coinSlideIn {
-                            from { opacity: 0; transform: translateY(-8px); }
-                            to { opacity: 1; transform: translateY(0); }
-                          }
-                        `}</style>
-                      </div>
-                    )}
-                    <GYNLessonButton
-                      lessonCompleted={isCompleted}
-                      gynPlayed={
-                        !!backendLessonData?.grow_your_nest_played ||
-                        gynAlreadyPlayed ||
-                        (isMockLesson && mockGYNPlayedLessons.has(lesson.backendId || ''))
-                      }
-                      onPlay={handleGYNPlay}
-                      isLoading={isLoadingLesson}
-                    />
-                  </div>
-                )}
               </div>
-              
+
               {/* Mark as Completed Toggle Button */}
               <div className="flex flex-col items-end gap-2 ml-4">
                 <button
@@ -1120,16 +1149,17 @@ const LessonView: React.FC<LessonViewProps> = ({
                   disabled={isLoadingLesson}
                   className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-200 border-2 ${
                     isCompleted
-                      ? 'bg-status-green border-status-green text-white'
+                      ? 'border-transparent text-white'
                       : 'bg-transparent border-logo-blue text-logo-blue hover:bg-logo-blue hover:text-white'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  style={isCompleted ? { background: 'linear-gradient(180deg, #339D5F 0%, #32A68E 100%)' } : undefined}
                 >
                   {isCompleted ? (
                     <>
+                      <span className="text-sm font-medium">Completed</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm font-medium">Completed</span>
                     </>
                   ) : (
                     <>
@@ -1140,7 +1170,6 @@ const LessonView: React.FC<LessonViewProps> = ({
                 </button>
               </div>
             </div>
-
             {/* Video section - always mounted, hidden via CSS to preserve YouTube player */}
             <div style={{ display: viewMode === 'video' ? 'block' : 'none' }}>
               <>
@@ -1331,42 +1360,44 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
             )}
 
-            {/* Uncomplete Confirmation Modal */}
-            {showUncompleteModal && (
-              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-                <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-xl">
-                  <div className="text-center mb-4">
-                    <div className="w-12 h-12 bg-status-yellow/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6 text-status-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-text-blue-black mb-1">Reverse Progress?</h3>
-                    <p className="text-sm text-text-grey">
-                      Are you sure you want to mark this lesson as incomplete? This will reverse your progress for this lesson.
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowUncompleteModal(false)}
-                      className="flex-1 px-4 py-2 rounded-xl border border-unavailable-button text-text-grey text-sm font-medium hover:bg-light-background-blue transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleConfirmUncomplete}
-                      className="flex-1 px-4 py-2 rounded-xl bg-status-red text-white text-sm font-medium hover:opacity-90 transition-colors"
-                    >
-                      Yes, Reverse
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Uncomplete Confirmation Modal — rendered via portal at root level */}
           </div>
         </div>
       </div>
 
+      {/* Uncomplete Confirmation Modal — rendered via portal to cover entire viewport including sidebar */}
+      {showUncompleteModal && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-xl">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-status-yellow/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-status-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-text-blue-black mb-1">Reverse Progress?</h3>
+              <p className="text-sm text-text-grey">
+                Are you sure you want to mark this lesson as incomplete? This will reverse your progress for this lesson.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUncompleteModal(false)}
+                className="flex-1 px-4 py-2 rounded-xl border border-unavailable-button text-text-grey text-sm font-medium hover:bg-light-background-blue transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmUncomplete}
+                className="flex-1 px-4 py-2 rounded-xl bg-status-red text-white text-sm font-medium hover:opacity-90 transition-colors"
+              >
+                Yes, Reverse
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

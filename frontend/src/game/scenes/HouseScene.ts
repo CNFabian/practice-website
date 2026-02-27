@@ -76,6 +76,10 @@ export default class HouseScene extends BaseScene {
   private tooltipDestroyTimer?: Phaser.Time.TimerEvent;
   private isPointerOverTooltip: boolean = false;
 
+  // Free roam locked tooltip
+  private freeRoamLockedTooltip?: Phaser.GameObjects.Container;
+  private freeRoamTooltipDestroyTimer?: Phaser.Time.TimerEvent;
+
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
 
@@ -101,6 +105,8 @@ export default class HouseScene extends BaseScene {
     this.hoverTooltipLessonId = undefined;
     this.tooltipDestroyTimer = undefined;
     this.isPointerOverTooltip = false;
+    this.freeRoamLockedTooltip = undefined;
+    this.freeRoamTooltipDestroyTimer = undefined;
     this.moduleBackendId = data.moduleBackendId;
 
     const moduleLessonsData: Record<string, ModuleLessonsData> =
@@ -160,6 +166,7 @@ export default class HouseScene extends BaseScene {
     this.cancelTooltipDestroyTimer();
     this.destroyBird();
     this.destroyHoverTooltip(true);
+    this.destroyFreeRoamLockedTooltip();
     this.lessonContainers = [];
   }
 
@@ -332,7 +339,9 @@ export default class HouseScene extends BaseScene {
   public launchLessonMinigame(initData: GYNMinigameInitData): void {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
-    this.slideAndLaunchMinigame(initData);
+    // When called from LessonView the user never saw the house sitting still,
+    // so run slide-out and GYN slide-in concurrently instead of sequentially.
+    this.slideAndLaunchMinigame(initData, true);
   }
 
   /**
@@ -358,15 +367,13 @@ export default class HouseScene extends BaseScene {
 
   /**
    * Shared slide-out → launch → slide-in logic for both free roam and lesson mode.
+   * @param concurrent — when true, launch GYN immediately so its slide-in runs
+   *   at the same time as the house slide-out (used for the LessonView → GYN path
+   *   where the user doesn't need to watch the house exit first).
    */
-  private slideAndLaunchMinigame(initData: GYNMinigameInitData): void {
-    // Slide out house components to the left
-    this.slideOutHouseComponents();
+  private slideAndLaunchMinigame(initData: GYNMinigameInitData, concurrent = false): void {
 
-    // After slide-out completes, pause HouseScene and launch GYN
-    this.time.delayedCall(300, () => {
-      this.scene.pause('HouseScene');
-
+    const launchGYN = () => {
       // Stop any existing GYN scene first
       if (
         this.scene.isActive('GrowYourNestMinigame') ||
@@ -399,6 +406,12 @@ export default class HouseScene extends BaseScene {
           this.slideInHouseComponents();
           this.isTransitioning = false;
 
+          // After slide-in completes (800ms), rebuild lesson cards with fresh data
+          // so newly unlocked lessons appear without requiring a scene restart
+          this.time.delayedCall(850, () => {
+            this.rebuildLessonCards();
+          });
+
           // Only check free roam unlock after LESSON mode minigame completions
           // Free roam completions should not re-trigger the unlock modal
           if (initData.mode === 'lesson') {
@@ -417,7 +430,21 @@ export default class HouseScene extends BaseScene {
           this.minigameShutdownHandler
         );
       }
-    });
+    };
+
+    if (concurrent) {
+      // Run both animations at the same time — house slides left while GYN slides in from right
+      this.slideOutHouseComponents().then(() => {
+        this.scene.pause('HouseScene');
+      });
+      launchGYN();
+    } else {
+      // Sequential: wait for house to fully exit before launching GYN
+      this.slideOutHouseComponents().then(() => {
+        this.scene.pause('HouseScene');
+        launchGYN();
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -606,15 +633,8 @@ export default class HouseScene extends BaseScene {
       );
     }
 
-    // If Free Roam is not unlocked, hide the button entirely
-    if (!freeRoamUnlocked) {
-      container.setVisible(false);
-      container.setAlpha(0);
-      return container;
-    }
-
-    // Use tree growth data from the learning modules API (flat structure)
-    // or fall back to dashboard modules (nested under .module)
+    // Always read tree growth data so the button reflects the current state
+    // regardless of unlock status (matches NeighborhoodScene HouseProgressCard)
     let progressPercent = 0;
     let treeGrowthPoints = 0;
     let treeTotalStages = 5;
@@ -622,20 +642,11 @@ export default class HouseScene extends BaseScene {
     let treeCompleted = false;
     const pointsPerStage = 50;
 
-    // Try learning modules first (flat: module.tree_growth_points)
-    const learningModules: any[] | undefined = this.registry.get('learningModules');
+    // Primary: dashboardModules (nested under .module) — same source as HouseProgressCard
     const dashboardModules: any[] | undefined = this.registry.get('dashboardModules');
+    const learningModules: any[] | undefined = this.registry.get('learningModules');
 
-    if (learningModules && this.moduleBackendId) {
-      const mod = learningModules.find((m: any) => m.id === this.moduleBackendId);
-      if (mod) {
-        treeGrowthPoints = mod.tree_growth_points ?? 0;
-        treeTotalStages = mod.tree_total_stages ?? 5;
-        treeCurrentStage = mod.tree_current_stage ?? 0;
-        treeCompleted = mod.tree_completed ?? false;
-      }
-    } else if (dashboardModules && this.moduleBackendId) {
-      // Dashboard modules are nested: { module: { id, tree_growth_points, ... }, ... }
+    if (dashboardModules && this.moduleBackendId) {
       const dashEntry = dashboardModules.find(
         (entry: any) => entry.module?.id === this.moduleBackendId
       );
@@ -644,6 +655,15 @@ export default class HouseScene extends BaseScene {
         treeTotalStages = dashEntry.module.tree_total_stages ?? 5;
         treeCurrentStage = dashEntry.module.tree_current_stage ?? 0;
         treeCompleted = dashEntry.module.tree_completed ?? false;
+      }
+    } else if (learningModules && this.moduleBackendId) {
+      // Fallback: learningModules (flat structure)
+      const mod = learningModules.find((m: any) => m.id === this.moduleBackendId);
+      if (mod) {
+        treeGrowthPoints = mod.tree_growth_points ?? 0;
+        treeTotalStages = mod.tree_total_stages ?? 5;
+        treeCurrentStage = mod.tree_current_stage ?? 0;
+        treeCompleted = mod.tree_completed ?? false;
       }
     }
 
@@ -660,7 +680,7 @@ export default class HouseScene extends BaseScene {
     bgCircle.strokeCircle(0, 0, circleRadius);
     container.add(bgCircle);
 
-    // Progress arc (green)
+    // Progress arc (green) — show progress regardless of unlock status
     if (progressPercent > 0) {
       const progressArc = this.add.graphics();
       progressArc.lineStyle(scale(4), COLORS.STATUS_GREEN, 1);
@@ -674,28 +694,33 @@ export default class HouseScene extends BaseScene {
       container.add(progressArc);
     }
 
-    // Tree stage for display (1-indexed)
+    // Tree stage for display (1-indexed); always show actual stage
     let treeStage = treeCurrentStage + 1;
     if (treeStage > 5) treeStage = 5;
     if (treeStage < 1) treeStage = 1;
 
-    // Tree image
-    const treeIcon = this.add.image(0, 0, `tree_stage_${treeStage}`);
-    const targetSize = scale(42);
-    const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
-    treeIcon.setScale(treeScale);
-    treeIcon.setOrigin(0.5);
-    container.add(treeIcon);
+    // Tree image — only add if texture is loaded
+    const treeTextureKey = `tree_stage_${treeStage}`;
+    if (this.textures.exists(treeTextureKey)) {
+      const treeIcon = this.add.image(0, 0, treeTextureKey);
+      const targetSize = scale(42);
+      const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
+      treeIcon.setScale(treeScale);
+      treeIcon.setOrigin(0.5);
+      // Desaturate tree when locked
+      if (!freeRoamUnlocked) {
+        treeIcon.setAlpha(0.5);
+      }
+      container.add(treeIcon);
+    }
 
-    // Completed state: checkmark overlay
-    if (treeCompleted) {
-      // Semi-transparent overlay
+    // Completed state: checkmark overlay (only when unlocked)
+    if (freeRoamUnlocked && treeCompleted) {
       const overlay = this.add.graphics();
       overlay.fillStyle(COLORS.STATUS_GREEN, 0.25);
       overlay.fillCircle(0, 0, circleRadius);
       container.add(overlay);
 
-      // Checkmark text
       const checkmark = this.add.text(0, 0, '✓', {
         fontSize: `${scaleFontSize(18)}px`,
         fontFamily: "'Onest', sans-serif",
@@ -713,7 +738,6 @@ export default class HouseScene extends BaseScene {
       0x000000,
       0
     );
-    // Only make interactive (free roam is accessible even when tree is completed)
     hitArea.setInteractive({ useHandCursor: true });
     container.add(hitArea);
 
@@ -735,20 +759,27 @@ export default class HouseScene extends BaseScene {
       });
     });
 
-    hitArea.on('pointerdown', () => {
-    if (this.isTransitioning) return;
-    this.isTransitioning = true;
-    
-    if (this.moduleBackendId) {
-      // Derive display module number from house position (1-indexed)
-      const houses = this.registry.get('neighborhoodHouses')?.['downtown'] || [];
-      const houseIndex = houses.findIndex((h: any) => h.moduleBackendId === this.moduleBackendId);
-        const moduleNumber = (houseIndex >= 0 ? houseIndex : 0) + 1;
-        this.launchFreeRoam(this.moduleBackendId, moduleNumber);
-      } else {
-        this.isTransitioning = false;
-      }
-    });
+    if (freeRoamUnlocked) {
+      // Unlocked: click launches free roam
+      hitArea.on('pointerdown', () => {
+        if (this.isTransitioning) return;
+        this.isTransitioning = true;
+
+        if (this.moduleBackendId) {
+          const houses = this.registry.get('neighborhoodHouses')?.['downtown'] || [];
+          const houseIndex = houses.findIndex((h: any) => h.moduleBackendId === this.moduleBackendId);
+          const moduleNumber = (houseIndex >= 0 ? houseIndex : 0) + 1;
+          this.launchFreeRoam(this.moduleBackendId, moduleNumber);
+        } else {
+          this.isTransitioning = false;
+        }
+      });
+    } else {
+      // Locked: click shows tooltip explaining how to unlock
+      hitArea.on('pointerdown', () => {
+        this.showFreeRoamLockedTooltip(container.x, container.y, circleRadius);
+      });
+    }
 
     return container;
   }
@@ -797,6 +828,22 @@ export default class HouseScene extends BaseScene {
   // LESSON CARDS (visual only — NO interactivity)
   // ═══════════════════════════════════════════════════════════
 
+  /**
+   * Destroys existing lesson card containers and recreates them
+   * with the latest data from this.module. Used after minigame
+   * completion to reflect newly unlocked lessons.
+   */
+  private rebuildLessonCards(): void {
+    if (!this.module || this.module.lessons.length === 0) return;
+
+    // Destroy old lesson containers
+    this.lessonContainers.forEach((container) => container.destroy());
+    this.lessonContainers = [];
+
+    // Recreate with fresh data
+    this.createLessonCards();
+  }
+
   private createLessonCards(): void {
     if (!this.module) return;
     this.module.lessons.forEach((lesson, index) => {
@@ -834,16 +881,24 @@ export default class HouseScene extends BaseScene {
 
     const cardOffsetY = -cardHeight * 0.1;
 
-    const card = this.add.rectangle(
-      0,
-      cardOffsetY,
-      cardWidth,
-      cardHeight,
-      COLORS.PURE_WHITE,
-      1
-    );
-    const strokeWidth = Math.max(2, width * 0.002);
-    card.setStrokeStyle(strokeWidth, COLORS.UNAVAILABLE_BUTTON);
+    let card: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+    if (this.textures.exists(ASSET_KEYS.LESSON_CARD)) {
+      const cardImage = this.add.image(0, cardOffsetY, ASSET_KEYS.LESSON_CARD);
+      cardImage.setDisplaySize(cardWidth, cardHeight);
+      card = cardImage;
+    } else {
+      const cardRect = this.add.rectangle(
+        0,
+        cardOffsetY,
+        cardWidth,
+        cardHeight,
+        COLORS.PURE_WHITE,
+        1
+      );
+      const strokeWidth = Math.max(2, width * 0.002);
+      cardRect.setStrokeStyle(strokeWidth, COLORS.UNAVAILABLE_BUTTON);
+      card = cardRect;
+    }
     lessonContainer.add(card);
 
     // Lesson number badge (top-left of card)
@@ -871,37 +926,6 @@ export default class HouseScene extends BaseScene {
       )
       .setOrigin(0.5);
     lessonContainer.add(numberText);
-
-    const titleSize = Math.min(width, height) * 0.022;
-    const titleOffsetY = -cardHeight * 0.12;
-    const titleText = this.add
-      .text(
-        0,
-        titleOffsetY,
-        lesson.title,
-        createTextStyle('BODY_BOLD', COLORS.TEXT_PRIMARY, {
-          fontSize: `${titleSize}px`,
-          align: 'center',
-          wordWrap: { width: cardWidth * 0.75 },
-        })
-      )
-      .setOrigin(0.5);
-    lessonContainer.add(titleText);
-
-    const typeSize = Math.min(width, height) * 0.016;
-    const typeOffsetY = titleOffsetY + titleText.height + scale(4);
-    const typeText = this.add
-      .text(
-        0,
-        typeOffsetY,
-        lesson.type,
-        createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
-          fontSize: `${typeSize}px`,
-          align: 'center',
-        })
-      )
-      .setOrigin(0.5);
-    lessonContainer.add(typeText);
 
     if (lesson.locked) {
       const lockOverlay = this.add.rectangle(
@@ -1013,6 +1037,9 @@ export default class HouseScene extends BaseScene {
   ): void {
     // If already showing for this lesson, skip
     if (this.hoverTooltipLessonId === lesson.id) return;
+
+    // Don't show tooltips during minigame transition
+    if (this.isTransitioning) return;
 
     // Destroy any existing tooltip immediately
     this.destroyHoverTooltip(true);
@@ -1340,6 +1367,163 @@ export default class HouseScene extends BaseScene {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // FREE ROAM LOCKED TOOLTIP
+  // ═══════════════════════════════════════════════════════════
+
+  private showFreeRoamLockedTooltip(buttonX: number, buttonY: number, circleRadius: number): void {
+    // If already visible, dismiss it instead (toggle behavior)
+    if (this.freeRoamLockedTooltip) {
+      this.destroyFreeRoamLockedTooltip();
+      return;
+    }
+
+    const { width } = this.scale;
+    const minDim = Math.min(this.scale.width, this.scale.height);
+
+    // Calculate how many lessons still need minigames completed
+    const moduleLessonsData: Record<string, any> = this.registry.get('moduleLessonsData') || {};
+    const moduleData = this.moduleBackendId ? moduleLessonsData[this.moduleBackendId] : null;
+    let completedCount = 0;
+    let totalCount = 0;
+    if (moduleData?.lessons && moduleData.lessons.length > 0) {
+      totalCount = moduleData.lessons.length;
+      completedCount = moduleData.lessons.filter((l: any) => l.grow_your_nest_played === true).length;
+    }
+
+    const tooltipContainer = this.add.container(0, 0);
+    tooltipContainer.setDepth(200);
+
+    // Tooltip dimensions
+    const padding = scale(22);
+    const tooltipWidth = Math.min(width * 0.42, 380);
+    const cornerRadius = scale(14);
+
+    const titleFontSize = minDim * 0.024;
+    const bodyFontSize = minDim * 0.018;
+    const progressFontSize = minDim * 0.016;
+
+    const maxTextWidth = tooltipWidth - padding * 2;
+
+    // Title text
+    const titleText = this.add.text(0, 0, 'Free Roam Locked', {
+      fontSize: `${titleFontSize}px`,
+      fontFamily: "'Onest', sans-serif",
+      fontStyle: 'bold',
+      color: COLORS.TEXT_PRIMARY,
+      wordWrap: { width: maxTextWidth },
+    }).setOrigin(0.5, 0);
+
+    // Body text
+    const bodyText = this.add.text(0, 0, 'Complete all lesson minigames\nto unlock Free Roam mode', {
+      fontSize: `${bodyFontSize}px`,
+      fontFamily: "'Onest', sans-serif",
+      color: COLORS.TEXT_SECONDARY,
+      align: 'center',
+      lineSpacing: scale(3),
+      wordWrap: { width: maxTextWidth },
+    }).setOrigin(0.5, 0);
+
+    // Progress text
+    const progressText = this.add.text(0, 0, `${completedCount}/${totalCount} completed`, {
+      fontSize: `${progressFontSize}px`,
+      fontFamily: "'Onest', sans-serif",
+      fontStyle: 'bold',
+      color: '#3658EC',
+      wordWrap: { width: maxTextWidth },
+    }).setOrigin(0.5, 0);
+
+    // Calculate total height
+    const innerGap = scale(10);
+    const totalContentHeight = titleText.height + innerGap + bodyText.height + innerGap + progressText.height;
+    const tooltipHeight = totalContentHeight + padding * 2;
+
+    // Position tooltip to the left of the button
+    const viewportMargin = scale(8);
+    const { height: viewportHeight } = this.scale;
+    let tooltipX = buttonX - circleRadius - scale(12) - tooltipWidth / 2;
+    let tooltipY = buttonY;
+
+    // If tooltip would go off the left edge, position it below instead
+    if (tooltipX - tooltipWidth / 2 < viewportMargin) {
+      tooltipX = buttonX;
+      tooltipY = buttonY + circleRadius + scale(12) + tooltipHeight / 2;
+    }
+
+    // Clamp vertically so the tooltip stays within the viewport
+    const topEdge = tooltipY - tooltipHeight / 2;
+    const bottomEdge = tooltipY + tooltipHeight / 2;
+    if (topEdge < viewportMargin) {
+      tooltipY = viewportMargin + tooltipHeight / 2;
+    } else if (bottomEdge > viewportHeight - viewportMargin) {
+      tooltipY = viewportHeight - viewportMargin - tooltipHeight / 2;
+    }
+
+    tooltipContainer.setPosition(tooltipX, tooltipY);
+
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(COLORS.PURE_WHITE, 1);
+    bg.fillRoundedRect(-tooltipWidth / 2, -tooltipHeight / 2, tooltipWidth, tooltipHeight, cornerRadius);
+    bg.lineStyle(2, COLORS.UNAVAILABLE_BUTTON, 0.4);
+    bg.strokeRoundedRect(-tooltipWidth / 2, -tooltipHeight / 2, tooltipWidth, tooltipHeight, cornerRadius);
+    tooltipContainer.add(bg);
+
+    // Position text elements inside tooltip
+    let currentY = -tooltipHeight / 2 + padding;
+    titleText.setPosition(0, currentY);
+    tooltipContainer.add(titleText);
+
+    currentY += titleText.height + innerGap;
+    bodyText.setPosition(0, currentY);
+    tooltipContainer.add(bodyText);
+
+    currentY += bodyText.height + innerGap;
+    progressText.setPosition(0, currentY);
+    tooltipContainer.add(progressText);
+
+    // Entrance animation
+    tooltipContainer.setScale(0.9);
+    tooltipContainer.setAlpha(0);
+    this.tweens.add({
+      targets: tooltipContainer,
+      scale: 1,
+      alpha: 1,
+      duration: 180,
+      ease: 'Back.easeOut',
+    });
+
+    this.freeRoamLockedTooltip = tooltipContainer;
+
+    // Auto-dismiss after 3 seconds
+    this.freeRoamTooltipDestroyTimer = this.time.delayedCall(3000, () => {
+      this.destroyFreeRoamLockedTooltip();
+    });
+  }
+
+  private destroyFreeRoamLockedTooltip(): void {
+    if (this.freeRoamTooltipDestroyTimer) {
+      this.freeRoamTooltipDestroyTimer.remove();
+      this.freeRoamTooltipDestroyTimer = undefined;
+    }
+
+    if (this.freeRoamLockedTooltip) {
+      const tooltip = this.freeRoamLockedTooltip;
+      this.freeRoamLockedTooltip = undefined;
+
+      this.tweens.add({
+        targets: tooltip,
+        scale: 0.9,
+        alpha: 0,
+        duration: 120,
+        ease: 'Power2',
+        onComplete: () => {
+          tooltip.destroy();
+        },
+      });
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // EVENT HANDLERS
   // ═══════════════════════════════════════════════════════════
 
@@ -1364,10 +1548,14 @@ export default class HouseScene extends BaseScene {
     }
   }
 
-  private slideOutHouseComponents(): void {
+  private slideOutHouseComponents(): Promise<void> {
     const { width } = this.scale;
     const duration = 800;
     const ease = 'Power2';
+
+    // Immediately destroy any visible hover tooltips so they don't linger during transition
+    this.destroyHoverTooltip(true);
+    this.destroyFreeRoamLockedTooltip();
 
     const allComponents: Phaser.GameObjects.GameObject[] = [];
     if (this.backButton) allComponents.push(this.backButton);
@@ -1386,12 +1574,29 @@ export default class HouseScene extends BaseScene {
     });
 
     const slideDistance = width * 1.5;
-    allComponents.forEach((component) => {
-      this.tweens.add({
-        targets: component,
-        x: `-=${slideDistance}`,
-        duration: duration,
-        ease: ease,
+
+    return new Promise<void>((resolve) => {
+      let completedCount = 0;
+      const totalComponents = allComponents.length;
+
+      if (totalComponents === 0) {
+        resolve();
+        return;
+      }
+
+      allComponents.forEach((component) => {
+        this.tweens.add({
+          targets: component,
+          x: `-=${slideDistance}`,
+          duration: duration,
+          ease: ease,
+          onComplete: () => {
+            completedCount++;
+            if (completedCount >= totalComponents) {
+              resolve();
+            }
+          },
+        });
       });
     });
   }
@@ -1551,8 +1756,9 @@ export default class HouseScene extends BaseScene {
     }
     this.createMinigameButton();
 
-    // Destroy tooltip on resize
+    // Destroy tooltips on resize
     this.destroyHoverTooltip(true);
+    this.destroyFreeRoamLockedTooltip();
 
     // Destroy and recreate lesson cards
     this.lessonContainers.forEach((container) => container.destroy());

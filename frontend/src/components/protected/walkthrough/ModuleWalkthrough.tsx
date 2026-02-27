@@ -513,7 +513,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
           style={{
-            background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+            background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
           }}
           onClick={blockEvent}
           onMouseDown={blockEvent}
@@ -684,7 +684,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           }`}
           style={{
             ...getTooltipStyle(),
-            background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+            background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
           }}
           onClick={blockEvent}
           onMouseDown={blockEvent}
@@ -843,7 +843,7 @@ const ModuleWalkthrough: React.FC<ModuleWalkthroughProps> = ({
           }`}
           style={{
             ...getTooltipStyle(),
-            background: 'linear-gradient(137deg, #1D3CC6 6.84%, #837CFF 97.24%)',
+            background: 'linear-gradient(180deg, #1D3CC6 0%, #837CFF 100%)',
             pointerEvents: 'all',
           }}
         >

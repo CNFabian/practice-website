@@ -55,9 +55,15 @@ export const useCompleteLesson = (
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.lesson(lessonId),
-      });
+      // NOTE: We intentionally do NOT invalidate the lesson query here.
+      // The optimistic update in onMutate already set is_completed=true,
+      // and LessonView also uses local videoCompleted/readingCompleted
+      // state as a source of truth. Any refetch risks returning stale
+      // is_completed=false data from a backend that processes completion
+      // asynchronously, overwriting the correct optimistic state.
+      // The lesson query will naturally refresh on next navigation/mount.
+
+      // Dependent aggregate queries can invalidate immediately
       queryClient.invalidateQueries({
         queryKey: queryKeys.learning.module(moduleId),
       });

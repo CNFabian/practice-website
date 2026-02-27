@@ -1,24 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { OnestFont, NoticeBirdIcon } from '../../../assets';
+import { MinigameIcon } from '../../../assets';
 
 // ═══════════════════════════════════════════════════════════════
-// GYNLessonButton — 3-state persistent button for lesson minigame
+// GYNLessonButton — 3-state circular button for lesson minigame
 // ═══════════════════════════════════════════════════════════════
 //
 // State 1 — Inactive:  Lesson not completed yet (muted/grayed)
 // State 2 — Active:    Lesson complete, GYN not played (vibrant, pulse)
 // State 3 — Completed: GYN already played (green checkmark)
-//
-// Replaces the GYN prompt modal interception system with a
-// user-initiated, always-visible button in LessonView.
 // ═══════════════════════════════════════════════════════════════
 
 type ButtonState = 'inactive' | 'active' | 'completed';
 
 interface GYNLessonButtonProps {
-  /** Whether the lesson video/reading has been completed (from backendLessonData.is_completed) */
+  /** Whether the lesson video/reading has been completed */
   lessonCompleted: boolean;
-  /** Whether the GYN minigame has been played for this lesson (from backendLessonData.grow_your_nest_played) */
+  /** Whether the GYN minigame has been played for this lesson */
   gynPlayed: boolean;
   /** Callback to launch the lesson-mode minigame */
   onPlay: () => void;
@@ -26,7 +23,6 @@ interface GYNLessonButtonProps {
   isLoading: boolean;
 }
 
-/** Derive the button state from server-driven fields */
 const deriveButtonState = (lessonCompleted: boolean, gynPlayed: boolean): ButtonState => {
   if (!lessonCompleted) return 'inactive';
   if (gynPlayed) return 'completed';
@@ -44,7 +40,6 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
 
   const buttonState = deriveButtonState(lessonCompleted, gynPlayed);
 
-  // ── Cleanup tooltip timer on unmount ──
   useEffect(() => {
     return () => {
       if (tooltipTimerRef.current) {
@@ -54,7 +49,6 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
     };
   }, []);
 
-  // ── Hide tooltip when button state changes ──
   useEffect(() => {
     setShowTooltip(false);
     if (tooltipTimerRef.current) {
@@ -63,9 +57,7 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
     }
   }, [buttonState]);
 
-  /** Show tooltip for inactive/completed states, auto-dismiss after 4s */
   const showTooltipBriefly = useCallback(() => {
-    // Clear any existing timer
     if (tooltipTimerRef.current) {
       clearTimeout(tooltipTimerRef.current);
     }
@@ -85,7 +77,6 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
         showTooltipBriefly();
         break;
       case 'active':
-        // Dismiss tooltip if open, then launch
         setShowTooltip(false);
         if (tooltipTimerRef.current) {
           clearTimeout(tooltipTimerRef.current);
@@ -96,36 +87,29 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
     }
   }, [isLoading, buttonState, showTooltipBriefly, onPlay]);
 
-  // ── Tooltip messages per state ──
   const tooltipMessage = buttonState === 'inactive'
-    ? 'Complete this lesson by watching the video or clicking Finish Lesson in the reading view to unlock the minigame.'
-    : 'You\'ve already completed this lesson\'s minigame! Move on to the next lesson.';
+    ? 'Complete this lesson to unlock the minigame.'
+    : buttonState === 'completed'
+      ? 'Minigame complete! Move on to the next lesson.'
+      : 'Play Grow Your Nest';
 
-  // ── Loading skeleton ──
   if (isLoading) {
     return (
-      <div className="w-full rounded-xl p-3 bg-light-background-blue/50 flex items-center gap-3 animate-pulse">
-        <div className="w-10 h-10 rounded-full bg-unavailable-button/30" />
-        <div className="flex-1">
-          <div className="h-3 w-24 bg-unavailable-button/30 rounded mb-1.5" />
-          <div className="h-2 w-32 bg-unavailable-button/20 rounded" />
-        </div>
-      </div>
+      <div className="w-12 h-12 rounded-full bg-unavailable-button/30 animate-pulse" />
     );
   }
 
   return (
-    <div className="relative w-full">
-      {/* ── Main Button ── */}
+    <div className="relative inline-flex">
       <button
         onClick={handleClick}
         className={`
-          w-full rounded-xl p-3 flex items-center gap-3 transition-all duration-200
+          w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
           ${buttonState === 'inactive'
-            ? 'bg-light-background-blue/50 cursor-default opacity-60'
+            ? 'bg-unavailable-button/20 cursor-default opacity-60'
             : buttonState === 'active'
-              ? 'bg-light-background-blue hover:bg-tab-active cursor-pointer shadow-sm'
-              : 'bg-light-background-blue/50 cursor-default'
+              ? 'bg-logo-blue hover:bg-logo-blue/90 cursor-pointer gyn-pulse-ring shadow-sm'
+              : 'bg-status-green/30 cursor-default border border-status-green/40'
           }
         `}
         aria-label={
@@ -136,112 +120,41 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
               : 'Minigame completed'
         }
       >
-        {/* Icon container */}
-        <div
-          className={`
-            relative w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-            ${buttonState === 'inactive'
-              ? 'bg-unavailable-button/20'
-              : buttonState === 'active'
-                ? 'bg-logo-blue/10 gyn-pulse-ring'
-                : 'bg-status-green/15'
-            }
-          `}
-        >
-          {buttonState === 'completed' ? (
-            /* Checkmark icon */
-            <svg className="w-5 h-5 text-status-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            /* Bird icon */
-            <img
-              src={NoticeBirdIcon}
-              alt=""
-              className={`w-7 h-7 object-contain ${buttonState === 'inactive' ? 'grayscale opacity-50' : ''}`}
-            />
-          )}
-        </div>
-
-        {/* Text content */}
-        <div className="flex-1 text-left min-w-0">
-          <OnestFont
-            as="span"
-            weight={buttonState === 'active' ? 700 : 500}
-            lineHeight="tight"
-            className={`text-sm block truncate ${
-              buttonState === 'inactive'
-                ? 'text-unavailable-button'
-                : buttonState === 'active'
-                  ? 'text-text-blue-black'
-                  : 'text-status-green'
-            }`}
-          >
-            {buttonState === 'inactive'
-              ? 'Grow Your Nest'
-              : buttonState === 'active'
-                ? 'Play Minigame'
-                : 'Minigame Complete'
-            }
-          </OnestFont>
-          <OnestFont
-            as="span"
-            weight={300}
-            lineHeight="relaxed"
-            className={`text-xs block truncate ${
-              buttonState === 'inactive'
-                ? 'text-unavailable-button'
-                : buttonState === 'active'
-                  ? 'text-text-grey'
-                  : 'text-status-green/70'
-            }`}
-          >
-            {buttonState === 'inactive'
-              ? 'Complete lesson to unlock'
-              : buttonState === 'active'
-                ? 'Answer 3 questions to grow the tree'
-                : 'Great job!'
-            }
-          </OnestFont>
-        </div>
-
-        {/* Right arrow / indicator */}
-        {buttonState === 'active' && (
-          <svg className="w-5 h-5 text-logo-blue flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        {buttonState === 'completed' ? (
+          <svg className="w-5 h-5 text-status-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
+        ) : (
+          <img
+            src={MinigameIcon}
+            alt=""
+            className={`w-7 h-7 object-contain ${buttonState === 'inactive' ? 'grayscale opacity-50' : ''}`}
+          />
         )}
       </button>
 
-      {/* ── Tooltip (inactive / completed clicks) ── */}
+      {/* Tooltip */}
       {showTooltip && (
         <div
-          className="absolute left-0 right-0 top-full mt-2 z-20 animate-fade-in"
+          className="absolute right-0 top-full mt-2 z-[9998] animate-fade-in whitespace-nowrap"
           role="tooltip"
         >
-          <div className="bg-pure-white rounded-lg shadow-lg border border-unavailable-button/20 p-3 mx-1">
-            <OnestFont
-              as="p"
-              weight={300}
-              lineHeight="relaxed"
-              className="text-xs text-text-blue-black"
-            >
+          <div className="bg-pure-white rounded-lg shadow-lg border border-unavailable-button/20 px-3 py-2">
+            <p className="text-xs text-text-blue-black font-medium">
               {tooltipMessage}
-            </OnestFont>
+            </p>
           </div>
-          {/* Tooltip arrow */}
-          <div className="absolute left-6 -top-1.5 w-3 h-3 bg-pure-white border-l border-t border-unavailable-button/20 rotate-45" />
+          <div className="absolute right-4 -top-1.5 w-3 h-3 bg-pure-white border-l border-t border-unavailable-button/20 rotate-45" />
         </div>
       )}
 
-      {/* ── Scoped CSS for pulse animation ── */}
       <style>{`
         .gyn-pulse-ring {
-          animation: gynPulse 2s ease-in-out infinite;
+          animation: gynPulse 6s ease-in-out infinite;
         }
         @keyframes gynPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(54, 88, 236, 0.3); }
-          50% { box-shadow: 0 0 0 6px rgba(54, 88, 236, 0); }
+          50% { box-shadow: 0 0 0 8px rgba(54, 88, 236, 0); }
         }
         .animate-fade-in {
           animation: gynFadeIn 0.15s ease-out;

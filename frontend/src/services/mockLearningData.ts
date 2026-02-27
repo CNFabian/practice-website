@@ -525,7 +525,12 @@ export const validateMockAnswer = (questionId: string, answerId: string): { is_c
 
 export const getMockGYNValidateAnswer = (questionId: string, answerId: string) => {
   const result = validateMockAnswer(questionId, answerId);
-  return { is_correct: result.is_correct, explanation: result.explanation };
+  // Include correct_answer_id so the UI can show which answer was correct
+  const correctIndex = MOCK_CORRECT_ANSWERS[questionId];
+  const allQuestions = [...Object.values(MOCK_QUIZ_DATA).flat(), ...MOCK_FREE_ROAM_EXTRA_QUESTIONS];
+  const question = allQuestions.find((q) => q.id === questionId);
+  const correctAnswerId = question?.answers[correctIndex]?.id ?? null;
+  return { is_correct: result.is_correct, explanation: result.explanation, correct_answer_id: correctAnswerId };
 };
 
 export const getMockGYNLessonSubmit = (
@@ -571,7 +576,7 @@ export const getMockGYNLessonSubmit = (
     total_questions: answers.length,
     growth_points_earned: totalPointsEarned,
     fertilizer_bonus: isPerfect,
-    coins_earned: correctCount * 5,
+    coins_earned: newState.current_stage > previousStage ? (newState.current_stage - previousStage) * 50 : 0,
     tree_state: {
       growth_points: newState.growth_points,
       current_stage: newState.current_stage,
@@ -628,7 +633,7 @@ export const getMockGYNFreeRoamAnswer = (
     explanation: result.explanation,
     growth_points_earned: totalPointsEarned,
     fertilizer_bonus: isFertilizer,
-    coins_earned: result.is_correct ? 5 : 0,
+    coins_earned: newState.current_stage > previousStage ? 50 : 0,
     tree_state: {
       growth_points: newState.growth_points,
       current_stage: newState.current_stage,

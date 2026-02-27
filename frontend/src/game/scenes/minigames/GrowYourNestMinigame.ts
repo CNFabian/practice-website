@@ -32,6 +32,7 @@ import {
   showCompletion,
   showTreeFullyGrownScreen,
   showFeedbackBanner,
+  showEarnedRewardsRow,
 } from './grow-your-nest/GYNRightPanel';
 import { BaseScene } from '../BaseScene';
 import { queryClient } from '../../../lib/queryClient';
@@ -80,9 +81,11 @@ export default class GrowYourNestMinigame extends BaseScene {
   private fertilizerImage?: Phaser.GameObjects.Image;
   private isFertilizerAnimationPlaying: boolean = false;
   private feedbackBanner?: Phaser.GameObjects.Container;
+  private earnedRewardsRow?: Phaser.GameObjects.Container;
   private awardedQuestionIds: Set<string> = new Set();
   private lastAnswerAlreadyAwarded: boolean = false;
   private lessonPassed: boolean | null = null;
+  private initialTreeStage: number = 0;
 
   constructor() {
     super({ key: 'GrowYourNestMinigame' });
@@ -111,6 +114,7 @@ export default class GrowYourNestMinigame extends BaseScene {
       isWateringAnimationPlaying: this.isWateringAnimationPlaying,
       isFertilizerAnimationPlaying: this.isFertilizerAnimationPlaying,
       lessonPassed: this.lessonPassed,
+      initialTreeStage: this.initialTreeStage,
       leftPanel: this.leftPanel,
       rightPanel: this.rightPanel,
       questionText: this.questionText,
@@ -128,6 +132,7 @@ export default class GrowYourNestMinigame extends BaseScene {
       wateringCanImage: this.wateringCanImage,
       fertilizerImage: this.fertilizerImage,
       feedbackBanner: this.feedbackBanner,
+      earnedRewardsRow: this.earnedRewardsRow,
     };
   }
 
@@ -154,6 +159,7 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.showingStartScreen = s.showingStartScreen;
     this.selectedAnswer = s.selectedAnswer;
     this.feedbackBanner = s.feedbackBanner;
+    this.earnedRewardsRow = s.earnedRewardsRow;
   }
 
   /** Re-enable HouseScene input so it is interactive after minigame exits */
@@ -224,6 +230,7 @@ export default class GrowYourNestMinigame extends BaseScene {
 
     this.lastAnswerAlreadyAwarded = false;
     this.lessonPassed = null;
+    this.initialTreeStage = data.treeState?.current_stage ?? 0;
 
     this.questions = data.questions.map((q) => ({
       id: q.id,
@@ -334,7 +341,24 @@ export default class GrowYourNestMinigame extends BaseScene {
             }
 
             this.isSubmitting = false;
-            this.showAnswerFeedback(validation.is_correct, validation.explanation, validation.correct_answer_id);
+
+            // If incorrect in lesson mode and backend didn't provide the correct answer ID,
+            // probe remaining options to discover which one is correct
+            if (!validation.is_correct && !validation.correct_answer_id) {
+              const otherOptions = q.options.filter((o) => o.answerId !== opt.answerId);
+              Promise.all(
+                otherOptions.map((o) =>
+                  validateAnswer({ question_id: q.id, answer_id: o.answerId })
+                    .then((r) => (r.is_correct ? o.answerId : null))
+                    .catch(() => null)
+                )
+              ).then((results) => {
+                const foundCorrectId = results.find((id) => id !== null) || null;
+                this.showAnswerFeedback(false, validation.explanation, foundCorrectId);
+              });
+            } else {
+              this.showAnswerFeedback(validation.is_correct, validation.explanation, validation.correct_answer_id);
+            }
           } else if (this.gameMode === 'freeroam') {
           // After validation, submit to freeroam/answer for tree growth + coins
           if (!this.moduleId) {
@@ -502,11 +526,15 @@ export default class GrowYourNestMinigame extends BaseScene {
     const state = this.getState();
     const q = this.questions[this.currentQuestionIndex];
 
-    // Find the correct answer letter from the correct_answer_id (if provided by backend)
+    // Find the correct answer letter — only reveal in lesson mode
+    // Try API-provided correct_answer_id first, fall back to question's correctAnswer
     let correctLetter: string | null = null;
-    if (!isCorrect && correctAnswerId) {
-      const correctOpt = q.options.find((o) => o.answerId === correctAnswerId);
-      if (correctOpt) correctLetter = correctOpt.letter;
+    if (!isCorrect && this.gameMode === 'lesson') {
+      const resolvedCorrectId = correctAnswerId || q.correctAnswer;
+      if (resolvedCorrectId) {
+        const correctOpt = q.options.find((o) => o.answerId === resolvedCorrectId);
+        if (correctOpt) correctLetter = correctOpt.letter;
+      }
     }
 
     state.optionButtons.forEach((btn) => {
@@ -518,15 +546,23 @@ export default class GrowYourNestMinigame extends BaseScene {
       const cr = btn.getData('cornerRadius') as number;
 
       bg.clear();
-      if (letter === this.selectedAnswer) {
-        // Selected answer: green if correct, red if incorrect
-        bg.fillStyle(isCorrect ? COLORS.STATUS_GREEN : COLORS.STATUS_RED, 1);
+      if (letter === this.selectedAnswer && isCorrect) {
+        // Correct selected answer: light green tinted fill (#76DC94 at 10%) + green outline
+        bg.fillStyle(COLORS.STATUS_GREEN_TINT, 0.1);
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
-      } else if (!isCorrect && letter === correctLetter) {
-        // Highlight the correct answer in green when user got it wrong
-        bg.fillStyle(COLORS.STATUS_GREEN, 0.6);
-        bg.lineStyle(2, COLORS.STATUS_GREEN);
+        bg.lineStyle(2.5, COLORS.STATUS_GREEN_BG_START);
+        bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
+      } else if (letter === this.selectedAnswer && !isCorrect) {
+        // Incorrect selected answer: light red tinted fill (#F05135 at 10%) + red outline
+        bg.fillStyle(COLORS.STATUS_RED_TINT, 0.1);
         bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
+        bg.lineStyle(2.5, COLORS.STATUS_RED_BG);
+        bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
+      } else if (!isCorrect && letter === correctLetter && this.gameMode === 'lesson') {
+        // Highlight the correct answer in green — lesson mode only
+        bg.fillStyle(COLORS.STATUS_GREEN_TINT, 0.1);
+        bg.fillRoundedRect(lp, -bh / 2, bw, bh, cr);
+        bg.lineStyle(2.5, COLORS.STATUS_GREEN_BG_START);
         bg.strokeRoundedRect(lp, -bh / 2, bw, bh, cr);
       }
       const hitArea = btn.getData('hitArea') as Phaser.GameObjects.Rectangle;
@@ -541,16 +577,30 @@ export default class GrowYourNestMinigame extends BaseScene {
     if (!isCorrect) {
       // Use server explanation if available, fall back to question-level explanation
       feedbackExplanation = explanation || q.explanation || undefined;
-      if (correctLetter) {
-        feedbackExplanation = `The correct answer is ${correctLetter}.${feedbackExplanation ? ' ' + feedbackExplanation : ''}`;
-      }
     }
 
-    // Show the feedback banner below the options
-    showFeedbackBanner(this, state, isCorrect, feedbackExplanation);
+    // Show the feedback text below the bottom separator
+    // Only pass correctLetter in lesson mode so the answer is revealed in feedback text
+    showFeedbackBanner(this, state, isCorrect, feedbackExplanation, correctLetter || undefined);
     this.syncState(state);
 
-      if (isCorrect) {
+    if (isCorrect) {
+      // Build earned rewards description for bottom-left display
+      const earnedItems: string[] = [];
+      if (!this.lastAnswerAlreadyAwarded) {
+        earnedItems.push('1 Water');
+      }
+      if (this.pendingFertilizer) {
+        earnedItems.push('1 Fertilizer');
+      }
+      const earnedText = earnedItems.length > 0 ? earnedItems.join(' and ') : '';
+
+      // Show the "Great Job! Earned ___" row in the bottom-left
+      if (earnedText) {
+        showEarnedRewardsRow(this, state, earnedText);
+        this.syncState(state);
+      }
+
       playWateringAnimation(this, state, () => {
         this.isWateringAnimationPlaying = false;
       }, this.lastAnswerAlreadyAwarded);

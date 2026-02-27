@@ -16,14 +16,24 @@ export class UIComponents {
     const container = scene.add.container(0, 0);
     container.setDepth(100); // High depth to stay on top
 
-    // Background - fully rounded with solid color
+    // Background - rounded rectangle with white fill and neumorphic shadow layers
     const bgWidth = scale(120);
     const bgHeight = scale(40);
-    
-    // Create fully rounded background using graphics
+    const radius = scale(12);
+
+    // Subtle tight shadow — single layer, close offset, low opacity
+    const shadow = scene.add.graphics();
+    shadow.fillStyle(0xa7b4d4, 0.25);
+    shadow.fillRoundedRect(-bgWidth/2 + scale(2), -bgHeight/2 + scale(2), bgWidth, bgHeight, radius);
+    container.add(shadow);
+
+    // Main white background
     const background = scene.add.graphics();
-    background.fillStyle(COLORS.ELEGANT_BLUE, 1); // ElegantBlue
-    background.fillRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, bgHeight/2);
+    background.fillStyle(COLORS.PURE_WHITE, 1);
+    background.fillRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, radius);
+    // Thin border for definition
+    background.lineStyle(scale(1), 0xa7b4d4, 0.15);
+    background.strokeRoundedRect(-bgWidth/2, -bgHeight/2, bgWidth, bgHeight, radius);
     container.add(background);
 
     // Coin icon (on the left) - using image instead of emoji
@@ -50,10 +60,13 @@ export class UIComponents {
       scene.textures.on('addtexture', onTextureAdd);
     }
 
-    // Coin text (on the right)
-    const coinText = scene.add.text(scale(15), 0, coins.toString(),
-      createTextStyle('H2', COLORS.TEXT_PURE_WHITE)
-    ).setOrigin(0.5);
+    // Coin text (on the right) — Logo Blue, 18px base (DPR-scaled)
+    const coinText = scene.add.text(scale(15), 0, coins.toString(), {
+      fontFamily: FONT_FAMILY,
+      fontSize: scaleFontSize(18),
+      color: '#3658EC',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
     coinText.setName('coinText'); // so BaseScene can find it
     container.add(coinText);
 

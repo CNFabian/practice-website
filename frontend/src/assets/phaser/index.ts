@@ -19,7 +19,7 @@ export { default as House3 } from '../images/phaser/houses/house3.png'
 export { default as House4 } from '../images/phaser/houses/house4.png'
 export { default as House5 } from '../images/phaser/houses/house5.png'
 export { default as HouseCloud } from '../images/phaser/houses/house_cloud.png'
-export { default as VideoProgressIcon } from '../images/phaser/houses/Video_ProgressCard.svg'
+export { default as VideoProgressIcon } from '../images/phaser/houses/Video_ProgressCard.png'
 export { default as DocumentProgressIcon } from '../images/phaser/houses/Document_ProgressCard.svg'
 export { default as ProgressStarIcon } from '../images/phaser/houses/progress_star.png'
 export { default as FrontGrass } from '../images/phaser/houses/FrontGrass.png'
@@ -28,11 +28,16 @@ export { default as BackgroundCloud } from '../images/phaser/houses/background_c
 // House background + lesson house (HouseScene)
 export { default as HouseBackground } from '../images/phaser/house_background1.png'
 export { default as LessonHouse } from '../images/phaser/House.png'
+export { default as LessonCard } from '../images/phaser/houses/lessonCard.png'
 
 // Bird avatars (BaseScene)
 export { default as BirdIdle } from '../images/phaser/bird_idle.svg'
 export { default as BirdFly } from '../images/phaser/bird_flight.svg'
-export { default as BirdCelebration } from '../images/phaser/bird_celebration.svg'
+export { default as BirdCelebration } from '../images/birdCharacter/bird_celebration.png'
+export { default as BirdWithPencil } from '../images/birdCharacter/bird_with_pencil.png'
+export { default as BirdSad } from '../images/birdCharacter/bird_sad.png'
+export { default as BirdWithCoin } from '../images/birdCharacter/bird_with_coin.png'
+export { default as BirdNestStanding } from '../images/birdCharacter/bird_nest_standing.png'
 
 // Coin counter (BaseScene)
 export { default as CoinCounterIcon } from '../images/icons/coins/coin_counter.svg'
@@ -51,3 +56,4 @@ export { default as WateringCanStill } from '../images/phaser/minigames/watering
 export { default as WateringCanWatering } from '../images/phaser/minigames/wateringCan_watering.png'
 export { default as FertilizerStill } from '../images/phaser/minigames/fertilizer_Still.png'
 export { default as FertilizerPouring } from '../images/phaser/minigames/fertilizer_pouring.png'
+export { default as MinigameIcon } from '../images/phaser/minigames/minigame_icon.png'

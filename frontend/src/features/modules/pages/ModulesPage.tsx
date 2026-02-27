@@ -181,11 +181,15 @@ const ModulesPage: React.FC = () => {
   }, [queryClient]);
 
   const handleLessonSelect = useCallback((lessonId: number, moduleBackendId?: string) => {
+    // Set synchronous flag BEFORE React re-render so Phaser's BaseScene
+    // knows React owns the background even before useEffect/localStorage update
+    (window as any).__nestnav_reactOwnsBackground = true;
+
     const game = GameManager.getGame();
     const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
     const backendId = moduleBackendId || navState.moduleBackendId;
     const house = houses.find((h: any) => h.moduleBackendId === backendId);
-    
+
     setNavState(prev => ({
       ...prev,
       currentView: 'lesson',
@@ -196,6 +200,7 @@ const ModulesPage: React.FC = () => {
   }, [navState.moduleBackendId]);
 
   const handleMinigameSelect = useCallback(() => {
+    (window as any).__nestnav_reactOwnsBackground = true;
     setNavState(prev => ({
       ...prev,
       currentView: 'minigame',
@@ -203,6 +208,7 @@ const ModulesPage: React.FC = () => {
   }, []);
 
   const handleBackToMap = useCallback(() => {
+    (window as any).__nestnav_reactOwnsBackground = false;
     setNavState({
       currentView: 'map',
       neighborhoodId: null,
@@ -215,6 +221,7 @@ const ModulesPage: React.FC = () => {
   }, []);
 
   const handleBackToNeighborhood = useCallback(() => {
+    (window as any).__nestnav_reactOwnsBackground = false;
     setNavState(prev => ({
       ...prev,
       currentView: 'neighborhood',
@@ -226,6 +233,40 @@ const ModulesPage: React.FC = () => {
   }, []);
 
   const handleBackToHouse = useCallback(() => {
+    (window as any).__nestnav_reactOwnsBackground = false;
+    setNavState(prev => ({
+      ...prev,
+      currentView: 'house',
+      lessonId: null,
+    }));
+  }, []);
+
+  // Special callback for launching GYN minigame from LessonView.
+  // Unlike handleBackToHouse (which sets navState to 'house' and triggers a
+  // full HouseScene stop+restart via transitionToHouse), this sets navState to
+  // 'house' while also waking the sleeping HouseScene directly — avoiding the
+  // destructive restart. The HouseScene keeps its existing components and state,
+  // which launchLessonMinigame can then slide out and replace with the GYN scene.
+  // This avoids a race condition between the HouseScene restart and the
+  // minigame launch that caused flashing and errors on re-entry.
+  const handleLaunchMinigameFromLesson = useCallback(() => {
+    (window as any).__nestnav_reactOwnsBackground = false;
+
+    // Wake HouseScene BEFORE changing navState — this ensures it's active
+    // when transitionToHouse runs, so the `isActive` check succeeds and the
+    // scene gets properly stopped then restarted in a clean state.
+    // However, this still causes a full restart. Instead, we set a flag
+    // so transitionToHouse knows to skip the restart.
+    const game = GameManager.getGame();
+    if (game) {
+      game.registry.set('skipHouseSceneRestart', true);
+
+      // Wake HouseScene from sleep so it's ready for launchLessonMinigame
+      if (game.scene.isSleeping('HouseScene')) {
+        game.scene.wake('HouseScene');
+      }
+    }
+
     setNavState(prev => ({
       ...prev,
       currentView: 'house',
@@ -577,10 +618,17 @@ const ModulesPage: React.FC = () => {
     if (modulesData && modulesData.length > 0) {
       GameManager.updateModulesData(modulesData);
     }
-    
+
+    // Ensure lessons data is synced after modules (houses) are available.
+    // This handles the race condition where lessonsData arrived before modulesData,
+    // causing updateLessonsData to bail because housesData was empty.
+    if (lessonsData && lessonsData.length > 0 && navState.moduleBackendId) {
+      GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
+    }
+
     const module = GameManager.getCurrentModule(navState.moduleId, navState.moduleBackendId);
     console.log('🔍 Found module:', module ? 'YES' : 'NO');
-    
+
     return module;
   }, [navState.moduleId, navState.moduleBackendId, isLoadingModules, modulesData, lessonsData]);
 
@@ -647,16 +695,34 @@ const ModulesPage: React.FC = () => {
 
   // Set section-background for lesson/minigame views directly,
   // independent of Phaser lifecycle to avoid race conditions
-  // where Phaser destroy clears the background after LessonView sets it
+  // where Phaser destroy clears the background after LessonView sets it.
+  // Uses interval-based enforcement for 2s to guarantee the background
+  // survives any late Phaser setBackgroundImage()/clearBackgroundImage() calls.
+  //
+  // This is the ONLY place that clears the background when leaving lesson/minigame.
+  // LessonView's cleanup intentionally does NOT clear it, because LessonView can
+  // unmount/remount during Phaser game recreation while navState is still 'lesson'.
   useEffect(() => {
     if (navState.currentView === 'lesson' || navState.currentView === 'minigame') {
       const bgElement = document.getElementById('section-background');
-      if (bgElement) {
-        bgElement.style.setProperty('background', `url(${LessonViewBackground})`, 'important');
-        bgElement.style.backgroundSize = 'cover';
-        bgElement.style.backgroundPosition = 'center';
-        bgElement.style.backgroundRepeat = 'no-repeat';
-      }
+      if (!bgElement) return;
+
+      const applyBackground = () => {
+        bgElement.style.setProperty('background', `url(${LessonViewBackground}) center / cover no-repeat`, 'important');
+      };
+
+      // Apply immediately
+      applyBackground();
+      // Re-apply every 100ms for 2 seconds to survive any Phaser background writes
+      const intervalId = setInterval(applyBackground, 100);
+      const stopId = setTimeout(() => clearInterval(intervalId), 2000);
+
+      return () => {
+        clearInterval(intervalId);
+        clearTimeout(stopId);
+        // Clear background when navState changes away from lesson/minigame
+        bgElement.style.setProperty('background', '', 'important');
+      };
     }
   }, [navState.currentView]);
 
@@ -721,6 +787,7 @@ const ModulesPage: React.FC = () => {
               lesson={currentLesson}
               module={currentModule}
               onBack={handleBackToHouse}
+              onLaunchMinigame={handleLaunchMinigameFromLesson}
               onNextLesson={handleLessonSelect}
               addProgressItem={addProgressItem}
               flushProgress={flushProgress}

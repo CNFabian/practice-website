@@ -14,6 +14,7 @@ export const ASSET_KEYS = {
   NOTICE_BIRD_ICON: 'noticeBirdIcon',
   
   // Houses
+  LESSON_CARD: 'lessonCard',
   LESSON_HOUSE: 'lessonHouse',
   HOUSE_1: 'house1',
   HOUSE_2: 'house2',
@@ -32,6 +33,10 @@ export const ASSET_KEYS = {
   BIRD_IDLE: 'bird_idle',
   BIRD_FLY: 'bird_fly',
   BIRD_CELEBRATION: 'bird_celebration',
+  BIRD_WITH_PENCIL: 'bird_with_pencil',
+  BIRD_SAD: 'bird_sad',
+  BIRD_WITH_COIN: 'bird_with_coin',
+  BIRD_NEST_STANDING: 'bird_nest_standing',
 
   // UI
   COIN_ICON: 'coinIcon',

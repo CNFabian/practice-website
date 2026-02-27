@@ -29,10 +29,11 @@ export const useTrackLessonMilestone = (lessonId: string, moduleId?: string) => 
       ),
 
     onSuccess: (data) => {
-      // Invalidate lesson data to reflect updated milestones
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.learning.lesson(lessonId),
-      });
+      // NOTE: We do NOT invalidate the lesson query here.
+      // Milestone tracking doesn't change lesson fields that useLesson
+      // returns, and invalidating here can race with the completion
+      // mutation's optimistic update (especially at 90% when both
+      // milestone and completion fire near-simultaneously).
 
       // If auto-completed at 90% milestone, invalidate broader queries
       if (data.auto_completed) {

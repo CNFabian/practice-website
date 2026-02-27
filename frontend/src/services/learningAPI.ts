@@ -289,6 +289,11 @@ export const uncompleteLesson = async (lessonId: string): Promise<any> => {
       body: JSON.stringify({ lesson_id: lessonId }),
     });
 
+    if (response.status === 400) {
+      console.warn('Lesson is not currently completed — nothing to reverse.');
+      return { success: false, message: 'Lesson is not currently completed' };
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

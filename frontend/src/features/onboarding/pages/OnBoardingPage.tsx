@@ -170,9 +170,9 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
           wants_expert_contact: formData.wants_expert_contact
         });
       } else {
-        // Default value when expert contact was skipped
+        // Default value when expert contact was skipped (user already has professionals)
         await completeStep2({
-          wants_expert_contact: 'no_thanks'
+          wants_expert_contact: 'Maybe later'
         });
       }
 
