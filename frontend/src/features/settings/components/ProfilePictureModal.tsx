@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { OnestFont } from '../../../assets';
+import CloseButton from '../../../components/common/CloseButton';
 
 interface ProfilePictureModalProps {
   isOpen: boolean;
@@ -127,14 +128,7 @@ const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                 Choose Profile Picture
               </OnestFont>
             </DialogTitle>
-            <button
-              onClick={onClose}
-              className="text-unavailable-button hover:text-text-grey"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <CloseButton onClick={onClose} />
           </div>
           
           {/* Tab Navigation */}

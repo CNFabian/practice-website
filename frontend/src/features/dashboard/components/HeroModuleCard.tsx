@@ -128,7 +128,7 @@ const HeroModuleCard: React.FC<HeroModuleCardProps> = ({
               lineHeight="relaxed"
               className="text-sm tracking-widest"
             >
-              CONTINUE
+              Continue
             </OnestFont>
           </button>
         </BetaTooltip>

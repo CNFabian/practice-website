@@ -230,10 +230,10 @@ const FirstTimeBuyerChecklist: React.FC = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-pure-white rounded-2xl p-6 max-w-md w-full">
         <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black mb-4">
-          🎉 Congratulations!
+          Congratulations
         </OnestFont>
         <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey mb-6">
-          You've completed all the essential steps for first-time homebuying! You're well-prepared for your homebuying journey.
+          You've completed all the essential steps for first-time homebuying. You're well-prepared for what's ahead.
         </OnestFont>
         <button
           onClick={() => setShowModal(false)}

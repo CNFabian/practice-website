@@ -41,7 +41,7 @@ const NotificationsView: React.FC = () => {
         {/* Notifications From Us */}
         <div className="pb-6">
           <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-text-blue-black mb-2">
-            Notifications From Us
+            Notifications from us
           </OnestFont>
           <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mb-6">
             Receive the latest news and updates from Nest Navigate

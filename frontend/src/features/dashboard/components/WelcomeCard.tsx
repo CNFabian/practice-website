@@ -28,7 +28,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
             overflowWrap: 'break-word'
           }}
         >
-          Welcome to Nest Navigate!
+          Welcome to Nest Navigate
         </OnestFont>
         <button 
           onClick={onToggleExpand}
@@ -64,7 +64,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           overflowWrap: 'break-word'
         }}
       >
-        Here's a few tasks to get your bearings. Set up your profile to
+        Here are a few tasks to get started. Set up your profile to
         personalize your learning experience. Access your first module and
         complete your first lesson. Test your knowledge by completing
         quizzes. Spend your coins on rewards. Battle against other players

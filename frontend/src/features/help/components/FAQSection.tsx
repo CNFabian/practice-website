@@ -7,7 +7,7 @@ const FALLBACK_FAQS: FAQ[] = [
   {
     id: '1',
     question: 'How do I get started with the platform?',
-    answer: 'Getting started is easy! Simply complete your profile, browse our learning modules, and begin your homebuying journey.',
+    answer: 'Getting started is simple. Complete your profile, browse learning modules, and start learning.',
     category: 'General',
     order_index: 1,
     view_count: 0

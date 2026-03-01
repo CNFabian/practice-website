@@ -369,7 +369,7 @@ const HomeInspectionChecklist: React.FC = () => {
           Home Inspection Checklist
         </OnestFont>
         <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey">
-          Use this comprehensive checklist during your home inspection to ensure you don't miss any critical areas. 
+          Use this checklist during your home inspection to make sure you don't miss anything important.
           Take notes and mark items as you inspect them.
         </OnestFont>
         

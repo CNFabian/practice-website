@@ -151,12 +151,12 @@ export default class NeighborhoodScene extends BaseScene {
     return [
       {
         id: 'mock-house-1',
-        name: 'Home-buying Foundations',
+        name: 'Homebuying Foundations',
         houseType: ASSET_KEYS.HOUSE_1,
         isLocked: true,
         moduleId: 1,
         moduleBackendId: 'mock-module-1',
-        description: 'Learn the basics of home buying',
+        description: 'Learn the basics of homebuying',
         coinReward: 100,
       },
       {
@@ -166,7 +166,7 @@ export default class NeighborhoodScene extends BaseScene {
         isLocked: true,
         moduleId: 2,
         moduleBackendId: 'mock-module-2',
-        description: 'Master your finances for home ownership',
+        description: 'Master your finances for homeownership',
         coinReward: 150,
       },
       {
@@ -239,7 +239,10 @@ export default class NeighborhoodScene extends BaseScene {
     this.createUI();
     this.fadeInScene();
     this.setupEventListeners();
-    this.prefetchAllHouseLessons(); 
+    this.prefetchAllHouseLessons();
+
+    // Signal to React that this scene is fully rendered and visible
+    this.registry.set('sceneRendered', true);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -986,26 +989,30 @@ public expandProgressCard(houseIndex: number): void {
     return length;
   }
 
-  private calculateHousePosition(index: number, width: number, height: number, _house: HousePosition): { x: number; y: number } {
+  private calculateHousePosition(index: number, _width: number, _height: number, _house: HousePosition): { x: number; y: number } {
+    // Use getLayoutSize() so positions are clamped to the design reference
+    // and stay consistent across DPI changes and viewport resizes.
+    const { lw, lh } = this.getLayoutSize();
+
     const isTopRow = index % 2 === 0;
     const columnIndex = Math.floor(index / 2);
-    
+
     const startX = 15; // Start at 15% from left edge
     const horizontalSpacing = 80; // 80% spacing between houses
     const bottomRowOffset = 40; // Bottom row shifted to the right by 40%
     const topRowY = 35; // Top row at 35% from top
     const bottomRowY = 70; // Bottom row at 70% from top
-    
+
     // Calculate X position with offset for bottom row
-    const defaultX = isTopRow 
+    const defaultX = isTopRow
       ? startX + (columnIndex * horizontalSpacing)  // Top row: 15%, 95%, 175%...
       : startX + (columnIndex * horizontalSpacing) + bottomRowOffset;  // Bottom row: 55%, 135%, 215%...
-    
+
     const defaultY = isTopRow ? topRowY : bottomRowY;
-    
-    const x = (defaultX / 100) * width;
-    const y = (defaultY / 100) * height;
-    
+
+    const x = (defaultX / 100) * lw;
+    const y = (defaultY / 100) * lh;
+
     return { x, y };
   }
 
@@ -1021,8 +1028,8 @@ public expandProgressCard(houseIndex: number): void {
     const houseContainer = this.add.container(x, y);
     houseContainer.setDepth(2);
 
-    // Set house to locked by default unless explicitly unlocked by backend
-    const isLocked =  false; // Locked unless explicitly set to false
+    // Beta release: only the first house (index 0) is unlocked
+    const isLocked = index !== 0;
 
     // Create house icon
     let houseImage: Phaser.GameObjects.Image | undefined;
@@ -1162,7 +1169,7 @@ public expandProgressCard(houseIndex: number): void {
   private createLockedHouseTooltip(
     houseContainer: Phaser.GameObjects.Container,
     house: HousePosition,
-    index: number,
+    _index: number,
     x: number,
     y: number
   ): void {
@@ -1197,11 +1204,10 @@ public expandProgressCard(houseIndex: number): void {
     tooltipContainer.add(lockIcon);
 
     // Tooltip text - using standard text colors, larger font
-    const previousHouseName = index > 0 ? this.houses[index - 1].name : 'the previous house';
     const tooltipText = this.add.text(
       0,
       scale(20),
-      `Complete ${previousHouseName}\nto unlock this house`,
+      'Not available in the beta release.',
       createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
         fontSize: scaleFontSize(16),
         align: 'center',
@@ -1592,14 +1598,15 @@ public expandProgressCard(houseIndex: number): void {
     // Destroy and recreate scrollbar for new dimensions
     this.destroyScrollbar();
 
-    // Recalculate camera bounds for new size
-    const { width, height } = this.scale;
-    const worldWidth = width * 2.5;
-    const worldHeight = height;
+    // Recalculate camera bounds for new size using layout dimensions
+    const { width } = this.scale;
+    const { lw, lh } = this.getLayoutSize();
+    const worldWidth = lw * 2.5;
+    const worldHeight = lh;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
     // Reset camera scroll if it's out of new bounds
-    const maxScrollX = Math.max(0, worldWidth - width);
+    const maxScrollX = Math.max(0, worldWidth - lw);
     const currentScrollX = this.cameras.main.scrollX;
     if (currentScrollX > maxScrollX) {
       this.cameras.main.setScroll(maxScrollX, 0);
@@ -1607,11 +1614,11 @@ public expandProgressCard(houseIndex: number): void {
 
     // Recreate scrollbar with new dimensions
     this.createScrollbar();
-    
+
     // Use consistent positioning formula - same as createBird() and travelToHouse()
     if (this.bird && this.houses.length > 0) {
       const currentHouse = this.houses[this.currentHouseIndex];
-      const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
+      const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, lh, currentHouse);
       
       const progressCardOffsetX = scale(250);
       

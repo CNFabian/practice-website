@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { 
+import {
   HouseBackground,
   NeighborhoodMap,
   NeighborhoodBackground,
-  LessonViewBackground
 } from '../../../assets';
 import GameManager from '../../../game/managers/GameManager';
 import LessonView from '../../lessons/pages/LessonView';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { useDashboardModules } from '../../../hooks/queries/useDashboardModules';
 import { useModuleLessons } from '../../lessons/hooks/useLearningQueries';
 import { useCoinBalance } from '../../../hooks/queries/useCoinBalance';
@@ -33,6 +33,7 @@ const ModulesPage: React.FC = () => {
   const [isPhaserReady, setIsPhaserReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [secondaryAssetsLoaded, setSecondaryAssetsLoaded] = useState(false);
+  const [sceneRendered, setSceneRendered] = useState(false);
   const location = useLocation();
   const walkthroughTriggered = useRef(false);
   const { data: dashboardModules } = useDashboardModules();
@@ -50,7 +51,15 @@ const ModulesPage: React.FC = () => {
     const saved = localStorage.getItem('moduleNavState');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Transient views (lesson, minigame) cannot survive a page reload —
+        // they depend on runtime state (video players, lesson data, etc.) that
+        // is lost on remount. Fall back to the last valid Phaser view.
+        if (parsed.currentView === 'lesson' || parsed.currentView === 'minigame') {
+          parsed.currentView = parsed.houseId ? 'house' : parsed.neighborhoodId ? 'neighborhood' : 'map';
+          parsed.lessonId = null;
+        }
+        return parsed;
       } catch (e) {
         console.error('Failed to parse saved nav state:', e);
       }
@@ -135,8 +144,14 @@ const ModulesPage: React.FC = () => {
     error: lessonsError 
   } = useModuleLessons(navState.moduleBackendId || '');
 
-  // Save nav state to localStorage
+  // Save nav state to localStorage — exclude transient views that can't survive reload
   useEffect(() => {
+    if (navState.currentView === 'lesson' || navState.currentView === 'minigame') {
+      // Don't persist transient views; keep the last valid Phaser view in storage
+      return;
+    }
+    // Clear any transient view signal when returning to a Phaser view
+    localStorage.removeItem('moduleNavTransientView');
     GameManager.saveNavState(navState);
   }, [navState]);
 
@@ -184,6 +199,10 @@ const ModulesPage: React.FC = () => {
     // Set synchronous flag BEFORE React re-render so Phaser's BaseScene
     // knows React owns the background even before useEffect/localStorage update
     (window as any).__nestnav_reactOwnsBackground = true;
+
+    // Signal the transient view immediately so the walkthrough polling in MainLayout
+    // can detect the nav change to 'lesson' (lesson view is not persisted to moduleNavState)
+    localStorage.setItem('moduleNavTransientView', 'lesson');
 
     const game = GameManager.getGame();
     const houses = game?.registry.get('neighborhoodHouses')?.['downtown'] || [];
@@ -342,6 +361,28 @@ const ModulesPage: React.FC = () => {
     console.log('🔄 EARLY SYNC: Updating lessons data to GameManager for:', navState.moduleBackendId);
     GameManager.updateLessonsData(navState.moduleBackendId, lessonsData);
   }, [lessonsData, navState.moduleBackendId, isLoadingLessons]);
+
+  // Poll for scene rendered — MapScene sets this after initializeScene completes
+  useEffect(() => {
+    if (!isPhaserReady || !assetsLoaded) return;
+
+    const game = GameManager.getGame();
+    if (!game) return;
+
+    if (game.registry.get('sceneRendered')) {
+      setSceneRendered(true);
+      return;
+    }
+
+    const checkInterval = setInterval(() => {
+      if (game.registry.get('sceneRendered')) {
+        setSceneRendered(true);
+        clearInterval(checkInterval);
+      }
+    }, 50);
+
+    return () => clearInterval(checkInterval);
+  }, [isPhaserReady, assetsLoaded]);
 
   // Trigger Tier 2 (Secondary) background asset loading after map is visible
   useEffect(() => {
@@ -536,22 +577,27 @@ const ModulesPage: React.FC = () => {
     };
 
     const handleFullscreenChange = () => {
+      const isFullscreen = document.fullscreenElement !== null;
       console.log('=== FULLSCREEN CHANGE DETECTED ===');
-      console.log('Is fullscreen:', document.fullscreenElement !== null);
-      
+      console.log('Is fullscreen:', isFullscreen);
+
+      // Update sidebar offset so performResize() uses the correct viewport width.
+      // In fullscreen the sidebar is hidden so offset is 0; on exit restore it.
+      GameManager.updateSidebarOffset(isFullscreen ? 0 : sidebarOffset);
+
       if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
       if (finalResizeTimer) clearTimeout(finalResizeTimer);
-      
+
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - PASS 1 ===');
         performResize();
       }, 100);
-      
+
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - PASS 2 ===');
         performResize();
       }, 250);
-      
+
       setTimeout(() => {
         console.log('=== FULLSCREEN RESIZE - FINAL ===');
         performResize();
@@ -564,18 +610,6 @@ const ModulesPage: React.FC = () => {
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
-    const currentDPR = window.devicePixelRatio || 1;
-    const mediaQueryList = window.matchMedia(`(resolution: ${currentDPR}dppx)`);
-    
-    const handleDPIChange = () => {
-      console.log('=== DPI CHANGE DETECTED ===');
-      setTimeout(() => {
-        handleResize();
-      }, 50);
-    };
-
-    mediaQueryList.addEventListener('change', handleDPIChange);
-
     return () => {
       if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
       if (finalResizeTimer) clearTimeout(finalResizeTimer);
@@ -584,7 +618,6 @@ const ModulesPage: React.FC = () => {
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-      mediaQueryList.removeEventListener('change', handleDPIChange);
     };
   }, [isPhaserReady, assetsLoaded]);
 
@@ -708,7 +741,7 @@ const ModulesPage: React.FC = () => {
       if (!bgElement) return;
 
       const applyBackground = () => {
-        bgElement.style.setProperty('background', `url(${LessonViewBackground}) center / cover no-repeat`, 'important');
+        bgElement.style.setProperty('background', 'linear-gradient(133.93deg, #EEF1FF 24.22%, #FAFBFF 79%)', 'important');
       };
 
       // Apply immediately
@@ -728,22 +761,14 @@ const ModulesPage: React.FC = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
-      {/* Loading indicators */}
-      {isLoadingModules && (
-        <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-text-grey">Loading modules...</p>
-        </div>
+      {/* Loading spinner — shown until Phaser scene is fully rendered and data is loaded */}
+      {(!isPhaserReady || !assetsLoaded || !sceneRendered || isLoadingModules || (isLoadingLessons && navState.currentView === 'house')) && (
+        <LoadingSpinner />
       )}
 
       {modulesError && (
         <div className="absolute top-4 right-4 bg-status-red/10 px-4 py-2 rounded-lg shadow-lg z-50">
           <p className="text-sm text-status-red">Failed to load modules</p>
-        </div>
-      )}
-
-      {isLoadingLessons && navState.currentView === 'house' && (
-        <div className="absolute top-16 right-4 bg-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <p className="text-sm text-text-grey">Loading lessons...</p>
         </div>
       )}
 
@@ -816,6 +841,7 @@ const ModulesPage: React.FC = () => {
           )}
         </div>
       )}
+
     </div>
   );
 };

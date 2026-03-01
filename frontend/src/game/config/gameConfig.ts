@@ -28,9 +28,9 @@ export const createGameConfig = (
     },
     // All scenes but don't auto-start any
     scene: [
-      PreloaderScene, 
-      MapScene, 
-      NeighborhoodScene, 
+      PreloaderScene,
+      MapScene,
+      NeighborhoodScene,
       HouseScene,
       GrowYourNestMinigame
     ],

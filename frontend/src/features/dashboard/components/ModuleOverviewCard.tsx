@@ -62,7 +62,7 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
       return (
         <div className="absolute top-3 right-3 bg-status-green text-pure-white px-2.5 py-1 rounded-md text-xs z-10">
           <OnestFont weight={700} lineHeight="relaxed">
-            FINISHED
+            Finished
           </OnestFont>
         </div>
       );
@@ -71,7 +71,7 @@ const ModuleOverviewCard: React.FC<ModuleOverviewCardProps> = ({
       return (
         <div className="absolute top-3 right-3 bg-logo-blue text-pure-white px-2.5 py-1 rounded-md text-xs z-10">
           <OnestFont weight={700} lineHeight="relaxed">
-            IN PROGRESS
+            In progress
           </OnestFont>
         </div>
       );

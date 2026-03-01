@@ -466,43 +466,62 @@ function showWaterText(
   const fontSize = Math.round(panelWidth * 0.08);
   const displayText = alreadyAwarded ? 'Max Growth Points' : '+1 Water';
   const textColor = alreadyAwarded
-    ? `#${COLORS.UNAVAILABLE_BUTTON.toString(16).padStart(6, '0')}`
+    ? `#${COLORS.STATUS_YELLOW.toString(16).padStart(6, '0')}`
     : `#${COLORS.LOGO_BLUE.toString(16).padStart(6, '0')}`;
+
+  // Container to group pill background + text so they animate together
+  const container = scene.add.container(x - 175, y - 100);
+  state.leftPanel.add(container);
+
   const waterText = scene.add.text(
-    x - 175,
-    y - 100,
+    0,
+    0,
     displayText,
     createTextStyle('BODY_BOLD', textColor, {
       fontSize: `${fontSize}px`,
     })
   );
   waterText.setOrigin(0.5, 0.5);
-  waterText.setAlpha(0);
-  waterText.setScale(0.5);
-  state.leftPanel.add(waterText);
+
+  // Pill-shaped background behind text
+  const padX = fontSize * 0.6;
+  const padY = fontSize * 0.35;
+  const pillWidth = waterText.width + padX * 2;
+  const pillHeight = waterText.height + padY * 2;
+  const pillRadius = pillHeight / 2;
+
+  const pill = scene.add.graphics();
+  pill.fillStyle(COLORS.PURE_WHITE, 0.85);
+  pill.fillRoundedRect(-pillWidth / 2, -pillHeight / 2, pillWidth, pillHeight, pillRadius);
+
+  container.add(pill);
+  container.add(waterText);
+
+  container.setAlpha(0);
+  container.setScale(0.5);
 
   scene.tweens.add({
-    targets: waterText,
+    targets: container,
     alpha: 1,
     scale: 1.2,
     duration: 200,
     ease: 'Back.easeOut',
     onComplete: () => {
       scene.tweens.add({
-        targets: waterText,
+        targets: container,
         scale: 1,
         duration: 150,
         ease: 'Power2',
         onComplete: () => {
           scene.tweens.add({
-            targets: waterText,
+            targets: container,
             y: y - 130,
             alpha: 0,
             duration: 800,
             ease: 'Power2',
             delay: 200,
             onComplete: () => {
-              waterText.destroy();
+              container.destroy();
             },
           });
         },
@@ -629,41 +648,79 @@ function showFertilizerText(
   panelWidth: number
 ): void {
   const fontSize = Math.round(panelWidth * 0.08);
+
+  // Container to group pill background + text so they animate together
+  const container = scene.add.container(x + 175, y - 100);
+  state.leftPanel.add(container);
+
   const fertilizerText = scene.add.text(
-    x + 175,
-    y - 100,
+    0,
+    0,
     'Fertilizer +20',
-    createTextStyle('BODY_BOLD', `#${COLORS.STATUS_GREEN.toString(16).padStart(6, '0')}`, {
+    createTextStyle('BODY_BOLD', COLORS.TEXT_PURE_WHITE, {
       fontSize: `${fontSize}px`,
     })
   );
   fertilizerText.setOrigin(0.5, 0.5);
-  fertilizerText.setAlpha(0);
-  fertilizerText.setScale(0.5);
-  state.leftPanel.add(fertilizerText);
+
+  // Pill-shaped background behind text — StatusGreenBackground gradient (matches correct answer pill)
+  const padX = fontSize * 0.6;
+  const padY = fontSize * 0.35;
+  const pillWidth = fertilizerText.width + padX * 2;
+  const pillHeight = fertilizerText.height + padY * 2;
+  const pillRadius = pillHeight / 2;
+
+  // Create gradient pill using canvas texture (same gradient as correct answer pill in right panel)
+  const gradKey = '__gyn_fertilizer_pill_grad';
+  if (scene.textures.exists(gradKey)) scene.textures.remove(gradKey);
+  const canvas = scene.textures.createCanvas(gradKey, pillWidth, pillHeight);
+  const ctx = canvas!.context;
+  const grd = ctx.createLinearGradient(0, 0, 0, pillHeight);
+  grd.addColorStop(0, '#339D5F'); // STATUS_GREEN_BG_START
+  grd.addColorStop(1, '#32A68E'); // STATUS_GREEN_BG_END
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.moveTo(pillRadius, 0);
+  ctx.lineTo(pillWidth - pillRadius, 0);
+  ctx.arc(pillWidth - pillRadius, pillRadius, pillRadius, -Math.PI / 2, Math.PI / 2);
+  ctx.lineTo(pillRadius, pillHeight);
+  ctx.arc(pillRadius, pillRadius, pillRadius, Math.PI / 2, -Math.PI / 2);
+  ctx.closePath();
+  ctx.fill();
+  canvas!.refresh();
+
+  const pill = scene.add.image(0, 0, gradKey);
+  pill.setOrigin(0.5, 0.5);
+  pill.setAlpha(0.9);
+
+  container.add(pill);
+  container.add(fertilizerText);
+
+  container.setAlpha(0);
+  container.setScale(0.5);
 
   scene.tweens.add({
-    targets: fertilizerText,
+    targets: container,
     alpha: 1,
     scale: 1.2,
     duration: 200,
     ease: 'Back.easeOut',
     onComplete: () => {
       scene.tweens.add({
-        targets: fertilizerText,
+        targets: container,
         scale: 1,
         duration: 150,
         ease: 'Power2',
         onComplete: () => {
           scene.tweens.add({
-            targets: fertilizerText,
+            targets: container,
             y: y - 130,
             alpha: 0,
             duration: 800,
             ease: 'Power2',
             delay: 200,
             onComplete: () => {
-              fertilizerText.destroy();
+              container.destroy();
             },
           });
         },

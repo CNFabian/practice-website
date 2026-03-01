@@ -61,8 +61,7 @@ export default function MobileGate({ children }: MobileGateProps) {
           weight={500}
           className="text-text-grey text-base mb-6 leading-relaxed"
         >
-          NestNavigate Beta is currently optimized for desktop browsers. 
-          Please visit us from a laptop or desktop computer for the best experience.
+          Nest Navigate Beta is currently optimized for desktop browsers.
         </OnestFont>
 
         {/* Divider */}
@@ -74,7 +73,7 @@ export default function MobileGate({ children }: MobileGateProps) {
           weight={500}
           className="text-unavailable-button text-sm"
         >
-          Mobile support is coming soon!
+          Mobile support is coming soon.
         </OnestFont>
       </div>
     </div>

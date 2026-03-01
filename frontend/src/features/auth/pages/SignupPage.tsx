@@ -278,7 +278,7 @@ const SignupPage: React.FC = () => {
     <form onSubmit={handleSendCode} className="space-y-6">
       <div className="text-center space-y-2">
         <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
-          Welcome To Nest!
+          Welcome to Nest
         </OnestFont>
         <OnestFont as="p" weight={700} lineHeight="relaxed" className="text-text-blue-black text-base px-4">
           Build confidence before you buy
@@ -307,7 +307,7 @@ const SignupPage: React.FC = () => {
 
       <input
         type="email"
-        placeholder="email address"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
@@ -325,7 +325,7 @@ const SignupPage: React.FC = () => {
             <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
           )}
           <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-            NEXT
+            Next
           </OnestFont>
         </button>
       </div>
@@ -404,7 +404,7 @@ const SignupPage: React.FC = () => {
               <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
             )}
             <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-              VERIFY
+              Verify
             </OnestFont>
           </button>
         ) : (
@@ -415,7 +415,7 @@ const SignupPage: React.FC = () => {
             className="w-48 bg-logo-blue text-pure-white py-3.5 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center"
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-              {resendCooldown > 0 ? `RESEND (${resendCooldown}s)` : 'RESEND'}
+              {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend'}
             </OnestFont>
           </button>
         )}
@@ -569,7 +569,7 @@ const SignupPage: React.FC = () => {
             <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
           )}
           <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-            SIGN UP
+            Sign up
           </OnestFont>
         </button>
       </div>

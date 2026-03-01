@@ -115,10 +115,10 @@ const FreeRoamWalkthrough: React.FC<FreeRoamWalkthroughProps> = ({
       >
         <div className="p-6">
           <OnestFont as="h2" weight={700} lineHeight="tight" className="text-2xl text-pure-white mb-3">
-            Free Roam Unlocked!
+            Free Roam unlocked
           </OnestFont>
           <OnestFont weight={300} lineHeight="relaxed" className="text-base text-pure-white/90">
-            You've completed all lesson minigames in this module! Click the tree button to enter Free Roam mode — answer questions from every lesson to grow your tree to its final stage and earn bonus coins!
+            You've completed all lesson minigames in this module. Click the tree button to enter Free Roam mode.
           </OnestFont>
           <div className="mt-6">
             <button

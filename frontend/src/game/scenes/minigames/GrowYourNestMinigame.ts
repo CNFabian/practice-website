@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { createTextStyle } from '../../constants/Typography';
 import { COLORS } from '../../constants/Colors';
+import { ASSET_KEYS } from '../../constants/AssetKeys';
 import {
   validateAnswer,
   submitLessonAnswers,
@@ -255,14 +256,14 @@ export default class GrowYourNestMinigame extends BaseScene {
     // Call BaseScene.create() to set up coin counter and coin update listener
     super.create();
 
-    const { width, height } = this.cameras.main;
+    const { lw, lh } = this.getLayoutSize();
 
     this.createBackButton();
-    this.createHeader(width);
-    this.createPanels(width, height);
-    this.slideInMinigameComponents(width);
+    this.createHeader(lw);
+    this.createPanels(lw, lh);
+    this.slideInMinigameComponents(lw);
 
-    this.scale.on('resize', this.handleResize, this);
+    this.scale.on('resize', this.handleResizeDebounced, this);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -476,7 +477,9 @@ export default class GrowYourNestMinigame extends BaseScene {
         this.lastServerResponse = r.tree_state;
         this.score = r.correct_count;
         this.lessonPassed = r.passed;
-        if (r.fertilizer_bonus) this.fertilizerBonusCount++;
+        // NOTE: Do NOT increment fertilizerBonusCount here — it is already
+        // incremented per-question at answer time (line ~319). Incrementing
+        // again from the server response would double-count.
 
         if (r.passed) {
           // Lesson passed (3/3 correct) — use authoritative server values
@@ -673,6 +676,18 @@ export default class GrowYourNestMinigame extends BaseScene {
   // SCENE LIFECYCLE
   // ═══════════════════════════════════════════════════════════════
 
+  private resizeDebounceTimer?: Phaser.Time.TimerEvent;
+
+  private handleResizeDebounced(): void {
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+    }
+    this.resizeDebounceTimer = this.time.delayedCall(100, () => {
+      this.handleResize();
+      this.resizeDebounceTimer = undefined;
+    });
+  }
+
   private handleResize(): void {
     this.tweens.killAll();
 
@@ -711,10 +726,10 @@ export default class GrowYourNestMinigame extends BaseScene {
     // Handle coin counter resize from BaseScene
     this.handleCoinCounterResize();
 
-    const { width, height } = this.scale;
+    const { lw, lh } = this.getLayoutSize();
     this.createBackButton();
-    this.createHeader(width);
-    this.createPanels(width, height);
+    this.createHeader(lw);
+    this.createPanels(lw, lh);
   }
 
   shutdown() {
@@ -779,7 +794,12 @@ export default class GrowYourNestMinigame extends BaseScene {
       }
     }
 
-    this.scale.off('resize', this.handleResize, this);
+    if (this.resizeDebounceTimer) {
+      this.resizeDebounceTimer.remove();
+      this.resizeDebounceTimer = undefined;
+    }
+
+    this.scale.off('resize', this.handleResizeDebounced, this);
 
     // Call BaseScene.shutdown() to clean up coin counter
     super.shutdown();
@@ -787,8 +807,9 @@ export default class GrowYourNestMinigame extends BaseScene {
 
   // ─── Slide-in animation ───
 
-  private slideInMinigameComponents(width: number): void {
-    const offset = width * 1.5;
+  private slideInMinigameComponents(_width: number): void {
+    const aw = this.scale.width;
+    const offset = aw * 1.5;
 
     if (this.backButton) this.backButton.x += offset;
     if (this.headerTitle) this.headerTitle.x += offset;
@@ -798,13 +819,16 @@ export default class GrowYourNestMinigame extends BaseScene {
     const dur = 800,
       ease = 'Power2';
 
+    const margin = aw * 0.04;
+    const gap = aw * 0.025;
+
     if (this.backButton)
-      this.tweens.add({ targets: this.backButton, x: 60, duration: dur, ease });
+      this.tweens.add({ targets: this.backButton, x: margin, duration: dur, ease });
 
     if (this.headerTitle)
       this.tweens.add({
         targets: this.headerTitle,
-        x: width / 2,
+        x: aw / 2,
         duration: dur,
         ease,
       });
@@ -812,7 +836,7 @@ export default class GrowYourNestMinigame extends BaseScene {
     if (this.leftPanel) {
       this.tweens.add({
         targets: this.leftPanel,
-        x: 60,
+        x: margin,
         duration: dur,
         ease,
         onUpdate: () => {
@@ -836,40 +860,41 @@ export default class GrowYourNestMinigame extends BaseScene {
       });
     }
 
-    if (this.rightPanel)
+    if (this.rightPanel) {
+      const panelWidth = (aw - margin * 2 - gap) / 2;
+      const rightX = margin + panelWidth + gap;
       this.tweens.add({
         targets: this.rightPanel,
-        x: width / 2 + 20,
+        x: rightX,
         duration: dur,
         ease,
       });
+    }
   }
 
   // ─── Back button & header (kept in main scene since they emit scene-level events) ───
 
   private createBackButton(): void {
-    this.backButton = this.add.container(60, 48);
+    const aw = this.scale.width;
+    const margin = aw * 0.04;
+    this.backButton = this.add.container(margin, this.scale.height * 0.06);
 
-    const arrow = this.add.text(0, 0, '←', {
-      fontSize: '48px',
-      color: COLORS.TEXT_SECONDARY,
-    });
-    arrow.setOrigin(0.5);
+    const arrow = this.add.image(0, 0, ASSET_KEYS.BACK_ARROW)
+      .setOrigin(0.5)
+      .setScale(1.5);
 
-    const text = this.add.text(
-      40,
-      0,
-      `Module ${this.moduleNumber}`,
-      createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '36px' })
-    );
-    text.setOrigin(0, 0.5);
-
-    this.backButton.add([arrow, text]);
+    this.backButton.add(arrow);
     this.backButton.setDepth(100);
 
-    const hitArea = this.add.rectangle(-10, 0, 250, 70, 0x000000, 0);
-    hitArea.setOrigin(0, 0.5);
+    const hitArea = this.add.rectangle(0, 0, 70, 70, 0x000000, 0);
+    hitArea.setOrigin(0.5);
     hitArea.setInteractive({ useHandCursor: true });
+    hitArea.on('pointerover', () => {
+      arrow.setTexture(ASSET_KEYS.BACK_ARROW_HOVER);
+    });
+    hitArea.on('pointerout', () => {
+      arrow.setTexture(ASSET_KEYS.BACK_ARROW);
+    });
     hitArea.on('pointerdown', () => {
       this.events.emit('minigameCompleted');
       this.scene.stop();
@@ -879,10 +904,12 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.backButton.sendToBack(hitArea);
   }
 
-  private createHeader(width: number): void {
+  private createHeader(_width: number): void {
+    const aw = this.scale.width;
+    const ah = this.scale.height;
     this.headerTitle = this.add.text(
-      width / 2,
-      48,
+      aw / 2,
+      ah * 0.06,
       'Grow Your Nest',
       createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '42px' })
     );
@@ -890,20 +917,27 @@ export default class GrowYourNestMinigame extends BaseScene {
     this.headerTitle.setDepth(10);
   }
 
-  private createPanels(width: number, height: number): void {
-    const panelY = 120;
-    const panelHeight = height - panelY - 80;
-    const panelWidth = (width - 80) / 2 - 20;
+  private createPanels(_width: number, _height: number): void {
+    const aw = this.scale.width; // actual canvas width for centering
+    const ah = this.scale.height;
+    const margin = aw * 0.04;   // ~4% side margins — scales with screen size
+    const gap = aw * 0.025;     // ~2.5% gap between panels
+    const panelY = ah * 0.13;
+    const panelHeight = ah - panelY - ah * 0.08;
+    // Equal-width panels with proportional margins and gap
+    const panelWidth = (aw - margin * 2 - gap) / 2;
+    const leftX = margin;
+    const rightX = leftX + panelWidth + gap;
 
     const state = this.getState();
 
-    createLeftPanel(this, state, 60, panelY, panelWidth, panelHeight);
+    createLeftPanel(this, state, leftX, panelY, panelWidth, panelHeight);
     this.syncState(state);
 
     createRightPanel(
       this,
       state,
-      width / 2 + 20,
+      rightX,
       panelY,
       panelWidth,
       panelHeight,

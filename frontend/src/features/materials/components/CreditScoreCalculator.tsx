@@ -402,7 +402,7 @@ const CreditScoreCalculator: React.FC = () => {
         {currentCategory.level !== 'Exceptional' && (
           <div className="mt-6 p-4 bg-logo-blue/10 border border-logo-blue rounded-xl">
             <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-logo-blue">
-              <span className="font-semibold">Keep improving!</span> Continue monitoring and enhancing your credit habits to reach the next level and unlock better rates and terms.
+              Keep monitoring and building your credit habits to qualify for better rates and terms.
             </OnestFont>
           </div>
         )}

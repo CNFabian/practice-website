@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { OnestFont } from '../../../assets';
+import BackButton from '../../../components/common/BackButton';
 import { useLeadDetail, useLeadHistory, useCalculateUserScore } from '../hooks/useAnalyticsAdmin';
 import ScoreBreakdown from './ScoreBreakdown';
 import ScoreHistoryChart from './ScoreHistoryChart';
@@ -74,9 +75,7 @@ const LeadDetailView: React.FC<LeadDetailViewProps> = ({ userId, onBack }) => {
     return (
       <div className="space-y-4">
         {onBack && (
-          <button onClick={onBack} className="text-logo-blue hover:opacity-80 transition-opacity">
-            <OnestFont weight={500} lineHeight="relaxed" className="text-sm">← Back to All Leads</OnestFont>
-          </button>
+          <BackButton onClick={onBack} />
         )}
         <div className="bg-pure-white rounded-xl p-8 shadow-sm text-center">
           <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-lg mb-2">
@@ -94,9 +93,7 @@ const LeadDetailView: React.FC<LeadDetailViewProps> = ({ userId, onBack }) => {
     return (
       <div className="space-y-4">
         {onBack && (
-          <button onClick={onBack} className="text-logo-blue hover:opacity-80 transition-opacity">
-            <OnestFont weight={500} lineHeight="relaxed" className="text-sm">← Back to All Leads</OnestFont>
-          </button>
+          <BackButton onClick={onBack} />
         )}
         <div className="bg-pure-white rounded-xl p-6 shadow-sm">
           <ShimmerBlock className="h-8 w-48 mb-4" />
@@ -126,9 +123,7 @@ const LeadDetailView: React.FC<LeadDetailViewProps> = ({ userId, onBack }) => {
     <div className="space-y-4">
       {/* Back button */}
       {onBack && (
-        <button onClick={onBack} className="text-logo-blue hover:opacity-80 transition-opacity">
-          <OnestFont weight={500} lineHeight="relaxed" className="text-sm">← Back to All Leads</OnestFont>
-        </button>
+        <BackButton onClick={onBack} />
       )}
 
       {/* Header */}

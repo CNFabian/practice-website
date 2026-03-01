@@ -7,7 +7,7 @@ interface UpdateLessonProgressParams {
   videoProgressSeconds: number;
 }
 
-export const useUpdateLessonProgress = (lessonId: string | number, moduleId: string | number) => {
+export const useUpdateLessonProgress = (_lessonId: string | number, moduleId: string | number) => {
   const queryClient = useQueryClient();
 
   return useMutation<any, Error, UpdateLessonProgressParams>({

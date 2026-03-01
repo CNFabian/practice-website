@@ -9,5 +9,4 @@ export { default as QuestionImage } from '../images/static/question_image.png'
 export { default as TryAgainImage } from '../images/static/tryagain-image.png'
 
 // Background images
-export { default as LessonViewBackground } from '../images/backgrounds/lessonView_background.png'
 export { default as PublicBackground } from '../images/backgrounds/public_background.jpg'

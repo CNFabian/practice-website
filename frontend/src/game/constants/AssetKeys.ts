@@ -27,12 +27,17 @@ export const ASSET_KEYS = {
   PROGRESS_STAR_ICON: 'progressStarIcon',
   FRONT_GRASS: 'frontGrass',
   BACKGROUND_CLOUD: 'backgroundCloud',
+  ROOM_LOCK_OVERLAY_0: 'roomLockOverlay0',
+  ROOM_LOCK_OVERLAY_1: 'roomLockOverlay1',
+  ROOM_LOCK_OVERLAY_2: 'roomLockOverlay2',
+  ROOM_LOCK_OVERLAY_3: 'roomLockOverlay3',
 
-    
+
   // Characters
   BIRD_IDLE: 'bird_idle',
   BIRD_FLY: 'bird_fly',
   BIRD_CELEBRATION: 'bird_celebration',
+  BIRD_HAPPY: 'bird_happy',
   BIRD_WITH_PENCIL: 'bird_with_pencil',
   BIRD_SAD: 'bird_sad',
   BIRD_WITH_COIN: 'bird_with_coin',
@@ -40,6 +45,9 @@ export const ASSET_KEYS = {
 
   // UI
   COIN_ICON: 'coinIcon',
+  MINIGAME_ICON: 'minigameIcon',
+  BACK_ARROW: 'backArrow',
+  BACK_ARROW_HOVER: 'backArrowHover',
 
   // Trees
   TREE_STAGE_1: 'tree_stage_1',

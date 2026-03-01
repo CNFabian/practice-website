@@ -24,6 +24,10 @@ export { default as DocumentProgressIcon } from '../images/phaser/houses/Documen
 export { default as ProgressStarIcon } from '../images/phaser/houses/progress_star.png'
 export { default as FrontGrass } from '../images/phaser/houses/FrontGrass.png'
 export { default as BackgroundCloud } from '../images/phaser/houses/background_cloud.png'
+export { default as RoomLockOverlay0 } from '../images/phaser/houses/room_lock_overlay_0.png'
+export { default as RoomLockOverlay1 } from '../images/phaser/houses/room_lock_overlay_1.png'
+export { default as RoomLockOverlay2 } from '../images/phaser/houses/room_lock_overlay_2.png'
+export { default as RoomLockOverlay3 } from '../images/phaser/houses/room_lock_overlay_3.png'
 
 // House background + lesson house (HouseScene)
 export { default as HouseBackground } from '../images/phaser/house_background1.png'
@@ -35,6 +39,7 @@ export { default as BirdIdle } from '../images/phaser/bird_idle.svg'
 export { default as BirdFly } from '../images/phaser/bird_flight.svg'
 export { default as BirdCelebration } from '../images/birdCharacter/bird_celebration.png'
 export { default as BirdWithPencil } from '../images/birdCharacter/bird_with_pencil.png'
+export { default as BirdHappy } from '../images/birdCharacter/bird_happy.png'
 export { default as BirdSad } from '../images/birdCharacter/bird_sad.png'
 export { default as BirdWithCoin } from '../images/birdCharacter/bird_with_coin.png'
 export { default as BirdNestStanding } from '../images/birdCharacter/bird_nest_standing.png'
@@ -57,3 +62,7 @@ export { default as WateringCanWatering } from '../images/phaser/minigames/water
 export { default as FertilizerStill } from '../images/phaser/minigames/fertilizer_Still.png'
 export { default as FertilizerPouring } from '../images/phaser/minigames/fertilizer_pouring.png'
 export { default as MinigameIcon } from '../images/phaser/minigames/minigame_icon.png'
+
+// Navigation icons (back button)
+export { default as BackArrowIcon } from '../images/icons/back-arrow.svg'
+export { default as BackArrowHoverIcon } from '../images/icons/back-arrow-hover.svg'

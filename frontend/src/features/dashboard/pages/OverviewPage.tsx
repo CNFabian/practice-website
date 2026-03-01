@@ -195,7 +195,7 @@ const OverviewPage: React.FC = () => {
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md p-6">
             <OnestFont weight={500} lineHeight="relaxed" className="text-status-red text-lg mb-2">
-              Oops! Something went wrong
+              Something went wrong
             </OnestFont>
             <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey mb-4">
               {error instanceof Error ? error.message : 'Failed to load dashboard data'}
@@ -259,7 +259,7 @@ const OverviewPage: React.FC = () => {
                 <HeroModuleCard
                   moduleTitle={overviewData.next_lesson.title}
                   moduleDescription={
-                    overviewData.next_lesson.description || "Continue your learning journey"
+                    overviewData.next_lesson.description || "Continue learning"
                   }
                   tags={['Video', 'Beginner']}
                   coinReward={overviewData.next_lesson.nest_coins_reward || 25}

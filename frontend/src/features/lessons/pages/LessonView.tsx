@@ -6,12 +6,13 @@ import { useLesson, useLessonQuiz } from '../hooks/useLearningQueries';
 import { useCompleteLesson } from '../hooks/useCompleteLesson';
 import { useUncompleteLesson } from '../hooks/useUncompleteLesson';
 import { useUpdateLessonProgress } from '../hooks/useUpdateLessonProgress';
-import { LessonViewBackground, PublicBackground, VideoProgressIcon, DocumentProgressIcon } from '../../../assets';
+import { PublicBackground, VideoProgressIcon, DocumentProgressIcon, BackArrow, BackArrowHover } from '../../../assets';
 import { buildLessonModeInitData } from '../hooks/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../hooks/useTrackLessonMilestone';
 import type { BatchProgressItem } from '../../../services/learningAPI';
 import GYNLessonButton from '../components/GYNLessonButton';
+import GYNUnlockModal from '../components/GYNUnlockModal';
 import LessonCoinCounter from '../components/LessonCoinCounter';
 import { getLessonQuestions } from '../../../services/growYourNestAPI';
 import gameManager from '../../../game/managers/GameManager';
@@ -217,6 +218,7 @@ const LessonView: React.FC<LessonViewProps> = ({
   flushProgress
 }) => {
   const [viewMode, setViewMode] = useState<'video' | 'reading'>('video');
+  const [isBackHovered, setIsBackHovered] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // YouTube Player state and refs
@@ -243,18 +245,28 @@ const LessonView: React.FC<LessonViewProps> = ({
 
   // GYN "just unlocked" notification state
   const [showGYNUnlockedNotification, setShowGYNUnlockedNotification] = useState(false);
+  const [showGYNUnlockModal, setShowGYNUnlockModal] = useState(false);
   const [gynAlreadyPlayed, setGynAlreadyPlayed] = useState(false);
   const prevIsCompletedRef = useRef<boolean | undefined>(undefined);
+
 
   // Uncomplete confirmation modal state
   const [showUncompleteModal, setShowUncompleteModal] = useState(false);
   const gynNotificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Preload the background image on mount so it's in the browser cache
+  // before any background-setting logic runs. This prevents the brief white
+  // flash that occurs when the image URL is set but the image hasn't loaded yet.
+  useEffect(() => {
+    const img = new Image();
+    img.src = PublicBackground;
+  }, []);
+
   useEffect(() => {
     const bgElement = document.getElementById('section-background');
 
     // Apply the LessonView background to the shared DOM element.
-    // Uses interval-based enforcement for 2s to survive any late Phaser
+    // Uses interval-based enforcement for 3s to survive any late Phaser
     // setBackgroundImage()/clearBackgroundImage() calls.
     //
     // IMPORTANT: This cleanup must NOT clear the background. LessonView can
@@ -262,14 +274,29 @@ const LessonView: React.FC<LessonViewProps> = ({
     // while navState is still 'lesson'. If cleanup cleared the background,
     // the user would see white during the remount gap. Background clearing
     // is handled by ModulesPage's useEffect when navState changes away from 'lesson'.
+    const backgroundValue = `url(${PublicBackground}) center / cover no-repeat`;
     const applyBackground = () => {
       if (!bgElement) return;
-      bgElement.style.setProperty('background', `url(${PublicBackground}) center / cover no-repeat`, 'important');
+      bgElement.style.setProperty('background', backgroundValue, 'important');
     };
 
     applyBackground();
     const intervalId = setInterval(applyBackground, 100);
-    const stopId = setTimeout(() => clearInterval(intervalId), 2000);
+    const stopId = setTimeout(() => clearInterval(intervalId), 3000);
+
+    // MutationObserver: re-apply background if anything clears/changes it
+    // after the enforcement window. This catches late Phaser scene shutdowns
+    // or any other code that modifies #section-background unexpectedly.
+    let observer: MutationObserver | null = null;
+    if (bgElement) {
+      observer = new MutationObserver(() => {
+        const current = bgElement.style.getPropertyValue('background');
+        if (!current || !current.includes(PublicBackground)) {
+          bgElement.style.setProperty('background', backgroundValue, 'important');
+        }
+      });
+      observer.observe(bgElement, { attributes: true, attributeFilter: ['style'] });
+    }
 
     // Reset all per-lesson state when lesson changes
     setVideoCompleted(false);
@@ -280,6 +307,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     lastProgressSyncRef.current = 0;
     autoCompletedRef.current = false;
     setShowGYNUnlockedNotification(false);
+    setShowGYNUnlockModal(false);
     prevIsCompletedRef.current = undefined;
     if (gynNotificationTimerRef.current) {
       clearTimeout(gynNotificationTimerRef.current);
@@ -289,6 +317,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     return () => {
       clearInterval(intervalId);
       clearTimeout(stopId);
+      if (observer) observer.disconnect();
       // Do NOT clear #section-background here — see comment above
     };
   }, [lesson.id]);
@@ -394,34 +423,26 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [isMockLesson, isCompleted, lesson.backendId]);
   // ═══════════════════════════════════════════════════════════
-  // GYN "JUST UNLOCKED" notification — detects is_completed
-  // transitioning from falsy → true while GYN not yet played
+  // GYN "JUST UNLOCKED" modal — detects is_completed
+  // transitioning from falsy → true while GYN not yet played.
+  // Also triggered explicitly by handleMarkComplete's onSuccess
+  // to cover cases where isCompleted was already true.
   // ═══════════════════════════════════════════════════════════
   useEffect(() => {
     const gynPlayed = !!backendLessonData?.grow_your_nest_played;
     const wasCompleted = prevIsCompletedRef.current;
-    const lessonKey = lesson.backendId ? `nestnav_gyn_toast_shown_${lesson.backendId}` : null;
+    const modalKey = lesson.backendId ? `nestnav_gyn_modal_shown_${lesson.backendId}` : null;
+    const alreadyShown = modalKey ? localStorage.getItem(modalKey) === 'true' : false;
 
-    // Detect transition: previously false → now true, GYN not played,
-    // and toast hasn't been shown before for this lesson (persisted via localStorage)
-    const alreadyShown = lessonKey ? localStorage.getItem(lessonKey) === 'true' : false;
+    console.log('🔍 [GYN Modal Effect] wasCompleted:', wasCompleted, '| isCompleted:', isCompleted, '| gynPlayed:', gynPlayed, '| alreadyShown:', alreadyShown);
 
-    if (wasCompleted === false && isCompleted && !gynPlayed && !alreadyShown) {
-      setShowGYNUnlockedNotification(true);
+    if (!wasCompleted && isCompleted && !gynPlayed && !alreadyShown) {
+      console.log('🎮 [GYN Modal Effect] Showing GYN unlock modal!');
+      setShowGYNUnlockModal(true);
 
-      // Mark as shown so it won't appear again on future visits
-      if (lessonKey) {
-        localStorage.setItem(lessonKey, 'true');
+      if (modalKey) {
+        localStorage.setItem(modalKey, 'true');
       }
-
-      // Auto-dismiss after 5 seconds
-      if (gynNotificationTimerRef.current) {
-        clearTimeout(gynNotificationTimerRef.current);
-      }
-      gynNotificationTimerRef.current = setTimeout(() => {
-        setShowGYNUnlockedNotification(false);
-        gynNotificationTimerRef.current = null;
-      }, 5000);
     }
 
     // Track current value for next render
@@ -826,6 +847,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   // MARK AS COMPLETED TOGGLE
   // ═══════════════════════════════════════════════════════════
   const handleMarkComplete = useCallback(() => {
+    console.log('🖱️ [Mark Complete] clicked | isCompleted:', isCompleted, '| isValidBackendId:', isValidBackendId, '| lessonId:', lesson.backendId);
+
     if (isCompleted) {
       // Show confirmation modal before uncompleting
       setShowUncompleteModal(true);
@@ -833,20 +856,53 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
     // Mark as complete
     if (isValidBackendId && module?.backendId && lesson.backendId) {
-      completeLessonMutation({ lessonId: lesson.backendId }, {
+      // Capture lessonId before the async callback (lesson ref may change)
+      const lessonId = lesson.backendId;
+
+      completeLessonMutation({ lessonId }, {
         onSuccess: () => {
           console.log('✅ Lesson manually marked as complete');
+
+          // Explicitly trigger GYN unlock modal on manual completion.
+          // The useEffect that detects is_completed transitioning false→true
+          // can miss this if isCompleted was already true (e.g. video/reading
+          // completed the lesson before the button was clicked) or if the
+          // optimistic update and ref tracking race each other.
+          const gynPlayed = !!backendLessonData?.grow_your_nest_played;
+          const modalKey = lessonId ? `nestnav_gyn_modal_shown_${lessonId}` : null;
+          const alreadyShown = modalKey ? localStorage.getItem(modalKey) === 'true' : false;
+
+          console.log('🔍 [Mark Complete onSuccess] gynPlayed:', gynPlayed, '| alreadyShown:', alreadyShown);
+
+          if (!gynPlayed && !alreadyShown) {
+            console.log('🎮 [Mark Complete] Showing GYN unlock modal!');
+            setShowGYNUnlockModal(true);
+            if (modalKey) {
+              localStorage.setItem(modalKey, 'true');
+            }
+          }
         },
         onError: (error: Error) => {
           console.error('❌ Failed to mark lesson complete:', error);
         }
       });
+    } else {
+      console.warn('⚠️ [Mark Complete] Skipped mutation — isValidBackendId:', isValidBackendId, '| module?.backendId:', module?.backendId, '| lesson.backendId:', lesson.backendId);
     }
-  }, [isCompleted, isValidBackendId, module?.backendId, lesson.backendId, completeLessonMutation]);
+  }, [isCompleted, isValidBackendId, module?.backendId, lesson.backendId, completeLessonMutation, backendLessonData?.grow_your_nest_played]);
 
   const handleConfirmUncomplete = useCallback(() => {
     setShowUncompleteModal(false);
     if (isValidBackendId && lesson.backendId) {
+      // Clear the GYN modal "already shown" flag so the unlock modal
+      // can re-appear when the lesson is completed again.
+      const modalKey = `nestnav_gyn_modal_shown_${lesson.backendId}`;
+      localStorage.removeItem(modalKey);
+
+      // Reset the completion ref so the useEffect can detect the
+      // false → true transition on the next completion.
+      prevIsCompletedRef.current = false;
+
       uncompleteLessonMutation({ lessonId: lesson.backendId }, {
         onSuccess: () => {
           console.log('🔄 Lesson marked as incomplete');
@@ -863,13 +919,8 @@ const LessonView: React.FC<LessonViewProps> = ({
   // Called by GYNLessonButton when in Active state
   // ═══════════════════════════════════════════════════════════
 
-  const handleGYNPlay = useCallback(async () => {
-    setShowGYNUnlockedNotification(false);
-    if (gynNotificationTimerRef.current) {
-      clearTimeout(gynNotificationTimerRef.current);
-      gynNotificationTimerRef.current = null;
-    }
-
+  // Core minigame launch logic — fetches questions and transitions to Phaser
+  const launchGYNMinigame = useCallback(async () => {
     if (!lesson.backendId) {
       console.warn('🌳 [GYN Play] No lesson backendId, cannot launch');
       return;
@@ -969,6 +1020,20 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
   }, [lesson.backendId, module.orderIndex, onBack, onLaunchMinigame]);
 
+  // Entry point — dismisses notifications and launches the minigame.
+  // The GYN Welcome modal (shown once on first play) is handled by
+  // ModulesPage after the Phaser scene transition completes.
+  const handleGYNPlay = useCallback(() => {
+    setShowGYNUnlockedNotification(false);
+    setShowGYNUnlockModal(false);
+    if (gynNotificationTimerRef.current) {
+      clearTimeout(gynNotificationTimerRef.current);
+      gynNotificationTimerRef.current = null;
+    }
+
+    launchGYNMinigame();
+  }, [launchGYNMinigame]);
+
   // ═══════════════════════════════════════════════════════════
   // BACK BUTTON — Navigates directly without interception
   // ═══════════════════════════════════════════════════════════
@@ -982,26 +1047,31 @@ const LessonView: React.FC<LessonViewProps> = ({
   const displayDescription = backendLessonData?.description || lesson.description || "In this lesson, you'll learn the key financial steps to prepare for home ownership.";
 
   return (
-    <div className="h-screen flex flex-col bg-transparent">
+    <div
+      className="h-screen flex flex-col"
+    >
       {/* Scrollable Main Content Container */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-7 pt-4">
-          {/* Two-column nav: Left (Back + House) | Right (Toggle + GYN) */}
-          <div className="flex items-start justify-between relative z-30 pointer-events-none [&>*]:pointer-events-auto">
+        {/* Two-column nav: Left (Back + House) | Right (Toggle + GYN) */}
+        <div className="px-7 pt-4">
+          <div className="flex items-start justify-between z-30">
             {/* Left column: Back button above, House nav below */}
             <div className="flex flex-col items-start gap-2">
+              {/* Back button - icon only, matching Phaser scene style */}
               <button
                 onClick={handleBack}
-                className="flex items-center font-bold hover:bg-black/10 transition-colors"
-                style={{
-                  color: '#192141',
-                  borderRadius: 10,
-                  padding: '10px 12px 10px 10px',
-                  marginLeft: -10,
-                }}
+                onMouseEnter={() => setIsBackHovered(true)}
+                onMouseLeave={() => setIsBackHovered(false)}
+                className="cursor-pointer transition-opacity hover:opacity-80 p-2"
+                title="Go back"
+                style={{ background: 'none', border: 'none' }}
               >
-                <span style={{ fontSize: 24, marginRight: 6, lineHeight: 1 }}>←</span>
-                <span style={{ fontSize: 18, lineHeight: 1.25 }}>Back</span>
+                <img
+                  src={isBackHovered ? BackArrowHover : BackArrow}
+                  alt="Back"
+                  className="w-6 h-6"
+                  draggable={false}
+                />
               </button>
 
               {/* Mini House Progress — clickable rooms */}
@@ -1095,45 +1165,54 @@ const LessonView: React.FC<LessonViewProps> = ({
               )}
             </div>
           </div>
-          </div>
+        </div>
 
-          {/* Toast Notifications — fixed position, won't affect layout */}
-          <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2" style={{ pointerEvents: 'none' }}>
-            {showGYNUnlockedNotification && (
-              <div className="border border-status-green/30 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg max-w-sm animate-toast-slide-in" style={{ pointerEvents: 'auto', backgroundColor: '#ecfdf5' }}>
-                <span className="text-base flex-shrink-0">🌱</span>
-                <p className="text-xs text-status-green font-medium">
-                  Minigame Unlocked! Help the bird grow her tree.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowGYNUnlockedNotification(false);
-                    if (gynNotificationTimerRef.current) {
-                      clearTimeout(gynNotificationTimerRef.current);
-                      gynNotificationTimerRef.current = null;
-                    }
-                  }}
-                  className="ml-auto flex-shrink-0 text-status-green/60 hover:text-status-green transition-colors"
-                  aria-label="Dismiss notification"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
-            <style>{`
-              .animate-toast-slide-in {
-                animation: toastSlideIn 0.3s ease-out;
-              }
-              @keyframes toastSlideIn {
-                from { opacity: 0; transform: translateX(20px); }
-                to { opacity: 1; transform: translateX(0); }
-              }
-            `}</style>
-          </div>
+        {/* GYN Unlock Modal — appears when lesson completes and minigame unlocks */}
+        <GYNUnlockModal
+          isOpen={showGYNUnlockModal}
+          lessonTitle={displayTitle}
+          onPlayNow={handleGYNPlay}
+          onDismiss={() => setShowGYNUnlockModal(false)}
+        />
 
-          <div className="max-w-3xl mx-auto px-6 relative z-[25]" style={{ marginTop: -120 }}>
+        {/* Toast Notifications — fixed position, won't affect layout */}
+        <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2" style={{ pointerEvents: 'none' }}>
+          {showGYNUnlockedNotification && (
+            <div className="border border-status-green/30 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg max-w-sm animate-toast-slide-in" style={{ pointerEvents: 'auto', backgroundColor: '#ecfdf5' }}>
+              <span className="text-base flex-shrink-0">🌱</span>
+              <p className="text-xs text-status-green font-medium">
+                Minigame Unlocked! Help the bird grow her tree.
+              </p>
+              <button
+                onClick={() => {
+                  setShowGYNUnlockedNotification(false);
+                  if (gynNotificationTimerRef.current) {
+                    clearTimeout(gynNotificationTimerRef.current);
+                    gynNotificationTimerRef.current = null;
+                  }
+                }}
+                className="ml-auto flex-shrink-0 text-status-green/60 hover:text-status-green transition-colors"
+                aria-label="Dismiss notification"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          <style>{`
+            .animate-toast-slide-in {
+              animation: toastSlideIn 0.3s ease-out;
+            }
+            @keyframes toastSlideIn {
+              from { opacity: 0; transform: translateX(20px); }
+              to { opacity: 1; transform: translateX(0); }
+            }
+          `}</style>
+        </div>
+
+        {/* Main content — negative margin pulls it up under the nav */}
+        <div className="max-w-3xl mx-auto px-6 relative z-[25]" style={{ marginTop: -120 }}>
           <div className="rounded-xl pb-8">
             {/* Lesson title + description + complete button */}
             <div className="flex items-start justify-between mb-4 bg-text-white rounded-2xl p-4">
@@ -1143,7 +1222,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               </div>
 
               {/* Mark as Completed Toggle Button */}
-              <div className="flex flex-col items-end gap-2 ml-4">
+              <div className="flex flex-col items-end gap-2 ml-4" data-walkthrough="lesson-mark-complete">
                 <button
                   onClick={handleMarkComplete}
                   disabled={isLoadingLesson}

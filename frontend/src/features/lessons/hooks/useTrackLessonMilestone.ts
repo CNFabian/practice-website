@@ -14,7 +14,7 @@ interface TrackMilestoneParams {
   timeSpentSeconds: number;
 }
 
-export const useTrackLessonMilestone = (lessonId: string, moduleId?: string) => {
+export const useTrackLessonMilestone = (_lessonId: string, moduleId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation<LessonMilestoneResponse, Error, TrackMilestoneParams>({

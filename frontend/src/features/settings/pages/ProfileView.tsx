@@ -91,8 +91,8 @@ const ProfileView: React.FC = () => {
     },
     {
       id: 'in-game-currency',
-      title: 'In-Game Currency',
-      description: 'Coins to unlock premium features',
+      title: 'Nest Coins',
+      description: 'Coins to use in the rewards shop',
       icon: '🪙'
     }
   ];
@@ -209,7 +209,7 @@ const ProfileView: React.FC = () => {
             Are you currently working with a loan officer?
           </OnestFont>
           <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-            A realtor can help you navigate the financial processes of home ownership
+            A loan officer can help you navigate the financial side of homeownership
           </OnestFont>
           
           <div className="flex gap-6 mt-2">

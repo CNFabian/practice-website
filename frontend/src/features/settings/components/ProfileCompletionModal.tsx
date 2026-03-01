@@ -1,5 +1,6 @@
 import React from 'react';
 import { OnestFont } from '../../../assets';
+import CloseButton from '../../../components/common/CloseButton';
 
 interface ProfileCompletionModalProps {
   onClose: () => void;
@@ -22,21 +23,14 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-pure-white rounded-2xl shadow-xl max-w-md w-full mx-auto overflow-hidden relative">
         {/* Close button (X) */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-unavailable-button hover:text-text-grey transition-colors z-10"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <CloseButton onClick={onClose} className="absolute top-4 right-4 z-10" />
 
         <div className="p-6">
           {/* Header with celebration emoji */}
           <div className="text-center mb-6">
             <div className="text-5xl mb-4">🎉</div>
             <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black mb-2">
-              Congratulations on completing your profile!
+              Congratulations on completing your profile
             </OnestFont>
             <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
               You've taken the first important step toward homeownership
@@ -52,7 +46,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
               </div>
               
               <OnestFont as="h2" weight={500} lineHeight="relaxed" className="text-lg text-text-blue-black mb-2">
-                +25 Nest Coins Earned!
+                +25 Nest Coins earned
               </OnestFont>
               <OnestFont weight={500} lineHeight="relaxed" className="text-text-grey text-sm">
                 Great job completing your profile setup
@@ -86,7 +80,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ onClose
           {/* Bottom Text */}
           <div className="text-center">
             <OnestFont weight={300} lineHeight="relaxed" className="text-xs text-text-grey">
-              Ready to start your homeownership journey? Explore our lessons and earn more rewards!
+              Explore lessons and start earning rewards.
             </OnestFont>
           </div>
         </div>

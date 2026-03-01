@@ -122,7 +122,7 @@ const RewardPreferences: React.FC = () => {
         {isSubmitted && (
           <div className="text-center mb-6">
             <OnestFont as="p" weight={500} lineHeight="relaxed" className="text-status-green text-sm">
-              ✓ Thanks! Your preferences have been saved.
+              Your preferences have been saved.
             </OnestFont>
           </div>
         )}

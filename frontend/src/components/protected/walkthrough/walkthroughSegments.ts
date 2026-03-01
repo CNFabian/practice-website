@@ -28,9 +28,13 @@ export interface WalkthroughStep {
   sceneTransition?: 'MapScene' | 'NeighborhoodScene' | 'HouseScene' | 'LessonView' | 'GrowYourNestMinigame';
   advanceOnNavState?: 'map' | 'neighborhood' | 'house' | 'lesson' | 'minigame';
   advanceDelay?: number;
+  hideCloseButton?: boolean;
+  hintText?: string;
   birdPosition?: {
     side: 'left' | 'right' | 'top' | 'bottom';
     offset?: number;
+    flip?: boolean;
+    verticalOffset?: number;
   };
 }
 
@@ -39,6 +43,9 @@ export interface WalkthroughSegment {
   /** Which navState value triggers this segment on first visit */
   triggerNavState: string;
   steps: WalkthroughStep[];
+  /** When false, the segment is never auto-triggered by navState changes —
+   *  it must be started explicitly via startSegment(). Defaults to true. */
+  autoTrigger?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -52,7 +59,7 @@ const mapIntroSteps: WalkthroughStep[] = [
     content: {
       image: NoticeBirdIcon,
       title: 'Welcome!',
-      description: "We're happy to be with you through your home-buying journey!",
+      description: "We're here to guide you through the homebuying process.",
       buttonText: 'CONTINUE',
     },
     sceneTransition: 'MapScene',
@@ -63,7 +70,7 @@ const mapIntroSteps: WalkthroughStep[] = [
     content: {
       image: CoinStack,
       title: 'Complete Lessons and Minigames to Earn Nest Coins',
-      description: "As you learn, you'll earn rewards! Coins can be spent in the rewards shop to redeem coupons for your favorite stores!",
+      description: "As you learn, you'll earn rewards. Coins can be spent in the rewards shop for discounts at partner stores.",
       buttonText: 'CONTINUE',
     },
   },
@@ -84,7 +91,7 @@ const mapIntroSteps: WalkthroughStep[] = [
     content: {
       image: NoticeBirdIcon,
       title: 'Thank you for testing our beta version',
-      description: "Some features are still in development. Thanks for your patience—and we'd love your feedback on how we can improve as we prepare for our official launch!",
+      description: "Some features are still in development. Thanks for your patience — we'd love your feedback as we prepare for launch.",
       buttonText: 'CONTINUE',
     },
   },
@@ -92,8 +99,8 @@ const mapIntroSteps: WalkthroughStep[] = [
     id: 'click-neighborhood',
     type: 'interactive',
     content: {
-      title: 'Explore Neighborhoods',
-      description: "Each neighborhood represents a different stage of your home-buying journey. Click on this neighborhood to explore!",
+      title: '',
+      description: 'Click on a neighborhood to get started',
       buttonText: '',
     },
     highlight: {
@@ -104,7 +111,8 @@ const mapIntroSteps: WalkthroughStep[] = [
     highlightPadding: 16,
     advanceOnNavState: 'neighborhood',
     advanceDelay: 800,
-    birdPosition: { side: 'right', offset: 10 },
+    hideCloseButton: true,
+    birdPosition: { side: 'right', offset: -20 },
   },
 ];
 
@@ -113,8 +121,8 @@ const neighborhoodIntroSteps: WalkthroughStep[] = [
     id: 'click-house',
     type: 'interactive',
     content: {
-      title: 'Welcome to Your First House!',
-      description: "Each house contains lessons on a specific topic. Click on this house to see its lessons!",
+      title: '',
+      description: "Each house has lessons on a specific topic. Complete them all to earn coins!\n\nClick on the house to continue.",
       buttonText: '',
     },
     highlight: {
@@ -125,51 +133,37 @@ const neighborhoodIntroSteps: WalkthroughStep[] = [
     highlightPadding: 16,
     advanceOnNavState: 'house',
     advanceDelay: 800,
-    birdPosition: { side: 'top', offset: 10 },
+    hideCloseButton: true,
+    birdPosition: { side: 'top', offset: 0, flip: true },
   },
 ];
 
 const houseIntroSteps: WalkthroughStep[] = [
   {
-    id: 'house-lessons-overview',
-    type: 'highlight',
-    content: {
-      title: 'Your Lessons',
-      description: "Here are your lessons! Each one covers a key topic. Hover over a lesson to see details.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      region: { x: 17, y: 21, width: 25, height: 18 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 12,
-    birdPosition: { side: 'right', offset: 10 },
-  },
-  {
     id: 'click-first-lesson',
     type: 'interactive',
     content: {
-      title: 'Start Your First Lesson!',
-      description: "Hover over Lesson 1 and click 'Start Lesson' to begin learning!",
+      title: '',
+      description: "Lessons are located in the rooms of the house. Each one covers a key topic.\n\nHover over the bedroom and click start to begin the first lesson.",
       buttonText: '',
     },
     highlight: {
       selector: '[data-walkthrough="phaser-container"]',
-      region: { x: 5, y: 10, width: 55, height: 45 },
+      region: { x: 5, y: 10, width: 38, height: 45 },
     },
     tooltipPosition: 'right',
     highlightPadding: 12,
     advanceOnNavState: 'lesson',
     advanceDelay: 500,
-    birdPosition: { side: 'right', offset: 10 },
+    hideCloseButton: true,
+    birdPosition: { side: 'right', offset: 30, flip: true },
   },
   {
     id: 'lesson-toggle',
     type: 'highlight',
     content: {
-      title: 'Watch or Read',
-      description: "Inside each lesson you can watch or read! Use this toggle to switch between watching the video or reading at your own pace.",
+      title: '',
+      description: "Inside each lesson you can watch or read. Use this toggle to switch between video and text.",
       buttonText: 'CONTINUE',
     },
     highlight: {
@@ -177,49 +171,60 @@ const houseIntroSteps: WalkthroughStep[] = [
     },
     tooltipPosition: 'bottom',
     highlightPadding: 8,
-    birdPosition: { side: 'top', offset: 10 },
+    hideCloseButton: true,
+    birdPosition: { side: 'left', offset: 10, verticalOffset: -60 },
+  },
+  {
+    id: 'lesson-complete',
+    type: 'highlight',
+    content: {
+      title: '',
+      description: "When watching a video, the lesson will autocomplete once finished. For reading, click here to mark the lesson as complete.",
+      buttonText: 'GOT IT',
+    },
+    highlight: {
+      selector: '[data-walkthrough="lesson-mark-complete"]',
+    },
+    tooltipPosition: 'bottom',
+    highlightPadding: 8,
+    hideCloseButton: true,
+    birdPosition: { side: 'right', offset: -5, flip: true, verticalOffset: -40 },
   },
 ];
 
 const minigameIntroSteps: WalkthroughStep[] = [
   {
+    id: 'minigame-welcome',
+    type: 'fullscreen',
+    content: {
+      image: NoticeBirdIcon,
+      title: 'Welcome to Grow Your Tree',
+      description: "This bird needs a home\nHelp grow a strong tree so it can build its nest.\nAnswer questions, earn rewards,\nand watch your tree grow.",
+      buttonText: "LET'S GO",
+    },
+  },
+  {
     id: 'minigame-lessons',
     type: 'highlight',
     content: {
-      title: 'Play After Each Lesson',
-      description: "After each lesson, you'll play a quick 3-question round to help your tree grow. Complete all the lessons and your tree unlocks free roam — where you can answer questions from every lesson to grow it even more!",
+      title: '',
+      description: "After each lesson, you will answer 3 questions about the content of the lesson.\n\nEach correct answer will give the tree water to help it grow.\n\nGet 3 correct in a row and earn Fertilizer for a bonus growth boost.\n\nDon't worry, mistakes won't hurt your tree — they just reset your streak.",
       buttonText: 'CONTINUE',
     },
     highlight: {
       selector: '[data-walkthrough="phaser-container"]',
-      region: { x: 52, y: 8, width: 46, height: 88 },
+      region: { x: 52, y: 2, width: 46, height: 70 },
     },
     tooltipPosition: 'left',
     highlightPadding: 12,
-    birdPosition: { side: 'left', offset: 10 },
-  },
-  {
-    id: 'minigame-streak',
-    type: 'highlight',
-    content: {
-      title: 'Build Your Streak!',
-      description: "Get 3 correct in a row and earn Fertilizer for a bonus growth boost! Don't worry — mistakes won't hurt your tree, they just reset your streak.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      region: { x: 52, y: 8, width: 46, height: 88 },
-    },
-    tooltipPosition: 'left',
-    highlightPadding: 12,
-    birdPosition: { side: 'left', offset: 10 },
+    birdPosition: { side: 'top', offset: -10, flip: false, verticalOffset: 60 },
   },
   {
     id: 'minigame-grow',
     type: 'highlight',
     content: {
-      title: 'Grow Your Tree!',
-      description: "Answer homebuying questions to water your tree and help it grow. Every correct answer gives your tree a splash of water!",
+      title: '',
+      description: "A fully grown tree earns you up to 250 Nest Coins. Spend them in the rewards shop for real-world perks and discounts.",
       buttonText: 'CONTINUE',
     },
     highlight: {
@@ -228,23 +233,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
     },
     tooltipPosition: 'right',
     highlightPadding: 12,
-    birdPosition: { side: 'right', offset: 10 },
-  },
-  {
-    id: 'minigame-coins',
-    type: 'highlight',
-    content: {
-      title: 'Earn Nest Coins!',
-      description: "A fully grown tree earns you up to 250 Nest Coins! Spend them in the rewards shop for real-world perks and discounts.",
-      buttonText: 'CONTINUE',
-    },
-    highlight: {
-      selector: '[data-walkthrough="phaser-container"]',
-      region: { x: 2, y: 8, width: 48, height: 88 },
-    },
-    tooltipPosition: 'right',
-    highlightPadding: 12,
-    birdPosition: { side: 'right', offset: 10 },
+    birdPosition: { side: 'top', offset: -10, flip: true, verticalOffset: 200 },
   },
   {
     id: 'minigame-ready',
@@ -252,9 +241,32 @@ const minigameIntroSteps: WalkthroughStep[] = [
     content: {
       image: NoticeBirdIcon,
       title: 'Help the Nest Bird Get a Home!',
-      description: "Help your bird build the perfect nest — one answer at a time!",
+      description: "Help your bird build the perfect nest — one answer at a time.",
       buttonText: 'CONTINUE',
     },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════
+// FREE ROAM INTRO STEPS
+// ═══════════════════════════════════════════════════════════
+
+const freeRoamIntroSteps: WalkthroughStep[] = [
+  {
+    id: 'freeroam-unlocked',
+    type: 'highlight',
+    content: {
+      title: 'Free Roam Unlocked!',
+      description: "You've completed all lesson minigames! Tap this button to enter Free Roam mode and finish growing your tree to its final stage.",
+      buttonText: 'GOT IT',
+    },
+    highlight: {
+      selector: '[data-walkthrough="phaser-container"]',
+      region: { x: 78, y: 0, width: 22, height: 18 },
+    },
+    tooltipPosition: 'left',
+    highlightPadding: 8,
+    birdPosition: { side: 'right', offset: -230, flip: false, verticalOffset: 10 },
   },
 ];
 
@@ -283,9 +295,15 @@ export const WALKTHROUGH_SEGMENTS: Record<string, WalkthroughSegment> = {
     triggerNavState: 'minigame',
     steps: minigameIntroSteps,
   },
+  'freeroam-intro': {
+    id: 'freeroam-intro',
+    triggerNavState: 'house',
+    autoTrigger: false,
+    steps: freeRoamIntroSteps,
+  },
 };
 
-export const ALL_SEGMENT_IDS = ['map-intro', 'neighborhood-intro', 'house-intro', 'minigame-intro'];
+export const ALL_SEGMENT_IDS = ['map-intro', 'neighborhood-intro', 'house-intro', 'minigame-intro', 'freeroam-intro'];
 
 // localStorage key prefix for segment completion
 export const SEGMENT_STORAGE_PREFIX = 'nestnav_wt_segment_';

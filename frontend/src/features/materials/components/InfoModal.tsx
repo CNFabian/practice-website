@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { OnestFont } from '../../../assets';
+import CloseButton from '../../../components/common/CloseButton';
 
 interface InfoModalProps {
   isOpen: boolean;
@@ -68,15 +69,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
                       {description}
                     </OnestFont>
                   </div>
-                  <button
-                    type="button"
-                    className="ml-4 text-unavailable-button hover:text-text-grey transition-colors"
-                    onClick={onClose}
-                  >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <CloseButton onClick={onClose} className="ml-4" />
                 </div>
 
                 <div className="space-y-6">

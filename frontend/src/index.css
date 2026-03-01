@@ -41,3 +41,8 @@ body {
 .animate-slideOutRight {
   animation: slideOutRight 0.3s ease-in forwards;
 }
+
+/* Background layer - ensures consistent alignment across all screens */
+#section-background {
+  background-attachment: fixed;
+}

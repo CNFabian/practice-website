@@ -147,16 +147,16 @@ export class UIComponents {
     // --- Bird icon centred vertically ---
     const birdX = scale(45);
     const birdY = tooltipHeight / 2;
-    if (scene.textures.exists(ASSET_KEYS.BIRD_CELEBRATION)) {
-      const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_CELEBRATION);
+    if (scene.textures.exists(ASSET_KEYS.BIRD_HAPPY)) {
+      const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_HAPPY);
       birdIcon.setDisplaySize(birdSize, birdSize);
       container.add(birdIcon);
     } else {
       const onTextureAdd = (key: string) => {
-        if (key === ASSET_KEYS.BIRD_CELEBRATION) {
+        if (key === ASSET_KEYS.BIRD_HAPPY) {
           scene.textures.off('addtexture', onTextureAdd);
           if (container && container.scene) {
-            const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_CELEBRATION);
+            const birdIcon = scene.add.image(birdX, birdY, ASSET_KEYS.BIRD_HAPPY);
             birdIcon.setDisplaySize(birdSize, birdSize);
             container.add(birdIcon);
           }
@@ -237,7 +237,7 @@ export class UIComponents {
     // Create tooltip positioned to stay on screen
     const tooltip = UIComponents.createTooltip(
       scene,
-      'Earn coins as you learn and redeem them for rewards in the rewards shop!',
+      'Earn coins as you learn and redeem them for rewards in the rewards shop.',
       tooltipX,
       tooltipY
     );

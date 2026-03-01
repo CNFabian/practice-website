@@ -21,7 +21,6 @@ import {
   Logo,
   OnestFont
 } from '../../assets';
-import OnboardingPage from '../../features/onboarding/pages/OnboardingPage';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { logoutUser } from '../../services/authAPI';
 import { featureFlags } from '../../utils/featureFlags';
@@ -30,7 +29,6 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { isCollapsed, toggleCollapsed } = useSidebar();
 
@@ -55,8 +53,8 @@ const Sidebar: React.FC = () => {
 
   const mainMenuItems = [
     { id: 'overview', label: 'Overview', path: '/app/overview', icon: HomeIcon },
-    { id: 'modules', label: 'Modules', path: '/app', icon: ModuleIcon },
-    ...(featureFlags.rewards ? [{ id: 'rewards', label: 'Rewards', path: '/app/rewards', icon: RewardsIcon }] : []),
+    { id: 'modules', label: 'Neighborhoods', path: '/app', icon: ModuleIcon },
+    ...(featureFlags.rewards ? [{ id: 'rewards', label: 'Rewards Shop', path: '/app/rewards', icon: RewardsIcon }] : []),
     ...(featureFlags.badges ? [{ id: 'badges', label: 'Badges', path: '/app/badges', icon: BadgesIcon }] : []),
     { id: 'notifications', label: 'Notifications', path: '/app/notifications', icon: GetHelpIcon },
   ];
@@ -231,17 +229,6 @@ const Sidebar: React.FC = () => {
 
         <div className="border-t border-pure-white/20 px-3 py-3">
           <div className="space-y-1">
-            {!isCollapsed && (
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-opacity duration-200 bg-status-red hover:opacity-90 text-pure-white font-medium"
-              >
-                <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                  Test Onboarding
-                </OnestFont>
-              </button>
-            )}
-
             {bottomMenuItems.map((item) => (
               <Link
                 key={item.id}
@@ -305,12 +292,6 @@ const Sidebar: React.FC = () => {
         </div>
       </aside>
 
-      {showOnboarding && (
-        <OnboardingPage
-          isOpen={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-        />
-      )}
     </>
   );
 };

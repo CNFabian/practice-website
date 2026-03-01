@@ -18,6 +18,7 @@ class GameManager {
   private resizeDebounceTimer: NodeJS.Timeout | null = null;
   private dpiMediaQuery: MediaQueryList | null = null;
   private dpiChangeHandler: (() => void) | null = null;
+  private windowResizeHandler: (() => void) | null = null;
   private _isDestroying: boolean = false;
 
   private constructor() {}
@@ -65,12 +66,17 @@ class GameManager {
       const canvas = this.game.canvas;
 
       // If the canvas exists but its parent is no longer in the DOM
-      // (e.g. React StrictMode double-mount or auth state remount),
-      // destroy the stale game and create a fresh one below.
+      // (e.g. React route change unmounted the previous container),
+      // reattach it to the new container instead of destroying the game.
+      // This preserves all loaded textures and scene state, avoiding a
+      // full asset reload + loading bar when navigating back.
       if (canvas && !canvas.isConnected) {
-        console.log('=== STALE CANVAS DETECTED — DESTROYING OLD INSTANCE ===');
-        this.destroy();
-        // Fall through to create new game below
+        console.log('=== STALE CANVAS DETECTED — REATTACHING TO NEW CONTAINER ===');
+        container.appendChild(canvas);
+        this.game.scale.parent = container;
+        canvas.style.display = 'block';
+        this.performCanvasResize();
+        return this.game;
       } else if (!canvas) {
         // Game is still initializing (canvas not created yet).
         // Destroy and recreate to ensure it targets the current container.
@@ -107,8 +113,9 @@ class GameManager {
       console.log('=== PHASER GAME READY ===');
       this.isPhaserReady = true;
 
-      // Set up DPI change monitoring
+      // Set up DPI change monitoring and window resize handling
       this.setupDPIMonitoring();
+      this.setupWindowResizeListener();
 
       // Only start PreloaderScene if assets haven't been loaded yet
       if (!this.assetsLoaded && this.game) {
@@ -177,46 +184,75 @@ class GameManager {
 
     const canvas = this.game.canvas;
     const dpr = window.devicePixelRatio || 1;
-    const baseWidth = window.innerWidth - this.currentSidebarOffset;
-    const baseHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth - this.currentSidebarOffset;
+    const viewportHeight = window.innerHeight;
 
-    console.log(`=== CANVAS RESIZE: ${baseWidth}x${baseHeight} @ DPR ${dpr} ===`);
+    // Internal resolution always matches viewport × DPI so the canvas
+    // fills the screen exactly with zoom 1/dpr.  MapScene's getLayoutSize()
+    // handles the minimum positioning independently — it clamps positions
+    // to the design reference so components can't squish below that.
+    const internalWidth = viewportWidth * dpr;
+    const internalHeight = viewportHeight * dpr;
+
+    console.log(`=== CANVAS RESIZE: ${viewportWidth}x${viewportHeight} @ DPR ${dpr} ===`);
 
     // Update canvas element pixel buffer
-    canvas.width = baseWidth * dpr;
-    canvas.height = baseHeight * dpr;
+    canvas.width = internalWidth;
+    canvas.height = internalHeight;
 
-    // Update canvas CSS display size
-    canvas.style.width = `${baseWidth}px`;
-    canvas.style.height = `${baseHeight}px`;
+    // CSS display size always matches the viewport
+    canvas.style.width = `${viewportWidth}px`;
+    canvas.style.height = `${viewportHeight}px`;
 
-    // Update Phaser internals
+    // Update Phaser internals — zoom is always 1/dpr
     this.game.scale.setZoom(1 / dpr);
-    this.game.scale.resize(baseWidth * dpr, baseHeight * dpr);
+    this.game.scale.resize(internalWidth, internalHeight);
   }
 
   /**
    * Set up DPI change monitoring for monitor switches
    */
+  /**
+   * Set up DPI change monitoring for monitor switches.
+   *
+   * Uses a recursive matchMedia pattern: each listener removes itself and
+   * re-registers against the NEW devicePixelRatio so every subsequent
+   * monitor switch is also caught — not just the first one.
+   */
   private setupDPIMonitoring(): void {
     if (this.dpiMediaQuery) return;
+    this.registerDPIListener();
+  }
 
+  private registerDPIListener(): void {
     const dpr = window.devicePixelRatio || 1;
-    this.dpiMediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`);
+    const mq = window.matchMedia(`(resolution: ${dpr}dppx)`);
 
-    this.dpiChangeHandler = () => {
-      console.log('=== GAME MANAGER: DPI CHANGE DETECTED ===');
-      // Immediate resize
+    const handler = () => {
+      console.log(`=== GAME MANAGER: DPI CHANGE DETECTED (was ${dpr}, now ${window.devicePixelRatio}) ===`);
+
+      // Remove this one-shot listener immediately
+      mq.removeEventListener('change', handler);
+      this.dpiMediaQuery = null;
+      this.dpiChangeHandler = null;
+
+      // Resize canvas so Phaser has correct dimensions at the new DPR
+      this.performCanvasResize();
+
+      // Restart the active scene so all assets re-run scale() at the new DPR.
+      // Delay slightly to let the canvas resize settle first.
       setTimeout(() => {
         this.performCanvasResize();
-      }, 50);
-      // Follow-up resize after DPI stabilizes
-      setTimeout(() => {
-        this.performCanvasResize();
-      }, 200);
+        this.restartActiveScene();
+
+        // Re-register for the next monitor switch
+        this.registerDPIListener();
+      }, 150);
     };
 
-    this.dpiMediaQuery.addEventListener('change', this.dpiChangeHandler);
+    mq.addEventListener('change', handler);
+    this.dpiMediaQuery = mq;
+    this.dpiChangeHandler = handler;
   }
 
   /**
@@ -227,6 +263,58 @@ class GameManager {
     this.dpiMediaQuery.removeEventListener('change', this.dpiChangeHandler);
     this.dpiMediaQuery = null;
     this.dpiChangeHandler = null;
+  }
+
+  /**
+   * Restart whichever scene is currently active so that all assets are
+   * recreated with the correct scale() values after a DPI change.
+   * Only restarts scenes that re-create their assets in create() —
+   * skips PreloaderScene to avoid re-triggering asset loading.
+   */
+  private restartActiveScene(): void {
+    if (!this.game) return;
+
+    const restartableScenes = ['MapScene', 'NeighborhoodScene', 'HouseScene', 'GrowYourNestMinigame'];
+
+    for (const key of restartableScenes) {
+      if (this.game.scene.isActive(key)) {
+        console.log(`=== GAME MANAGER: DPI SCENE RESTART → ${key} ===`);
+        const scene = this.game.scene.getScene(key);
+        if (scene) {
+          scene.scene.restart();
+        }
+        break;
+      }
+    }
+  }
+
+  /**
+   * Listen for window resize events (fullscreen toggle, manual resize, etc.)
+   * and update the canvas dimensions accordingly.
+   */
+  private setupWindowResizeListener(): void {
+    if (this.windowResizeHandler) return;
+
+    let resizeTimer: NodeJS.Timeout | null = null;
+
+    this.windowResizeHandler = () => {
+      // Debounce: wait for resize to settle before updating
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        this.performCanvasResize();
+      }, 100);
+    };
+
+    window.addEventListener('resize', this.windowResizeHandler);
+  }
+
+  /**
+   * Clean up window resize listener
+   */
+  private cleanupWindowResizeListener(): void {
+    if (!this.windowResizeHandler) return;
+    window.removeEventListener('resize', this.windowResizeHandler);
+    this.windowResizeHandler = null;
   }
 
   /**
@@ -287,6 +375,7 @@ class GameManager {
 
       // Clean up DPI monitoring
       this.cleanupDPIMonitoring();
+      this.cleanupWindowResizeListener();
 
       // Clear any pending debounce timer
       if (this.resizeDebounceTimer) {

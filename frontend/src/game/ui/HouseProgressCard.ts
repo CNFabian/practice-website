@@ -350,20 +350,20 @@ export class HouseProgressCard {
 
       // Determine button text based on status
       const getButtonText = (): string => {
-        if (data.isLocked) return 'LOCKED';
+        if (data.isLocked) return 'Locked';
         if (!data.status) {
           // Fallback to old logic if status not provided
-          return data.hasProgress ? 'CONTINUE' : 'START';
+          return data.hasProgress ? 'Continue' : 'Start';
         }
         switch (data.status) {
           case 'continue':
-            return 'CONTINUE';
+            return 'Continue';
           case 'start':
-            return 'START';
+            return 'Start';
           case 'locked':
-            return 'LOCKED';
+            return 'Locked';
           default:
-            return 'START';
+            return 'Start';
         }
       };
 

@@ -72,7 +72,7 @@ const GoalsCard: React.FC<GoalsCardProps> = ({ goals }) => {
               {/* Complete label */}
               {isComplete && (
                 <OnestFont weight={500} lineHeight="relaxed" className="text-status-green text-xs">
-                  Complete!
+                  Complete
                 </OnestFont>
               )}
             </div>

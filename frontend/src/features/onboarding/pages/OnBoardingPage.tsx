@@ -261,7 +261,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                       <img src={TextBox} alt="" className="w-full h-auto" />
                       <div className="absolute inset-0 flex items-center justify-center px-10 pb-3">
                         <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-text-blue-black text-center">
-                          Welcome! Let's build<br />your learning path.
+                          Welcome. Let's build<br />your learning path.
                         </OnestFont>
                       </div>
                     </div>
@@ -274,7 +274,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                 className="mx-auto block px-12 py-4 bg-elegant-blue hover:opacity-90 text-pure-white rounded-full transition-opacity shadow-md"
               >
                 <OnestFont weight={500} lineHeight="relaxed" className="text-lg">
-                  CONTINUE
+                  Continue
                 </OnestFont>
               </button>
             </div>
@@ -378,7 +378,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   }`}
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
-                    NEXT &gt;
+                    Next
                   </OnestFont>
                 </button>
               </div>
@@ -392,7 +392,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                 <img src={OnboardingImage4} alt="Expert Contact" className="absolute right-full mr-2 w-24 h-24 object-contain" />
                 <div>
                   <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
-                    Would you like help from a home buying professional?
+                    Would you like help from a homebuying professional?
                   </OnestFont>
                   <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
                     We can connect you with trusted experts in your area.
@@ -452,7 +452,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                 <img src={OnboardingImage3_5} alt="Timeline" className="absolute right-full mr-2 w-24 h-24 object-contain" />
                 <div>
                   <OnestFont as="h1" weight={700} lineHeight="tight" className="text-xl text-text-blue-black">
-                    When would you approximately like to buy a home?
+                    When are you looking to buy a home?
                   </OnestFont>
                   <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey mt-1">
                     This helps us tailor your plan.
@@ -673,7 +673,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   }`}
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
-                    {isLoading ? 'LOADING...' : 'NEXT >'}
+                    {isLoading ? 'Loading...' : 'Next'}
                   </OnestFont>
                 </button>
               </div>

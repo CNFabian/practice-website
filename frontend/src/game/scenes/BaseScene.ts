@@ -3,6 +3,8 @@ import { UIComponents } from '../ui/UIComponents';
 // Add Typography import for future consistency (even though not directly used)
 import { createTextStyle } from '../constants/Typography';
 import GameManager from '../managers/GameManager';
+import { scale } from '../utils/scaleHelper';
+import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../constants/DesignConstants';
 
 export class BaseScene extends Phaser.Scene {
   protected coinCounter?: Phaser.GameObjects.Container;
@@ -96,6 +98,20 @@ export class BaseScene extends Phaser.Scene {
       this.coinTooltip.destroy();
       this.coinTooltip = undefined;
     }
+  }
+
+  /**
+   * Returns the layout dimensions used for percentage-based positioning.
+   * Always at least the DPI-scaled design reference so elements never
+   * squish below the minimum design size on small viewports.
+   * Shared by all child scenes — matches MapScene's getLayoutSize().
+   */
+  protected getLayoutSize(): { lw: number; lh: number } {
+    const { width, height } = this.scale;
+    return {
+      lw: Math.max(width, scale(DESIGN_WIDTH)),
+      lh: Math.max(height, scale(DESIGN_HEIGHT)),
+    };
   }
 
   protected handleCoinCounterResize(): void {

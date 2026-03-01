@@ -47,8 +47,7 @@ const RewardsPage: React.FC = () => {
             Rewards Shop Coming Soon
           </h3>
           <p className="text-text-grey max-w-md" style={{ fontFamily: 'Onest, Arial, sans-serif' }}>
-            We're building something exciting! The rewards shop is currently under development.
-            Keep earning coins and check back soon to redeem them for real rewards.
+            The rewards shop is under development. Keep earning coins — you'll be able to redeem them here soon.
           </p>
         </div>
       </div>

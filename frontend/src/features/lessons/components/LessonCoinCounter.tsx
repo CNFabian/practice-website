@@ -147,7 +147,7 @@ const LessonCoinCounter: React.FC = () => {
                 margin: 0,
               }}
             >
-              Earn coins as you learn and redeem them for rewards in the{' '}
+              Earn coins as you learn and redeem them in the{' '}
             </p>
             <button
               onClick={handleRewardsClick}
@@ -165,7 +165,7 @@ const LessonCoinCounter: React.FC = () => {
               onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
               onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
             >
-              rewards shop!
+              rewards shop.
             </button>
           </div>
         </div>

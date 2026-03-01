@@ -7,6 +7,8 @@ interface WalkthroughContextType {
   startSegment: (segmentId: string) => void;
   completeSegment: (segmentId: string) => void;
   exitSegment: () => void;
+  /** Hide the walkthrough without marking it complete — it will re-trigger on return */
+  suspendSegment: () => void;
   isSegmentCompleted: (segmentId: string) => boolean;
   resetAllSegments: () => void;
 
@@ -39,7 +41,11 @@ export const WalkthroughProvider: React.FC<WalkthroughProviderProps> = ({ childr
   const startSegment = useCallback((segmentId: string) => {
     // Don't start if another segment is already active
     setActiveSegmentId(prev => {
-      if (prev !== null) return prev;
+      if (prev !== null) {
+        console.log(`🌳 [Walkthrough] startSegment('${segmentId}') blocked — '${prev}' is already active`);
+        return prev;
+      }
+      console.log(`🌳 [Walkthrough] startSegment('${segmentId}') — activating`);
       return segmentId;
     });
   }, []);
@@ -69,6 +75,14 @@ export const WalkthroughProvider: React.FC<WalkthroughProviderProps> = ({ childr
     });
   }, []);
 
+  const suspendSegment = useCallback(() => {
+    // Temporarily hide walkthrough without marking complete — will re-trigger on return
+    setActiveSegmentId(prev => {
+      console.log(`🌳 [Walkthrough] suspendSegment — suspending '${prev}'`);
+      return null;
+    });
+  }, []);
+
   const isSegmentCompleted = useCallback((segmentId: string) => {
     return completedSegments.has(segmentId);
   }, [completedSegments]);
@@ -92,6 +106,7 @@ export const WalkthroughProvider: React.FC<WalkthroughProviderProps> = ({ childr
         startSegment,
         completeSegment,
         exitSegment,
+        suspendSegment,
         isSegmentCompleted,
         resetAllSegments,
         isWalkthroughActive,

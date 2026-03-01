@@ -4,6 +4,7 @@ import { OnestFont } from '../../../assets';
 import {
   BetaTooltip,
 } from '../../../components';
+import CloseButton from '../../../components/common/CloseButton';
 import MortgageCalculator from '../components/MortgageCalculator';
 import DebtToIncomeCalculator from '../components/DebtToIncomeCalculator';
 import CreditScoreCalculator from '../components/CreditScoreCalculator';
@@ -463,7 +464,7 @@ const MaterialsPage: React.FC = () => {
           lineHeight="relaxed"
           className="text-text-grey text-sm"
         >
-          Financial tools and resources to help with your homeownership journey
+          Financial tools and resources for your homeownership path
         </OnestFont>
 
         {/* Backend Error Banner */}
@@ -758,24 +759,7 @@ const MaterialsPage: React.FC = () => {
     if (showCalculator === 'mortgage')
       return (
         <div className="relative">
-          <button
-            onClick={() => setShowCalculator(null)}
-            className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
-          >
-            <svg
-              className="w-6 h-6 text-unavailable-button"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <CloseButton onClick={() => setShowCalculator(null)} className="absolute top-4 right-4 z-10" />
           <MortgageCalculator />
         </div>
       );
@@ -783,24 +767,7 @@ const MaterialsPage: React.FC = () => {
     if (showCalculator === 'debt-to-income')
       return (
         <div className="relative">
-          <button
-            onClick={() => setShowCalculator(null)}
-            className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
-          >
-            <svg
-              className="w-6 h-6 text-unavailable-button"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <CloseButton onClick={() => setShowCalculator(null)} className="absolute top-4 right-4 z-10" />
           <DebtToIncomeCalculator />
         </div>
       );
@@ -808,24 +775,7 @@ const MaterialsPage: React.FC = () => {
     if (showCalculator === 'credit-score')
       return (
         <div className="relative">
-          <button
-            onClick={() => setShowCalculator(null)}
-            className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
-          >
-            <svg
-              className="w-6 h-6 text-unavailable-button"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <CloseButton onClick={() => setShowCalculator(null)} className="absolute top-4 right-4 z-10" />
           <CreditScoreCalculator />
         </div>
       );
@@ -833,24 +783,7 @@ const MaterialsPage: React.FC = () => {
     if (showChecklist === 'first-time-buyer')
       return (
         <div className="relative">
-          <button
-            onClick={() => setShowChecklist(null)}
-            className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
-          >
-            <svg
-              className="w-6 h-6 text-unavailable-button"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <CloseButton onClick={() => setShowChecklist(null)} className="absolute top-4 right-4 z-10" />
           <FirstTimeBuyerChecklist />
         </div>
       );
@@ -858,24 +791,7 @@ const MaterialsPage: React.FC = () => {
     if (showChecklist === 'home-inspection')
       return (
         <div className="relative">
-          <button
-            onClick={() => setShowChecklist(null)}
-            className="absolute top-4 right-4 p-2 hover:bg-light-background-blue rounded-full transition-colors z-10"
-          >
-            <svg
-              className="w-6 h-6 text-unavailable-button"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <CloseButton onClick={() => setShowChecklist(null)} className="absolute top-4 right-4 z-10" />
           <HomeInspectionChecklist />
         </div>
       );

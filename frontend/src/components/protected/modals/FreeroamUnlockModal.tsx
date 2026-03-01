@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { OnestFont, NoticeBirdIcon, CoinStack, TreasureChest } from '../../../assets';
+import CloseButton from '../../common/CloseButton';
 import { updateUserProfile } from '../../../services/authAPI';
 
 // ═══════════════════════════════════════════════════════════════
@@ -64,14 +65,17 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
   }, [step]);
 
   const handleContinueToPhonePrompt = useCallback(() => {
+    console.log('🌳 [FreeRoamModal] Step: congratulations → phone-prompt');
     setStep('phone-prompt');
   }, []);
 
   const handleLetsGo = useCallback(() => {
+    console.log('🌳 [FreeRoamModal] Step: phone-prompt → phone-input');
     setStep('phone-input');
   }, []);
 
   const handleSkipPhone = useCallback(() => {
+    console.log('🌳 [FreeRoamModal] Skip phone → calling onDismiss');
     onDismiss();
   }, [onDismiss]);
 
@@ -102,10 +106,13 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
     setSubmitError('');
 
     try {
+      console.log('🌳 [FreeRoamModal] Submitting phone number...');
       await updateUserProfile({ phone: digits });
+      console.log('🌳 [FreeRoamModal] Phone saved successfully → will call onLaunchFreeRoam in 1.5s');
       setSubmitSuccess(true);
       // Auto-dismiss after showing success
       setTimeout(() => {
+        console.log('🌳 [FreeRoamModal] Calling onLaunchFreeRoam now');
         onLaunchFreeRoam();
       }, 1500);
     } catch (err) {
@@ -159,7 +166,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             lineHeight="tight"
             className="text-2xl text-pure-white mb-3"
           >
-            Congratulations on completing {moduleTitle}!
+            Congratulations on completing {moduleTitle}
           </OnestFont>
 
           {/* Description */}
@@ -168,9 +175,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             lineHeight="relaxed"
             className="text-sm text-pure-white/85 mb-8"
           >
-            You have earned{' '}
-            <span className="font-bold text-pure-white">{coinsEarned} coins</span>{' '}
-            for completing this module! You have unlocked Free Roam mode and you can now reach the final stage in Grow Your Tree!
+            You earned <span className="font-bold text-pure-white">{coinsEarned} coins</span> for completing this module!
           </OnestFont>
 
           {/* Continue button */}
@@ -179,7 +184,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             className="w-full max-w-xs py-3 bg-pure-white rounded-full hover:opacity-90 transition-opacity shadow-lg"
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-base text-elegant-blue tracking-wide">
-              CONTINUE
+              Continue
             </OnestFont>
           </button>
         </div>
@@ -196,25 +201,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
       {/* Modal — Light background */}
       <div className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl bg-text-white">
         {/* Close button */}
-        <button
-          onClick={handleSkipPhone}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-unavailable-button/20 hover:bg-unavailable-button/30 transition-colors flex items-center justify-center"
-          aria-label="Close"
-        >
-          <svg
-            className="w-4 h-4 text-text-grey"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+        <CloseButton onClick={handleSkipPhone} className="absolute top-4 right-4 z-10" />
 
         <div className="flex flex-col items-center text-center px-8 pt-10 pb-8">
           {/* Bird mascot */}
@@ -233,7 +220,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             lineHeight="tight"
             className="text-2xl text-logo-blue mb-4"
           >
-            You've completed the first module!
+            You've completed the first module
           </OnestFont>
 
           {/* Description */}
@@ -255,7 +242,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             }}
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-lg text-pure-white tracking-wide">
-              LET'S GO
+              Let's go
             </OnestFont>
           </button>
         </div>
@@ -272,25 +259,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
       {/* Modal — Light background */}
       <div className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl bg-text-white">
         {/* Close / Skip button */}
-        <button
-          onClick={handleSkipPhone}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-unavailable-button/20 hover:bg-unavailable-button/30 transition-colors flex items-center justify-center"
-          aria-label="Close"
-        >
-          <svg
-            className="w-4 h-4 text-text-grey"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+        <CloseButton onClick={handleSkipPhone} className="absolute top-4 right-4 z-10" />
 
         <div className="flex flex-col items-center text-center px-8 pt-10 pb-8">
           {/* Bird mascot */}
@@ -372,7 +341,7 @@ const FreeRoamUnlockModal: React.FC<FreeRoamUnlockModalProps> = ({
             }}
           >
             <OnestFont weight={700} lineHeight="relaxed" className="text-base text-pure-white tracking-wide">
-              {isSubmitting ? 'Saving...' : submitSuccess ? 'Saved!' : 'VERIFY'}
+              {isSubmitting ? 'Saving...' : submitSuccess ? 'Saved!' : 'Verify'}
             </OnestFont>
           </button>
 

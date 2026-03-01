@@ -21,7 +21,7 @@ const HelpPage: React.FC = () => {
           Help Center
         </OnestFont>
         <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey leading-relaxed">
-          Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
+          Find answers to common questions and get the support you need.
         </OnestFont>
       </div>
 

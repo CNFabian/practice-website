@@ -160,7 +160,7 @@ export const calculatorInfoData: Record<string, CalculatorInfo> = {
 
   "first-time-buyer": {
     title: "First-Time Homebuyer Checklist",
-    description: "A comprehensive step-by-step guide for first-time homebuyers covering all essential phases of the home buying process.",
+    description: "A step-by-step guide for first-time homebuyers covering all essential phases of homebuying.",
     howToUseTitle: "How to Use This Checklist",
     howToUse: [
       "Start from the top and work through each category in order",

@@ -12,7 +12,7 @@ export const BadgeHeader = ({ progress }: BadgeHeaderProps) => {
         Your Badge Collection
       </OnestFont>
       <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey mb-6">
-        Collect badges by completing modules and achieving milestones in your homeownership journey
+        Collect badges by completing modules and reaching milestones.
       </OnestFont>
       
       <div className="inline-flex items-center justify-center px-6 py-3 text-white rounded-2xl mb-6 bg-linear-blue-1">

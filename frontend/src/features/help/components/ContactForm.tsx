@@ -101,10 +101,10 @@ const ContactForm: React.FC = () => {
   return (
     <div>
       <OnestFont as="h2" weight={700} lineHeight="tight" className="text-xl text-text-blue-black mb-3">
-        Send Us a message
+        Send us a message
       </OnestFont>
       <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-base text-text-grey mb-8">
-        Find answers to common questions, explore our platform through demos, and get the support you need on your homebuying journey. We're here to help you succeed.
+        Find answers to common questions and get the support you need.
       </OnestFont>
 
       {/* Success Message */}

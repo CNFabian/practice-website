@@ -38,7 +38,7 @@ const PublicFooter: React.FC = () => {
                 </Link>
               </div>
               <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-sm">
-                © 2025 Nest Navigate, Inc. All rights reserved.
+                © 2026 Nest Navigate, Inc. All rights reserved.
               </OnestFont>
             </div>
 

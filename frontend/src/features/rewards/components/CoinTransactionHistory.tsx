@@ -87,7 +87,7 @@ const EmptyState: React.FC = () => (
       lineHeight="relaxed"
       className="text-text-grey text-sm"
     >
-      No coin transactions yet. Start completing lessons to earn coins!
+      No coin transactions yet. Complete lessons to earn coins.
     </OnestFont>
   </div>
 );

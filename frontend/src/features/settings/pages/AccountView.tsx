@@ -122,6 +122,13 @@ const AccountView: React.FC = () => {
         clearAuthData();
         resetAllSegments();
         localStorage.removeItem('moduleNavState');
+
+        // Clear all GYN-related localStorage flags so they can
+        // re-appear after a fresh wipe + re-completion of lessons.
+        Object.keys(localStorage)
+          .filter(key => key.startsWith('nestnav_gyn_'))
+          .forEach(key => localStorage.removeItem(key));
+
         dispatch(logout());
         navigate('/auth/login');
       }, 2000);

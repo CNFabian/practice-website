@@ -100,7 +100,7 @@ const Header: React.FC = () => {
               Hello, {getDisplayName()}
             </OnestFont>
             <OnestFont weight={300} lineHeight="relaxed" className="text-sm text-text-grey">
-              Let's begin your journey to land a home!
+              Let's get started on your path to homeownership.
             </OnestFont>
           </div>
         </div>

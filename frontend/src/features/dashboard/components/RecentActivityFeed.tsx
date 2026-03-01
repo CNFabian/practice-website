@@ -83,7 +83,7 @@ const EmptyState: React.FC = () => (
       lineHeight="relaxed"
       className="text-text-grey text-sm"
     >
-      No activity yet. Complete your first lesson to get started!
+      No activity yet. Complete your first lesson to get started.
     </OnestFont>
   </div>
 );

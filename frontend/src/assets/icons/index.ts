@@ -39,6 +39,12 @@ export { default as ControllerDarkIcon } from '../images/icons/controller_dark.s
 export { default as Eye } from '../images/icons/Eye.svg'
 export { default as Blind } from '../images/icons/Blind.svg'
 
+// Navigation Icons
+export { default as BackArrow } from '../images/icons/back-arrow.svg'
+export { default as BackArrowHover } from '../images/icons/back-arrow-hover.svg'
+export { default as CloseIcon } from '../images/icons/close-icon.svg'
+export { default as CloseIconHover } from '../images/icons/close-icon-hover.svg'
+
 // Coin Icons
 export { default as CoinIcon } from '../images/icons/nest-coin.svg'
 export { default as Coin1 } from '../images/icons/coins/coin1.svg'

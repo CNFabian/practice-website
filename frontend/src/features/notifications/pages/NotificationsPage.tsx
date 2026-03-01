@@ -177,7 +177,7 @@ const NotificationsPage: React.FC = () => {
               No notifications
             </OnestFont>
             <OnestFont weight={500} lineHeight="relaxed" className="text-unavailable-button text-sm">
-              You're all caught up! Check back later for updates.
+              You're all caught up. Check back later for updates.
             </OnestFont>
           </div>
         ) : (

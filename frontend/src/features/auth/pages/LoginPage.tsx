@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux'
 import { loginUser, getCurrentUser, requestPasswordReset } from '../../../services/authAPI'
 import { setUser } from '../../../store/slices/authSlice'
 import { birdWithPencil, PublicBackground, Eye, Blind, OnestFont } from '../../../assets'
+import BackButton from '../../../components/common/BackButton'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
@@ -56,7 +57,7 @@ const LoginPage: React.FC = () => {
       } else if (err.message.includes('422')) {
         setError('Please check your email and password format');
       } else {
-        setError('Login failed. Please try again.');
+        setError('Log in failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -120,22 +121,14 @@ const LoginPage: React.FC = () => {
                 /* ──── Forgot Password View ──── */
                 <div className="space-y-6">
                   {/* Back to Login button */}
-                  <button
-                    type="button"
+                  <BackButton
                     onClick={() => {
                       setShowForgotPassword(false)
                       setResetMessage('')
                       setResetError('')
                     }}
-                    className="flex items-center gap-1 text-logo-blue hover:underline focus:outline-none"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    <OnestFont weight={500} lineHeight="relaxed" className="text-sm">
-                      Back to Login
-                    </OnestFont>
-                  </button>
+                    size={10}
+                  />
 
                   <div className="text-center space-y-3">
                     <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
@@ -163,7 +156,7 @@ const LoginPage: React.FC = () => {
 
                   <input
                     type="email"
-                    placeholder="email address"
+                    placeholder="Email"
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     className={inputClassName}
@@ -180,7 +173,7 @@ const LoginPage: React.FC = () => {
                         <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
                       )}
                       <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-                        {resetLoading ? 'SENDING...' : 'SEND LINK'}
+                        {resetLoading ? 'Sending...' : 'Send link'}
                       </OnestFont>
                     </button>
                   </div>
@@ -207,7 +200,7 @@ const LoginPage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="text-center space-y-3">
                     <OnestFont as="h1" weight={700} lineHeight="tight" className="text-4xl text-text-blue-black">
-                      Welcome Back!
+                      Welcome back
                     </OnestFont>
                     <OnestFont as="p" weight={300} lineHeight="relaxed" className="text-text-grey text-base px-4">
                       Continue building the knowledge you need to buy
@@ -225,7 +218,7 @@ const LoginPage: React.FC = () => {
 
                   <input
                     type="email"
-                    placeholder="email address"
+                    placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -236,7 +229,7 @@ const LoginPage: React.FC = () => {
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="password"
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onPaste={(e) => e.preventDefault()}
@@ -285,7 +278,7 @@ const LoginPage: React.FC = () => {
                         <div className="w-5 h-5 border-2 border-pure-white border-t-transparent rounded-full animate-spin mr-2" />
                       )}
                       <OnestFont weight={700} lineHeight="relaxed" className="text-lg tracking-wider">
-                        LOG IN
+                        Log in
                       </OnestFont>
                     </button>
                   </div>

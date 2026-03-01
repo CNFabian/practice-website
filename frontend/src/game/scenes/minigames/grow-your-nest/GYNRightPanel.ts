@@ -35,14 +35,14 @@ export function createRightPanel(
   state.rightPanel.add(panelBg);
 
   const HORIZONTAL_PADDING = panelWidth * 0.08;
-  const topSeparatorY = 90;
+  const topSeparatorY = panelHeight * 0.11;
   const bottomSeparatorY = panelHeight - panelHeight * 0.14;
 
   const title = scene.add.text(
     HORIZONTAL_PADDING,
     topSeparatorY / 2,
     'Question Cards',
-    createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: '24px' })
+    createTextStyle('H2', COLORS.TEXT_PRIMARY, { fontSize: `${Math.round(panelWidth * 0.05)}px` })
   );
   title.setOrigin(0, 0.5);
   state.rightPanel.add(title);
@@ -251,7 +251,7 @@ export function showStartScreen(
     laterButtonWidth,
     buttonHeight,
     buttonRadius,
-    'DO IT LATER',
+    'Do it later',
     false,
     () => {
       callbacks.onReturn();
@@ -267,7 +267,7 @@ export function showStartScreen(
     goButtonWidth,
     buttonHeight,
     buttonRadius,
-    "LET'S GO",
+    "Let's go",
     true,
     () => {
       if (callbacks.onStartGame) {
@@ -429,15 +429,15 @@ export function updateQuestion(
   const contentWidth = panelWidth - horizontalPadding * 2;
 
   const topSeparatorY = state.rightPanel.getData('topSeparatorY') as number;
-  const QUESTION_TO_OPTIONS_GAP_PERCENT = 0.12;
-  const OPTION_BUTTON_HEIGHT_PERCENT = 0.095;
-  const OPTION_GAP_PERCENT = 0.02;
-  const NEXT_BUTTON_MARGIN_PERCENT = 0.08;
+  const QUESTION_TO_OPTIONS_GAP_PERCENT = 0.07;
+  const OPTION_BUTTON_HEIGHT_PERCENT = 0.082;
+  const OPTION_GAP_PERCENT = 0.015;
+  const NEXT_BUTTON_MARGIN_PERCENT = 0.06;
   const QUESTION_TEXT_FONT_PERCENT = 0.04;
   const OPTION_LETTER_FONT_PERCENT = 0.035;
   const OPTION_TEXT_FONT_PERCENT = 0.03;
 
-  const questionStartY = topSeparatorY + 64;
+  const questionStartY = topSeparatorY + panelHeight * 0.07;
   const questionToOptionsGap = panelHeight * QUESTION_TO_OPTIONS_GAP_PERCENT;
   const optionButtonHeight = panelHeight * OPTION_BUTTON_HEIGHT_PERCENT;
   const optionGap = panelHeight * OPTION_GAP_PERCENT;
@@ -697,7 +697,7 @@ function createNextButton(
   const buttonText = scene.add.text(
     0,
     0,
-    'NEXT',
+    'Next',
     createTextStyle('BUTTON', COLORS.TEXT_SECONDARY, {
       fontSize: `${fontSize}px`,
     })
@@ -792,6 +792,9 @@ export function showFeedbackBanner(
     } else {
       modalY = panelHeight * 0.7;
     }
+    // Clamp: ensure the banner + next button fit within the panel
+    const maxModalY = panelHeight - modalHeight - panelHeight * 0.12;
+    modalY = Math.min(modalY, maxModalY);
 
     state.feedbackBanner = scene.add.container(0, modalY);
 
@@ -799,25 +802,27 @@ export function showFeedbackBanner(
     const gradKey = '__gyn_correct_pill_grad';
     if (scene.textures.exists(gradKey)) scene.textures.remove(gradKey);
     const canvas = scene.textures.createCanvas(gradKey, contentWidth, modalHeight);
-    const ctx = canvas.context;
-    // Draw rounded rect with gradient
-    const grd = ctx.createLinearGradient(0, 0, 0, modalHeight);
-    grd.addColorStop(0, '#339D5F');
-    grd.addColorStop(1, '#32A68E');
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.moveTo(modalRadius, 0);
-    ctx.lineTo(contentWidth - modalRadius, 0);
-    ctx.quadraticCurveTo(contentWidth, 0, contentWidth, modalRadius);
-    ctx.lineTo(contentWidth, modalHeight - modalRadius);
-    ctx.quadraticCurveTo(contentWidth, modalHeight, contentWidth - modalRadius, modalHeight);
-    ctx.lineTo(modalRadius, modalHeight);
-    ctx.quadraticCurveTo(0, modalHeight, 0, modalHeight - modalRadius);
-    ctx.lineTo(0, modalRadius);
-    ctx.quadraticCurveTo(0, 0, modalRadius, 0);
-    ctx.closePath();
-    ctx.fill();
-    canvas.refresh();
+    if (canvas) {
+      const ctx = canvas.context;
+      // Draw rounded rect with gradient
+      const grd = ctx.createLinearGradient(0, 0, 0, modalHeight);
+      grd.addColorStop(0, '#339D5F');
+      grd.addColorStop(1, '#32A68E');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.moveTo(modalRadius, 0);
+      ctx.lineTo(contentWidth - modalRadius, 0);
+      ctx.quadraticCurveTo(contentWidth, 0, contentWidth, modalRadius);
+      ctx.lineTo(contentWidth, modalHeight - modalRadius);
+      ctx.quadraticCurveTo(contentWidth, modalHeight, contentWidth - modalRadius, modalHeight);
+      ctx.lineTo(modalRadius, modalHeight);
+      ctx.quadraticCurveTo(0, modalHeight, 0, modalHeight - modalRadius);
+      ctx.lineTo(0, modalRadius);
+      ctx.quadraticCurveTo(0, 0, modalRadius, 0);
+      ctx.closePath();
+      ctx.fill();
+      canvas.refresh();
+    }
     const modalBg = scene.add.image(HORIZONTAL_PADDING, 0, gradKey);
     modalBg.setOrigin(0, 0);
     state.feedbackBanner.add(modalBg);
@@ -858,8 +863,8 @@ export function showFeedbackBanner(
 
     const headerFontSize = Math.round(panelWidth * 0.026);
     const headerLine = correctLetter
-      ? `Nice try! The correct answer is ${correctLetter}`
-      : 'Nice try!';
+      ? `Not quite — here's what to know. The correct answer is ${correctLetter}`
+      : 'Not quite — here\'s what to know.';
     const headerText = scene.add.text(
       FEEDBACK_LEFT_PADDING,
       0,
@@ -983,7 +988,7 @@ export function showEarnedRewardsRow(
   const prefixText = scene.add.text(
     textX,
     0,
-    'Great Job! Earned ',
+    'Well done. You earned ',
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
       fontSize: `${textFontSize}px`,
     })
@@ -1207,7 +1212,7 @@ export function showCompletion(
     const playAgainText = scene.add.text(
       0,
       0,
-      'PLAY AGAIN',
+      'Play again',
       createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
         fontSize: `${moduleButtonFontSize}px`,
       })
@@ -1327,7 +1332,7 @@ export function showCompletion(
     const headlineText = scene.add.text(
       panelWidth / 2,
       headlineY,
-      'Question Completed!',
+      'Questions completed',
       createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
         fontSize: `${headlineFontSize}px`,
         align: 'center',
@@ -1490,7 +1495,7 @@ export function showCompletion(
     const moduleButtonText = scene.add.text(
       0,
       0,
-      'MODULE',
+      'Module',
       createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, {
         fontSize: `${moduleButtonFontSize}px`,
       })
@@ -1816,7 +1821,7 @@ export function showTreeFullyGrownScreen(
     moduleButtonWidth, moduleButtonHeight, moduleButtonRadius
   );
 
-  const moduleButtonText = scene.add.text(0, 0, 'MODULE',
+  const moduleButtonText = scene.add.text(0, 0, 'Module',
     createTextStyle('BUTTON', COLORS.TEXT_PURE_WHITE, { fontSize: `${moduleButtonFontSize}px` })
   );
   moduleButtonText.setOrigin(0.5, 0.5);

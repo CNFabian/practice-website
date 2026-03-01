@@ -90,7 +90,7 @@ const GYNLessonButton: React.FC<GYNLessonButtonProps> = ({
   const tooltipMessage = buttonState === 'inactive'
     ? 'Complete this lesson to unlock the minigame.'
     : buttonState === 'completed'
-      ? 'Minigame complete! Move on to the next lesson.'
+      ? 'Minigame complete. Move on to the next lesson.'
       : 'Play Grow Your Nest';
 
   if (isLoading) {

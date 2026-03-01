@@ -82,6 +82,10 @@ export default class HouseScene extends BaseScene {
 
   // Environment
   private lessonHouse?: Phaser.GameObjects.Image;
+  private moduleTitleText?: Phaser.GameObjects.Text;
+
+  // Room lock overlays
+  private roomLockOverlays: Phaser.GameObjects.Image[] = [];
 
   // Bird character
   private bird?: BirdCharacter;
@@ -107,6 +111,7 @@ export default class HouseScene extends BaseScene {
     this.isPointerOverTooltip = false;
     this.freeRoamLockedTooltip = undefined;
     this.freeRoamTooltipDestroyTimer = undefined;
+    this.roomLockOverlays = [];
     this.moduleBackendId = data.moduleBackendId;
 
     const moduleLessonsData: Record<string, ModuleLessonsData> =
@@ -142,6 +147,9 @@ export default class HouseScene extends BaseScene {
     // Data is often already in registry by the time HouseScene starts —
     // run the free roam check immediately to update the button with accurate tree state
     this.checkFreeRoamUnlockCondition();
+
+    // Signal to React that this scene is fully rendered and visible
+    this.registry.set('sceneRendered', true);
   }
 
   shutdown() {
@@ -161,12 +169,19 @@ export default class HouseScene extends BaseScene {
       }
     }
 
+    if (this.moduleTitleText) {
+      this.moduleTitleText.destroy();
+      this.moduleTitleText = undefined;
+    }
+
     this.cleanupResizeHandler();
     this.registry.events.off('changedata-moduleLessonsData', this.onLessonsDataChanged, this);
     this.cancelTooltipDestroyTimer();
     this.destroyBird();
     this.destroyHoverTooltip(true);
     this.destroyFreeRoamLockedTooltip();
+    this.roomLockOverlays.forEach((overlay) => overlay.destroy());
+    this.roomLockOverlays = [];
     this.lessonContainers = [];
   }
 
@@ -175,7 +190,7 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
 
   private createEnvironment(): void {
-    const { width, height } = this.scale;
+    const { lw, lh } = this.getLayoutSize();
 
     // Set background image on DOM element (like MapScene does)
     if (this.textures.exists(ASSET_KEYS.SUBURBAN_BACKGROUND)) {
@@ -195,25 +210,81 @@ export default class HouseScene extends BaseScene {
     // Layer 1 (depth 2): Lesson house image with transparent background
     // OPT-02: Check texture exists (Tier 2 may still be loading)
     if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
-      this.lessonHouse = this.add.image(width / 2, height, ASSET_KEYS.LESSON_HOUSE);
-      this.lessonHouse.setOrigin(0.5, 1);      this.lessonHouse.setDepth(1);
-      const houseScale = Math.min(width, height) * 0.001375
+      this.lessonHouse = this.add.image(this.scale.width / 2, lh * 0.97, ASSET_KEYS.LESSON_HOUSE);
+      this.lessonHouse.setOrigin(0.5, 1);
+      this.lessonHouse.setDepth(1);
+      const houseScale = Math.min(lw, lh) * 0.001325;
       this.lessonHouse.setScale(houseScale);
+      // Create room lock overlays after house is positioned
+      this.createRoomLockOverlays();
     } else {
       // Listen for secondary assets and create house when ready
       const onLoaded = () => {
         this.registry.events.off('changedata-secondaryAssetsLoaded', onLoaded);
         if (this.textures.exists(ASSET_KEYS.LESSON_HOUSE)) {
-          const { width, height } = this.scale;
-          this.lessonHouse = this.add.image(width / 2, height, ASSET_KEYS.LESSON_HOUSE);
+          const { lw: lw2, lh: lh2 } = this.getLayoutSize();
+          this.lessonHouse = this.add.image(this.scale.width / 2, lh2 * 0.97, ASSET_KEYS.LESSON_HOUSE);
           this.lessonHouse.setOrigin(0.5, 1);
           this.lessonHouse.setDepth(1);
-          const houseScale = Math.min(width, height) * 0.001375
+          const houseScale = Math.min(lw2, lh2) * 0.001325;
           this.lessonHouse.setScale(houseScale);
+          // Create room lock overlays after house is positioned
+          this.createRoomLockOverlays();
         }
       };
       this.registry.events.on('changedata-secondaryAssetsLoaded', onLoaded);
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ROOM LOCK OVERLAYS
+  // ═══════════════════════════════════════════════════════════
+  private createRoomLockOverlays(): void {
+    // Destroy any existing overlays first
+    this.roomLockOverlays.forEach((overlay) => overlay.destroy());
+    this.roomLockOverlays = [];
+
+    if (!this.module || !this.lessonHouse) return;
+
+    // House anchor is bottom-center (origin 0.5, 1)
+    const houseX = this.lessonHouse.x;
+    const houseY = this.lessonHouse.y;
+    const houseScaleVal = this.lessonHouse.scaleX;
+
+    // House source dimensions (House.png is 1039x667)
+    const houseW = 1039;
+    const houseH = 667;
+
+    // Each overlay is a cropped room image — position its center relative
+    // to the house anchor (bottom-center) using pixel offsets in house space,
+    // then scale by the same houseScale.
+    // Offsets measured from House.png room positions:
+    //   room top-left corner (px)  +  room size / 2  −  house anchor (519.5, 667)
+    const roomData: { key: string; cx: number; cy: number }[] = [
+      { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_0, cx: 27 + 454 / 2, cy: 47 + 305 / 2 },   // Top-left
+      { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_1, cx: 512 + 481 / 2, cy: 36 + 305 / 2 },   // Top-right
+      { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_2, cx: 40 + 422 / 2, cy: 355 + 275 / 2 },   // Bottom-left
+      { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_3, cx: 478 + 514 / 2, cy: 355 + 275 / 2 },  // Bottom-right
+    ];
+
+    this.module.lessons.forEach((lesson, index) => {
+      if (index >= roomData.length) return;
+      if (!lesson.locked) return;
+
+      const { key: assetKey, cx, cy } = roomData[index];
+      if (!this.textures.exists(assetKey)) return;
+
+      // Convert room center from house-pixel coords to offset from anchor (bottom-center)
+      const offsetX = (cx - houseW / 2) * houseScaleVal;
+      const offsetY = (cy - houseH) * houseScaleVal;
+
+      const overlay = this.add.image(houseX + offsetX, houseY + offsetY, assetKey);
+      overlay.setOrigin(0.5, 0.5);
+      overlay.setScale(houseScaleVal);
+      overlay.setDepth(5); // Above house (1) but below lesson cards (10) and UI (15+)
+
+      this.roomLockOverlays.push(overlay);
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -223,12 +294,43 @@ export default class HouseScene extends BaseScene {
   private createUI(): void {
     this.createBackButton();
     this.createMinigameButton();
+    this.createModuleTitle();
 
     if (this.module && this.module.lessons.length > 0) {
       this.createLessonCards();
     } else {
       this.createLoadingPlaceholder();
     }
+  }
+
+  private createModuleTitle(): void {
+    if (!this.module) return;
+    const { lw, lh } = this.getLayoutSize();
+    const aw = this.scale.width;
+
+    // House top = anchor y - rendered height (house source height is 667px)
+    const houseScale = Math.min(lw, lh) * 0.001325;
+    const houseTopY = lh * 0.97 - 667 * houseScale;
+
+    // Midpoint between top of viewport (0) and top of house
+    const titleY = houseTopY / 2;
+
+    const fontSize = Math.min(lw, lh) * 0.034;
+
+    if (this.moduleTitleText) {
+      this.moduleTitleText.destroy();
+    }
+
+    this.moduleTitleText = this.add
+      .text(aw / 2, titleY, this.module.title, {
+        fontFamily: 'Onest, Arial, sans-serif',
+        fontSize: `${fontSize}px`,
+        fontStyle: 'bold',
+        color: COLORS.TEXT_PRIMARY,
+      })
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setScrollFactor(0);
   }
 
   private createLoadingPlaceholder(): void {
@@ -384,18 +486,13 @@ export default class HouseScene extends BaseScene {
 
       this.scene.launch('GrowYourNestMinigame', initData);
 
-      // Signal the walkthrough system that we're in the minigame view
-      // Write directly to localStorage (read by MainLayout polling) instead of calling
-      // handleMinigameSelect() which triggers React state updates that pause scenes and
-      // change backgrounds. Delay allows GYN scene to fully create and slide in.
+      // Signal the walkthrough system that we're in the minigame view.
+      // Write to localStorage for MainLayout polling, but use a dedicated
+      // transient key so it doesn't corrupt the persisted navState (which
+      // must never contain 'lesson' or 'minigame' — those can't survive reload).
       setTimeout(() => {
         try {
-          const saved = localStorage.getItem('moduleNavState');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            parsed.currentView = 'minigame';
-            localStorage.setItem('moduleNavState', JSON.stringify(parsed));
-          }
+          localStorage.setItem('moduleNavTransientView', 'minigame');
         } catch { /* ignore */ }
       }, 1200);
 
@@ -405,6 +502,13 @@ export default class HouseScene extends BaseScene {
         this.minigameShutdownHandler = () => {
           this.slideInHouseComponents();
           this.isTransitioning = false;
+
+          // Clear the transient nav view so MainLayout polling picks up 'house'
+          // instead of the stale 'minigame' value. Without this, the walkthrough
+          // system sees currentNavView='minigame' and suspends immediately.
+          try {
+            localStorage.removeItem('moduleNavTransientView');
+          } catch { /* ignore */ }
 
           // After slide-in completes (800ms), rebuild lesson cards with fresh data
           // so newly unlocked lessons appear without requiring a scene restart
@@ -504,11 +608,11 @@ export default class HouseScene extends BaseScene {
   }
 
   private createMinigameButton(): void {
-    const { width, height } = this.scale;
+    const { lw, lh } = this.getLayoutSize();
 
     // Position: below and to the right of coin counter
-    const buttonX = width - width * 0.08 + scale(20);
-    const buttonY = height * 0.05 + scale(60);
+    const buttonX = lw - lw * 0.08 + scale(20);
+    const buttonY = lh * 0.05 + scale(60);
 
     this.minigameButton = this.createCircularMinigameButton(buttonX, buttonY);
     this.minigameButton.setDepth(100);
@@ -616,7 +720,7 @@ export default class HouseScene extends BaseScene {
   ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
-    const circleRadius = scale(24);
+    const circleRadius = scale(30);
 
     // ── Check Free Roam unlock condition ──
     // Button is only active when ALL lessons have grow_your_nest_played === true
@@ -633,16 +737,9 @@ export default class HouseScene extends BaseScene {
       );
     }
 
-    // Always read tree growth data so the button reflects the current state
-    // regardless of unlock status (matches NeighborhoodScene HouseProgressCard)
-    let progressPercent = 0;
-    let treeGrowthPoints = 0;
-    let treeTotalStages = 5;
-    let treeCurrentStage = 0;
+    // Read tree completion state for the checkmark overlay
     let treeCompleted = false;
-    const pointsPerStage = 50;
 
-    // Primary: dashboardModules (nested under .module) — same source as HouseProgressCard
     const dashboardModules: any[] | undefined = this.registry.get('dashboardModules');
     const learningModules: any[] | undefined = this.registry.get('learningModules');
 
@@ -651,83 +748,77 @@ export default class HouseScene extends BaseScene {
         (entry: any) => entry.module?.id === this.moduleBackendId
       );
       if (dashEntry?.module) {
-        treeGrowthPoints = dashEntry.module.tree_growth_points ?? 0;
-        treeTotalStages = dashEntry.module.tree_total_stages ?? 5;
-        treeCurrentStage = dashEntry.module.tree_current_stage ?? 0;
         treeCompleted = dashEntry.module.tree_completed ?? false;
       }
     } else if (learningModules && this.moduleBackendId) {
-      // Fallback: learningModules (flat structure)
       const mod = learningModules.find((m: any) => m.id === this.moduleBackendId);
       if (mod) {
-        treeGrowthPoints = mod.tree_growth_points ?? 0;
-        treeTotalStages = mod.tree_total_stages ?? 5;
-        treeCurrentStage = mod.tree_current_stage ?? 0;
         treeCompleted = mod.tree_completed ?? false;
       }
     }
 
-    const treeTotalPoints = treeTotalStages * pointsPerStage;
-    if (treeCompleted) {
-      progressPercent = 100;
-    } else if (treeTotalPoints > 0) {
-      progressPercent = (treeGrowthPoints / treeTotalPoints) * 100;
-    }
-
-    // Background circle (light gray)
+    // Background circle — LogoBlue when active, muted when locked
     const bgCircle = this.add.graphics();
-    bgCircle.lineStyle(scale(4), COLORS.UNAVAILABLE_BUTTON, 1);
-    bgCircle.strokeCircle(0, 0, circleRadius);
+    if (freeRoamUnlocked) {
+      bgCircle.fillStyle(COLORS.LOGO_BLUE, 1);
+      bgCircle.fillCircle(0, 0, circleRadius);
+    } else {
+      bgCircle.fillStyle(COLORS.UNAVAILABLE_BUTTON, 0.2);
+      bgCircle.fillCircle(0, 0, circleRadius);
+      bgCircle.lineStyle(scale(3), COLORS.UNAVAILABLE_BUTTON, 0.4);
+      bgCircle.strokeCircle(0, 0, circleRadius);
+    }
     container.add(bgCircle);
 
-    // Progress arc (green) — show progress regardless of unlock status
-    if (progressPercent > 0) {
-      const progressArc = this.add.graphics();
-      progressArc.lineStyle(scale(4), COLORS.STATUS_GREEN, 1);
-      const startAngle = Phaser.Math.DegToRad(270);
-      const endAngle = Phaser.Math.DegToRad(
-        270 + (360 * progressPercent) / 100
-      );
-      progressArc.beginPath();
-      progressArc.arc(0, 0, circleRadius, startAngle, endAngle, false);
-      progressArc.strokePath();
-      container.add(progressArc);
-    }
+    // Gold controller icon (MinigameIcon) — matches GYNLessonButton style
+    if (this.textures.exists(ASSET_KEYS.MINIGAME_ICON)) {
+      const controllerIcon = this.add.image(0, 0, ASSET_KEYS.MINIGAME_ICON);
+      const targetSize = scale(34);
+      const iconScale = targetSize / Math.max(controllerIcon.width, controllerIcon.height);
+      controllerIcon.setScale(iconScale);
+      controllerIcon.setOrigin(0.5);
 
-    // Tree stage for display (1-indexed); always show actual stage
-    let treeStage = treeCurrentStage + 1;
-    if (treeStage > 5) treeStage = 5;
-    if (treeStage < 1) treeStage = 1;
-
-    // Tree image — only add if texture is loaded
-    const treeTextureKey = `tree_stage_${treeStage}`;
-    if (this.textures.exists(treeTextureKey)) {
-      const treeIcon = this.add.image(0, 0, treeTextureKey);
-      const targetSize = scale(42);
-      const treeScale = targetSize / Math.max(treeIcon.width, treeIcon.height);
-      treeIcon.setScale(treeScale);
-      treeIcon.setOrigin(0.5);
-      // Desaturate tree when locked
+      // If free roam is locked, desaturate the icon (no opacity reduction)
       if (!freeRoamUnlocked) {
-        treeIcon.setAlpha(0.5);
+        controllerIcon.setTint(0x888888);
       }
-      container.add(treeIcon);
+      container.add(controllerIcon);
     }
 
-    // Completed state: checkmark overlay (only when unlocked)
+    // Completed state: checkmark badge (only when unlocked and tree finished)
     if (freeRoamUnlocked && treeCompleted) {
-      const overlay = this.add.graphics();
-      overlay.fillStyle(COLORS.STATUS_GREEN, 0.25);
-      overlay.fillCircle(0, 0, circleRadius);
-      container.add(overlay);
+      const checkBadgeRadius = scale(10);
+      const checkBadge = this.add.graphics();
+      checkBadge.fillStyle(COLORS.STATUS_GREEN, 1);
+      checkBadge.fillCircle(circleRadius * 0.7, -circleRadius * 0.7, checkBadgeRadius);
+      container.add(checkBadge);
 
-      const checkmark = this.add.text(0, 0, '✓', {
-        fontSize: `${scaleFontSize(18)}px`,
+      const checkmark = this.add.text(circleRadius * 0.7, -circleRadius * 0.7, '✓', {
+        fontSize: `${scaleFontSize(12)}px`,
         fontFamily: "'Onest', sans-serif",
-        color: '#76DC94',
+        color: '#FFFFFF',
       });
       checkmark.setOrigin(0.5);
       container.add(checkmark);
+    }
+
+    // Pulse ring effect when active (unlocked) — matches GYNLessonButton gyn-pulse-ring
+    // Uses an arc Shape (not Graphics) so Phaser can tween alpha properly
+    if (freeRoamUnlocked && !treeCompleted) {
+      const pulseCircle = this.add.circle(0, 0, circleRadius);
+      pulseCircle.setStrokeStyle(scale(3), COLORS.LOGO_BLUE, 0.6);
+      pulseCircle.setFillStyle(0x000000, 0); // transparent fill
+      container.add(pulseCircle);
+
+      this.tweens.add({
+        targets: pulseCircle,
+        scaleX: 1.6,
+        scaleY: 1.6,
+        alpha: 0,
+        duration: 1400,
+        ease: 'Sine.easeOut',
+        repeat: -1,
+      });
     }
 
     // Invisible hit area
@@ -811,9 +902,11 @@ export default class HouseScene extends BaseScene {
       if (this.module && this.module.lessons.length > 0) {
         this.createLessonCards();
       }
+      this.createRoomLockOverlays();
     } else {
       // Lessons already loaded — update reference silently for fresh grow_your_nest_played values
       this.module = freshData;
+      this.createRoomLockOverlays();
     }
 
     // Re-check free roam unlock with the fresh data
@@ -842,6 +935,7 @@ export default class HouseScene extends BaseScene {
 
     // Recreate with fresh data
     this.createLessonCards();
+    this.createRoomLockOverlays();
   }
 
   private createLessonCards(): void {
@@ -852,28 +946,29 @@ export default class HouseScene extends BaseScene {
   }
 
   private createLessonCard(lesson: Lesson, index: number): void {
-    const { width, height } = this.scale;
+    const { lw, lh } = this.getLayoutSize();
+    const aw = this.scale.width;  // actual canvas width for centering
 
     const defaultPositions = [
       { x: 31, y: 33 },   // Top-left room (bedroom screen)
       { x: 66, y: 33 },   // Top-right room (dining screen)
-      { x: 28, y: 70 },   // Bottom-left room (living room screen)
-      { x: 69, y: 70 },   // Bottom-right room (kitchen screen)
+      { x: 28, y: 68 },   // Bottom-left room (living room screen)
+      { x: 69, y: 68 },   // Bottom-right room (kitchen screen)
     ];
 
     const defaultPos = defaultPositions[index] || { x: 50, y: 50 };
 
     const x =
       lesson.x !== undefined
-        ? (lesson.x / 100) * width
-        : (defaultPos.x / 100) * width;
+        ? (lesson.x / 100) * aw
+        : (defaultPos.x / 100) * aw;
     const y =
       lesson.y !== undefined
-        ? (lesson.y / 100) * height
-        : (defaultPos.y / 100) * height;
+        ? (lesson.y / 100) * lh
+        : (defaultPos.y / 100) * lh;
 
-    const cardWidth = width * 0.27;
-    const cardHeight = height * 0.19;
+    const cardWidth = lw * 0.19;
+    const cardHeight = cardWidth * 0.534; // matches lessonCard.png aspect ratio (249x133)
 
     const lessonContainer = this.add.container(x, y);
     lessonContainer.setDepth(10);
@@ -895,7 +990,7 @@ export default class HouseScene extends BaseScene {
         COLORS.PURE_WHITE,
         1
       );
-      const strokeWidth = Math.max(2, width * 0.002);
+      const strokeWidth = Math.max(2, lw * 0.002);
       cardRect.setStrokeStyle(strokeWidth, COLORS.UNAVAILABLE_BUTTON);
       card = cardRect;
     }
@@ -903,7 +998,7 @@ export default class HouseScene extends BaseScene {
 
     // Lesson number badge (top-left of card)
     const lessonNumber = index + 1;
-    const badgeRadius = Math.min(width, height) * 0.018;
+    const badgeRadius = Math.min(lw, lh) * 0.018;
     const numberBadgeX = -cardWidth * 0.4;
     const numberBadgeY = -cardHeight * 0.35;
     const numberBadgeBg = this.add.circle(
@@ -914,7 +1009,7 @@ export default class HouseScene extends BaseScene {
     );
     lessonContainer.add(numberBadgeBg);
 
-    const numberSize = Math.min(width, height) * 0.018;
+    const numberSize = Math.min(lw, lh) * 0.018;
     const numberText = this.add
       .text(
         numberBadgeX,
@@ -1227,7 +1322,7 @@ export default class HouseScene extends BaseScene {
         .text(
           0,
           unlockMsgY,
-          'Unlock this lesson by watching\nthe previous lessons',
+          'Unlock this lesson by completing\nthe previous lessons',
           createTextStyle('CAPTION', COLORS.TEXT_SECONDARY, {
             fontSize: `${unlockFontSize}px`,
             align: 'center',
@@ -1393,16 +1488,17 @@ export default class HouseScene extends BaseScene {
     const tooltipContainer = this.add.container(0, 0);
     tooltipContainer.setDepth(200);
 
-    // Tooltip dimensions
-    const padding = scale(22);
-    const tooltipWidth = Math.min(width * 0.42, 380);
+    // Wide horizontal tooltip layout
+    const paddingX = scale(20);
+    const paddingY = scale(14);
+    const tooltipWidth = Math.min(width * 0.52, 480);
     const cornerRadius = scale(14);
 
-    const titleFontSize = minDim * 0.024;
-    const bodyFontSize = minDim * 0.018;
-    const progressFontSize = minDim * 0.016;
+    const titleFontSize = minDim * 0.022;
+    const bodyFontSize = minDim * 0.016;
+    const progressFontSize = minDim * 0.015;
 
-    const maxTextWidth = tooltipWidth - padding * 2;
+    const maxTextWidth = tooltipWidth - paddingX * 2;
 
     // Title text
     const titleText = this.add.text(0, 0, 'Free Roam Locked', {
@@ -1413,29 +1509,27 @@ export default class HouseScene extends BaseScene {
       wordWrap: { width: maxTextWidth },
     }).setOrigin(0.5, 0);
 
-    // Body text
-    const bodyText = this.add.text(0, 0, 'Complete all lesson minigames\nto unlock Free Roam mode', {
+    // Body + progress on single line
+    const bodyText = this.add.text(0, 0, `Complete all lesson minigames to unlock  ·  ${completedCount}/${totalCount} completed`, {
       fontSize: `${bodyFontSize}px`,
       fontFamily: "'Onest', sans-serif",
       color: COLORS.TEXT_SECONDARY,
       align: 'center',
-      lineSpacing: scale(3),
       wordWrap: { width: maxTextWidth },
     }).setOrigin(0.5, 0);
 
-    // Progress text
-    const progressText = this.add.text(0, 0, `${completedCount}/${totalCount} completed`, {
+    // Progress pill badge
+    const progressText = this.add.text(0, 0, `${completedCount}/${totalCount}`, {
       fontSize: `${progressFontSize}px`,
       fontFamily: "'Onest', sans-serif",
       fontStyle: 'bold',
       color: '#3658EC',
-      wordWrap: { width: maxTextWidth },
-    }).setOrigin(0.5, 0);
+    }).setOrigin(0.5, 0.5);
 
-    // Calculate total height
-    const innerGap = scale(10);
-    const totalContentHeight = titleText.height + innerGap + bodyText.height + innerGap + progressText.height;
-    const tooltipHeight = totalContentHeight + padding * 2;
+    // Calculate compact height
+    const innerGap = scale(6);
+    const totalContentHeight = titleText.height + innerGap + bodyText.height;
+    const tooltipHeight = totalContentHeight + paddingY * 2;
 
     // Position tooltip to the left of the button
     const viewportMargin = scale(8);
@@ -1469,7 +1563,7 @@ export default class HouseScene extends BaseScene {
     tooltipContainer.add(bg);
 
     // Position text elements inside tooltip
-    let currentY = -tooltipHeight / 2 + padding;
+    let currentY = -tooltipHeight / 2 + paddingY;
     titleText.setPosition(0, currentY);
     tooltipContainer.add(titleText);
 
@@ -1477,8 +1571,21 @@ export default class HouseScene extends BaseScene {
     bodyText.setPosition(0, currentY);
     tooltipContainer.add(bodyText);
 
-    currentY += bodyText.height + innerGap;
-    progressText.setPosition(0, currentY);
+    // Progress pill — positioned at right side of title row
+    const pillPadX = scale(8);
+    const pillPadY = scale(4);
+    const pillW = progressText.width + pillPadX * 2;
+    const pillH = progressText.height + pillPadY * 2;
+    const pillX = tooltipWidth / 2 - paddingX - pillW / 2;
+    const pillY = -tooltipHeight / 2 + paddingY + titleText.height / 2;
+
+    const pillBg = this.add.graphics();
+    pillBg.fillStyle(COLORS.LIGHT_BACKGROUND_BLUE, 1);
+    pillBg.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, pillH / 2);
+    pillBg.setPosition(pillX, pillY);
+    tooltipContainer.add(pillBg);
+
+    progressText.setPosition(pillX, pillY);
     tooltipContainer.add(progressText);
 
     // Entrance animation
@@ -1566,6 +1673,7 @@ export default class HouseScene extends BaseScene {
       if (container) allComponents.push(container);
     });
     if (this.minigameButton) allComponents.push(this.minigameButton);
+    if (this.moduleTitleText) allComponents.push(this.moduleTitleText);
 
     // Store original positions before sliding out
     this.originalComponentPositions.clear();
@@ -1614,6 +1722,7 @@ export default class HouseScene extends BaseScene {
       if (container) allComponents.push(container);
     });
     if (this.minigameButton) allComponents.push(this.minigameButton);
+    if (this.moduleTitleText) allComponents.push(this.moduleTitleText);
 
     // Tween each component back to its stored original position
     allComponents.forEach((component) => {
@@ -1768,11 +1877,15 @@ export default class HouseScene extends BaseScene {
       this.createLessonCards();
     }
 
+    this.createModuleTitle();
+
     if (this.lessonHouse) {
-      const { width, height } = this.scale;
-      this.lessonHouse.setPosition(width / 2, height);
-      const houseScale = Math.min(width, height) * 0.001375
+      const { lw, lh } = this.getLayoutSize();
+      this.lessonHouse.setPosition(this.scale.width / 2, lh * 0.97);
+      const houseScale = Math.min(lw, lh) * 0.001325;
       this.lessonHouse.setScale(houseScale);
+      // Recreate overlays with updated house position/scale
+      this.createRoomLockOverlays();
     }
   }
 

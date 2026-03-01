@@ -14,6 +14,8 @@ import {
   BirdIdle,
   BirdFly,
   BirdCelebration,
+  BirdHappy,
+  MinigameIcon,
   BirdWithPencil,
   BirdSad,
   BirdWithCoin,
@@ -43,7 +45,13 @@ import {
   FertilizerPouring,
   TreeShadow,
   BirdNestStanding,
-  LessonCard
+  LessonCard,
+  RoomLockOverlay0,
+  RoomLockOverlay1,
+  RoomLockOverlay2,
+  RoomLockOverlay3,
+  BackArrowIcon,
+  BackArrowHoverIcon,
 } from '../../assets/phaser';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -75,6 +83,9 @@ const CRITICAL_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.COIN_ICON, path: CoinCounterIcon, type: 'image' },
   { key: ASSET_KEYS.BIRD_IDLE, path: BirdIdle, type: 'image' },
   { key: ASSET_KEYS.BIRD_FLY, path: BirdFly, type: 'image' },
+  // Back button icons (used by NeighborhoodScene, HouseScene, GYN minigame)
+  { key: ASSET_KEYS.BACK_ARROW, path: BackArrowIcon, type: 'image' },
+  { key: ASSET_KEYS.BACK_ARROW_HOVER, path: BackArrowHoverIcon, type: 'image' },
 ];
 
 /** Tier 2: NeighborhoodScene + HouseScene — background load after map visible (22 assets) */
@@ -97,6 +108,8 @@ const SECONDARY_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.FRONT_GRASS, path: FrontGrass, type: 'image' },
   // Bird celebration (SVG with dimensions)
   { key: ASSET_KEYS.BIRD_CELEBRATION, path: BirdCelebration, type: 'image' },
+  { key: ASSET_KEYS.BIRD_HAPPY, path: BirdHappy, type: 'image' },
+  { key: ASSET_KEYS.MINIGAME_ICON, path: MinigameIcon, type: 'image' },
   { key: ASSET_KEYS.BIRD_WITH_PENCIL, path: BirdWithPencil, type: 'image' },
   { key: ASSET_KEYS.BIRD_SAD, path: BirdSad, type: 'image' },
   { key: ASSET_KEYS.BIRD_WITH_COIN, path: BirdWithCoin, type: 'image' },
@@ -108,6 +121,11 @@ const SECONDARY_ASSETS: AssetDefinition[] = [
   { key: ASSET_KEYS.TREE_STAGE_3, path: stage3Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_4, path: stage4Tree, type: 'image' },
   { key: ASSET_KEYS.TREE_STAGE_5, path: stage5Tree, type: 'image' },
+  // Room lock overlays (HouseScene)
+  { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_0, path: RoomLockOverlay0, type: 'image' },
+  { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_1, path: RoomLockOverlay1, type: 'image' },
+  { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_2, path: RoomLockOverlay2, type: 'image' },
+  { key: ASSET_KEYS.ROOM_LOCK_OVERLAY_3, path: RoomLockOverlay3, type: 'image' },
 ];
 
 /** Tier 3: GrowYourNest minigame — load on-demand when minigame starts (5 assets) */
@@ -152,36 +170,15 @@ export default class PreloaderScene extends Phaser.Scene {
     // The broken loadOnestFonts() method has been REMOVED
     // ═══════════════════════════════════════════════════════════
     
-    // Create loading UI
-    const width = this.cameras.main.width;
-    const height = this.cameras.main.height;
-    
-    this.progressBar = this.add.graphics();
-    this.progressBox = this.add.graphics();
-    this.progressBox.fillStyle(0x222222, 0.8);
-    this.progressBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
-    
-    this.loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading...', {
-      fontSize: '20px',
-      color: '#ffffff'
-    });
-    this.loadingText.setOrigin(0.5, 0.5);
-    
-    this.percentText = this.add.text(width / 2, height / 2, '0%', {
-      fontSize: '18px',
-      color: '#ffffff'
-    });
-    this.percentText.setOrigin(0.5, 0.5);
+    // Loading UI is handled by React's LoadingSpinner component —
+    // no need for a Phaser-side progress bar.
 
-    this.load.on('progress', (value: number) => {
-      if (this.percentText) {
-        this.percentText.setText(Math.floor(value * 100) + '%');
-      }
-      if (this.progressBar) {
-        this.progressBar.clear();
-        this.progressBar.fillStyle(0xffffff, 1);
-        this.progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
-      }
+    // Track failed assets for retry
+    const failedAssets: string[] = [];
+
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      console.error(`❌ PreloaderScene: Failed to load asset "${file.key}" from ${file.url}`);
+      failedAssets.push(file.key);
     });
 
     this.load.on('complete', () => {
@@ -202,10 +199,78 @@ export default class PreloaderScene extends Phaser.Scene {
   create(): void {
     if (this.shouldLoad) {
       console.log('✓ PreloaderScene.create: Assets loaded');
+
+      // Verify all critical textures actually loaded (not just queued)
+      const missingTextures = CRITICAL_ASSETS.filter(
+        (asset) => !this.textures.exists(asset.key) || this.textures.get(asset.key).key === '__MISSING'
+      );
+
+      if (missingTextures.length > 0) {
+        console.warn(`⚠️ PreloaderScene: ${missingTextures.length} critical textures missing after load, retrying...`);
+        this.reloadMissingAssets(missingTextures);
+        return; // Don't proceed until retry completes
+      }
     } else {
       console.log('✓ PreloaderScene.create: No loading needed');
     }
 
+    this.finishCreate();
+  }
+
+  /**
+   * Retry loading assets that failed during the initial preload.
+   * Attempts up to 2 retries before proceeding anyway.
+   */
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 2;
+
+  private reloadMissingAssets(missingAssets: AssetDefinition[]): void {
+    this.retryCount++;
+    console.log(`🔄 PreloaderScene: Retry attempt ${this.retryCount}/${this.MAX_RETRIES} for ${missingAssets.length} assets`);
+
+    // Remove failed textures so they can be re-loaded
+    missingAssets.forEach((asset) => {
+      if (this.textures.exists(asset.key)) {
+        this.textures.remove(asset.key);
+      }
+    });
+
+    // Queue them for loading again
+    missingAssets.forEach((asset) => {
+      if (asset.type === 'svg') {
+        this.load.svg(asset.key, asset.path, { width: asset.svgWidth, height: asset.svgHeight });
+      } else {
+        this.load.image(asset.key, asset.path);
+      }
+    });
+
+    const onRetryComplete = () => {
+      this.load.off('complete', onRetryComplete);
+
+      // Check again
+      const stillMissing = missingAssets.filter(
+        (asset) => !this.textures.exists(asset.key) || this.textures.get(asset.key).key === '__MISSING'
+      );
+
+      if (stillMissing.length > 0 && this.retryCount < this.MAX_RETRIES) {
+        console.warn(`⚠️ PreloaderScene: ${stillMissing.length} textures still missing, retrying...`);
+        this.reloadMissingAssets(stillMissing);
+      } else {
+        if (stillMissing.length > 0) {
+          console.error(`❌ PreloaderScene: ${stillMissing.length} textures failed after ${this.MAX_RETRIES} retries:`,
+            stillMissing.map(a => a.key));
+        } else {
+          console.log(`✓ PreloaderScene: All critical textures loaded after retry`);
+        }
+        this.finishCreate();
+      }
+    };
+
+    this.load.on('complete', onRetryComplete);
+    this.load.start();
+  }
+
+  private finishCreate(): void {
     this.registry.set('assetsLoaded', true);
 
     const fontTimeout = new Promise<string>((resolve) =>

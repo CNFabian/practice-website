@@ -32,7 +32,6 @@ export default class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private neighborhoods: NeighborhoodData[] = [];
   private isTransitioning: boolean = false;
-  private centerContainer!: Phaser.GameObjects.Container;
   private neighborhoodElements: Map<string, NeighborhoodElements> = new Map();
   private resizeDebounceTimer?: Phaser.Time.TimerEvent;
   private lastClickedNeighborhoodId: string | null = null;
@@ -55,7 +54,44 @@ export default class MapScene extends BaseScene {
 
   create() {
     super.create();
-    
+
+    // Verify all critical MapScene textures are loaded before rendering
+    const requiredTextures = [
+      ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND,
+      ASSET_KEYS.NEIGHBORHOOD_1,
+      ASSET_KEYS.NEIGHBORHOOD_2,
+      ASSET_KEYS.NEIGHBORHOOD_3,
+      ASSET_KEYS.NEIGHBORHOOD_SHADOW,
+      ASSET_KEYS.ROADBLOCK_ICON,
+      ASSET_KEYS.NOTICE_BIRD_ICON,
+    ];
+
+    const missingTextures = requiredTextures.filter(
+      (key) => !this.textures.exists(key) || this.textures.get(key).key === '__MISSING'
+    );
+
+    if (missingTextures.length > 0) {
+      console.warn(`⚠️ MapScene: ${missingTextures.length} textures missing, waiting for reload...`, missingTextures);
+      // Wait and retry — assets may still be loading from PreloaderScene retry
+      this.time.delayedCall(500, () => {
+        const stillMissing = missingTextures.filter(
+          (key) => !this.textures.exists(key) || this.textures.get(key).key === '__MISSING'
+        );
+        if (stillMissing.length > 0) {
+          console.error('❌ MapScene: Textures still missing after delay, restarting scene...', stillMissing);
+          this.scene.restart();
+          return;
+        }
+        // All textures now available, proceed with create
+        this.initializeScene();
+      });
+      return;
+    }
+
+    this.initializeScene();
+  }
+
+  private initializeScene(): void {
     // Check if texture exists
     if (this.textures.exists(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND)) {
       this.setBackgroundImage(ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND);
@@ -66,18 +102,21 @@ export default class MapScene extends BaseScene {
         bgElement.style.setProperty('background', 'linear-gradient(180deg, #EBEFFF 0%, #DDE3FF 100%)', 'important');
       }
     }
-    
+
     // Initialize transition manager and fade in
     this.transitionManager = new SceneTransitionManager(this);
     this.transitionManager.enterMap();
-    
+
     // Correct order of operations
     this.setupNeighborhoodData();  // Setup neighborhood data first
     this.createUI();               // Create UI elements
     this.setAllElementsInvisible(); // Set alpha to 0
     this.fadeInScene();            // Fade everything in
-    
+
     this.setupEventListeners();
+
+    // Signal React that the scene is fully rendered and visible
+    this.registry.set('sceneRendered', true);
   }
 
   shutdown() {
@@ -108,18 +147,21 @@ export default class MapScene extends BaseScene {
   // SETUP METHODS
   // ═══════════════════════════════════════════════════════════
   private setupNeighborhoodData(): void {
-    const { width, height } = this.scale;
-
     // Get backend neighborhood data from registry (if available)
     const backendNeighborhoods = this.registry.get('neighborhoodsData');
 
-    // Frontend defaults for positioning and assets
+    // Positions are percentage-based against the layout size, which is
+    // the larger of the current canvas or the design reference.  This
+    // keeps neighborhoods properly spread at any viewport size and
+    // prevents squishing below the design minimum.
+    const { lw, lh } = this.getLayoutSize();
+
     const defaultNeighborhoods = [
       {
         id: 'home-buying-knowledge',
-        name: 'Home-Buying Knowledge',
-        x: width * 0.25, // Middle ground: was 0.2, then 0.3, now 0.25
-        y: height * 0.65,
+        name: 'Homebuying Knowledge',
+        x: lw * 0.22,   // left side
+        y: lh * 0.65,   // lower half
         color: COLORS.LOGO_BLUE,
         isLocked: false,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_1,
@@ -127,8 +169,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'locked-neighborhood',
         name: 'Locked Neighborhood',
-        x: width * 0.5,  // Middle ground: was 0.45, then 0.55, now 0.5
-        y: height * 0.25,
+        x: lw * 0.40,    // center
+        y: lh * 0.25,   // upper area
         color: COLORS.UNAVAILABLE_BUTTON,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_2,
@@ -136,8 +178,8 @@ export default class MapScene extends BaseScene {
       {
         id: 'construction-zone',
         name: 'Construction Zone',
-        x: width * 0.75, // Middle ground: was 0.7, then 0.8, now 0.75
-        y: height * 0.65,
+        x: lw * 0.62,   // right side
+        y: lh * 0.65,   // lower half
         color: COLORS.STATUS_YELLOW,
         isLocked: true,
         assetKey: ASSET_KEYS.NEIGHBORHOOD_3,
@@ -215,11 +257,6 @@ export default class MapScene extends BaseScene {
   // UI CREATION METHODS
   // ═══════════════════════════════════════════════════════════
   private createUI(): void {
-    const { width, height } = this.scale;
-
-    // Create center container
-    this.centerContainer = this.add.container(width / 2, height / 2);
-
     // Create neighborhood displays with proper layering
     this.createNeighborhoodDisplays();
   }
@@ -575,25 +612,28 @@ export default class MapScene extends BaseScene {
   }
 
   private handleResize(): void {
-    const { width, height } = this.scale;
-
     this.tweens.killAll();
     this.handleCoinCounterResize();
 
-    if (this.centerContainer) {
-      this.centerContainer.setPosition(width / 2, height / 2);
+    // Recalculate neighborhood positions against the new layout size.
+    // Uses the same percentage-based formula as setupNeighborhoodData()
+    // but clamped to the design minimum so components never squish.
+    const { lw, lh } = this.getLayoutSize();
+
+    if (this.neighborhoods[0]) {
+      this.neighborhoods[0].x = lw * 0.22;
+      this.neighborhoods[0].y = lh * 0.65;
     }
-    
-    this.neighborhoods[0].x = width * 0.25; // Middle ground position
-    this.neighborhoods[0].y = height * 0.65;
-    
-    this.neighborhoods[1].x = width * 0.5;  // Middle ground position
-    this.neighborhoods[1].y = height * 0.25;
-    
-    this.neighborhoods[2].x = width * 0.75; // Middle ground position
-    this.neighborhoods[2].y = height * 0.65;
-    
-    // Update container positions
+    if (this.neighborhoods[1]) {
+      this.neighborhoods[1].x = lw * 0.40;
+      this.neighborhoods[1].y = lh * 0.25;
+    }
+    if (this.neighborhoods[2]) {
+      this.neighborhoods[2].x = lw * 0.62;
+      this.neighborhoods[2].y = lh * 0.65;
+    }
+
+    // Update container positions to match
     this.neighborhoods.forEach((neighborhood) => {
       const elements = this.neighborhoodElements.get(neighborhood.id);
       if (elements) {

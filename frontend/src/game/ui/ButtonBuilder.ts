@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../utils/scaleHelper';
 import { COLORS, OPACITY } from '../constants/Colors';
 import { FONT_FAMILY, createTextStyle } from '../constants/Typography';
+import { ASSET_KEYS } from '../constants/AssetKeys';
 
 export interface ButtonConfig {
   scene: Phaser.Scene;
@@ -161,7 +162,8 @@ export class ButtonBuilder {
   }
 
 /**
- * Create a back button (arrow + text)
+ * Create a back button (arrow icon only)
+ * Uses SVG back-arrow assets with hover state swap.
  */
 static createBackButton(
   scene: Phaser.Scene,
@@ -171,42 +173,21 @@ static createBackButton(
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
 
-  // Create transparent rounded background that shows on hover
-  const hoverBg = scene.add.graphics();
-  hoverBg.fillStyle(0x000000, 0);
-  hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
-  container.add(hoverBg);
-
-  // Create arrow icon — 24px base, DPR-scaled to match React text-2xl
-  const arrow = scene.add.text(0, 0, '←', {
-    fontSize: scaleFontSize(24),
-    fontFamily: FONT_FAMILY,
-    color: COLORS.TEXT_PRIMARY,
-    fontStyle: 'bold',
-  }).setOrigin(0, 0.5);
+  // Back arrow icon — static (grey) state
+  const arrowScale = scale(1);
+  const arrow = scene.add.image(0, 0, ASSET_KEYS.BACK_ARROW)
+    .setOrigin(0, 0.5)
+    .setScale(arrowScale);
   container.add(arrow);
 
-  // Create "Back" text — 18px base, DPR-scaled to match React text-lg
-  const backText = scene.add.text(scale(22), 0, 'Back', {
-    fontSize: scaleFontSize(18),
-    fontFamily: FONT_FAMILY,
-    color: COLORS.TEXT_PRIMARY,
-    fontStyle: 'bold',
-  }).setOrigin(0, 0.5);
-  container.add(backText);
-
   // Create interactive area for hover effects
-  const interactiveZone = scene.add.zone(scale(35), 0, scale(90), scale(44));
+  const interactiveZone = scene.add.zone(0, 0, scale(44), scale(44));
   interactiveZone.setInteractive({ useHandCursor: true })
     .on('pointerover', () => {
-      hoverBg.clear();
-      hoverBg.fillStyle(0x000000, 0.1);
-      hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
+      arrow.setTexture(ASSET_KEYS.BACK_ARROW_HOVER);
     })
     .on('pointerout', () => {
-      hoverBg.clear();
-      hoverBg.fillStyle(0x000000, 0);
-      hoverBg.fillRoundedRect(scale(-10), scale(-22), scale(90), scale(44), scale(10));
+      arrow.setTexture(ASSET_KEYS.BACK_ARROW);
     })
     .on('pointerdown', onClick);
   container.add(interactiveZone);
