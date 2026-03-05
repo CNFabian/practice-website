@@ -405,20 +405,13 @@ def submit_lesson_game(
     
     db.commit()
     
-    # Calculate coins earned (proportional to growth points)
-    coins_earned = 0
-    if growth_points_earned > 0:
-        # Proportional coins based on max 250 for full tree
-        coins_earned = int((growth_points_earned / (TREE_TOTAL_STAGES * POINTS_PER_STAGE)) * MAX_COINS_PER_TREE)
-        if coins_earned > 0:
-            CoinManager.award_coins(
-                db,
-                current_user.id,
-                coins_earned,
-                COIN_REASON_LESSON,
-                lesson_id,
-                f"{ROUTE_TAG_GROW_YOUR_NEST} - Lesson: {lesson.title}"
-            )
+    # Award coins only for reaching new tree stages (50 coins per stage)
+    coins_earned = award_stage_coins(
+        db, current_user.id, module_progress,
+        old_stage, new_stage,
+        lesson_id,
+        f"{ROUTE_TAG_GROW_YOUR_NEST} - Lesson: {lesson.title}"
+    )
     
     return {
         "success": True,
@@ -619,20 +612,13 @@ def submit_freeroam_answer(
 
     db.commit()
 
-    coins_earned = 0
-    if growth_points_earned > 0:
-        coins_earned = int(
-            (growth_points_earned / (TREE_TOTAL_STAGES * POINTS_PER_STAGE)) * MAX_COINS_PER_TREE
-        )
-        if coins_earned > 0:
-            CoinManager.award_coins(
-                db,
-                current_user.id,
-                coins_earned,
-                COIN_REASON_FREEROAM,
-                module_id,
-                f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}",
-            )
+    # Award coins only for reaching new tree stages (50 coins per stage)
+    coins_earned = award_stage_coins(
+        db, current_user.id, module_progress,
+        old_stage, new_stage,
+        module_id,
+        f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}",
+    )
 
     return {
         "success": True,
@@ -749,19 +735,13 @@ def save_freeroam_progress(
     # IMPORTANT: Commit immediately to persist state
     db.commit()
     
-    # Calculate coins for this question (proportional)
-    coins_earned = 0
-    if growth_points_earned > 0:
-        coins_earned = int((growth_points_earned / (TREE_TOTAL_STAGES * POINTS_PER_STAGE)) * MAX_COINS_PER_TREE)
-        if coins_earned > 0:
-            CoinManager.award_coins(
-                db,
-                current_user.id,
-                coins_earned,
-                COIN_REASON_FREEROAM,
-                module_id,
-                f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}"
-            )
+    # Award coins only for reaching new tree stages (50 coins per stage)
+    coins_earned = award_stage_coins(
+        db, current_user.id, module_progress,
+        old_stage, new_stage,
+        module_id,
+        f"{ROUTE_TAG_GROW_YOUR_NEST} - Free Roam: {module.title}"
+    )
     
     return {
         "success": True,

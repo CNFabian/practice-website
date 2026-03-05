@@ -354,6 +354,11 @@ class LessonCompletionRequest(BaseModel):
     content_type: Optional[str] = Field(None, pattern="^(video|transcript)$")
 
 
+class LessonUncompleteRequest(BaseModel):
+    """Reverse a lesson's completion status"""
+    lesson_id: UUID
+
+
 class BatchProgressItem(BaseModel):
     """Single lesson progress item for batch update"""
     lesson_id: UUID

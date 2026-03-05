@@ -572,6 +572,9 @@ class UserLessonProgress(Base):
     milestones_reached: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True
     )  # "25,50,75" - comma-separated milestone percentages
+    coins_awarded: Mapped[bool] = mapped_column(
+        Boolean, default=False
+    )  # Track if completion coins were already given
     
     first_started_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True

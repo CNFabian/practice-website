@@ -82,7 +82,10 @@ def get_user_module_progress(
                     estimated_duration_minutes=module.estimated_duration_minutes,
                     difficulty_level=module.difficulty_level,
                     created_at=module.created_at,
-                    lesson_count=user_progress.total_lessons
+                    lesson_count=user_progress.total_lessons,
+                    tree_growth_points=user_progress.tree_growth_points,
+                    tree_current_stage=user_progress.tree_current_stage,
+                    tree_completed=user_progress.tree_completed,
                 ),
                 lessons_completed=user_progress.lessons_completed,
                 total_lessons=user_progress.total_lessons,

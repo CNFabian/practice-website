@@ -25,6 +25,7 @@ from schemas import (
 )
 from utils import NotificationManager
 from services.email import send_verification_email, send_password_reset_email
+from services.hubspot import sync_contact_on_register
 
 router = APIRouter()
 
@@ -189,6 +190,12 @@ def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
         f"Hi {user.first_name}! Welcome to your gamified learning journey. Complete your onboarding to get started.",
         "high"
     )
+
+    # Sync to HubSpot (non-blocking; failures are logged only)
+    try:
+        sync_contact_on_register(user)
+    except Exception:
+        pass  # Already logged in hubspot service
 
     tokens = create_tokens_for_user(user)
     return tokens

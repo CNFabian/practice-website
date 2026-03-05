@@ -20,6 +20,7 @@ from schemas import (
 )
 from utils import OnboardingManager
 from analytics.event_tracker import EventTracker
+from services.hubspot import sync_contact_onboarding_complete
 
 router = APIRouter()
 
@@ -182,6 +183,13 @@ def complete_step4_cities(
     if is_completed:
         EventTracker.track_onboarding_completed(db, current_user.id)
 
+    # Sync to HubSpot (non-blocking; failures are logged only)
+    if is_completed:
+        try:
+            sync_contact_onboarding_complete(current_user, completed_onboarding)
+        except Exception:
+            pass
+
     payload = OnboardingStatusPayload(
         user_id=current_user.id,
         completed=is_completed,
@@ -228,6 +236,13 @@ def complete_onboarding_all_at_once(
     completed_onboarding = OnboardingManager.complete_onboarding(db, current_user.id)
     is_completed = bool(completed_onboarding.completed_at)
     step = 5 if is_completed else 4
+
+    # Sync to HubSpot when onboarding is complete (non-blocking; failures are logged only)
+    if is_completed:
+        try:
+            sync_contact_onboarding_complete(current_user, completed_onboarding)
+        except Exception:
+            pass
 
     payload = OnboardingStatusPayload(
         user_id=current_user.id,

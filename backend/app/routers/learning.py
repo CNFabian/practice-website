@@ -30,6 +30,7 @@ from schemas import (
     SuccessResponse,
     LessonMilestoneUpdate,
     LessonCompletionRequest,
+    LessonUncompleteRequest,
     BatchProgressUpdate,
     LessonProgressResponse,
 )
@@ -789,14 +790,17 @@ def complete_lesson(
         progress.last_accessed_at = datetime.now()
         
         # Award 5 coins for first lesson completion (coin economy alignment)
-        CoinManager.award_coins(
-            db,
-            current_user.id,
-            5,  # Flat 5 coins per lesson (100 coins = $1)
-            "lesson_completion",
-            lesson_id,
-            f"Completed lesson: {lesson.title}"
-        )
+        # Only award if coins haven't been given before (prevents re-award after uncomplete)
+        if not progress.coins_awarded:
+            CoinManager.award_coins(
+                db,
+                current_user.id,
+                5,  # Flat 5 coins per lesson (100 coins = $1)
+                "lesson_completion",
+                lesson_id,
+                f"Completed lesson: {lesson.title}"
+            )
+            progress.coins_awarded = True
         
         # Track event
         _, created = EventTracker.track_lesson_completed(db, current_user.id, lesson_id, lesson.title)
@@ -807,6 +811,62 @@ def complete_lesson(
     db.commit()
 
     return SuccessResponse(message="Lesson completed successfully")
+
+
+@router.post("/lessons/{lesson_id}/uncomplete", response_model=SuccessResponse)
+def uncomplete_lesson(
+    lesson_id: UUID,
+    uncomplete_data: Optional[LessonUncompleteRequest] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Reverse a lesson's completion status.
+    Counterpart to POST /lessons/{lesson_id}/complete.
+    """
+    lesson = db.query(Lesson).filter(
+        and_(Lesson.id == lesson_id, Lesson.is_active == True)
+    ).first()
+
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found"
+        )
+
+    # Get existing progress
+    progress = db.query(UserLessonProgress).filter(
+        and_(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id == lesson_id
+        )
+    ).first()
+
+    if not progress or progress.status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lesson is not currently completed"
+        )
+
+    # Reverse completion status
+    progress.status = "in_progress"
+    progress.completed_at = None
+    progress.completion_method = None
+    progress.last_accessed_at = datetime.now()
+
+    # Note: coins_awarded flag is NOT reset — coins are kept and won't be re-awarded on re-complete
+
+    # Recalculate parent module progress
+    ProgressManager.update_module_progress(db, current_user.id, lesson_id)
+
+    db.commit()
+
+    return SuccessResponse(
+        message="Lesson marked as incomplete",
+        data={
+            "lesson_id": str(lesson_id),
+            "is_completed": False
+        }
+    )
 
 
 @router.post("/progress/batch", response_model=SuccessResponse)
