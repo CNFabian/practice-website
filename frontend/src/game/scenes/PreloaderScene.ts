@@ -12,6 +12,7 @@ import {
   House5,
   HouseCloud,
   BirdIdle,
+  BirdHop,
   BirdFly,
   BirdCelebration,
   BirdHappy,
@@ -68,7 +69,7 @@ interface AssetDefinition {
   svgHeight?: number;
 }
 
-/** Tier 1: MapScene + BaseScene essentials — blocks game start (11 assets) */
+/** Tier 1: MapScene + BaseScene essentials — blocks game start (12 assets) */
 const CRITICAL_ASSETS: AssetDefinition[] = [
   // MapScene backgrounds & icons
   { key: ASSET_KEYS.NEIGHBORHOOD_MAP_BACKGROUND, path: NeighborhoodMap, type: 'image' },
@@ -82,6 +83,7 @@ const CRITICAL_ASSETS: AssetDefinition[] = [
   // BaseScene essentials (used by all scenes)
   { key: ASSET_KEYS.COIN_ICON, path: CoinCounterIcon, type: 'image' },
   { key: ASSET_KEYS.BIRD_IDLE, path: BirdIdle, type: 'image' },
+  { key: ASSET_KEYS.BIRD_HOP, path: BirdHop, type: 'image' },
   { key: ASSET_KEYS.BIRD_FLY, path: BirdFly, type: 'image' },
   // Back button icons (used by NeighborhoodScene, HouseScene, GYN minigame)
   { key: ASSET_KEYS.BACK_ARROW, path: BackArrowIcon, type: 'image' },

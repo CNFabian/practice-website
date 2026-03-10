@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { scale, scaleFontSize } from '../utils/scaleHelper';
 import { COLORS, OPACITY } from '../constants/Colors';
 import { FONT_FAMILY, createTextStyle } from '../constants/Typography';
-import { ASSET_KEYS } from '../constants/AssetKeys';
 
 export interface ButtonConfig {
   scene: Phaser.Scene;
@@ -162,8 +161,89 @@ export class ButtonBuilder {
   }
 
 /**
- * Create a back button (arrow icon only)
- * Uses SVG back-arrow assets with hover state swap.
+ * Draw the back-arrow chevron using Phaser Graphics (pure vector).
+ *
+ * Replicates EXACTLY what the browser does when rendering the SVG as a 24×24
+ * <img> tag (Tailwind w-6 h-6) with preserveAspectRatio="xMidYMid meet":
+ *
+ *   Normal SVG  : viewBox 0 0 13 23, path M11.5 21.5 L1.5 11.5 L11.5 1.5
+ *                 stroke #585561, stroke-width 3, linecap/join round
+ *   Hover  SVG  : viewBox 0 0 14 24, path M12 22 L2 12 L12 2
+ *                 stroke #3658EC, stroke-width 4, linecap/join round
+ *
+ * "meet" scaling: uniform scale so the entire viewBox fits inside the 24×24
+ * box.  Scale = min(24/vbW, 24/vbH).  The scaled viewBox is then centred.
+ *
+ * All path coordinates are taken verbatim from the SVG, multiplied by the
+ * computed scale, then offset so the result is centred on (0,0).
+ *
+ * Drawing is done in all-positive space (origin = top-left of bounding box
+ * including stroke bleed) and graphics.x/y shift it to centre on the
+ * container's (0,0). graphics.x/.y are container-relative; setPosition() is
+ * NOT used because it operates in scene space.
+ */
+private static drawBackArrow(
+  graphics: Phaser.GameObjects.Graphics,
+  isHover: boolean,
+  displaySize: number  // target square size in Phaser units = scale(24)
+): void {
+  graphics.clear();
+
+  // ── SVG source values ─────────────────────────────────────────────────────
+  // Normal:  viewBox 13×23, path apex (1.5, 11.5), open ends x=11.5, y=1.5/21.5
+  // Hover:   viewBox 14×24, path apex (2, 12),     open ends x=12,   y=2/22
+  const vbW       = isHover ? 14   : 13;
+  const vbH       = isHover ? 24   : 23;
+  const svgSW     = isHover ?  4   :  3;   // stroke-width in SVG units
+  const color     = isHover ? 0x3658ec : 0x585561;
+
+  // SVG path points (verbatim from the d= attribute)
+  const svgApexX  = isHover ?  2   :  1.5; // leftmost — the arrow tip
+  const svgApexY  = isHover ? 12   : 11.5; // vertical centre
+  const svgOpenX  = isHover ? 12   : 11.5; // rightmost — open ends
+  const svgTopY   = isHover ?  2   :  1.5; // top open end y
+  const svgBotY   = isHover ? 22   : 21.5; // bottom open end y
+
+  // ── preserveAspectRatio="xMidYMid meet" ──────────────────────────────────
+  // Uniform scale so the full viewBox fits inside displaySize × displaySize
+  const s = Math.min(displaySize / vbW, displaySize / vbH);
+
+  // Offset to centre the scaled viewBox in the displaySize square
+  const ox = (displaySize - vbW * s) / 2;
+  const oy = (displaySize - vbH * s) / 2;
+
+  // Scale path points and apply centering offset
+  const strokeWidth = svgSW * s;
+  const apexX = svgApexX * s + ox;
+  const apexY = svgApexY * s + oy;
+  const openX = svgOpenX * s + ox;
+  const topY  = svgTopY  * s + oy;
+  const botY  = svgBotY  * s + oy;
+
+  // ── Draw in all-positive space ────────────────────────────────────────────
+  // Pad by half stroke-width on every edge so round caps are never clipped.
+  const pad  = strokeWidth / 2;
+  // The total bounding box is displaySize + pad on each side
+  const boxSize = displaySize + pad * 2;
+
+  graphics.lineStyle(strokeWidth, color, 1);
+  graphics.beginPath();
+  // Shift all points by +pad so nothing is at negative coordinates
+  graphics.moveTo(openX + pad, topY  + pad);  // top open end  (right side)
+  graphics.lineTo(apexX + pad, apexY + pad);  // apex          (left tip ‹)
+  graphics.lineTo(openX + pad, botY  + pad);  // bottom open end (right side)
+  graphics.strokePath();
+
+  // Centre the bounding box on the container's local (0,0)
+  graphics.x = -boxSize / 2;
+  graphics.y = -boxSize / 2;
+}
+
+/**
+ * Create a back button (arrow icon only).
+ *
+ * Renders the chevron via Phaser.GameObjects.Graphics (vector paths) so it
+ * stays crisp at every DPI — no SVG rasterisation, no texture upscaling.
  */
 static createBackButton(
   scene: Phaser.Scene,
@@ -173,21 +253,23 @@ static createBackButton(
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
 
-  // Back arrow icon — static (grey) state
-  const arrowScale = scale(1);
-  const arrow = scene.add.image(0, 0, ASSET_KEYS.BACK_ARROW)
-    .setOrigin(0, 0.5)
-    .setScale(arrowScale);
+  // Rendered size: match the React LessonView (24 logical px × DPR)
+  const arrowSize = scale(24);
+
+  // Graphics object used to draw the vector chevron
+  const arrow = scene.add.graphics();
+  ButtonBuilder.drawBackArrow(arrow, false, arrowSize);
   container.add(arrow);
 
-  // Create interactive area for hover effects
-  const interactiveZone = scene.add.zone(0, 0, scale(44), scale(44));
+  // 44px accessible touch-target zone (invisible, sits on top)
+  const hitSize = scale(44);
+  const interactiveZone = scene.add.zone(0, 0, hitSize, hitSize);
   interactiveZone.setInteractive({ useHandCursor: true })
     .on('pointerover', () => {
-      arrow.setTexture(ASSET_KEYS.BACK_ARROW_HOVER);
+      ButtonBuilder.drawBackArrow(arrow, true, arrowSize);
     })
     .on('pointerout', () => {
-      arrow.setTexture(ASSET_KEYS.BACK_ARROW);
+      ButtonBuilder.drawBackArrow(arrow, false, arrowSize);
     })
     .on('pointerdown', onClick);
   container.add(interactiveZone);

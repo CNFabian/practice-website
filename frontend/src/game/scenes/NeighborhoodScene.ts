@@ -239,6 +239,7 @@ export default class NeighborhoodScene extends BaseScene {
     this.createUI();
     this.fadeInScene();
     this.setupEventListeners();
+    this.setupGameResizeListener();
     this.prefetchAllHouseLessons();
 
     // Signal to React that this scene is fully rendered and visible
@@ -525,10 +526,19 @@ export default class NeighborhoodScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
   private setupEventListeners(): void {
   this.scale.on('resize', this.handleResize, this);
-  
+
   // No longer using registry events - will use direct method call instead
   console.log('✅ NeighborhoodScene: Setup complete, ready for walkthrough');
 }
+
+  /**
+   * Listen for game resize events — delegates to the same performResize()
+   * that the Phaser scale 'resize' event uses, keeping a single code path.
+   */
+  private setupGameResizeListener(): void {
+    this.game.events.on('gameResized', this.handleResize, this);
+  }
+
 
 // PUBLIC METHOD for walkthrough to call directly
 public expandProgressCard(houseIndex: number): void {
@@ -555,6 +565,7 @@ public expandProgressCard(houseIndex: number): void {
 
   private cleanupEventListeners(): void {
     this.scale.off('resize', this.handleResize, this);
+    this.game.events.off('gameResized', this.handleResize, this);
   }
 
   private cleanupBird(): void {
@@ -1405,11 +1416,6 @@ public expandProgressCard(houseIndex: number): void {
   }
 
   update(): void {
-    // Ensure bird stays fully visible
-    if (this.bird) {
-      this.bird.enforceAlpha();
-    }
-    // Keep scrollbar thumb in sync with camera scroll
     this.updateScrollbarPosition();
   }
 
@@ -1457,18 +1463,13 @@ public expandProgressCard(houseIndex: number): void {
 
     const { width, height } = this.scale;
     const currentHouse = this.houses[this.currentHouseIndex];
-    
     const { x: houseX, y: houseY } = this.calculateHousePosition(this.currentHouseIndex, width, height, currentHouse);
-    
-    // Use consistent positioning formula
-    const progressCardOffsetX = scale(250);
-    
-    const birdX = houseX + progressCardOffsetX + scale(140);
-    const birdY = houseY - scale(50); // Top of card area
+
+    const birdX = houseX + scale(250) + scale(140);
+    const birdY = houseY - scale(67);
 
     this.bird = new BirdCharacter(this);
     this.bird.createStatic(birdX, birdY);
-    // BirdCharacter.createStatic() now handles alpha=0 and depth internally
   }
 
   private startBirdIdleAnimation(): void {
@@ -1621,9 +1622,9 @@ public expandProgressCard(houseIndex: number): void {
       const { x, y } = this.calculateHousePosition(this.currentHouseIndex, width, lh, currentHouse);
       
       const progressCardOffsetX = scale(250);
-      
+
       const birdX = x + progressCardOffsetX + scale(140);
-      const birdY = y - scale(50);
+      const birdY = y - scale(67);
 
       this.bird.setPosition(birdX, birdY);
       this.bird.handleResize();

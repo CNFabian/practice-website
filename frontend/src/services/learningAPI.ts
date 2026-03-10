@@ -383,7 +383,7 @@ export const trackLessonMilestone = async (
     };
   }
 
-  const response = await fetchWithAuth(`/api/learning/lessons/${lessonId}/milestone`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/lessons/${lessonId}/milestone`, {
     method: 'POST',
     body: JSON.stringify({
       lesson_id: lessonId,
@@ -419,7 +419,7 @@ export const batchUpdateProgress = async (
     };
   }
 
-  const response = await fetchWithAuth('/api/learning/progress/batch', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/learning/progress/batch`, {
     method: 'POST',
     body: JSON.stringify({
       items: realItems,

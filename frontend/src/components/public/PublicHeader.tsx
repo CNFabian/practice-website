@@ -15,7 +15,7 @@ const PublicHeader: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
-          <Link to="/splash" className="flex items-center">
+          <Link to="/auth/login" className="flex items-center">
             <img
               src={NestNavigateLogo}
               alt="Nest Navigate"

@@ -1,3 +1,11 @@
+// 🔴 CRITICAL DEV NOTE: Submit Event Timing
+// - Do NOT fire submit/completion events on button click
+// - Always wait for backend success response (onSuccess) for true measurement
+// - This ensures events only fire when the backend confirms the quiz submission succeeded
+// - onMutate is used for optimistic UI updates ONLY — not for analytics
+// - onError rolls back optimistic updates if the submission fails
+// - onSuccess = backend confirmed ✅ | onClick = user intent only ⚠️
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { submitQuiz } from '../services/quizAPI';
@@ -61,6 +69,7 @@ export const useSubmitQuiz = (
       }
     },
 
+    // ✅ onSuccess fires ONLY after backend confirms — correct place for analytics events
     onSuccess: (data) => {
       console.log('✅ Quiz submitted successfully:', data);
     },

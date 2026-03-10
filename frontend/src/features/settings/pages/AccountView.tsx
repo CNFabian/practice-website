@@ -513,10 +513,11 @@ const AccountView: React.FC = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* TEMPORARY: Wipe User Data — Beta Testing Only */}
-        {/* Remove this entire section before production launch */}
+        {/* DEV ONLY: Wipe User Data — localhost only, hidden in production */}
+        {/* import.meta.env.DEV is true on localhost, false in prod builds  */}
+        {/* Vite tree-shakes this entire block out of the production bundle */}
         {/* ============================================================ */}
-        <div className="border-t border-light-background-blue py-6">
+        {import.meta.env.DEV && <div className="border-t border-light-background-blue py-6">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
               <svg className="w-5 h-5 text-status-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -594,7 +595,7 @@ const AccountView: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Save Button */}

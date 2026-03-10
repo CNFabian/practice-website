@@ -35,6 +35,7 @@ export const ASSET_KEYS = {
 
   // Characters
   BIRD_IDLE: 'bird_idle',
+  BIRD_HOP: 'bird_hop',
   BIRD_FLY: 'bird_fly',
   BIRD_CELEBRATION: 'bird_celebration',
   BIRD_HAPPY: 'bird_happy',

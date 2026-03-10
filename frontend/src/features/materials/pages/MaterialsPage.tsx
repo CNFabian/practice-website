@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { trackToolOpen } from '../../../hooks/useAnalytics';
 import { OnestFont } from '../../../assets';
 import {
   BetaTooltip,
@@ -363,12 +364,16 @@ const MaterialsPage: React.FC = () => {
   };
 
   const handleCalculatorClick = (calculatorId: string) => {
+    // 🔴 Analytics: tool_open — fires on tool selection (intent signal, no backend call needed)
+    trackToolOpen(calculatorId);
     setShowCalculator(calculatorId);
     setShowChecklist(null);
     setShowWorksheet(null);
   };
 
   const handleChecklistClick = (checklistId: string) => {
+    // 🔴 Analytics: tool_open — fires on tool selection (intent signal, no backend call needed)
+    trackToolOpen(checklistId);
     setShowChecklist(checklistId);
     setShowCalculator(null);
     setShowWorksheet(null);

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { ASSET_KEYS } from '../constants/AssetKeys';
+import { scale } from '../utils/scaleHelper';
+import { DESIGN_WIDTH, DESIGN_HEIGHT } from '../constants/DesignConstants';
 
 /**
  * BirdCharacter - Encapsulates all bird sprite and animation logic
@@ -26,6 +28,7 @@ export class BirdCharacter {
   private isAnimating: boolean = false;
   private cleanupScheduled: boolean = false;
   private hasFadedIn: boolean = false; // Track if fade-in has completed
+  private lockedY?: number; // Locked Y position (doesn't change on resize)
 
   // ═══════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -39,14 +42,17 @@ export class BirdCharacter {
   // ═══════════════════════════════════════════════════════════
 
   /**
-   * Create bird sprite at position without animation
-   * IMPORTANT: Sprite starts at alpha 0 - must call fadeIn() to make visible
+   * Create bird sprite at position without animation.
+   * Sprite starts at alpha 0 — call fadeIn() or forceVisible() to show it.
+   * The Y position is locked and will not shift on resize; size recalculates
+   * responsively via handleResize() whenever the viewport changes.
    */
   createStatic(x: number, y: number): void {
     this.sprite = this.scene.add.image(x, y, ASSET_KEYS.BIRD_IDLE);
+    this.lockedY = y;
     this.updateSize();
     this.sprite.setDepth(1000);
-    this.sprite.setAlpha(0); // Always start invisible
+    this.sprite.setAlpha(0);
     this.hasFadedIn = false;
   }
 
@@ -101,15 +107,13 @@ export class BirdCharacter {
   }
 
   /**
-   * Ensure alpha is maintained at 1 after fade-in (call periodically if needed)
+   * @deprecated Alpha is now managed correctly through the fade/visible API.
+   * Kept for call-site compatibility but does nothing — remove call sites
+   * over time.
    */
   enforceAlpha(): void {
-    if (this.sprite && this.hasFadedIn) {
-      // Only enforce if we've completed fade-in
-      if (this.sprite.alpha < 1) {
-        this.sprite.setAlpha(1);
-      }
-    }
+    // No-op: alpha is reliably set by fadeIn() / forceVisible() and is no
+    // longer at risk of being silently reset by animation callbacks.
   }
 
   /**
@@ -204,28 +208,29 @@ export class BirdCharacter {
   // ═══════════════════════════════════════════════════════════
 
   /**
-   * Start idle animation (small random hops)
-   * IMPORTANT: Only starts if bird has faded in
+   * Start idle animation (small random hops).
+   * Safe to call at any time — if the bird is not yet visible it waits until
+   * hasFadedIn is true before playing any hop, so callers don't need to
+   * sequence this manually against fadeIn / forceVisible.
    */
   startIdleAnimation(): void {
     this.stopIdleAnimation();
     this.cleanupScheduled = false;
-    
+
     const scheduleNextIdleHop = () => {
       if (this.cleanupScheduled) return;
-      
+
       const randomDelay = Phaser.Math.Between(5000, 8000);
       this.idleTimer = this.scene.time.delayedCall(randomDelay, () => {
         if (this.cleanupScheduled) return;
+        // Guard: only animate once the bird is fully visible
         if (!this.isAnimating && this.sprite && this.hasFadedIn) {
-          // Enforce alpha before any animation
-          this.enforceAlpha();
           this.playIdleHop();
         }
         scheduleNextIdleHop();
       });
     };
-    
+
     scheduleNextIdleHop();
   }
 
@@ -241,20 +246,22 @@ export class BirdCharacter {
   }
 
   /**
-   * Play a single idle movement animation (horizontal only, no hop)
+   * Play a single idle movement animation with vertical hop
    */
   private playIdleHop(): void {
     if (!this.sprite || this.isAnimating || !this.hasFadedIn) return;
 
-    const { width } = this.scene.scale;
+    const { width, height } = this.scene.scale;
     const originalX = this.sprite.x;
+    const originalY = this.sprite.y;
 
     const moveRange = Math.floor(width * 0.003);
     const moveX = Phaser.Math.Between(-moveRange, moveRange);
-    
+    const hopHeight = height * 0.02; // Height of the hop
+
     // Use tighter boundaries for NeighborhoodScene
     const isNeighborhoodScene = this.scene.scene.key === 'NeighborhoodScene';
-    
+
     let targetX: number;
     if (isNeighborhoodScene) {
       const maxDistance = width * 0.02;
@@ -274,9 +281,14 @@ export class BirdCharacter {
     this.scene.tweens.add({
       targets: this.sprite,
       x: targetX,
+      y: originalY - hopHeight, // Jump up
       duration: duration,
       ease: 'Sine.easeInOut',
+      yoyo: true, // Automatically falls back down
       onStart: () => {
+        // Switch to hop texture at start
+        this.sprite!.setTexture(ASSET_KEYS.BIRD_HOP);
+        this.updateSize(false); // Ensure proper sizing for hop texture
         this.scene.tweens.add({
           targets: this.sprite,
           angle: moveX < 0 ? 2 : -2,
@@ -286,7 +298,8 @@ export class BirdCharacter {
         });
       },
       onComplete: () => {
-        // Enforce alpha after animation completes
+        // Switch back to idle texture
+        this.switchToIdleTexture();
         this.enforceAlpha();
       }
     });
@@ -328,6 +341,9 @@ export class BirdCharacter {
       ease: 'Sine.easeOut',
       yoyo: true,
       onStart: () => {
+        // Switch to hop texture at start
+        this.sprite!.setTexture(ASSET_KEYS.BIRD_HOP);
+        this.updateSize(false); // Ensure proper sizing for hop texture
         this.scene.tweens.add({
           targets: this.sprite,
           angle: -3,
@@ -337,7 +353,8 @@ export class BirdCharacter {
         });
       },
       onComplete: () => {
-        // Enforce alpha after animation completes
+        // Switch back to idle texture
+        this.switchToIdleTexture();
         this.enforceAlpha();
       }
     });
@@ -441,6 +458,8 @@ export class BirdCharacter {
 
     const performNextHop = () => {
       if (currentHop >= path.length - 1) {
+        // Switch back to idle texture at end of sequence
+        this.switchToIdleTexture();
         this.enforceAlpha(); // Ensure alpha at end of sequence
         if (onComplete) onComplete();
         return;
@@ -458,6 +477,11 @@ export class BirdCharacter {
         duration: hopDuration / 2,
         ease: 'Sine.easeOut',
         onStart: () => {
+          // Switch to hop texture at start of first hop
+          if (currentHop === 0) {
+            this.sprite!.setTexture(ASSET_KEYS.BIRD_HOP);
+            this.updateSize(false); // Ensure proper sizing for hop texture
+          }
           this.scene.tweens.add({
             targets: this.sprite,
             angle: currentHop % 2 === 0 ? -5 : 5,
@@ -486,23 +510,33 @@ export class BirdCharacter {
   }
 
   /**
-   * Update bird size based on viewport
+   * Update bird display size based on the current viewport.
+   *
+   * Uses the same layout-clamped dimensions as the scenes (equivalent to
+   * BaseScene.getLayoutSize) so the bird never shrinks below the design
+   * reference on small viewports, staying consistent with all other UI.
    */
   private updateSize(isFlying: boolean = false): void {
     if (!this.sprite) return;
 
+    // Mirror BaseScene.getLayoutSize() — clamp to design reference minimum
     const { width, height } = this.scene.scale;
+    const lw = Math.max(width,  scale(DESIGN_WIDTH));
+    const lh = Math.max(height, scale(DESIGN_HEIGHT));
+    const minDimension = Math.min(lw, lh);
 
     if (isFlying) {
       const flyTexture = this.scene.textures.get(ASSET_KEYS.BIRD_FLY);
-      const flyWidth = flyTexture.getSourceImage().width;
-      const flyHeight = flyTexture.getSourceImage().height;
-      const flyAspectRatio = flyWidth / flyHeight;
-      const flySize = Math.min(width, height) * 0.1;
-      this.sprite.setDisplaySize(flySize * flyAspectRatio, flySize);
+      const flySource  = flyTexture.getSourceImage();
+      const flyAspect  = flySource.width / flySource.height;
+      const flySize    = Math.min(minDimension * 0.12, scale(100));
+      this.sprite.setDisplaySize(flySize * flyAspect, flySize);
     } else {
-      const birdSize = Math.min(width, height) * 0.08;
-      this.sprite.setDisplaySize(birdSize, birdSize);
+      const idleTexture = this.scene.textures.get(ASSET_KEYS.BIRD_IDLE);
+      const idleSource  = idleTexture.getSourceImage();
+      const idleAspect  = idleSource.width / idleSource.height;
+      const birdSize    = Math.min(minDimension * 0.11, scale(80));
+      this.sprite.setDisplaySize(birdSize * idleAspect, birdSize);
     }
   }
 
@@ -541,7 +575,15 @@ export class BirdCharacter {
   setPosition(x: number, y: number): void {
     if (this.sprite) {
       this.sprite.setPosition(x, y);
+      this.lockedY = y; // Update locked Y when position is set
     }
+  }
+
+  /**
+   * Get the locked Y position
+   */
+  getLockedY(): number | undefined {
+    return this.lockedY;
   }
 
   /**
@@ -581,5 +623,23 @@ export class BirdCharacter {
       this.updateSize(isFlying);
       this.enforceAlpha(); // Ensure alpha after resize
     }
+  }
+
+  /**
+   * Reposition the bird when the viewport changes.
+   *
+   * The callback receives the current scale dimensions and should return the
+   * desired { x, y }.  The returned Y is applied and stored as the new locked
+   * Y so it stays consistent on subsequent resizes.
+   */
+  repositionForViewport(calculateNewPosition: (width: number, height: number) => { x: number; y: number }): void {
+    if (!this.sprite) return;
+
+    const { width, height } = this.scene.scale;
+    const newPosition = calculateNewPosition(width, height);
+
+    this.sprite.setPosition(newPosition.x, newPosition.y);
+    this.lockedY = newPosition.y; // Keep lockedY in sync with the new position
+    this.updateSize();
   }
 }

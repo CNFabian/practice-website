@@ -35,7 +35,8 @@ export { default as LessonHouse } from '../images/phaser/House.png'
 export { default as LessonCard } from '../images/phaser/houses/lessonCard.png'
 
 // Bird avatars (BaseScene)
-export { default as BirdIdle } from '../images/phaser/bird_idle.svg'
+export { default as BirdIdle } from '../images/phaser/bird_idle.png'
+export { default as BirdHop } from '../images/phaser/bird_idle_open.png'
 export { default as BirdFly } from '../images/phaser/bird_flight.svg'
 export { default as BirdCelebration } from '../images/birdCharacter/bird_celebration.png'
 export { default as BirdWithPencil } from '../images/birdCharacter/bird_with_pencil.png'

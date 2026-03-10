@@ -10,6 +10,11 @@ import {
 } from '../../../services/authAPI'
 import { setUser } from '../../../store/slices/authSlice'
 import { birdAtDesk, PublicBackground, Eye, Blind, OnestFont } from '../../../assets'
+import {
+  trackCtaClick,
+  trackSignUpStart,
+  trackSignUpSubmit,
+} from '../../../hooks/useAnalytics'
 
 type SignupStep = 'email' | 'code' | 'register'
 
@@ -27,6 +32,7 @@ const SignupPage: React.FC = () => {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [marketingConsent, setMarketingConsent] = useState(false)
 
   // UI state
   const [currentStep, setCurrentStep] = useState<SignupStep>('email')
@@ -42,6 +48,15 @@ const SignupPage: React.FC = () => {
   const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const animationTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 🔴 Analytics: track sign_up_start only once per signup session
+  const signUpStartFiredRef = useRef(false)
+  const handleSignUpStartInteraction = useCallback(() => {
+    if (!signUpStartFiredRef.current) {
+      signUpStartFiredRef.current = true
+      trackSignUpStart()
+    }
+  }, [])
 
   // Cleanup all timers on unmount
   useEffect(() => {
@@ -118,6 +133,9 @@ const SignupPage: React.FC = () => {
         setError('Please enter your email address.')
         return
       }
+
+      // 🔴 Analytics: cta_click on "Next" button — fires on click (intent signal, not backend-gated)
+      trackCtaClick('Next', 'signup_email_step')
 
       setLoading(true)
 
@@ -213,13 +231,20 @@ const SignupPage: React.FC = () => {
       setLoading(true)
 
       try {
+        // 🔴 Analytics: cta_click on "Sign up" — fires on submit (intent signal)
+        trackCtaClick('Sign up', 'signup_register_step')
+
         await registerUser({
           email: email.trim(),
           password,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
+          marketing_consent: marketingConsent,
         })
+
+        // 🔴 Analytics: sign_up_submit — fires ONLY after backend confirms account created
+        trackSignUpSubmit()
 
         const userProfile = await getCurrentUser()
         dispatch(setUser(userProfile))
@@ -309,7 +334,8 @@ const SignupPage: React.FC = () => {
         type="email"
         placeholder="Email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => { setEmail(e.target.value); handleSignUpStartInteraction() }}
+        onFocus={handleSignUpStartInteraction}
         autoComplete="email"
         required
         className={inputClassName}
@@ -556,6 +582,28 @@ const SignupPage: React.FC = () => {
             className="w-5 h-5"
           />
         </button>
+      </div>
+
+      {/* Marketing Consent */}
+      <div className="flex items-start gap-3 px-1">
+        <input
+          type="checkbox"
+          id="marketingConsent"
+          checked={marketingConsent}
+          onChange={(e) => setMarketingConsent(e.target.checked)}
+          className="mt-1 w-4 h-4 shrink-0 text-logo-blue focus:ring-logo-blue border-unavailable-button rounded cursor-pointer"
+        />
+        <label htmlFor="marketingConsent" className="cursor-pointer">
+          <OnestFont weight={600} lineHeight="relaxed" className="text-text-blue-black text-sm block mb-0.5">
+            Full Marketing Consent
+          </OnestFont>
+          <OnestFont weight={300} lineHeight="relaxed" className="text-text-grey text-xs">
+            I agree to receive marketing communications from Nest Navigate. By checking this box, I consent to receive emails, phone calls, and/or text messages from Nest Navigate regarding products, services, updates, and promotions. Message and data rates may apply. Message frequency may vary. You can unsubscribe at any time by clicking the unsubscribe link in emails or replying STOP to text messages. For more information, see our{' '}
+            <a href="/privacy-policy" className="text-logo-blue hover:underline">Privacy Policy</a>
+            {' '}and{' '}
+            <a href="/terms-of-service" className="text-logo-blue hover:underline">Terms of Service</a>.
+          </OnestFont>
+        </label>
       </div>
 
       {/* Sign Up button */}

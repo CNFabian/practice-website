@@ -60,7 +60,7 @@ const mapIntroSteps: WalkthroughStep[] = [
       image: NoticeBirdIcon,
       title: 'Welcome!',
       description: "We're here to guide you through the homebuying process.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
     sceneTransition: 'MapScene',
   },
@@ -71,7 +71,7 @@ const mapIntroSteps: WalkthroughStep[] = [
       image: CoinStack,
       title: 'Complete Lessons and Minigames to Earn Nest Coins',
       description: "As you learn, you'll earn rewards. Coins can be spent in the rewards shop for discounts at partner stores.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
   },
   {
@@ -92,7 +92,7 @@ const mapIntroSteps: WalkthroughStep[] = [
       image: NoticeBirdIcon,
       title: 'Thank you for testing our beta version',
       description: "Some features are still in development. Thanks for your patience — we'd love your feedback as we prepare for launch.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
   },
   {
@@ -164,7 +164,7 @@ const houseIntroSteps: WalkthroughStep[] = [
     content: {
       title: '',
       description: "Inside each lesson you can watch or read. Use this toggle to switch between video and text.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
     highlight: {
       selector: '[data-walkthrough="lesson-view-toggle"]',
@@ -180,7 +180,7 @@ const houseIntroSteps: WalkthroughStep[] = [
     content: {
       title: '',
       description: "When watching a video, the lesson will autocomplete once finished. For reading, click here to mark the lesson as complete.",
-      buttonText: 'GOT IT',
+      buttonText: 'Continue',
     },
     highlight: {
       selector: '[data-walkthrough="lesson-mark-complete"]',
@@ -189,6 +189,22 @@ const houseIntroSteps: WalkthroughStep[] = [
     highlightPadding: 8,
     hideCloseButton: true,
     birdPosition: { side: 'right', offset: -5, flip: true, verticalOffset: -40 },
+  },
+  {
+    id: 'lesson-house-nav',
+    type: 'highlight',
+    content: {
+      title: '',
+      description: "This mini house shows where you are in the module. Each square is a lesson, green means it's done and grey means its not yet unlocked. Tap any unlocked square to jump to a different lesson.",
+      buttonText: 'Got it',
+    },
+    highlight: {
+      selector: '[data-walkthrough="lesson-house-nav"]',
+    },
+    tooltipPosition: 'right',
+    highlightPadding: 10,
+    hideCloseButton: true,
+    birdPosition: { side: 'bottom', offset: 0, flip: false, verticalOffset: -10 },
   },
 ];
 
@@ -200,7 +216,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
       image: NoticeBirdIcon,
       title: 'Welcome to Grow Your Tree',
       description: "This bird needs a home\nHelp grow a strong tree so it can build its nest.\nAnswer questions, earn rewards,\nand watch your tree grow.",
-      buttonText: "LET'S GO",
+      buttonText: "Let's go",
     },
   },
   {
@@ -209,7 +225,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
     content: {
       title: '',
       description: "After each lesson, you will answer 3 questions about the content of the lesson.\n\nEach correct answer will give the tree water to help it grow.\n\nGet 3 correct in a row and earn Fertilizer for a bonus growth boost.\n\nDon't worry, mistakes won't hurt your tree — they just reset your streak.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
     highlight: {
       selector: '[data-walkthrough="phaser-container"]',
@@ -225,7 +241,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
     content: {
       title: '',
       description: "A fully grown tree earns you up to 250 Nest Coins. Spend them in the rewards shop for real-world perks and discounts.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
     highlight: {
       selector: '[data-walkthrough="phaser-container"]',
@@ -242,7 +258,7 @@ const minigameIntroSteps: WalkthroughStep[] = [
       image: NoticeBirdIcon,
       title: 'Help the Nest Bird Get a Home!',
       description: "Help your bird build the perfect nest — one answer at a time.",
-      buttonText: 'CONTINUE',
+      buttonText: 'Continue',
     },
   },
 ];
@@ -256,7 +272,7 @@ const freeRoamIntroSteps: WalkthroughStep[] = [
     id: 'freeroam-unlocked',
     type: 'highlight',
     content: {
-      title: 'Free Roam Unlocked!',
+      title: 'Free Roam unlocked',
       description: "You've completed all lesson minigames! Tap this button to enter Free Roam mode and finish growing your tree to its final stage.",
       buttonText: 'GOT IT',
     },

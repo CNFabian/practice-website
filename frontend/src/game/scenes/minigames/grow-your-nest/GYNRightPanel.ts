@@ -255,7 +255,8 @@ export function showStartScreen(
     false,
     () => {
       callbacks.onReturn();
-    }
+    },
+    panelWidth
   );
   state.rightPanel.add(laterButton);
 
@@ -277,7 +278,8 @@ export function showStartScreen(
         state.showingStartScreen = false;
         updateQuestion(scene, state, callbacks);
       }
-    }
+    },
+    panelWidth
   );
   state.rightPanel.add(goButton);
 }
@@ -291,7 +293,8 @@ function createStartScreenButton(
   radius: number,
   text: string,
   isPrimary: boolean,
-  onClick: () => void
+  onClick: () => void,
+  panelWidth?: number
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
 
@@ -307,7 +310,8 @@ function createStartScreenButton(
   }
   container.add(bg);
 
-  const fontSize = Math.round(width * 0.085);
+  // Use consistent font sizing based on panel width for all buttons
+  const fontSize = panelWidth ? Math.round(panelWidth * 0.034) : Math.round(width * 0.085);
   const textColor = isPrimary ? COLORS.TEXT_PURE_WHITE : '#6B85F5';
   const buttonText = scene.add.text(
     width / 2,
@@ -483,7 +487,7 @@ export function updateQuestion(
   });
 
   // Next button
-  const nextButtonX = panelWidth - horizontalPadding - panelWidth * 0.13;
+  const nextButtonX = panelWidth - horizontalPadding - panelWidth * 0.1;
   const nextButtonY = panelHeight - nextButtonMargin;
   createNextButton(scene, state, nextButtonX, nextButtonY, panelWidth, callbacks.onNext);
   state.rightPanel.add(state.nextButton);
@@ -682,7 +686,7 @@ function createNextButton(
   const buttonWidth = panelWidth * 0.24;
   const buttonHeight = panelWidth * 0.08;
   const borderRadius = buttonHeight / 2;
-  const fontSize = Math.round(panelWidth * 0.035);
+  const fontSize = Math.round(panelWidth * 0.034);
 
   const buttonBg = scene.add.graphics();
   buttonBg.fillStyle(COLORS.UNAVAILABLE_BUTTON);
@@ -974,7 +978,7 @@ export function showEarnedRewardsRow(
   const rewardsText = scene.add.text(
     textX,
     0,
-    `Great Job! Earned ${earnedText}`,
+    `Well done. You earned ${earnedText}`,
     createTextStyle('BODY_MEDIUM', COLORS.TEXT_PRIMARY, {
       fontSize: `${textFontSize}px`,
     })
@@ -1750,7 +1754,7 @@ export function showTreeFullyGrownScreen(
     playAgainButtonWidth, playAgainButtonHeight, playAgainButtonRadius
   );
 
-  const playAgainText = scene.add.text(0, 0, 'PLAY AGAIN',
+  const playAgainText = scene.add.text(0, 0, 'Play again',
     createTextStyle('BUTTON', '#6B85F5', { fontSize: `${moduleButtonFontSize}px` })
   );
   playAgainText.setOrigin(0.5, 0.5);

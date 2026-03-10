@@ -10,13 +10,14 @@ import { PublicBackground, VideoProgressIcon, DocumentProgressIcon, BackArrow, B
 import { buildLessonModeInitData } from '../hooks/useGrowYourNest';
 import type { GYNMinigameInitData } from '../../../types/growYourNest.types';
 import { useTrackLessonMilestone } from '../hooks/useTrackLessonMilestone';
-import type { BatchProgressItem } from '../../../services/learningAPI';
+import type { BatchProgressItem, LessonMilestoneResponse } from '../../../services/learningAPI';
 import GYNLessonButton from '../components/GYNLessonButton';
 import GYNUnlockModal from '../components/GYNUnlockModal';
 import LessonCoinCounter from '../components/LessonCoinCounter';
 import { getLessonQuestions } from '../../../services/growYourNestAPI';
 import gameManager from '../../../game/managers/GameManager';
 import { mockGYNPlayedLessons, mockAwardedQuestionIds } from '../../../services/mockLearningData';
+import { trackPathStepView, trackPathStepComplete } from '../../../hooks/useAnalytics';
 
 // YouTube Player Type Definitions
 interface YouTubePlayer {
@@ -231,7 +232,13 @@ const LessonView: React.FC<LessonViewProps> = ({
   const [_videoDuration, setVideoDuration] = useState(0);
   const [_playerState, setPlayerState] = useState<number>(YT_PLAYER_STATES.UNSTARTED);
   const [_playbackRate, setPlaybackRate] = useState(1);
-  const [videoCompleted, setVideoCompleted] = useState(false); // Track if video is complete
+  // Track which lesson's video was completed (by backendId) instead of a plain boolean.
+  // This makes `videoCompleted` automatically become false when the lesson changes, so:
+  //   1. The GYN modal effect never sees a stale isCompleted=true for the NEW lesson.
+  //   2. The YouTube player container is never hidden when a new lesson loads.
+  const [videoCompletedLessonId, setVideoCompletedLessonId] = useState<string | null>(null);
+  // Derived: true only when the CURRENT lesson's video has been watched through
+  const videoCompleted = videoCompletedLessonId !== null && videoCompletedLessonId === lesson.backendId;
   const [readingCompleted, setReadingCompleted] = useState(false); // Track if reading is marked complete
 
   // Milestone tracking refs
@@ -299,7 +306,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     }
 
     // Reset all per-lesson state when lesson changes
-    setVideoCompleted(false);
+    setVideoCompletedLessonId(null);
     setReadingCompleted(false);
     setGynAlreadyPlayed(false);
     milestonesReachedRef.current.clear();
@@ -382,11 +389,22 @@ const LessonView: React.FC<LessonViewProps> = ({
     return true;
   }, [lesson?.backendId, lesson?.id, lesson?.title]);
 
-  const { 
-    data: backendLessonData, 
-    isLoading: isLoadingLesson, 
+  const {
+    data: backendLessonData,
+    isLoading: isLoadingLesson,
     error: _lessonError,
   } = useLesson(isValidBackendId ? lesson.backendId! : '');
+
+  // 🔴 Analytics: path_step_view — fires once per unique lesson load.
+  // Deduplication: lastTrackedLessonIdRef prevents re-firing on re-renders
+  // of the same lesson. Only fires if the lesson ID actually changes.
+  const lastTrackedLessonIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lesson.backendId) return;
+    if (lastTrackedLessonIdRef.current === lesson.backendId) return;
+    lastTrackedLessonIdRef.current = lesson.backendId;
+    trackPathStepView(lesson.backendId, lesson.title, module?.title);
+  }, [lesson.backendId, lesson.title, module?.title]);
 
   // Derive completion state from backend data
   // ═══════════════════════════════════════════════════════════
@@ -471,10 +489,17 @@ const LessonView: React.FC<LessonViewProps> = ({
     error: _quizError
   } = useLessonQuiz(isValidBackendId ? lesson.backendId! : '');
   
-  const { mutate: completeLessonMutation } = useCompleteLesson(
+  const { mutate: completeLessonMutation, isPending: isCompletionPending } = useCompleteLesson(
     isValidBackendId ? lesson.backendId! : '',
     module?.backendId || ''
   );
+
+  // GYN button unlock state — stricter than isCompleted.
+  // Waits for the backend to confirm completion before activating the button,
+  // preventing the race condition where the optimistic update makes the button
+  // active while the /complete API call is still in flight, causing the
+  // subsequent /questions fetch to 400 ("Please complete the lesson video first").
+  const isGYNUnlocked = isMockLesson ? isCompleted : (isCompleted && !isCompletionPending);
 
   const { mutate: uncompleteLessonMutation } = useUncompleteLesson(
     isValidBackendId ? lesson.backendId! : '',
@@ -515,14 +540,14 @@ const LessonView: React.FC<LessonViewProps> = ({
             timeSpentSeconds,
           },
           {
-            onSuccess: (response) => {
+            onSuccess: (response: LessonMilestoneResponse) => {
               console.log(`✅ [Milestone] ${milestone}% tracked successfully`, response);
-              
+
               if (response.auto_completed) {
                 console.log('🎉 [Milestone] Lesson auto-completed at 90%!');
               }
             },
-            onError: (error) => {
+            onError: (error: Error) => {
               console.error(`❌ [Milestone] Failed to track ${milestone}%:`, error);
               milestonesReachedRef.current.delete(milestone);
             },
@@ -601,7 +626,7 @@ const LessonView: React.FC<LessonViewProps> = ({
     
     setVideoDuration(duration);
     setIsPlayerReady(true);
-    setVideoCompleted(false);
+    setVideoCompletedLessonId(null);
 
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -618,7 +643,7 @@ const LessonView: React.FC<LessonViewProps> = ({
           console.log('🛑 [YouTube Player] Stopping video at', currentTime.toFixed(2), 'to prevent recommendations');
           player.pauseVideo();
 
-          setVideoCompleted(true);
+          setVideoCompletedLessonId(lesson.backendId || null);
           autoCompletedRef.current = true;
           console.log('✅ [YouTube Player] VIDEO COMPLETED - Player hidden!');
 
@@ -634,6 +659,8 @@ const LessonView: React.FC<LessonViewProps> = ({
             completeLessonMutation({ lessonId: lesson.backendId! }, {
               onSuccess: () => {
                 console.log('✅ [YouTube Player] Lesson marked complete successfully');
+                // 🔴 Analytics: path_step_complete — fires ONLY after backend confirms
+                trackPathStepComplete(lesson.backendId!, lesson.title, 'auto');
               },
               onError: (error: Error) => {
                 console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -643,7 +670,7 @@ const LessonView: React.FC<LessonViewProps> = ({
 
           return;
         }
-        
+
         if (state === YT_PLAYER_STATES.PLAYING) {
           console.log('⏯️ [YouTube Player] Progress - Time:', currentTime.toFixed(2), 'State:', getPlayerStateName(state));
           
@@ -692,7 +719,7 @@ const LessonView: React.FC<LessonViewProps> = ({
         
       case YT_PLAYER_STATES.ENDED:
         console.log('✅ [YouTube Player] VIDEO COMPLETED!');
-        setVideoCompleted(true);
+        setVideoCompletedLessonId(lesson.backendId || null);
         // Only fire completion if we haven't already handled it in the
         // progress interval (duration-3 check). Firing duplicate /complete
         // requests can cause backend transaction conflicts.
@@ -704,6 +731,8 @@ const LessonView: React.FC<LessonViewProps> = ({
             completeLessonMutation({ lessonId: lesson.backendId! }, {
               onSuccess: () => {
                 console.log('✅ [YouTube Player] Lesson marked complete successfully');
+                // 🔴 Analytics: path_step_complete — fires ONLY after backend confirms
+                trackPathStepComplete(lesson.backendId!, lesson.title, 'auto');
               },
               onError: (error: Error) => {
                 console.error('❌ [YouTube Player] Failed to mark lesson complete:', error);
@@ -862,6 +891,9 @@ const LessonView: React.FC<LessonViewProps> = ({
       completeLessonMutation({ lessonId }, {
         onSuccess: () => {
           console.log('✅ Lesson manually marked as complete');
+
+          // 🔴 Analytics: path_step_complete — fires ONLY after backend confirms
+          trackPathStepComplete(lessonId, lesson.title, 'manual');
 
           // Explicitly trigger GYN unlock modal on manual completion.
           // The useEffect that detects is_completed transitioning false→true
@@ -1075,7 +1107,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               </button>
 
               {/* Mini House Progress — clickable rooms */}
-              <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-sm">
+              <div data-walkthrough="lesson-house-nav" className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-sm">
                 <div className="relative w-14 h-14">
                   {/* Roof */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0"
@@ -1153,7 +1185,7 @@ const LessonView: React.FC<LessonViewProps> = ({
               {/* GYN Lesson Minigame Button */}
               {isValidBackendId && (
                 <GYNLessonButton
-                  lessonCompleted={isCompleted}
+                  lessonCompleted={isGYNUnlocked}
                   gynPlayed={
                     !!backendLessonData?.grow_your_nest_played ||
                     gynAlreadyPlayed ||
@@ -1302,11 +1334,11 @@ const LessonView: React.FC<LessonViewProps> = ({
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
-                              <h3 className="text-2xl font-bold text-white mb-2">Video Complete!</h3>
+                              <h3 className="text-2xl font-bold text-white mb-2">Video Complete</h3>
                               <p className="text-text-grey mb-6">Great job completing this lesson.</p>
                               <button
                                 onClick={() => {
-                                  setVideoCompleted(false);
+                                  setVideoCompletedLessonId(null);
                                   if (playerRef.current) {
                                     playerRef.current.seekTo(0, true);
                                   }
@@ -1338,60 +1370,7 @@ const LessonView: React.FC<LessonViewProps> = ({
                   </div>
                 </div>
 
-                <div className="mb-8 bg-text-white rounded-lg p-6">
-                  <h3 className="font-semibold text-text-blue-black mb-3">Video Transcript</h3>
-                  <div className="space-y-2 text-sm text-text-grey">
-                    {backendLessonData?.video_transcription ? (
-                      (() => {
-                        const timestampRegex = /\[(\d{2}:\d{2}:\d{2})\]/g;
-                        const segments: Array<{ timestamp: string; text: string }> = [];
-                        
-                        let match;
-                        let lastIndex = 0;
-                        
-                        while ((match = timestampRegex.exec(backendLessonData.video_transcription)) !== null) {
-                          if (lastIndex > 0) {
-                            const text = backendLessonData.video_transcription
-                              .substring(lastIndex, match.index)
-                              .trim();
-                            if (text) {
-                              segments[segments.length - 1].text = text;
-                            }
-                          }
-                          
-                          segments.push({
-                            timestamp: match[1],
-                            text: ''
-                          });
-                          
-                          lastIndex = match.index + match[0].length;
-                        }
-                        
-                        if (segments.length > 0 && lastIndex < backendLessonData.video_transcription.length) {
-                          segments[segments.length - 1].text = backendLessonData.video_transcription
-                            .substring(lastIndex)
-                            .trim();
-                        }
-                        
-                        return segments.map((segment, index) => {
-                          const timeFormatted = segment.timestamp.substring(3);
-                          
-                          return (
-                            <div key={index} className="flex gap-3">
-                              <span className="text-unavailable-button font-mono">{timeFormatted}</span>
-                              <p>{segment.text}</p>
-                            </div>
-                          );
-                        });
-                      })()
-                    ) : (
-                      <div className="flex gap-3">
-                        <span className="text-unavailable-button font-mono">0:00</span>
-                        <p>Welcome to this module on Readiness and Decision Making in your homeownership journey. Buying a home is one of the most significant financial and emotional decisions you'll make. So before diving into listings and neighborhood visits, it's important to take a step back and assess your personal and financial readiness. That means understanding your current income, savings, debt, and how stable your job or life situation is. Are you ready to stay in one place for at least a few years? Do you feel comfortable with the idea of taking on a mortgage and the responsibilities that come with home maintenance?</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {/* Video Transcript — hidden for now */}
               </>
             </div>
 

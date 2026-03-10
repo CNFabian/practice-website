@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingImage1, OnboardingImage3_5, OnboardingImage4, TextBox, OnestFont } from '../../../assets';
 import { getOnboardingOptions, completeStep1, completeStep2, completeStep3, completeStep4, type OnboardingOptions } from '../services/onboardingAPI';
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 import { searchCities, type PlacePrediction } from '../services/googlePlacesAPI';
+import { trackOnboardingStart, trackOnboardingComplete } from '../../../hooks/useAnalytics';
 
 interface OnboardingPageProps {
   isOpen?: boolean;
@@ -48,6 +49,15 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
       }
     };
     loadOptions();
+  }, []);
+
+  // 🔴 Analytics: onboarding_start — fires once on first mount of the onboarding flow
+  const onboardingStartFiredRef = useRef(false);
+  useEffect(() => {
+    if (!onboardingStartFiredRef.current) {
+      onboardingStartFiredRef.current = true;
+      trackOnboardingStart();
+    }
   }, []);
 
   // Search cities when user types (debounced)
@@ -187,6 +197,9 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
       });
 
       console.log('All onboarding steps completed successfully');
+
+      // 🔴 Analytics: onboarding_complete — fires ONLY after all backend steps confirmed
+      trackOnboardingComplete();
 
       // Wait for backend to update
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -438,7 +451,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   }`}
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
-                    NEXT &gt;
+                    Next
                   </OnestFont>
                 </button>
               </div>
@@ -515,7 +528,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ isOpen = true, onClose 
                   }`}
                 >
                   <OnestFont weight={500} lineHeight="relaxed">
-                    NEXT &gt;
+                    Next
                   </OnestFont>
                 </button>
               </div>

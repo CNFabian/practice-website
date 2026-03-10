@@ -1,6 +1,7 @@
 import { mapBackendUserToReduxUser, mapReduxUserToBackendUpdate } from '../utils/authUtils'
 import type { BackendUserResponse } from '../utils/authUtils'
 import type { SerializableUser } from '../store/slices/authSlice'
+import { connectionErrorEmitter } from '../contexts/ConnectionErrorContext'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -142,6 +143,17 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     return response;
   } catch (error) {
     console.error(`AuthAPI: Network error for ${url}:`, error);
+
+    // Detect genuine network failures (offline, DNS, timeout)
+    // vs application-level HTTP errors that were already handled above.
+    const isNetworkFailure =
+      error instanceof TypeError ||                        // fetch() rejects with TypeError on network failure
+      (error instanceof DOMException && error.name === 'AbortError') // request was aborted / timed out
+
+    if (isNetworkFailure) {
+      connectionErrorEmitter.emit()
+    }
+
     throw error;
   }
 };
@@ -190,6 +202,7 @@ export const registerUser = async (userData: {
   last_name: string;
   phone?: string;
   date_of_birth?: string;
+  marketing_consent?: boolean;
 }): Promise<void> => {
   console.log('AuthAPI: Starting user registration...');
   

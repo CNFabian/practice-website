@@ -1,3 +1,10 @@
+// 🔴 CRITICAL DEV NOTE: Submit Event Timing
+// - Do NOT fire submit/completion events on button click
+// - Always wait for backend success response (onSuccess) for true measurement
+// - This ensures events only fire when the backend confirms the action succeeded
+// - Prevents false positives from network errors, validation failures, or race conditions
+// - onSuccess = backend confirmed ✅ | onClick = user intent only ⚠️
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { submitModuleMinigame } from '../services/minigameAPI';
@@ -21,6 +28,7 @@ export const useSubmitMinigame = (moduleId: string) => {
         gameData: params.gameData,
       }),
 
+    // ✅ onSuccess fires ONLY after backend confirms — correct place for analytics events
     onSuccess: () => {
       // Invalidate minigame-related queries
       queryClient.invalidateQueries({

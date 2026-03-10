@@ -8,6 +8,7 @@ import { ButtonBuilder } from '../ui/ButtonBuilder';
 import { BirdCharacter } from '../characters/BirdCharacter';
 import { createTextStyle } from '../constants/Typography';
 import { SceneTransitionManager } from '../managers/SceneTransitionManager';
+import { DESIGN_HEIGHT } from '../constants/DesignConstants';
 import {
   getFreeRoamQuestions,
   getFreeRoamState,
@@ -51,6 +52,12 @@ interface ModuleLessonsData {
 }
 
 export default class HouseScene extends BaseScene {
+  // ═══════════════════════════════════════════════════════════
+  // CONSTANTS
+  // ═══════════════════════════════════════════════════════════
+  /** Bird X position as a fraction of viewport width — single source of truth. */
+  private static readonly BIRD_X_RATIO = 0.28;
+
   // ═══════════════════════════════════════════════════════════
   // PROPERTIES
   // ═══════════════════════════════════════════════════════════
@@ -141,6 +148,7 @@ export default class HouseScene extends BaseScene {
     this.createUI();
     this.createBirdWithEntrance();
     this.setupEventListeners();
+    this.setupGameResizeListener();
     this.checkForLessonsUpdate();
     this.registry.events.on('changedata-moduleLessonsData', this.onLessonsDataChanged, this);
 
@@ -1077,26 +1085,6 @@ export default class HouseScene extends BaseScene {
         )
         .setOrigin(0.5);
       container.add(checkmark);
-    } else if (lesson.locked) {
-      const lockedBg = this.add.circle(
-        badgeX,
-        badgeY,
-        badgeSize,
-        COLORS.UNAVAILABLE_BUTTON
-      );
-      container.add(lockedBg);
-
-      const lockIcon = this.add
-        .text(
-          badgeX,
-          badgeY,
-          '🔒',
-          createTextStyle('BADGE', COLORS.TEXT_WHITE_HEX, {
-            fontSize: `${badgeSize}px`,
-          })
-        )
-        .setOrigin(0.5);
-      container.add(lockIcon);
     }
   }
 
@@ -1676,9 +1664,15 @@ export default class HouseScene extends BaseScene {
     if (this.moduleTitleText) allComponents.push(this.moduleTitleText);
 
     // Store original positions before sliding out
+    // For the bird, store its final intended position, not its current animated position
     this.originalComponentPositions.clear();
     allComponents.forEach((component) => {
-      this.originalComponentPositions.set(component, (component as any).x);
+      let positionX = (component as any).x;
+      // Special handling for bird: use its intended final position
+      if (component === birdSprite && this.bird) {
+        positionX = width * HouseScene.BIRD_X_RATIO;
+      }
+      this.originalComponentPositions.set(component, positionX);
     });
 
     const slideDistance = width * 1.5;
@@ -1724,6 +1718,11 @@ export default class HouseScene extends BaseScene {
     if (this.minigameButton) allComponents.push(this.minigameButton);
     if (this.moduleTitleText) allComponents.push(this.moduleTitleText);
 
+    // Stop bird idle animation during slide-in to prevent conflicts
+    if (this.bird) {
+      this.bird.stopIdleAnimation();
+    }
+
     // Tween each component back to its stored original position
     allComponents.forEach((component) => {
       const originalX = this.originalComponentPositions.get(component);
@@ -1737,8 +1736,13 @@ export default class HouseScene extends BaseScene {
       }
     });
 
-    // Clear stored positions after use
+    // Clear stored positions after use and restart bird idle animation
     this.originalComponentPositions.clear();
+    this.time.delayedCall(duration, () => {
+      if (this.bird) {
+        this.bird.startIdleAnimation();
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1746,14 +1750,14 @@ export default class HouseScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
 
   private createBirdWithEntrance(): void {
-    const { width, height } = this.scale;
+    const { width } = this.scale;
+    const { lh } = this.getLayoutSize();
 
-    const birdTravelInfo: BirdTravelInfo | undefined =
-      this.registry.get('birdTravelInfo');
+    const finalX = width * HouseScene.BIRD_X_RATIO;
+    const finalY = lh * 0.06 + scale(5);
+
+    const birdTravelInfo: BirdTravelInfo | undefined = this.registry.get('birdTravelInfo');
     const returningFromLesson = this.registry.get('returningFromLesson');
-
-    const finalX = width * 0.1;
-    const finalY = height * 0.92;
 
     this.bird = new BirdCharacter(this);
 
@@ -1790,6 +1794,14 @@ export default class HouseScene extends BaseScene {
     this.scale.on('resize', this.handleResizeDebounced, this);
     this.events.on('wake', this.reEnableButtons, this);
     this.events.on('resume', this.reEnableButtons, this);
+  }
+
+  /**
+   * Listen for game resize events — routes through the same debounced handler
+   * as the Phaser scale 'resize' event so there is a single resize code path.
+   */
+  private setupGameResizeListener(): void {
+    this.game.events.on('gameResized', this.handleResizeDebounced, this);
   }
 
   private reEnableButtons(): void {
@@ -1855,6 +1867,14 @@ export default class HouseScene extends BaseScene {
   private handleResize(): void {
     this.handleCoinCounterResize();
 
+    // Reposition bird using the single source-of-truth X ratio
+    if (this.bird) {
+      this.bird.repositionForViewport((width, height) => ({
+        x: width * HouseScene.BIRD_X_RATIO,
+        y: Math.max(height, scale(DESIGN_HEIGHT)) * 0.06 + scale(5),
+      }));
+    }
+
     if (this.backButton) {
       this.backButton.destroy();
     }
@@ -1893,6 +1913,7 @@ export default class HouseScene extends BaseScene {
     this.scale.off('resize', this.handleResizeDebounced, this);
     this.events.off('wake', this.reEnableButtons, this);
     this.events.off('resume', this.reEnableButtons, this);
+    this.game.events.off('gameResized', this.handleResizeDebounced, this);
     if (this.resizeDebounceTimer) {
       this.resizeDebounceTimer.remove();
       this.resizeDebounceTimer = undefined;

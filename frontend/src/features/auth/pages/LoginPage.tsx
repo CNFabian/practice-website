@@ -5,6 +5,7 @@ import { loginUser, getCurrentUser, requestPasswordReset } from '../../../servic
 import { setUser } from '../../../store/slices/authSlice'
 import { birdWithPencil, PublicBackground, Eye, Blind, OnestFont } from '../../../assets'
 import BackButton from '../../../components/common/BackButton'
+import { trackCtaClick, trackLoginSuccess } from '../../../hooks/useAnalytics'
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate()
@@ -25,6 +26,10 @@ const LoginPage: React.FC = () => {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // 🔴 Analytics: cta_click on "Log in" — fires on click (intent signal, not backend-gated)
+    trackCtaClick('Log in', 'login_form')
+
     setLoading(true)
 
     try {
@@ -38,6 +43,9 @@ const LoginPage: React.FC = () => {
       console.log('LoginPage: Login successful, fetching user profile...');
       const userProfile = await getCurrentUser();
       console.log('LoginPage: User profile fetched:', userProfile);
+
+      // 🔴 Analytics: login_success — fires ONLY after backend confirms auth + user profile fetched
+      trackLoginSuccess()
 
       dispatch(setUser(userProfile));
 
@@ -120,7 +128,7 @@ const LoginPage: React.FC = () => {
               {showForgotPassword ? (
                 /* ──── Forgot Password View ──── */
                 <div className="space-y-6">
-                  {/* Back to Login button */}
+                  {/* Back to log in button */}
                   <BackButton
                     onClick={() => {
                       setShowForgotPassword(false)

@@ -490,7 +490,10 @@ export class HouseProgressCard {
         if (bird && bird.getSprite() && originalBirdY !== undefined) {
           const birdSprite = bird.getSprite();
           if (birdSprite) {
-            const targetBirdY = originalBirdY - scale(30);
+            // Responsive hop distance: smaller on small screens, larger on big screens
+            const minDimension = Math.min(scene.scale.width, scene.scale.height);
+            const hopDistance = Math.max(scale(15), minDimension * 0.03);
+            const targetBirdY = originalBirdY - hopDistance;
 
             scene.tweens.add({
               targets: birdSprite,

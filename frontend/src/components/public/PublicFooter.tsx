@@ -29,7 +29,7 @@ const PublicFooter: React.FC = () => {
             {/* Left Section - Logo and Copyright */}
             <div className="flex flex-col space-y-4">
               <div className="flex items-center">
-                <Link to="/splash" className="flex items-center">
+                <Link to="/auth/login" className="flex items-center">
                   <img 
                     src={NestNavigateLogo} 
                     alt="Nest Navigate" 

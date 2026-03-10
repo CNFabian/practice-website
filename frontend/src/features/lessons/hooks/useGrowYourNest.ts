@@ -1,9 +1,16 @@
 /**
  * useGrowYourNest.ts
- * 
+ *
  * React Query hooks for the "Grow Your Nest" minigame API.
  * Provides data fetching, mutations, and helper functions for both
  * lesson mode and free roam mode.
+ *
+ * 🔴 CRITICAL DEV NOTE: Submit Event Timing
+ * - Do NOT fire submit/completion events on button click
+ * - Always wait for backend success response (onSuccess) for true measurement
+ * - This ensures events only fire when the backend confirms the submission succeeded
+ * - Applies to both useGYNLessonSubmit and useGYNFreeRoamAnswer mutations
+ * - onSuccess = backend confirmed ✅ | onClick = user intent only ⚠️
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -74,6 +81,7 @@ export const useGYNLessonSubmit = (lessonId: string) => {
 
   return useMutation<LessonSubmitResponse, Error, LessonSubmitRequest>({
     mutationFn: (submission) => submitLessonAnswers(lessonId, submission),
+    // ✅ onSuccess fires ONLY after backend confirms — correct place for analytics events
     onSuccess: () => {
       // Invalidate lesson questions (since GYN is one-time per lesson)
       queryClient.invalidateQueries({ queryKey: GYN_QUERY_KEYS.lessonQuestions(lessonId) });
@@ -113,6 +121,7 @@ export const useGYNFreeRoamAnswer = (moduleId: string) => {
 
   return useMutation<FreeRoamAnswerResponse, Error, FreeRoamAnswerRequest>({
     mutationFn: (answerData) => submitFreeRoamAnswer(moduleId, answerData),
+    // ✅ onSuccess fires ONLY after backend confirms — correct place for analytics events
     onSuccess: () => {
       // Invalidate free roam state to reflect updated tree
       queryClient.invalidateQueries({ queryKey: GYN_QUERY_KEYS.freeRoamState(moduleId) });

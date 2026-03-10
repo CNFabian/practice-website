@@ -38,7 +38,7 @@ const NotificationsView: React.FC = () => {
     <div className="space-y-6">
       {/* Form Container */}
       <div>
-        {/* Notifications From Us */}
+        {/* Notifications from us */}
         <div className="pb-6">
           <OnestFont as="h3" weight={700} lineHeight="relaxed" className="text-base text-text-blue-black mb-2">
             Notifications from us

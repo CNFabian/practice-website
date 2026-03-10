@@ -207,6 +207,20 @@ class GameManager {
     // Update Phaser internals — zoom is always 1/dpr
     this.game.scale.setZoom(1 / dpr);
     this.game.scale.resize(internalWidth, internalHeight);
+
+    // Store viewport dimensions in registry for scene access
+    this.game.registry.set('viewportWidth', internalWidth);
+    this.game.registry.set('viewportHeight', internalHeight);
+    this.game.registry.set('devicePixelRatio', dpr);
+
+    // Emit resize event so scenes can recalculate positions
+    this.game.events.emit('gameResized', {
+      internalWidth,
+      internalHeight,
+      viewportWidth,
+      viewportHeight,
+      dpr
+    });
   }
 
   /**
@@ -490,7 +504,7 @@ class GameManager {
       const mockIndex = parseInt(moduleBackendId.replace('mock-module-', ''), 10) - 1;
       const mockHouse: HousePosition = {
         id: `mock-house-${mockIndex + 1}`,
-        name: lessonsData.length > 0 ? 'Home-buying Foundations' : `Module ${mockIndex + 1}`,
+        name: lessonsData.length > 0 ? 'Homebuying Foundations' : `Module ${mockIndex + 1}`,
         x: 20,
         y: 40,
         moduleId: generateFrontendId(moduleBackendId, 10000),

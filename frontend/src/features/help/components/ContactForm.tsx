@@ -3,6 +3,7 @@ import { OnestFont } from '../../../assets';
 import { useFAQCategories } from '../hooks/useHelpQueries';
 import { useSubmitSupportTicket } from '../hooks/useSubmitSupportTicket';
 import type { SupportTicketRequest } from '../types/help.types';
+import { trackLeadSubmit } from '../../../hooks/useAnalytics';
 
 interface FormData {
   firstName: string;
@@ -66,6 +67,8 @@ const ContactForm: React.FC = () => {
     submitTicketMutation(ticketData, {
       onSuccess: (response) => {
         console.log('Support ticket submitted successfully:', response);
+        // 🔴 Analytics: lead_submit — fires ONLY after backend confirms ticket created
+        trackLeadSubmit('support_ticket');
         setSubmitSuccess(true);
         setFormData({
           firstName: '',

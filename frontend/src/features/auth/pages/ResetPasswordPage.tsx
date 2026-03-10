@@ -323,7 +323,7 @@ const ResetPasswordPage: React.FC = () => {
         <div className="max-w-2xl max-h-[80vh] flex items-center justify-center">
           <img
             src={LoginImage}
-            alt="Home ownership journey"
+            alt="Homeownership journey"
             className="max-w-full max-h-full object-cover rounded-2xl"
           />
         </div>

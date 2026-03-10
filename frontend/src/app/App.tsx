@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useEffect, useState, useRef, lazy, Suspense } from 'react'
-import usePageTracking from '../hooks/usePageTracking'
+import { usePageTracking } from '../hooks/usePageTracking'
 import type { RootState } from '../store/store'
 import { setLoading, logout, setUser } from '../store/slices/authSlice'
 import { getCurrentUser, clearAuthData, isAuthenticated } from '../services/authAPI'
@@ -12,7 +12,10 @@ import ProtectedRoute from '../components/common/ProtectedRoute'
 import AdminRoute from '../components/common/AdminRoute'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import MobileGate from '../components/common/MobileGate'
+import ErrorBoundary from '../components/common/ErrorBoundary'
 import ModulesPage from '../features/modules/pages/ModulesPage'
+
+const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'))
 const SignupPage = lazy(() => import('../features/auth/pages/SignupPage'))
@@ -243,6 +246,7 @@ function App() {
 
   return (
     <MobileGate>
+    <ErrorBoundary>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/auth/*" element={
@@ -271,7 +275,7 @@ function App() {
                 <LoadingSpinner />
               )
             ) : (
-              <Navigate to="/splash" replace />
+              <Navigate to="/auth/login" replace />
             )
           }
           >
@@ -288,7 +292,10 @@ function App() {
                 <AdminDashboardPage />
               </AdminRoute>
             } />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
+
+          <Route path="/register" element={<Navigate to="/auth/signup" replace />} />
 
           <Route path="/" element={
             reduxIsAuthenticated
@@ -296,9 +303,10 @@ function App() {
               : <Navigate to="/auth/login" replace />
           } />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+    </ErrorBoundary>
     </MobileGate>
   )
 }
