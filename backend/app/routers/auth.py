@@ -171,6 +171,7 @@ def register_user(user_data: UserRegistration, db: Session = Depends(get_db)):
         phone=user_data.phone,
         date_of_birth=date_of_birth,
         is_verified=True,
+        marketing_consent=user_data.marketing_consent,
     )
 
     # Create initial coin balance
@@ -252,6 +253,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         profile_picture_url=current_user.profile_picture_url,
         is_active=current_user.is_active,
         is_verified=current_user.is_verified,
+        marketing_consent=current_user.marketing_consent or False,
         last_login_at=current_user.last_login_at,
         created_at=current_user.created_at
     )
@@ -297,6 +299,7 @@ def update_user_profile(
         profile_picture_url=current_user.profile_picture_url,
         is_active=current_user.is_active,
         is_verified=current_user.is_verified,
+        marketing_consent=current_user.marketing_consent or False,
         last_login_at=current_user.last_login_at,
         created_at=current_user.created_at
     )

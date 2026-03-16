@@ -76,6 +76,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    marketing_consent: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     password_reset_token: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True
     )

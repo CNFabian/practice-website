@@ -133,7 +133,7 @@ def _create_or_update_contact(properties: Dict[str, Any]) -> None:
 def sync_contact_on_register(user: User) -> None:
     """
     Create or update a HubSpot contact when a user registers.
-    Sends core profile fields and nest_navigate_user_id.
+    Sends core profile fields, nest_navigate_user_id, and marketing_consent.
     Logs errors and does not raise so registration is never blocked.
     """
     try:
@@ -144,6 +144,7 @@ def sync_contact_on_register(user: User) -> None:
             "firstname": user.first_name or "",
             "lastname": user.last_name or "",
             "nest_navigate_user_id": str(user.id),
+            "marketing_consent": bool(user.marketing_consent) if user.marketing_consent is not None else False,
         }
         if user.phone:
             properties["phone"] = user.phone
@@ -158,23 +159,39 @@ def sync_contact_onboarding_complete(user: User, onboarding: UserOnboarding) -> 
     """
     Update the HubSpot contact with onboarding fields when onboarding is completed.
     Identifies contact by user email. Logs errors and does not raise.
+
+    Data sent to HubSpot (align custom property types in HubSpot):
+    - has_realtor, has_loan_officer: boolean (True/False) — DB stores bool from "Yes, I am" / "Not yet"
+    - wants_expert_contact: string — DB stores "Yes, I'd love to" or "Maybe later"
+    - homeownership_timeline_months: number — DB stores int (e.g. 3, 6, 12, 24, 36, 120)
+    - target_cities: string — comma-separated list of city names (multi-line text in HubSpot)
+    - marketing_consent: boolean — from user; used by HubSpot workflow to set as marketing contact
     """
     try:
         if not _get_access_token():
             return
+        # Build target_cities string robustly (DB stores JSON array)
+        target_cities_raw = getattr(onboarding, "target_cities", None)
+        if isinstance(target_cities_raw, list) and target_cities_raw:
+            target_cities_value = ", ".join(str(c).strip() for c in target_cities_raw if c)
+        elif isinstance(target_cities_raw, str) and target_cities_raw.strip():
+            target_cities_value = target_cities_raw.strip()
+        else:
+            target_cities_value = ""
+
         properties = {
             "email": user.email,
             "firstname": user.first_name or "",
             "lastname": user.last_name or "",
             "nest_navigate_user_id": str(user.id),
-            "has_realtor": "true" if onboarding.has_realtor else "false",
-            "has_loan_officer": "true" if onboarding.has_loan_officer else "false",
+            "has_realtor": bool(onboarding.has_realtor) if onboarding.has_realtor is not None else False,
+            "has_loan_officer": bool(onboarding.has_loan_officer) if onboarding.has_loan_officer is not None else False,
             "wants_expert_contact": (onboarding.wants_expert_contact or ""),
-            "homeownership_timeline_months": str(onboarding.homeownership_timeline_months)
-            if onboarding.homeownership_timeline_months is not None
-            else "",
-            "target_cities": ", ".join(onboarding.target_cities) if onboarding.target_cities else "",
+            "target_cities": target_cities_value,
+            "marketing_consent": bool(user.marketing_consent) if user.marketing_consent is not None else False,
         }
+        if onboarding.homeownership_timeline_months is not None:
+            properties["homeownership_timeline_months"] = int(onboarding.homeownership_timeline_months)
         if user.phone:
             properties["phone"] = user.phone
         if user.date_of_birth:

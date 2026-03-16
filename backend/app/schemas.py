@@ -27,6 +27,7 @@ class UserRegistration(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None  # YYYY-MM-DD format
+    marketing_consent: bool = False
 
 
 class UserLogin(BaseModel):
@@ -44,6 +45,7 @@ class UserResponse(BaseSchema):
     profile_picture_url: Optional[str]
     is_active: bool
     is_verified: bool
+    marketing_consent: bool = False
     last_login_at: Optional[datetime]
     created_at: datetime
 
